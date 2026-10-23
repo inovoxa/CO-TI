@@ -17,27 +17,27 @@ public class DictDataSaveReqVO {
     private Long id;
 
     @Schema(description = "显示顺序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "显示顺序不能为空")
+    @NotNull(message = "Informe a ordem")
     private Integer sort;
 
     @Schema(description = "字典标签", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
-    @NotBlank(message = "字典标签不能为空")
-    @Size(max = 100, message = "字典标签长度不能超过100个字符")
+    @NotBlank(message = "Informe o rótulo")
+    @Size(max = 100, message = "O rótulo pode ter no máximo 100 caracteres")
     private String label;
 
     @Schema(description = "字典值", requiredMode = Schema.RequiredMode.REQUIRED, example = "iocoder")
-    @NotBlank(message = "字典键值不能为空")
-    @Size(max = 100, message = "字典键值长度不能超过100个字符")
+    @NotBlank(message = "Informe o valor")
+    @Size(max = 100, message = "O valor pode ter no máximo 100 caracteres")
     private String value;
 
     @Schema(description = "字典类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "sys_common_sex")
-    @NotBlank(message = "字典类型不能为空")
-    @Size(max = 100, message = "字典类型长度不能超过100个字符")
+    @NotBlank(message = "Informe o tipo do dicionário")
+    @Size(max = 100, message = "O tipo pode ter no máximo 100 caracteres")
     private String dictType;
 
     @Schema(description = "状态,见 CommonStatusEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "状态不能为空")
-    @InEnum(value = CommonStatusEnum.class, message = "修改状态必须是 {value}")
+    @NotNull(message = "Informe a situação")
+    @InEnum(value = CommonStatusEnum.class, message = "A situação deve ser {value}")
     private Integer status;
 
     @Schema(description = "颜色类型,default、primary、success、info、warning、danger", example = "default")

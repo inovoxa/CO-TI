@@ -44,7 +44,7 @@ withDefaults(
     filterPlaceholder?: string // 搜索输入框占位文字
   }>(),
   {
-    filterPlaceholder: '请输入部门名称'
+    filterPlaceholder: 'Digite o nome do departamento'
   }
 )
 

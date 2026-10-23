@@ -7,25 +7,25 @@
       :rules="formRules"
       label-width="80px"
     >
-      <el-form-item label="上级部门" prop="parentId">
+      <el-form-item label="Departamento superior" prop="parentId">
         <el-tree-select
           v-model="formData.parentId"
           :data="deptTree"
           :props="defaultProps"
           check-strictly
           default-expand-all
-          placeholder="请选择上级部门"
+          placeholder="Selecione o departamento superior"
           value-key="deptId"
         />
       </el-form-item>
-      <el-form-item label="部门名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入部门名称" />
+      <el-form-item label="Nome do departamento" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome do departamento" />
       </el-form-item>
-      <el-form-item label="显示排序" prop="sort">
+      <el-form-item label="Ordem" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" controls-position="right" />
       </el-form-item>
-      <el-form-item label="负责人" prop="leaderUserId">
-        <el-select v-model="formData.leaderUserId" clearable placeholder="请输入负责人">
+      <el-form-item label="Responsável" prop="leaderUserId">
+        <el-select v-model="formData.leaderUserId" clearable placeholder="Selecione o responsável">
           <el-option
             v-for="item in userList"
             :key="item.id"
@@ -34,14 +34,14 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="联系电话" prop="phone">
-        <el-input v-model="formData.phone" maxlength="11" placeholder="请输入联系电话" />
+      <el-form-item label="Telefone" prop="phone">
+        <el-input v-model="formData.phone" maxlength="11" placeholder="Digite o telefone" />
       </el-form-item>
-      <el-form-item label="邮箱" prop="email">
-        <el-input v-model="formData.email" maxlength="50" placeholder="请输入邮箱" />
+      <el-form-item label="E-mail" prop="email">
+        <el-input v-model="formData.email" maxlength="50" placeholder="Digite o e-mail" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="formData.status" clearable placeholder="请选择状态">
+      <el-form-item label="Situação" prop="status">
+        <el-select v-model="formData.status" clearable placeholder="Selecione a situação">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -52,8 +52,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -86,12 +86,12 @@ const formData = ref({
   status: CommonStatusEnum.ENABLE
 })
 const formRules = reactive<FormRules>({
-  parentId: [{ required: true, message: '上级部门不能为空', trigger: 'blur' }],
-  name: [{ required: true, message: '部门名称不能为空', trigger: 'blur' }],
-  sort: [{ required: true, message: '显示排序不能为空', trigger: 'blur' }],
-  email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
-  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }],
-  status: [{ required: true, message: '状态不能为空', trigger: 'blur' }]
+  parentId: [{ required: true, message: 'Informe o departamento superior', trigger: 'blur' }],
+  name: [{ required: true, message: 'Informe o nome do departamento', trigger: 'blur' }],
+  sort: [{ required: true, message: 'Informe a ordem', trigger: 'blur' }],
+  email: [{ type: 'email', message: 'E-mail inválido', trigger: ['blur', 'change'] }],
+  phone: [{ pattern: /^\+?[0-9][0-9 ()-]{6,22}[0-9]$/, message: 'Celular inválido', trigger: 'blur' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 const deptTree = ref() // 树形结构
@@ -167,7 +167,7 @@ const getTree = async () => {
   const data = await DeptApi.getSimpleDeptList()
   // 无数据（初始化）或能访问顶层部门时才显示"顶级部门"，后端已对受限用户过滤
   if (data.length === 0 || data.some((d) => d.parentId === 0)) {
-    const dept: Tree = { id: 0, name: '顶级部门', children: [] }
+    const dept: Tree = { id: 0, name: 'Raiz', children: [] }
     dept.children = handleTree(data)
     deptTree.value.push(dept)
   } else {

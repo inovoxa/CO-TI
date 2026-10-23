@@ -19,13 +19,13 @@
       v-else-if="previewType === 'iframe'"
       class="h-620px w-full border-0 bg-[var(--el-bg-color)]"
       :src="url"
-      title="文件在线预览"
+      title="Pré-visualização"
     ></iframe>
     <video v-else-if="previewType === 'video'" class="h-520px w-full" controls :src="url">
-      当前浏览器不支持视频预览
+      Este navegador não reproduz o vídeo
     </video>
     <audio v-else-if="previewType === 'audio'" class="w-[min(560px,90%)]" controls :src="url">
-      当前浏览器不支持音频预览
+      Este navegador não reproduz o áudio
     </audio>
     <el-alert v-else :closable="false" show-icon :title="unsupportedTitle" type="info" />
   </div>
@@ -68,8 +68,8 @@ const previewType = computed(() => {
 })
 const unsupportedTitle = computed(() =>
   props.downloadable
-    ? '当前文件格式暂不支持在线预览，可使用下载功能查看'
-    : '当前文件格式暂不支持在线预览，且当前账号没有下载权限'
+    ? 'Este formato não tem pré-visualização. Baixe o arquivo para ver'
+    : 'Este formato não tem pré-visualização e você não tem permissão para baixar'
 )
 
 const textLoading = ref(false) // 纯文本加载中
@@ -90,12 +90,12 @@ watch(
     textLoading.value = true
     try {
       const response = await fetch(url, { signal: controller.signal })
-      if (!response.ok) throw new Error('文件请求失败')
+      if (!response.ok) throw new Error('Falha ao buscar o arquivo')
       const charset = response.headers.get('content-type')?.match(/charset=["']?([^;"'\s]+)/i)?.[1]
       const content = new TextDecoder(charset || 'utf-8').decode(await response.arrayBuffer())
       if (!controller.signal.aborted) textContent.value = content
     } catch {
-      if (!controller.signal.aborted) textError.value = '文件预览失败，请下载后查看'
+      if (!controller.signal.aborted) textError.value = 'Falha na pré-visualização. Baixe o arquivo para ver'
     } finally {
       if (!controller.signal.aborted) textLoading.value = false
     }

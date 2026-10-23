@@ -30,6 +30,8 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
     private OAuth2CodeService oauth2CodeService;
     @Resource
     private AdminAuthService adminAuthService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private cn.iocoder.yudao.module.system.service.auth.SegundoFator segundoFator;
 
     @Override
     public OAuth2AccessTokenDO grantImplicit(Long userId, Integer userType,
@@ -74,6 +76,11 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
         // 使用账号 + 密码进行登录
         AdminUserDO user = adminAuthService.authenticate(username, password);
         Assert.notNull(user, "用户不能为空！"); // 防御性编程
+        // CO-TI: grant_type=password não tem onde pedir o código; quem tem segundo fator usa o login do portal
+        if (segundoFator != null && segundoFator.exige(user.getId())) {
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception(
+                    cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        }
 
         // 创建访问令牌
         return oauth2TokenService.createAccessToken(user.getId(), UserTypeEnum.ADMIN.getValue(), clientId, scopes);

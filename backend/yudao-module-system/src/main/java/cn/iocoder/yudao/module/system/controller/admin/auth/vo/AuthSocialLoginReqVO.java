@@ -20,15 +20,15 @@ public class AuthSocialLoginReqVO {
 
     @Schema(description = "社交平台的类型，参见 UserSocialTypeEnum 枚举值", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     @InEnum(SocialTypeEnum.class)
-    @NotNull(message = "社交平台的类型不能为空")
+    @NotNull(message = "Informe a rede social")
     private Integer type;
 
     @Schema(description = "授权码", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotEmpty(message = "授权码不能为空")
+    @NotEmpty(message = "Informe o código de autorização")
     private String code;
 
     @Schema(description = "state", requiredMode = Schema.RequiredMode.REQUIRED, example = "9b2ffbc1-7425-4155-9894-9d5c08541d62")
-    @NotEmpty(message = "state 不能为空")
+    @NotEmpty(message = "Informe o state")
     private String state;
 
 }

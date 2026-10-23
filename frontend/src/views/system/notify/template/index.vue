@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="站内信配置" url="https://doc.iocoder.cn/notify/" />
+  <doc-alert title="Configuração de mensagens internas" url="https://doc.iocoder.cn/notify/" />
 
   <!-- 搜索工作栏 -->
   <ContentWrap>
@@ -10,28 +10,28 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="模板名称" prop="name">
+      <el-form-item label="Nome do modelo" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入模板名称"
+          placeholder="Digite o nome do modelo"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="模板编号" prop="code">
+      <el-form-item label="Nº do modelo" prop="code">
         <el-input
           v-model="queryParams.code"
-          placeholder="请输入模版编码"
+          placeholder="Digite o código do modelo"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择开启状态"
+          placeholder="Selecione a situação"
           clearable
           class="!w-240px"
         >
@@ -43,27 +43,27 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
+      <el-form-item label="Criado em" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          start-placeholder="Data inicial"
+          end-placeholder="Data final"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['system:notify-template:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" />新增
+          <Icon icon="ep:plus" class="mr-5px" />Novo
         </el-button>
         <el-button
           type="danger"
@@ -72,7 +72,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['system:notify-template:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" />批量删除
+          <Icon icon="ep:delete" class="mr-5px" />Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -83,46 +83,46 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
       <el-table-column
-        label="模板编码"
+        label="Código do modelo"
         align="center"
         prop="code"
         width="120"
         :show-overflow-tooltip="true"
       />
       <el-table-column
-        label="模板名称"
+        label="Nome do modelo"
         align="center"
         prop="name"
         width="120"
         :show-overflow-tooltip="true"
       />
-      <el-table-column label="类型" align="center" prop="type">
+      <el-table-column label="Tipo" align="center" prop="type">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE" :value="scope.row.type" />
         </template>
       </el-table-column>
-      <el-table-column label="发送人名称" align="center" prop="nickname" />
+      <el-table-column label="Remetente" align="center" prop="nickname" />
       <el-table-column
-        label="模板内容"
+        label="Conteúdo do modelo"
         align="center"
         prop="content"
         width="200"
         :show-overflow-tooltip="true"
       />
-      <el-table-column label="开启状态" align="center" prop="status" width="80">
+      <el-table-column label="Situação" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
+      <el-table-column label="Observações" align="center" prop="remark" />
       <el-table-column
-        label="创建时间"
+        label="Criado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center" width="210" fixed="right">
+      <el-table-column label="Ações" align="center" width="210" fixed="right">
         <template #default="scope">
           <el-button
             link
@@ -130,7 +130,7 @@
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['system:notify-template:update']"
           >
-            修改
+            Editar
           </el-button>
           <el-button
             link
@@ -138,7 +138,7 @@
             @click="openSendForm(scope.row)"
             v-hasPermi="['system:notify-template:send-notify']"
           >
-            测试
+            Testar
           </el-button>
           <el-button
             link
@@ -146,7 +146,7 @@
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['system:notify-template:delete']"
           >
-            删除
+            Excluir
           </el-button>
         </template>
       </el-table-column>

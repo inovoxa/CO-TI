@@ -15,27 +15,27 @@ public class ConfigSaveReqVO {
     private Long id;
 
     @Schema(description = "参数分组", requiredMode = Schema.RequiredMode.REQUIRED, example = "biz")
-    @NotEmpty(message = "参数分组不能为空")
-    @Size(max = 50, message = "参数名称不能超过 50 个字符")
+    @NotEmpty(message = "Informe a categoria")
+    @Size(max = 50, message = "O nome pode ter no máximo 50 caracteres")
     private String category;
 
     @Schema(description = "参数名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "数据库名")
-    @NotBlank(message = "参数名称不能为空")
-    @Size(max = 100, message = "参数名称不能超过 100 个字符")
+    @NotBlank(message = "Informe o nome")
+    @Size(max = 100, message = "O nome pode ter no máximo 100 caracteres")
     private String name;
 
     @Schema(description = "参数键名", requiredMode = Schema.RequiredMode.REQUIRED, example = "yunai.db.username")
-    @NotBlank(message = "参数键名长度不能为空")
-    @Size(max = 100, message = "参数键名长度不能超过 100 个字符")
+    @NotBlank(message = "Informe a chave")
+    @Size(max = 100, message = "A chave pode ter no máximo 100 caracteres")
     private String key;
 
     @Schema(description = "参数键值", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotBlank(message = "参数键值不能为空")
-    @Size(max = 500, message = "参数键值长度不能超过 500 个字符")
+    @NotBlank(message = "Informe o valor")
+    @Size(max = 500, message = "O valor pode ter no máximo 500 caracteres")
     private String value;
 
     @Schema(description = "是否可见", requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
-    @NotNull(message = "是否可见不能为空")
+    @NotNull(message = "Informe se é visível")
     private Boolean visible;
 
     @Schema(description = "备注", example = "备注一下很帅气！")

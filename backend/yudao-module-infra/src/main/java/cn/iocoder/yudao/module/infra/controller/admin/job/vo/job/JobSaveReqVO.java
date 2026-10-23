@@ -13,26 +13,26 @@ public class JobSaveReqVO {
     private Long id;
 
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "测试任务")
-    @NotEmpty(message = "任务名称不能为空")
+    @NotEmpty(message = "Informe o nome da tarefa")
     private String name;
 
     @Schema(description = "处理器的名字", requiredMode = Schema.RequiredMode.REQUIRED, example = "sysUserSessionTimeoutJob")
-    @NotEmpty(message = "处理器的名字不能为空")
+    @NotEmpty(message = "Informe o handler")
     private String handlerName;
 
     @Schema(description = "处理器的参数", example = "yudao")
     private String handlerParam;
 
     @Schema(description = "CRON 表达式", requiredMode = Schema.RequiredMode.REQUIRED, example = "0/10 * * * * ? *")
-    @NotEmpty(message = "CRON 表达式不能为空")
+    @NotEmpty(message = "Informe a expressão CRON")
     private String cronExpression;
 
     @Schema(description = "重试次数", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
-    @NotNull(message = "重试次数不能为空")
+    @NotNull(message = "Informe as tentativas")
     private Integer retryCount;
 
     @Schema(description = "重试间隔", requiredMode = Schema.RequiredMode.REQUIRED, example = "1000")
-    @NotNull(message = "重试间隔不能为空")
+    @NotNull(message = "Informe o intervalo")
     private Integer retryInterval;
 
     @Schema(description = "监控超时时间", example = "1000")

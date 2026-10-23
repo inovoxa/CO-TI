@@ -13,7 +13,7 @@
                   {{ t('workplace.welcome') }} {{ username }} {{ t('workplace.happyDay') }}
                 </div>
                 <div class="mt-10px text-14px text-gray-500">
-                  {{ t('workplace.toady') }}，20℃ - 32℃！
+                  {{ t('workplace.toady') }}
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ const getProject = async () => {
       name: 'ruoyi-vue-pro',
       icon: 'simple-icons:springboot',
       message: 'github.com/YunaiV/ruoyi-vue-pro',
-      personal: 'Spring Boot 单体架构',
+      personal: 'Chamados',
       time: new Date('2025-01-02'),
       color: '#6DB33F'
     },
@@ -246,7 +246,7 @@ const getProject = async () => {
       name: 'yudao-ui-admin-vue3',
       icon: 'ep:element-plus',
       message: 'github.com/yudaocode/yudao-ui-admin-vue3',
-      personal: 'Vue3 + element-plus 管理后台',
+      personal: 'Atendimento',
       time: new Date('2025-02-03'),
       color: '#409EFF'
     },
@@ -254,7 +254,7 @@ const getProject = async () => {
       name: 'yudao-mall-uniapp',
       icon: 'icon-park-outline:mall-bag',
       message: 'github.com/yudaocode/yudao-mall-uniapp',
-      personal: 'Vue3 + uniapp 商城手机端',
+      personal: 'Inventário',
       time: new Date('2025-03-04'),
       color: '#ff4d4f'
     },
@@ -262,7 +262,7 @@ const getProject = async () => {
       name: 'yudao-cloud',
       icon: 'material-symbols:cloud-outline',
       message: 'github.com/YunaiV/yudao-cloud',
-      personal: 'Spring Cloud 微服务架构',
+      personal: 'Monitoramento',
       time: new Date('2025-04-05'),
       color: '#1890ff'
     },
@@ -270,7 +270,7 @@ const getProject = async () => {
       name: 'yudao-ui-admin-vben',
       icon: 'devicon:antdesign',
       message: 'github.com/yudaocode/yudao-ui-admin-vben',
-      personal: 'Vue3 + vben5(antd) 管理后台',
+      personal: 'Logs',
       time: new Date('2025-05-06'),
       color: '#e18525'
     },
@@ -278,7 +278,7 @@ const getProject = async () => {
       name: 'yudao-ui-admin-uniapp',
       icon: 'ant-design:mobile',
       message: 'github.com/yudaocode/yudao-ui-admin-uniapp',
-      personal: 'Vue3 + uniapp 管理手机端',
+      personal: 'Cofre de senhas',
       time: new Date('2025-06-01'),
       color: '#2979ff'
     }
@@ -291,27 +291,27 @@ let notice = reactive<Notice[]>([])
 const getNotice = async () => {
   const data = [
     {
-      title: '系统支持 JDK 8/17/21，Vue 2/3',
-      type: '技术兼容性',
+      title: 'Integração total com o Active Directory',
+      type: 'Identidade',
       keys: ['JDK', 'Vue'],
       date: new Date()
     },
     {
-      title: '后端提供 Spring Boot 2.7/3.2 + Cloud 双架构',
-      type: '架构灵活性',
+      title: 'Banco único, trilha de auditoria e verificação em duas etapas',
+      type: 'Segurança',
       keys: ['Boot', 'Cloud'],
       date: new Date()
     },
     {
-      title: '全部开源，个人与企业可 100% 直接使用，无需授权',
-      type: '开源免授权',
-      keys: ['无需授权'],
+      title: 'Núcleo open source (GPLv3), instalado na infraestrutura da sua empresa',
+      type: 'Open source',
+      keys: ['GPLv3'],
       date: new Date()
     },
     {
-      title: '国内使用最广泛的快速开发平台，远超 10w+ 企业使用',
-      type: '广泛企业认可',
-      keys: ['最广泛', '10w+'],
+      title: 'Tudo da TI em um só lugar: chamados, atendimento, inventário, monitoramento e logs',
+      type: 'Plataforma única',
+      keys: ['Unificado', '10w+'],
       date: new Date()
     }
   ]
@@ -324,37 +324,37 @@ let shortcut = reactive<Shortcut[]>([])
 const getShortcut = async () => {
   const data = [
     {
-      name: '首页',
+      name: 'Início',
       icon: 'ion:home-outline',
       url: '/',
       color: '#1fdaca'
     },
     {
-      name: '商城中心',
+      name: 'Loja',
       icon: 'ep:shop',
       url: '/mall/home',
       color: '#ff6b6b'
     },
     {
-      name: 'AI 大模型',
+      name: 'IA',
       icon: 'tabler:ai',
       url: '/ai/chat',
       color: '#7c3aed'
     },
     {
-      name: 'ERP 系统',
+      name: 'ERP',
       icon: 'simple-icons:erpnext',
       url: '/erp/home',
       color: '#3fb27f'
     },
     {
-      name: 'CRM 系统',
+      name: 'CRM',
       icon: 'simple-icons:civicrm',
       url: '/crm/backlog',
       color: '#4daf1bc9'
     },
     {
-      name: 'IoT 物联网',
+      name: 'IoT',
       icon: 'fa-solid:hdd',
       url: '/iot/home',
       color: '#1a73e8'

@@ -20,7 +20,7 @@ public class DictTypePageReqVO extends PageParam {
     private String name;
 
     @Schema(description = "字典类型，模糊匹配", example = "sys_common_sex")
-    @Size(max = 100, message = "字典类型类型长度不能超过100个字符")
+    @Size(max = 100, message = "O tipo pode ter no máximo 100 caracteres")
     private String type;
 
     @Schema(description = "展示状态，参见 CommonStatusEnum 枚举类", example = "1")

@@ -26,7 +26,7 @@ public class RoleRespVO {
     private String name;
 
     @Schema(description = "角色标志", requiredMode = Schema.RequiredMode.REQUIRED, example = "admin")
-    @NotBlank(message = "角色标志不能为空")
+    @NotBlank(message = "Informe o código do perfil")
     @ExcelProperty("角色标志")
     private String code;
 

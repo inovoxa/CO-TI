@@ -118,20 +118,20 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   const imgSize = rawFile.size / 1024 / 1024 < props.fileSize
   const imgType = props.fileType
   if (!imgType.includes(rawFile.type as FileTypes))
-    message.notifyWarning('上传图片不符合所需的格式！')
-  if (!imgSize) message.notifyWarning(`上传图片大小不能超过 ${props.fileSize}M！`)
+    message.notifyWarning('Formato de imagem não aceito!')
+  if (!imgSize) message.notifyWarning(`A imagem não pode passar de ${props.fileSize} MB!`)
   return imgType.includes(rawFile.type as FileTypes) && imgSize
 }
 
 // 图片上传成功提示
 const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
-  message.success('上传成功')
+  message.success('Enviado')
   emit('update:modelValue', res.data)
 }
 
 // 图片上传错误提示
 const uploadError = () => {
-  message.notifyError('图片上传失败，请您重新上传！')
+  message.notifyError('Falha ao enviar a imagem. Tente de novo!')
 }
 </script>
 <style lang="scss" scoped>

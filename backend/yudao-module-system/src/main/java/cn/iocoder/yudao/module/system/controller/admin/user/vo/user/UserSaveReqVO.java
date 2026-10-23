@@ -22,14 +22,14 @@ public class UserSaveReqVO {
     private Long id;
 
     @Schema(description = "用户账号", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
-    @NotBlank(message = "用户账号不能为空")
-    @Pattern(regexp = "^[a-zA-Z0-9]{4,30}$", message = "用户账号由 数字、字母 组成")
-    @Size(min = 4, max = 30, message = "用户账号长度为 4-30 个字符")
+    @NotBlank(message = "Informe o usuário")
+    @Pattern(regexp = "^[a-zA-Z0-9._-]{1,30}$", message = "O usuário só pode ter letras, números, ponto, hífen e sublinhado")
+    @Size(min = 1, max = 30, message = "O usuário deve ter de 1 a 30 caracteres")
     @DiffLogField(name = "用户账号")
     private String username;
 
     @Schema(description = "用户昵称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋艿")
-    @Size(max = 30, message = "用户昵称长度不能超过30个字符")
+    @Size(max = 100, message = "O nome pode ter no máximo 100 caracteres")
     @DiffLogField(name = "用户昵称")
     private String nickname;
 
@@ -46,8 +46,8 @@ public class UserSaveReqVO {
     private Set<Long> postIds;
 
     @Schema(description = "用户邮箱", example = "yudao@iocoder.cn")
-    @Email(message = "邮箱格式不正确")
-    @Size(max = 50, message = "邮箱长度不能超过 50 个字符")
+    @Email(message = "E-mail inválido")
+    @Size(max = 128, message = "O e-mail pode ter no máximo 128 caracteres")
     @DiffLogField(name = "用户邮箱")
     private String email;
 
@@ -67,10 +67,10 @@ public class UserSaveReqVO {
     // ========== 仅【创建】时，需要传递的字段 ==========
 
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
-    @Length(min = 4, max = 16, message = "密码长度为 4-16 位")
+    @Length(min = 4, max = 16, message = "A senha deve ter de 4 a 16 caracteres")
     private String password;
 
-    @AssertTrue(message = "密码不能为空")
+    @AssertTrue(message = "Informe a senha")
     @JsonIgnore
     public boolean isPasswordValid() {
         return id != null // 修改时，不需要传递

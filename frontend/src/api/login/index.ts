@@ -22,6 +22,11 @@ export const login = (data: UserLoginVO) => {
   })
 }
 
+// CO-TI: segunda etapa do login (código do autenticador ou de recuperação)
+export const loginMfa = (data: { desafio: string; codigo: string }) => {
+  return request.post({ url: '/system/auth/login-mfa', data, headers: { isEncrypt: false } })
+}
+
 // 注册
 export const register = (data: RegisterVO) => {
   return request.post({ url: '/system/auth/register', data })

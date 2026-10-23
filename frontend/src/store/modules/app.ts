@@ -282,7 +282,7 @@ export const useAppStore = defineStore('app', {
     setLayout(layout: LayoutType) {
       const normalizedLayout = normalizeLayout(layout)
       if (this.mobile && normalizedLayout !== 'sidebar-nav') {
-        ElMessage.warning('移动端模式下不支持切换其他布局')
+        ElMessage.warning('No celular não é possível trocar o layout')
         return
       }
       this.layout = normalizedLayout

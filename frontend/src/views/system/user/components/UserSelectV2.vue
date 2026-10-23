@@ -30,10 +30,10 @@
       <template #content>
         <div v-if="selectedItems.length > 0" class="flex gap-[10px]">
           <div v-for="selectedItem in selectedItems" :key="selectedItem.id" class="leading-6">
-            <div>用户名称：{{ selectedItem.username }}</div>
-            <div>用户昵称：{{ selectedItem.nickname }}</div>
-            <div>部门：{{ (selectedItem as any).deptName || '-' }}</div>
-            <div>手机号码：{{ selectedItem.mobile || '-' }}</div>
+            <div>Usuário: {{ selectedItem.username }}</div>
+            <div>Nome: {{ selectedItem.nickname }}</div>
+            <div>Departamento: {{ (selectedItem as any).deptName || '-' }}</div>
+            <div>Celular: {{ selectedItem.mobile || '-' }}</div>
           </div>
         </div>
       </template>
@@ -84,7 +84,7 @@ const props = withDefaults(
     defaultCurrentUser: false,
     disabled: false,
     clearable: true,
-    placeholder: '请选择用户'
+    placeholder: 'Selecione o usuário'
   }
 )
 
@@ -101,7 +101,7 @@ const selectedItems = ref<UserApi.UserVO[]>([]) // 当前选中的用户
 
 /** 输入框显示文本：展示用户昵称，保持简洁 */
 const displayLabel = computed(() => {
-  return selectedItems.value.map((item) => item.nickname || item.username).join('、')
+  return selectedItems.value.map((item) => item.nickname || item.username).join(', ')
 })
 
 /** 是否显示清除图标 */

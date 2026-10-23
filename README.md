@@ -44,6 +44,41 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Sincronização completa:** a cada 30 min (`CO_TI_AD_CRON`). Quem sumiu do AD ou foi desativado lá é desativado no portal. Se mais de 20% das contas sumirem de uma vez, a sincronização não desativa ninguém e registra um erro, porque o mais provável é um filtro mal configurado.
 - O certificado do DC precisa ser confiável. Use `CO_TI_AD_TRUSTSTORE` com a CA do AD; `ldap://` sem StartTLS é recusado.
 
+## Segurança
+
+- **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.
+  - Funciona com qualquer aplicativo autenticador. Recebe 10 códigos de recuperação de uso único.
+  - O mesmo código não serve duas vezes. O desafio do login vale 5 minutos e 5 tentativas.
+  - Quem perde o celular e os códigos: o administrador usa *Usuários → Mais → Redefinir verificação em duas etapas*.
+- **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA (e, depois, o cofre) com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular.
+- **Trilha de auditoria** (*Centro de Operações → Auditoria*):
+  - registra login, falhas, MFA, mudanças vindas do AD e a senha inicial;
+  - é encadeada por SHA-256: o botão *Verificar integridade* aponta a primeira linha alterada ou removida;
+  - o banco recusa `UPDATE`/`DELETE`/`TRUNCATE` nela.
+- **Dois papéis no PostgreSQL:**
+  - `coti` é o dono das tabelas e só roda as migrations;
+  - a aplicação conecta como `coti_app`, que só lê e grava dados e não consegue alterar a estrutura nem a auditoria.
+- **Logins alternativos desligados:** auto-cadastro, SMS e login social do RuoYi ficam desligados (`coti.seguranca.login-alternativo`). O `grant_type=password` do OAuth2 é recusado para quem tem MFA.
+- **Dados que não ficam guardados:**
+  - o navegador não guarda a senha ("lembrar" guarda só o usuário);
+  - o log não grava senha nem token;
+  - o painel `/druid` fica desligado.
+- **IP real:** o nginx sobrescreve `X-Forwarded-For` com o IP da conexão. Atrás de outro proxy, configure o módulo `realip`.
+
+## Idioma
+
+A interface e as mensagens estão em português (padrão) e inglês.
+
+Para o texto herdado do RuoYi há uma ferramenta em `ferramentas/traducao/`. Ela troca só strings e textos de tela, nunca comentários. Os dicionários ficam em `ferramentas/traducao/dicionarios/*.json`. Depois de trazer uma atualização do RuoYi:
+
+```bash
+cd ferramentas/traducao
+python traduzir.py aplicar     # reaplica as traduções
+python traduzir.py extrair     # lista em pendentes.json o que chegou de novo
+```
+
+Menus e dicionários do banco são traduzidos pela migration `V11__traducao_ptbr.sql`. Os módulos do RuoYi que o CO-TI não usa (loja, ERP, CRM, BPM, multi-empresa, SMS etc.) ficam escondidos.
+
 ## Desenvolvimento
 
 Requisitos: JDK 21, Maven 3.9, Node 22+ com pnpm 10, Docker.

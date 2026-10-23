@@ -13,13 +13,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileUploadReqVO {
 
     @Schema(description = "文件附件", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "文件附件不能为空")
+    @NotNull(message = "Envie o arquivo")
     private MultipartFile file;
 
     @Schema(description = "文件目录", example = "XXX/YYY")
     private String directory;
 
-    @AssertTrue(message = "文件目录不正确")
+    @AssertTrue(message = "Diretório inválido")
     @JsonIgnore
     public boolean isDirectoryValid() {
         return isDirectoryValid(directory);

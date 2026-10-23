@@ -27,4 +27,12 @@ public class AuthLoginRespVO {
     @Schema(description = "过期时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime expiresTime;
 
+    // ========== CO-TI: login em duas etapas ==========
+
+    @Schema(description = "true = falta o código do autenticador; os tokens só vêm depois de /system/auth/login-mfa")
+    private Boolean mfaPendente;
+
+    @Schema(description = "Desafio para enviar junto com o código (vale 5 minutos e 5 tentativas)")
+    private String desafioMfa;
+
 }

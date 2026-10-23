@@ -1,5 +1,5 @@
 <template>
-  <el-text type="info" size="small"> 拖动左上角的小圆点可对其排序 </el-text>
+  <el-text type="info" size="small"> Arraste pelo ponto no canto superior esquerdo para ordenar </el-text>
   <VueDraggable
     :list="formData"
     :force-fallback="false"
@@ -17,14 +17,14 @@
           class="m--8px m-b-4px flex flex-row items-center justify-between p-8px"
           style="background-color: var(--app-content-bg-color)"
         >
-          <el-tooltip content="拖动排序">
+          <el-tooltip content="Arraste para ordenar">
             <Icon
               icon="ic:round-drag-indicator"
               class="drag-icon cursor-move"
               style="color: #8a909c"
             />
           </el-tooltip>
-          <el-tooltip content="删除">
+          <el-tooltip content="Excluir">
             <Icon
               icon="ep:delete"
               class="cursor-pointer text-red-5"
@@ -38,7 +38,7 @@
       </div>
     </template>
   </VueDraggable>
-  <el-tooltip :disabled="limit < 1" :content="`最多添加${limit}个`">
+  <el-tooltip :disabled="limit < 1" :content="`No máximo ${limit}`">
     <el-button
       type="primary"
       plain
@@ -46,7 +46,7 @@
       :disabled="limit > 0 && formData.length >= limit"
       @click="handleAdd"
     >
-      <Icon icon="ep:plus" /><span>添加</span>
+      <Icon icon="ep:plus" /><span>Adicionar</span>
     </el-button>
   </el-tooltip>
 </template>

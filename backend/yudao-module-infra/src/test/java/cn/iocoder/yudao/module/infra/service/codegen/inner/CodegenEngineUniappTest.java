@@ -181,7 +181,7 @@ public class CodegenEngineUniappTest extends CodegenEngineAbstractTest {
                 () -> codegenEngine.execute(DbType.MYSQL, table, columns,
                         Arrays.asList(crmItemTable, erpItemTable), Arrays.asList(crmItemColumns, erpItemColumns)));
         // 断言
-        assertTrue(exception.getMessage().contains("主子表规范化类名(OrderItem)重复"));
+        assertTrue(exception.getMessage().contains("Nome de classe (OrderItem) repetido"));
     }
 
     @Test
@@ -203,7 +203,7 @@ public class CodegenEngineUniappTest extends CodegenEngineAbstractTest {
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> codegenEngine.execute(DbType.MYSQL, table, columns,
                         Arrays.asList(crmItemTable, erpItemTable), Arrays.asList(crmItemColumns, erpItemColumns)));
-        assertTrue(exception.getMessage().contains("主子表规范化类名(OrderItem)重复"));
+        assertTrue(exception.getMessage().contains("Nome de classe (OrderItem) repetido"));
     }
 
     @Test
@@ -299,7 +299,7 @@ public class CodegenEngineUniappTest extends CodegenEngineAbstractTest {
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> codegenEngine.execute(DbType.MYSQL, table, columns,
                         Arrays.asList(crmItemTable, erpItemsTable), Arrays.asList(crmItemColumns, erpItemsColumns)));
-        assertTrue(exception.getMessage().contains("主子表属性名(items)重复"));
+        assertTrue(exception.getMessage().contains("Nome de atributo (items) repetido"));
     }
 
     private void testExecute_duplicateMasterFieldWithMain(CodegenTemplateTypeEnum templateType) {
@@ -318,7 +318,7 @@ public class CodegenEngineUniappTest extends CodegenEngineAbstractTest {
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> codegenEngine.execute(DbType.MYSQL, table, columns,
                         List.of(itemTable), List.of(getColumnList("contact"))));
-        assertTrue(exception.getMessage().contains("主子表属性名(items)重复"));
+        assertTrue(exception.getMessage().contains("Nome de atributo (items) repetido"));
     }
 
     private void testExecute_master(CodegenTemplateTypeEnum templateType, String path) {

@@ -12,7 +12,7 @@
     <el-option
       v-for="template in templateList"
       :key="template.id"
-      :label="`${template.name}（${template.code}）`"
+      :label="`${template.name} (${template.code})`"
       :value="template.code"
     />
   </el-select>
@@ -36,7 +36,7 @@ withDefaults(
   {
     disabled: false,
     modelValue: undefined,
-    placeholder: '请选择站内信模板'
+    placeholder: 'Selecione o modelo de mensagem'
   }
 )
 

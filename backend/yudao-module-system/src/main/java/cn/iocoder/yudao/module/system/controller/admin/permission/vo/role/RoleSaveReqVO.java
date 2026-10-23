@@ -17,30 +17,30 @@ public class RoleSaveReqVO {
     private Long id;
 
     @Schema(description = "角色名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "管理员")
-    @NotBlank(message = "角色名称不能为空")
-    @Size(max = 30, message = "角色名称长度不能超过 30 个字符")
+    @NotBlank(message = "Informe o nome do perfil")
+    @Size(max = 30, message = "O nome do perfil pode ter no máximo 30 caracteres")
     @DiffLogField(name = "角色名称")
     private String name;
 
-    @NotBlank(message = "角色标志不能为空")
-    @Size(max = 100, message = "角色标志长度不能超过 100 个字符")
+    @NotBlank(message = "Informe o código do perfil")
+    @Size(max = 100, message = "O código do perfil pode ter no máximo 100 caracteres")
     @Schema(description = "角色标志", requiredMode = Schema.RequiredMode.REQUIRED, example = "ADMIN")
     @DiffLogField(name = "角色标志")
     private String code;
 
     @Schema(description = "显示顺序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "显示顺序不能为空")
+    @NotNull(message = "Informe a ordem")
     @DiffLogField(name = "显示顺序")
     private Integer sort;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
     @DiffLogField(name = "状态")
-    @NotNull(message = "状态不能为空")
-    @InEnum(value = CommonStatusEnum.class, message = "状态必须是 {value}")
+    @NotNull(message = "Informe a situação")
+    @InEnum(value = CommonStatusEnum.class, message = "A situação deve ser {value}")
     private Integer status;
 
     @Schema(description = "备注", example = "我是一个角色")
-    @Size(max = 500, message = "备注长度不能超过 500 个字符")
+    @Size(max = 500, message = "As observações podem ter no máximo 500 caracteres")
     @DiffLogField(name = "备注")
     private String remark;
 

@@ -8,26 +8,26 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="岗位名称" prop="name">
+      <el-form-item label="Nome do cargo" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入岗位名称"
+          placeholder="Digite o nome do cargo"
           clearable
           class="!w-240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="岗位编码" prop="code">
+      <el-form-item label="Código do cargo" prop="code">
         <el-input
           v-model="queryParams.code"
-          placeholder="请输入岗位编码"
+          placeholder="Digite o código do cargo"
           clearable
           class="!w-240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
+      <el-form-item label="Situação" prop="status">
+        <el-select v-model="queryParams.status" placeholder="Selecione a situação" clearable class="!w-240px">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -37,15 +37,15 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['system:post:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
+          <Icon icon="ep:plus" class="mr-5px" /> Novo
         </el-button>
         <el-button
           type="success"
@@ -54,7 +54,7 @@
           :loading="exportLoading"
           v-hasPermi="['system:post:export']"
         >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
+          <Icon icon="ep:download" class="mr-5px" /> Exportar
         </el-button>
         <el-button
           type="danger"
@@ -63,7 +63,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['system:post:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
+          <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -73,24 +73,24 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="岗位编号" align="center" prop="id" />
-      <el-table-column label="岗位名称" align="center" prop="name" />
-      <el-table-column label="岗位编码" align="center" prop="code" />
-      <el-table-column label="岗位顺序" align="center" prop="sort" />
-      <el-table-column label="岗位备注" align="center" prop="remark" />
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="Nº" align="center" prop="id" />
+      <el-table-column label="Nome do cargo" align="center" prop="name" />
+      <el-table-column label="Código do cargo" align="center" prop="code" />
+      <el-table-column label="Ordem" align="center" prop="sort" />
+      <el-table-column label="Observações" align="center" prop="remark" />
+      <el-table-column label="Situação" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column
-        label="创建时间"
+        label="Criado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
+      <el-table-column label="Ações" align="center">
         <template #default="scope">
           <el-button
             link
@@ -98,7 +98,7 @@
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['system:post:update']"
           >
-            编辑
+            Editar
           </el-button>
           <el-button
             link
@@ -106,7 +106,7 @@
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['system:post:delete']"
           >
-            删除
+            Excluir
           </el-button>
         </template>
       </el-table-column>
@@ -218,7 +218,7 @@ const handleExport = async () => {
     // 发起导出
     exportLoading.value = true
     const data = await PostApi.exportPost(queryParams)
-    download.excel(data, '岗位列表.xls')
+    download.excel(data, 'cargos.xls')
   } catch {
   } finally {
     exportLoading.value = false

@@ -7,17 +7,17 @@
       :rules="formRules"
       label-width="130px"
     >
-      <el-form-item label="配置名" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入配置名" />
+      <el-form-item label="Nome da configuração" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome da configuração" />
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输入备注" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite as observações" />
       </el-form-item>
-      <el-form-item label="存储器" prop="storage">
+      <el-form-item label="Armazenamento" prop="storage">
         <el-select
           v-model="formData.storage"
           :disabled="formData.id !== undefined"
-          placeholder="请选择存储器"
+          placeholder="Selecione o armazenamento"
         >
           <el-option
             v-for="dict in getDictOptions(DICT_TYPE.INFRA_FILE_STORAGE)"
@@ -31,94 +31,94 @@
       <!-- Local / FTP / SFTP -->
       <el-form-item
         v-if="formData.storage >= 10 && formData.storage <= 12"
-        label="基础路径"
+        label="Caminho base"
         prop="config.basePath"
       >
-        <el-input v-model="formData.config.basePath" placeholder="请输入基础路径" />
+        <el-input v-model="formData.config.basePath" placeholder="Digite o caminho base" />
       </el-form-item>
       <el-form-item
         v-if="formData.storage >= 11 && formData.storage <= 12"
-        label="主机地址"
+        label="Servidor"
         prop="config.host"
       >
-        <el-input v-model="formData.config.host" placeholder="请输入主机地址" />
+        <el-input v-model="formData.config.host" placeholder="Digite o servidor" />
       </el-form-item>
       <el-form-item
         v-if="formData.storage >= 11 && formData.storage <= 12"
-        label="主机端口"
+        label="Porta"
         prop="config.port"
       >
-        <el-input-number v-model="formData.config.port" :min="0" placeholder="请输入主机端口" />
+        <el-input-number v-model="formData.config.port" :min="0" placeholder="Digite a porta" />
       </el-form-item>
       <el-form-item
         v-if="formData.storage >= 11 && formData.storage <= 12"
-        label="用户名"
+        label="Usuário"
         prop="config.username"
       >
-        <el-input v-model="formData.config.username" placeholder="请输入密码" />
+        <el-input v-model="formData.config.username" placeholder="Digite a senha" />
       </el-form-item>
       <el-form-item
         v-if="formData.storage >= 11 && formData.storage <= 12"
-        label="密码"
+        label="Senha"
         prop="config.password"
       >
-        <el-input v-model="formData.config.password" placeholder="请输入密码" />
+        <el-input v-model="formData.config.password" placeholder="Digite a senha" />
       </el-form-item>
-      <el-form-item v-if="formData.storage === 11" label="连接模式" prop="config.mode">
+      <el-form-item v-if="formData.storage === 11" label="Modo de conexão" prop="config.mode">
         <el-radio-group v-model="formData.config.mode">
-          <el-radio key="Active" value="Active">主动模式</el-radio>
-          <el-radio key="Passive" value="Passive">被动模式</el-radio>
+          <el-radio key="Active" value="Active">Ativo</el-radio>
+          <el-radio key="Passive" value="Passive">Passivo</el-radio>
         </el-radio-group>
       </el-form-item>
       <!-- S3 -->
-      <el-form-item v-if="formData.storage === 20" label="节点地址" prop="config.endpoint">
-        <el-input v-model="formData.config.endpoint" placeholder="请输入节点地址" />
+      <el-form-item v-if="formData.storage === 20" label="Endpoint" prop="config.endpoint">
+        <el-input v-model="formData.config.endpoint" placeholder="Digite o endpoint" />
       </el-form-item>
-      <el-form-item v-if="formData.storage === 20" label="存储 bucket" prop="config.bucket">
-        <el-input v-model="formData.config.bucket" placeholder="请输入 bucket" />
+      <el-form-item v-if="formData.storage === 20" label="Bucket" prop="config.bucket">
+        <el-input v-model="formData.config.bucket" placeholder="Digite o bucket" />
       </el-form-item>
       <el-form-item v-if="formData.storage === 20" label="accessKey" prop="config.accessKey">
-        <el-input v-model="formData.config.accessKey" placeholder="请输入 accessKey" />
+        <el-input v-model="formData.config.accessKey" placeholder="Digite a accessKey" />
       </el-form-item>
       <el-form-item v-if="formData.storage === 20" label="accessSecret" prop="config.accessSecret">
-        <el-input v-model="formData.config.accessSecret" placeholder="请输入 accessSecret" />
+        <el-input v-model="formData.config.accessSecret" placeholder="Digite a accessSecret" />
       </el-form-item>
       <el-form-item
         v-if="formData.storage === 20"
-        label="是否 Path Style"
+        label="Path style"
         prop="config.enablePathStyleAccess"
       >
         <el-radio-group v-model="formData.config.enablePathStyleAccess">
-          <el-radio key="true" :value="true">启用</el-radio>
-          <el-radio key="false" :value="false">禁用</el-radio>
+          <el-radio key="true" :value="true">Ativar</el-radio>
+          <el-radio key="false" :value="false">Desativado</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item
         v-if="formData.storage === 20"
-        label="公开访问"
+        label="Acesso público"
         prop="config.enablePublicAccess"
       >
         <el-radio-group v-model="formData.config.enablePublicAccess">
-          <el-radio key="true" :value="true">公开</el-radio>
-          <el-radio key="false" :value="false">私有</el-radio>
+          <el-radio key="true" :value="true">Público</el-radio>
+          <el-radio key="false" :value="false">Privado</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.storage === 20" label="区域">
+      <el-form-item v-if="formData.storage === 20" label="Região">
         <!-- 选填，无需参数校验 -->
-        <el-input v-model="formData.config.region" placeholder="请填写区域，一般仅 AWS 需要填写" />
+        <el-input v-model="formData.config.region" placeholder="Região (em geral só a AWS exige)" />
       </el-form-item>
       <!-- 通用 -->
-      <el-form-item v-if="formData.storage === 20" label="自定义域名">
+      <el-form-item v-if="formData.storage === 20" label="Domínio personalizado">
         <!-- 无需参数校验，所以去掉 prop -->
-        <el-input v-model="formData.config.domain" placeholder="请输入自定义域名" />
+        <el-input v-model="formData.config.domain" placeholder="Digite o domínio personalizado" />
       </el-form-item>
-      <el-form-item v-else-if="formData.storage" label="自定义域名" prop="config.domain">
-        <el-input v-model="formData.config.domain" placeholder="请输入自定义域名" />
+      <el-form-item v-else-if="formData.storage" label="Domínio personalizado" prop="config.domain">
+        <el-input v-model="formData.config.domain" placeholder="Digite o domínio personalizado" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -144,24 +144,24 @@ const formData = ref({
   config: {} as FileConfigApi.FileClientConfig
 })
 const formRules = reactive<FormRules>({
-  name: [{ required: true, message: '配置名不能为空', trigger: 'blur' }],
-  storage: [{ required: true, message: '存储器不能为空', trigger: 'change' }],
+  name: [{ required: true, message: 'Informe o nome da configuração', trigger: 'blur' }],
+  storage: [{ required: true, message: 'Informe o armazenamento', trigger: 'change' }],
   config: {
-    basePath: [{ required: true, message: '基础路径不能为空', trigger: 'blur' }],
-    host: [{ required: true, message: '主机地址不能为空', trigger: 'blur' }],
-    port: [{ required: true, message: '主机端口不能为空', trigger: 'blur' }],
-    username: [{ required: true, message: '用户名不能为空', trigger: 'blur' }],
-    password: [{ required: true, message: '密码不能为空', trigger: 'blur' }],
-    mode: [{ required: true, message: '连接模式不能为空', trigger: 'change' }],
-    endpoint: [{ required: true, message: '节点地址不能为空', trigger: 'blur' }],
-    bucket: [{ required: true, message: '存储 bucket 不能为空', trigger: 'blur' }],
-    accessKey: [{ required: true, message: 'accessKey 不能为空', trigger: 'blur' }],
-    accessSecret: [{ required: true, message: 'accessSecret 不能为空', trigger: 'blur' }],
+    basePath: [{ required: true, message: 'Informe o caminho base', trigger: 'blur' }],
+    host: [{ required: true, message: 'Informe o servidor', trigger: 'blur' }],
+    port: [{ required: true, message: 'Informe a porta', trigger: 'blur' }],
+    username: [{ required: true, message: 'Informe o usuário', trigger: 'blur' }],
+    password: [{ required: true, message: 'Informe a senha', trigger: 'blur' }],
+    mode: [{ required: true, message: 'Informe o modo de conexão', trigger: 'change' }],
+    endpoint: [{ required: true, message: 'Informe o endpoint', trigger: 'blur' }],
+    bucket: [{ required: true, message: 'Informe o bucket', trigger: 'blur' }],
+    accessKey: [{ required: true, message: 'Informe a accessKey', trigger: 'blur' }],
+    accessSecret: [{ required: true, message: 'Informe a accessSecret', trigger: 'blur' }],
     enablePathStyleAccess: [
-      { required: true, message: '是否 PathStyle 访问不能为空', trigger: 'change' }
+      { required: true, message: 'Informe se usa path style', trigger: 'change' }
     ],
-    enablePublicAccess: [{ required: true, message: '公开访问设置不能为空', trigger: 'change' }],
-    domain: [{ required: true, message: '自定义域名不能为空', trigger: 'blur' }]
+    enablePublicAccess: [{ required: true, message: 'Informe o tipo de acesso', trigger: 'change' }],
+    domain: [{ required: true, message: 'Informe o domínio personalizado', trigger: 'blur' }]
   } as FormRules
 })
 const formRef = ref() // 表单 Ref

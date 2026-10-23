@@ -1,8 +1,8 @@
 <template>
-  <doc-alert title="代码生成（单表）" url="https://doc.iocoder.cn/new-feature/" />
-  <doc-alert title="代码生成（树表）" url="https://doc.iocoder.cn/new-feature/tree/" />
-  <doc-alert title="代码生成（主子表）" url="https://doc.iocoder.cn/new-feature/master-sub/" />
-  <doc-alert title="单元测试" url="https://doc.iocoder.cn/unit-test/" />
+  <doc-alert title="Gerar código (tabela simples)" url="https://doc.iocoder.cn/new-feature/" />
+  <doc-alert title="Gerar código (árvore)" url="https://doc.iocoder.cn/new-feature/tree/" />
+  <doc-alert title="Gerar código (mestre/detalhe)" url="https://doc.iocoder.cn/new-feature/master-sub/" />
+  <doc-alert title="Teste unitário" url="https://doc.iocoder.cn/unit-test/" />
 
   <!-- 搜索 -->
   <ContentWrap>
@@ -13,31 +13,31 @@
       class="-mb-15px"
       label-width="68px"
     >
-      <el-form-item label="表名称" prop="tableName">
+      <el-form-item label="Tabela" prop="tableName">
         <el-input
           v-model="queryParams.tableName"
           class="!w-240px"
           clearable
-          placeholder="请输入表名称"
+          placeholder="Digite a tabela"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="表描述" prop="tableComment">
+      <el-form-item label="Descrição" prop="tableComment">
         <el-input
           v-model="queryParams.tableComment"
           class="!w-240px"
           clearable
-          placeholder="请输入表描述"
+          placeholder="Digite a descrição"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
+      <el-form-item label="Criado em" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
-          end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          end-placeholder="Data final"
+          start-placeholder="Data inicial"
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -45,15 +45,15 @@
       <el-form-item>
         <el-button @click="handleQuery">
           <Icon class="mr-5px" icon="ep:search" />
-          搜索
+          Buscar
         </el-button>
         <el-button @click="resetQuery">
           <Icon class="mr-5px" icon="ep:refresh" />
-          重置
+          Limpar
         </el-button>
         <el-button v-hasPermi="['infra:codegen:create']" type="primary" @click="openImportTable()">
           <Icon class="mr-5px" icon="ep:zoom-in" />
-          导入
+          Importar
         </el-button>
         <el-button
           v-hasPermi="['infra:codegen:delete']"
@@ -62,7 +62,7 @@
           @click="handleDeleteBatch"
         >
           <Icon class="mr-5px" icon="ep:delete" />
-          批量删除
+          Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -72,37 +72,37 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column align="center" label="数据源">
+      <el-table-column align="center" label="Fonte de dados">
         <template #default="scope">
           {{
             dataSourceConfigList.find((config) => config.id === scope.row.dataSourceConfigId)?.name
           }}
         </template>
       </el-table-column>
-      <el-table-column align="center" label="表名称" prop="tableName" width="200" />
+      <el-table-column align="center" label="Tabela" prop="tableName" width="200" />
       <el-table-column
         :show-overflow-tooltip="true"
         align="center"
-        label="表描述"
+        label="Descrição"
         prop="tableComment"
         width="200"
       />
-      <el-table-column align="center" label="实体" prop="className" width="200" />
+      <el-table-column align="center" label="Entidade" prop="className" width="200" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="创建时间"
+        label="Criado em"
         prop="createTime"
         width="180"
       />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="更新时间"
+        label="Atualizado em"
         prop="createTime"
         width="180"
       />
-      <el-table-column align="center" fixed="right" label="操作" width="300px">
+      <el-table-column align="center" fixed="right" label="Ações" width="300px">
         <template #default="scope">
           <el-button
             v-hasPermi="['infra:codegen:preview']"
@@ -110,7 +110,7 @@
             type="primary"
             @click="handlePreview(scope.row)"
           >
-            预览
+            Visualizar
           </el-button>
           <el-button
             v-hasPermi="['infra:codegen:update']"
@@ -118,7 +118,7 @@
             type="primary"
             @click="handleUpdate(scope.row.id)"
           >
-            编辑
+            Editar
           </el-button>
           <el-button
             v-hasPermi="['infra:codegen:delete']"
@@ -126,7 +126,7 @@
             type="danger"
             @click="handleDelete(scope.row.id)"
           >
-            删除
+            Excluir
           </el-button>
           <el-button
             v-hasPermi="['infra:codegen:update']"
@@ -134,7 +134,7 @@
             type="primary"
             @click="handleSyncDB(scope.row)"
           >
-            同步
+            Sincronizar
           </el-button>
           <el-button
             v-hasPermi="['infra:codegen:download']"
@@ -142,7 +142,7 @@
             type="primary"
             @click="handleGenTable(scope.row)"
           >
-            生成代码
+            Gerar código
           </el-button>
         </template>
       </el-table-column>
@@ -266,9 +266,9 @@ const handleSyncDB = async (row: CodegenApi.CodegenTableVO) => {
   // 基于 DB 同步
   const tableName = row.tableName
   try {
-    await message.confirm('确认要强制同步' + tableName + '表结构吗?', t('common.reminder'))
+    await message.confirm('Sincronizar à força a estrutura da tabela "' + tableName + '"?', t('common.reminder'))
     await CodegenApi.syncCodegenFromDB(row.id)
-    message.success('同步成功')
+    message.success('Sincronizado')
   } catch {}
 }
 

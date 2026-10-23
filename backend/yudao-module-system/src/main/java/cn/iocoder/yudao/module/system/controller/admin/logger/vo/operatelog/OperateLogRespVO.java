@@ -57,7 +57,7 @@ public class OperateLogRespVO implements VO {
     private String extra;
 
     @Schema(description = "请求方法名", requiredMode = Schema.RequiredMode.REQUIRED, example = "GET")
-    @NotEmpty(message = "请求方法名不能为空")
+    @NotEmpty(message = "Informe o método")
     private String requestMethod;
 
     @Schema(description = "请求地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "/xxx/yyy")

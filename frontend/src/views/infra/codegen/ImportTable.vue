@@ -1,12 +1,12 @@
 <template>
-  <Dialog v-model="dialogVisible" title="导入表" width="800px">
+  <Dialog v-model="dialogVisible" title="Importar tabela" width="800px">
     <!-- 搜索栏 -->
     <el-form ref="queryFormRef" :inline="true" :model="queryParams" label-width="68px">
-      <el-form-item label="数据源" prop="dataSourceConfigId">
+      <el-form-item label="Fonte de dados" prop="dataSourceConfigId">
         <el-select
           v-model="queryParams.dataSourceConfigId"
           class="!w-240px"
-          placeholder="请选择数据源"
+          placeholder="Selecione a fonte de dados"
         >
           <el-option
             v-for="config in dataSourceConfigList"
@@ -16,32 +16,32 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="表名称" prop="name">
+      <el-form-item label="Tabela" prop="name">
         <el-input
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入表名称"
+          placeholder="Digite a tabela"
           @keyup.enter="getList"
         />
       </el-form-item>
-      <el-form-item label="表描述" prop="comment">
+      <el-form-item label="Descrição" prop="comment">
         <el-input
           v-model="queryParams.comment"
           class="!w-240px"
           clearable
-          placeholder="请输入表描述"
+          placeholder="Digite a descrição"
           @keyup.enter="getList"
         />
       </el-form-item>
       <el-form-item>
         <el-button @click="getList">
           <Icon class="mr-5px" icon="ep:search" />
-          搜索
+          Buscar
         </el-button>
         <el-button @click="resetQuery">
           <Icon class="mr-5px" icon="ep:refresh" />
-          重置
+          Limpar
         </el-button>
       </el-form-item>
     </el-form>
@@ -56,8 +56,8 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column :show-overflow-tooltip="true" label="表名称" prop="name" />
-        <el-table-column :show-overflow-tooltip="true" label="表描述" prop="comment" />
+        <el-table-column :show-overflow-tooltip="true" label="Tabela" prop="name" />
+        <el-table-column :show-overflow-tooltip="true" label="Descrição" prop="comment" />
       </el-table>
     </el-row>
     <!-- 操作 -->
@@ -67,9 +67,9 @@
         type="primary"
         @click="handleImportTable"
       >
-        导入
+        Importar
       </el-button>
-      <el-button @click="close">关闭</el-button>
+      <el-button @click="close">Fechar</el-button>
     </template>
   </Dialog>
 </template>
@@ -148,7 +148,7 @@ const handleImportTable = async () => {
       dataSourceConfigId: queryParams.dataSourceConfigId,
       tableNames: tableList.value
     })
-    message.success('导入成功')
+    message.success('Importado')
     emit('success')
     close()
   } finally {

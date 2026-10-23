@@ -465,5 +465,39 @@ export default {
     btn_zoom_in: 'Zoom in',
     btn_zoom_out: 'Zoom out',
     preview: 'Preview'
+  },
+  // ========== CO-TI ==========
+  coti: {
+    carregandoSistema: 'Loading...',
+    mfa: {
+      titulo: 'Two-step verification',
+      instrucaoLogin: 'Open your authenticator app and enter the 6-digit code. Without your phone, use a recovery code.',
+      codigoObrigatorio: 'Enter the code',
+      codigoPlaceholder: '6-digit code or recovery code',
+      verificar: 'Verify',
+      voltar: 'Back to sign in',
+      ativa: 'Two-step verification is on.',
+      inativa: 'Two-step verification is off.',
+      explicacao:
+        'Besides your password, sign-in will ask for a code from an authenticator app on your phone. Someone who learns your password cannot sign in without the phone.',
+      ativar: 'Turn on two-step verification',
+      passo1: 'Install an authenticator app on your phone.',
+      passo2: 'In the app, add an account by scanning the QR code below.',
+      passo3: 'Code shown in the app',
+      semCamera: 'No camera? Type this key in the app:',
+      confirmar: 'Confirm and turn on',
+      codigosRestantes: 'Recovery codes left: {n}',
+      poucosCodigos: 'Few recovery codes left. Turn off and on again to get new ones.',
+      codigoAtual: 'To turn off, enter a code',
+      desativar: 'Turn off',
+      confirmarDesativar: 'Turn off two-step verification? Your account will be protected only by the password.',
+      desativada: 'Two-step verification turned off',
+      codigosTitulo: 'Save your recovery codes',
+      codigosExplicacao:
+        'If you lose your phone, each code below lets you sign in once. Keep them safe: they will not be shown again.',
+      baixar: 'Download',
+      copiar: 'Copy',
+      guardei: 'I saved them'
+    }
   }
 }

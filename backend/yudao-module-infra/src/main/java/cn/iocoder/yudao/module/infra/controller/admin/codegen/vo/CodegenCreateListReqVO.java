@@ -11,11 +11,11 @@ import java.util.List;
 public class CodegenCreateListReqVO {
 
     @Schema(description = "数据源配置的编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "数据源配置的编号不能为空")
+    @NotNull(message = "Informe a fonte de dados")
     private Long dataSourceConfigId;
 
     @Schema(description = "表名数组", requiredMode = Schema.RequiredMode.REQUIRED, example = "[1, 2, 3]")
-    @NotNull(message = "表名数组不能为空")
+    @NotNull(message = "Informe as tabelas")
     private List<String> tableNames;
 
 }

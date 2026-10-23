@@ -36,7 +36,7 @@ withDefaults(
     disabled: false,
     clearable: true,
     filterable: true,
-    placeholder: '请选择部门'
+    placeholder: 'Selecione o departamento'
   }
 )
 

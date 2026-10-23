@@ -11,11 +11,11 @@ import java.util.Map;
 public class SmsTemplateSendReqVO {
 
     @Schema(description = "手机号", requiredMode = Schema.RequiredMode.REQUIRED, example = "15601691300")
-    @NotNull(message = "手机号不能为空")
+    @NotNull(message = "Informe o celular")
     private String mobile;
 
     @Schema(description = "模板编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "test_01")
-    @NotNull(message = "模板编码不能为空")
+    @NotNull(message = "Informe o código do modelo")
     private String templateCode;
 
     @Schema(description = "模板参数")

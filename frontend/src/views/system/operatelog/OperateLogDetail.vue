@@ -1,43 +1,43 @@
 <template>
-  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="详情" width="800">
+  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="Detalhes" width="800">
     <el-descriptions :column="1" border>
-      <el-descriptions-item label="日志主键" min-width="120">
+      <el-descriptions-item label="Nº do log" min-width="120">
         {{ detailData.id }}
       </el-descriptions-item>
-      <el-descriptions-item label="链路追踪" v-if="detailData.traceId">
+      <el-descriptions-item label="Rastreamento" v-if="detailData.traceId">
         {{ detailData.traceId }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作人编号">
+      <el-descriptions-item label="Nº do usuário">
         {{ detailData.userId }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作人名字">
+      <el-descriptions-item label="Usuário">
         {{ detailData.userName }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作人 IP">
+      <el-descriptions-item label="IP">
         {{ detailData.userIp }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作人 UA">
+      <el-descriptions-item label="Navegador">
         {{ detailData.userAgent }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作模块">
+      <el-descriptions-item label="Módulo">
         {{ detailData.type }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作名">
+      <el-descriptions-item label="Operação">
         {{ detailData.subType }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作内容">
+      <el-descriptions-item label="Descrição">
         {{ detailData.action }}
       </el-descriptions-item>
-      <el-descriptions-item v-if="detailData.extra" label="操作拓展参数">
+      <el-descriptions-item v-if="detailData.extra" label="Dados adicionais">
         {{ detailData.extra }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求 URL">
+      <el-descriptions-item label="URL">
         {{ detailData.requestMethod }} {{ detailData.requestUrl }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作时间">
+      <el-descriptions-item label="Data">
         {{ formatDate(detailData.createTime) }}
       </el-descriptions-item>
-      <el-descriptions-item label="业务编号">
+      <el-descriptions-item label="Nº do registro">
         {{ detailData.bizId }}
       </el-descriptions-item>
     </el-descriptions>

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.system.service.auth;
 
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
@@ -36,9 +37,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -58,6 +62,19 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private AdminUserService userService;
     @Autowired(required = false)
     private AutenticadorExterno autenticadorExterno;
+    @Autowired(required = false)
+    private SegundoFator segundoFator;
+    @Autowired(required = false)
+    private EventosSeguranca eventosSeguranca;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+    /** CO-TI: auto-cadastro, SMS e login social ficam desligados; o acesso é por usuário e senha (AD ou local) */
+    @Value("${coti.seguranca.login-alternativo:false}")
+    private boolean loginAlternativo;
+
+    private static final String CHAVE_DESAFIO_MFA = "coti:mfa:desafio:";
+    private static final Duration VALIDADE_DESAFIO_MFA = Duration.ofMinutes(5);
+    private static final int TENTATIVAS_MFA = 5;
     @Resource
     private LoginLogService loginLogService;
     @Resource
@@ -125,12 +142,80 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             socialUserService.bindSocialUser(new SocialUserBindReqDTO(user.getId(), getUserType().getValue(),
                     reqVO.getSocialType(), reqVO.getSocialCode(), reqVO.getSocialState()));
         }
-        // 创建 Token 令牌，记录登录日志
-        return createTokenAfterLoginSuccess(user, reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
+        // 创建 Token 令牌，记录登录日志（CO-TI: ou pede o segundo fator）
+        return concluirLogin(user, reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
+    }
+
+    @Override
+    @DataPermission(enable = false)
+    public AuthLoginRespVO loginSegundoFator(AuthMfaLoginReqVO reqVO) {
+        String chave = CHAVE_DESAFIO_MFA + reqVO.getDesafio();
+        Map<Object, Object> desafio = stringRedisTemplate.opsForHash().entries(chave);
+        if (desafio.isEmpty() || segundoFator == null) {
+            throw exception(AUTH_MFA_DESAFIO_INVALIDO);
+        }
+        Long userId = Long.valueOf((String) desafio.get("userId"));
+        String username = (String) desafio.get("username");
+        LoginLogTypeEnum logType = LoginLogTypeEnum.valueOf((String) desafio.get("logType"));
+        Long tentativas = stringRedisTemplate.opsForHash().increment(chave, "tentativas", 1);
+        if (tentativas > TENTATIVAS_MFA) {
+            stringRedisTemplate.delete(chave);
+            throw exception(AUTH_MFA_DESAFIO_INVALIDO);
+        }
+        if (!segundoFator.verificar(userId, reqVO.getCodigo())) {
+            registrarEvento(EventosSeguranca.LOGIN_MFA_FALHA, userId, username, Map.of("tentativa", tentativas));
+            createLoginLog(userId, username, logType, LoginResultEnum.BAD_CREDENTIALS);
+            if (tentativas >= TENTATIVAS_MFA) {
+                stringRedisTemplate.delete(chave);
+            }
+            throw exception(AUTH_MFA_CODIGO_INVALIDO);
+        }
+        // apagar antes de emitir o token: o mesmo desafio não serve para dois logins
+        if (!Boolean.TRUE.equals(stringRedisTemplate.delete(chave))) {
+            throw exception(AUTH_MFA_DESAFIO_INVALIDO);
+        }
+        AdminUserDO user = userService.getUser(userId);
+        if (user == null) {
+            throw exception(AUTH_MFA_DESAFIO_INVALIDO);
+        }
+        return createTokenAfterLoginSuccess(user, username, logType);
+    }
+
+    /** CO-TI: quem tem segundo fator ativo recebe um desafio em vez dos tokens. */
+    private AuthLoginRespVO concluirLogin(AdminUserDO user, String username, LoginLogTypeEnum logType) {
+        if (segundoFator == null || !segundoFator.exige(user.getId())) {
+            return createTokenAfterLoginSuccess(user, username, logType);
+        }
+        validateUserStatus(user, username, logType);
+        String desafio = IdUtil.fastSimpleUUID();
+        String chave = CHAVE_DESAFIO_MFA + desafio;
+        stringRedisTemplate.opsForHash().putAll(chave, Map.of("userId", String.valueOf(user.getId()),
+                "username", username, "logType", logType.name(), "tentativas", "0"));
+        stringRedisTemplate.expire(chave, VALIDADE_DESAFIO_MFA);
+        registrarEvento(EventosSeguranca.LOGIN_MFA_PENDENTE, user.getId(), username, Map.of("tipo", logType.name()));
+        return AuthLoginRespVO.builder().mfaPendente(true).desafioMfa(desafio).build();
+    }
+
+    private void validarLoginAlternativo() {
+        if (!loginAlternativo) {
+            throw exception(AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        }
+    }
+
+    private void registrarEvento(String acao, Long userId, String usuario, Map<String, Object> detalhes) {
+        if (eventosSeguranca == null) {
+            return;
+        }
+        try {
+            eventosSeguranca.registrar(acao, userId, usuario, detalhes);
+        } catch (Exception e) {
+            log.error("[registrarEvento][falha ao auditar {} de {}]", acao, usuario, e);
+        }
     }
 
     @Override
     public void sendSmsCode(AuthSmsSendReqVO reqVO) {
+        validarLoginAlternativo();
         // 如果是重置密码场景，需要校验图形验证码是否正确
         if (Objects.equals(SmsSceneEnum.ADMIN_MEMBER_RESET_PASSWORD.getScene(), reqVO.getScene())) {
             ResponseModel response = doValidateCaptcha(reqVO);
@@ -149,6 +234,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     @Override
     public AuthLoginRespVO smsLogin(AuthSmsLoginReqVO reqVO) {
+        validarLoginAlternativo();
         // 校验验证码
         smsCodeApi.useSmsCode(AuthConvert.INSTANCE.convert(reqVO, SmsSceneEnum.ADMIN_MEMBER_LOGIN.getScene(), getClientIP()));
 
@@ -159,7 +245,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         }
 
         // 创建 Token 令牌，记录登录日志
-        return createTokenAfterLoginSuccess(user, reqVO.getMobile(), LoginLogTypeEnum.LOGIN_MOBILE);
+        return concluirLogin(user, reqVO.getMobile(), LoginLogTypeEnum.LOGIN_MOBILE);
     }
 
     private void createLoginLog(Long userId, String username,
@@ -175,6 +261,9 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         reqDTO.setUserIp(ServletUtils.getClientIP());
         reqDTO.setResult(loginResult.getResult());
         loginLogService.createLoginLog(reqDTO);
+        registrarEvento(Objects.equals(LoginResultEnum.SUCCESS.getResult(), loginResult.getResult())
+                        ? EventosSeguranca.LOGIN_SUCESSO : EventosSeguranca.LOGIN_FALHA, userId, username,
+                Map.of("tipo", logTypeEnum.name(), "resultado", loginResult.name()));
         // 更新最后登录时间
         if (userId != null && Objects.equals(LoginResultEnum.SUCCESS.getResult(), loginResult.getResult())) {
             userService.updateUserLogin(userId, ServletUtils.getClientIP());
@@ -183,6 +272,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     @Override
     public AuthLoginRespVO socialLogin(AuthSocialLoginReqVO reqVO) {
+        validarLoginAlternativo();
         // 使用 code 授权码，进行登录。然后，获得到绑定的用户编号
         SocialUserRespDTO socialUser = socialUserService.getSocialUserByCode(UserTypeEnum.ADMIN.getValue(), reqVO.getType(),
                 reqVO.getCode(), reqVO.getState());
@@ -197,7 +287,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         }
 
         // 创建 Token 令牌，记录登录日志
-        return createTokenAfterLoginSuccess(user, user.getUsername(), LoginLogTypeEnum.LOGIN_SOCIAL);
+        return concluirLogin(user, user.getUsername(), LoginLogTypeEnum.LOGIN_SOCIAL);
     }
 
     @VisibleForTesting
@@ -257,6 +347,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         }
         // 删除成功，则记录登出日志
         createLogoutLog(accessTokenDO.getUserId(), accessTokenDO.getUserType(), logType);
+        registrarEvento(EventosSeguranca.LOGOUT, accessTokenDO.getUserId(), null, Map.of());
     }
 
     private void createLogoutLog(Long userId, Integer userType, Integer logType) {
@@ -290,6 +381,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     @Override
     public AuthLoginRespVO register(AuthRegisterReqVO registerReqVO) {
+        validarLoginAlternativo();
         // 1. 校验验证码
         validateCaptcha(registerReqVO);
 
@@ -297,7 +389,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         AdminUserDO user = userService.registerUser(registerReqVO);
 
         // 3. 创建 Token 令牌，记录登录日志
-        return createTokenAfterLoginSuccess(user, registerReqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
+        return concluirLogin(user, registerReqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
     }
 
     @VisibleForTesting
@@ -312,6 +404,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void resetPassword(AuthResetPasswordReqVO reqVO) {
+        validarLoginAlternativo();
         AdminUserDO userByMobile = userService.getUserByMobile(reqVO.getMobile());
         if (userByMobile == null) {
             throw exception(USER_MOBILE_NOT_EXISTS);

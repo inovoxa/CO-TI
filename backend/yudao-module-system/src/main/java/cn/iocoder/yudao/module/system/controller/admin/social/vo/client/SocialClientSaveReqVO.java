@@ -21,25 +21,25 @@ public class SocialClientSaveReqVO {
     private Long id;
 
     @Schema(description = "应用名", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao商城")
-    @NotNull(message = "应用名不能为空")
+    @NotNull(message = "Informe o nome do aplicativo")
     private String name;
 
     @Schema(description = "社交平台的类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "31")
-    @NotNull(message = "社交平台的类型不能为空")
+    @NotNull(message = "Informe a rede social")
     @InEnum(SocialTypeEnum.class)
     private Integer socialType;
 
     @Schema(description = "用户类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
-    @NotNull(message = "用户类型不能为空")
+    @NotNull(message = "Informe o tipo de usuário")
     @InEnum(UserTypeEnum.class)
     private Integer userType;
 
     @Schema(description = "客户端编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "wwd411c69a39ad2e54")
-    @NotNull(message = "客户端编号不能为空")
+    @NotNull(message = "Informe o código do cliente")
     private String clientId;
 
     @Schema(description = "客户端密钥", requiredMode = Schema.RequiredMode.REQUIRED, example = "peter")
-    @NotNull(message = "客户端密钥不能为空")
+    @NotNull(message = "Informe o segredo do cliente")
     private String clientSecret;
 
     @Schema(description = "授权方的网页应用编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2000045")
@@ -49,11 +49,11 @@ public class SocialClientSaveReqVO {
     private String publicKey;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "状态不能为空")
+    @NotNull(message = "Informe a situação")
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 
-    @AssertTrue(message = "agentId 不能为空")
+    @AssertTrue(message = "Informe o agentId")
     @JsonIgnore
     public boolean isAgentIdValid() {
         // 如果是企业微信，必须填写 agentId 属性
@@ -61,7 +61,7 @@ public class SocialClientSaveReqVO {
                 || !StrUtil.isEmpty(agentId);
     }
 
-    @AssertTrue(message = "publicKey 不能为空")
+    @AssertTrue(message = "Informe a publicKey")
     @JsonIgnore
     public boolean isPublicKeyValid() {
         // 如果是支付宝，必须填写 publicKey 属性

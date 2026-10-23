@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.identidade.dal.mysql.VinculoAdMapper;
 import cn.iocoder.yudao.module.identidade.service.AdAutenticador;
 import cn.iocoder.yudao.module.identidade.service.AdProvisionamentoService;
 import cn.iocoder.yudao.module.identidade.service.AdSincronizacaoService;
+import cn.iocoder.yudao.module.identidade.service.AuditoriaService;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,8 +38,9 @@ public class AdConfiguration {
     @Bean
     public AdSincronizacaoService adSincronizacaoService(@Lazy AdDiretorio diretorio,
                                                          AdProvisionamentoService provisionamento,
-                                                         VinculoAdMapper vinculoAdMapper, AdProperties props) {
-        return new AdSincronizacaoService(diretorio, provisionamento, vinculoAdMapper, props);
+                                                         VinculoAdMapper vinculoAdMapper, AdProperties props,
+                                                         AuditoriaService auditoria) {
+        return new AdSincronizacaoService(diretorio, provisionamento, vinculoAdMapper, props, auditoria);
     }
 
     @Bean

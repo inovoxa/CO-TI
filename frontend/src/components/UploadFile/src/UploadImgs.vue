@@ -27,11 +27,11 @@
         <div class="upload-handle" @click.stop>
           <div class="handle-icon" @click="imagePreview(file.url!)">
             <Icon icon="ep:zoom-in" />
-            <span>查看</span>
+            <span>Ver</span>
           </div>
           <div v-if="!disabled" class="handle-icon" @click="handleRemove(file)">
             <Icon icon="ep:delete" />
-            <span>删除</span>
+            <span>Excluir</span>
           </div>
         </div>
       </template>
@@ -107,14 +107,14 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
   if (!isValidType)
     ElNotification({
-      title: '温馨提示',
-      message: '上传图片不符合所需的格式！',
+      title: 'Aviso',
+      message: 'Formato de imagem não aceito!',
       type: 'warning'
     })
   if (!isValidSize)
     ElNotification({
-      title: '温馨提示',
-      message: `上传图片大小不能超过 ${props.fileSize}M！`,
+      title: 'Aviso',
+      message: `A imagem não pode passar de ${props.fileSize} MB!`,
       type: 'warning'
     })
 
@@ -140,7 +140,7 @@ const uploadSuccess: UploadProps['onSuccess'] = (res: any, uploadFile): void => 
     url: response.data,
     status: 'success'
   }
-  message.success('上传成功')
+  message.success('Enviado')
   emitUpdateModelValue()
 }
 
@@ -183,8 +183,8 @@ const handleRemove = (uploadFile: UploadFile) => {
 // 图片上传错误提示
 const uploadError = () => {
   ElNotification({
-    title: '温馨提示',
-    message: '图片上传失败，请您重新上传！',
+    title: 'Aviso',
+    message: 'Falha ao enviar a imagem. Tente de novo!',
     type: 'error'
   })
 }
@@ -192,8 +192,8 @@ const uploadError = () => {
 // 文件数超出提示
 const handleExceed = () => {
   ElNotification({
-    title: '温馨提示',
-    message: `当前最多只能上传 ${props.limit} 张图片，请移除后上传！`,
+    title: 'Aviso',
+    message: `No máximo ${props.limit} imagens. Remova alguma antes de enviar!`,
     type: 'warning'
   })
 }

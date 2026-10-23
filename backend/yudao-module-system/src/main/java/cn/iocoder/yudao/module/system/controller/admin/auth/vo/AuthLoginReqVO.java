@@ -22,14 +22,14 @@ import jakarta.validation.constraints.Pattern;
 public class AuthLoginReqVO extends CaptchaVerificationReqVO {
 
     @Schema(description = "账号", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudaoyuanma")
-    @NotEmpty(message = "登录账号不能为空")
+    @NotEmpty(message = "Informe o usuário")
     @Length(min = 1, max = 30, message = "Usuário deve ter de 1 a 30 caracteres")
     // CO-TI: aceita o sAMAccountName do AD (joao.silva, ana-souza, svc_backup)
     @Pattern(regexp = "^[a-zA-Z0-9._-]{1,30}$", message = "Usuário só pode ter letras, números, ponto, hífen e sublinhado")
     private String username;
 
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "buzhidao")
-    @NotEmpty(message = "密码不能为空")
+    @NotEmpty(message = "Informe a senha")
     @Length(min = 1, max = 128, message = "Senha deve ter até 128 caracteres") // CO-TI: senhas do AD podem passar de 16
     private String password;
 
@@ -45,12 +45,12 @@ public class AuthLoginReqVO extends CaptchaVerificationReqVO {
     @Schema(description = "state", requiredMode = Schema.RequiredMode.REQUIRED, example = "9b2ffbc1-7425-4155-9894-9d5c08541d62")
     private String socialState;
 
-    @AssertTrue(message = "授权码不能为空")
+    @AssertTrue(message = "Informe o código de autorização")
     public boolean isSocialCodeValid() {
         return socialType == null || StrUtil.isNotEmpty(socialCode);
     }
 
-    @AssertTrue(message = "授权 state 不能为空")
+    @AssertTrue(message = "Informe o state")
     public boolean isSocialState() {
         return socialType == null || StrUtil.isNotEmpty(socialState);
     }

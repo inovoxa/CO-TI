@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="邮件配置" url="https://doc.iocoder.cn/mail" />
+  <doc-alert title="Configuração de e-mail" url="https://doc.iocoder.cn/mail" />
 
   <ContentWrap>
     <!-- 搜索工作栏 -->
@@ -10,19 +10,19 @@
       :inline="true"
       label-width="100px"
     >
-      <el-form-item label="接收邮箱" prop="toMail">
+      <el-form-item label="E-mail do destinatário" prop="toMail">
         <el-input
           v-model="queryParams.toMail"
-          placeholder="请输入接收邮箱"
+          placeholder="Digite o e-mail do destinatário"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="邮箱账号" prop="accountId">
+      <el-form-item label="Conta de e-mail" prop="accountId">
         <el-select
           v-model="queryParams.accountId"
-          placeholder="请选择邮箱账号"
+          placeholder="Selecione a conta de e-mail"
           clearable
           class="!w-240px"
         >
@@ -34,19 +34,19 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="模板编号" prop="templateId">
+      <el-form-item label="Nº do modelo" prop="templateId">
         <el-input
           v-model="queryParams.templateId"
-          placeholder="请输入模板编号"
+          placeholder="Digite o nº do modelo"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="发送状态" prop="sendStatus">
+      <el-form-item label="Situação do envio" prop="sendStatus">
         <el-select
           v-model="queryParams.sendStatus"
-          placeholder="请选择发送状态"
+          placeholder="Selecione a situação do envio"
           clearable
           class="!w-240px"
         >
@@ -58,19 +58,19 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="用户编号" prop="userId">
+      <el-form-item label="Nº" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="Digite o nº do usuário"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="用户类型" prop="userType">
+      <el-form-item label="Tipo de usuário" prop="userType">
         <el-select
           v-model="queryParams.userType"
-          placeholder="请选择用户类型"
+          placeholder="Selecione o tipo de usuário"
           clearable
           class="!w-240px"
         >
@@ -82,19 +82,19 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="发送时间" prop="sendTime">
+      <el-form-item label="Enviada em" prop="sendTime">
         <el-date-picker
           v-model="queryParams.sendTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          start-placeholder="Data inicial"
+          end-placeholder="Data final"
           class="!w-240px"
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -102,15 +102,15 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="编号" align="center" prop="id" />
+      <el-table-column label="Nº" align="center" prop="id" />
       <el-table-column
-        label="发送时间"
+        label="Enviada em"
         align="center"
         prop="sendTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="接收用户" align="center" width="150">
+      <el-table-column label="Destinatário" align="center" width="150">
         <template #default="scope">
           <div v-if="scope.row.userType && scope.row.userId">
             <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
@@ -119,43 +119,43 @@
           <div v-else>-</div>
         </template>
       </el-table-column>
-      <el-table-column label="接收信息" align="center" width="300">
+      <el-table-column label="Destinatários" align="center" width="300">
         <template #default="scope">
           <div class="text-left">
             <div v-if="scope.row.toMails && scope.row.toMails.length > 0">
-              收件：
+              Para: 
               <span v-for="(mail, index) in scope.row.toMails" :key="mail">
-                {{ mail }}<span v-if="Number(index) < scope.row.toMails.length - 1">、</span>
+                {{ mail }}<span v-if="Number(index) < scope.row.toMails.length - 1">, </span>
               </span>
             </div>
             <div v-if="scope.row.ccMails && scope.row.ccMails.length > 0">
-              抄送：
+              Cc: 
               <span v-for="(mail, index) in scope.row.ccMails" :key="mail">
-                {{ mail }}<span v-if="Number(index) < scope.row.ccMails.length - 1">、</span>
+                {{ mail }}<span v-if="Number(index) < scope.row.ccMails.length - 1">, </span>
               </span>
             </div>
             <div v-if="scope.row.bccMails && scope.row.bccMails.length > 0">
-              密送：
+              Cco: 
               <span v-for="(mail, index) in scope.row.bccMails" :key="mail">
-                {{ mail }}<span v-if="Number(index) < scope.row.bccMails.length - 1">、</span>
+                {{ mail }}<span v-if="Number(index) < scope.row.bccMails.length - 1">, </span>
               </span>
             </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="邮件标题" align="center" prop="templateTitle" width="200" />
-      <el-table-column label="发送状态" align="center" width="120">
+      <el-table-column label="Assunto" align="center" prop="templateTitle" width="200" />
+      <el-table-column label="Situação do envio" align="center" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="scope.row.sendStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="邮箱账号" align="center" width="200">
+      <el-table-column label="Conta de e-mail" align="center" width="200">
         <template #default="scope">
           {{ getAccountMail(scope.row.accountId) }}
         </template>
       </el-table-column>
-      <el-table-column label="模板编号" align="center" prop="templateId" />
-      <el-table-column label="操作" align="center" fixed="right" class-name="fixed-width">
+      <el-table-column label="Nº do modelo" align="center" prop="templateId" />
+      <el-table-column label="Ações" align="center" fixed="right" class-name="fixed-width">
         <template #default="scope">
           <el-button
             link
@@ -163,7 +163,7 @@
             @click="openDetail(scope.row)"
             v-hasPermi="['system:mail-log:query']"
           >
-            详情
+            Detalhes
           </el-button>
         </template>
       </el-table-column>

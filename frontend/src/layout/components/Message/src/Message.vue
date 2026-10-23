@@ -71,14 +71,14 @@ onBeforeUnmount(() => {
         </ElBadge>
       </template>
       <ElTabs v-model="activeName">
-        <ElTabPane label="我的站内信" name="notice">
+        <ElTabPane label="Minhas mensagens" name="notice">
           <el-scrollbar class="message-list">
             <template v-for="item in list" :key="item.id">
               <div class="message-item">
                 <img alt="" class="message-icon" src="@/assets/imgs/avatar.gif" />
                 <div class="message-content">
                   <span class="message-title">
-                    {{ item.templateNickname }}：{{ item.templateContent }}
+                    {{ item.templateNickname }}: {{ item.templateContent }}
                   </span>
                   <span class="message-date">
                     {{ formatDate(item.createTime) }}
@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
       <!-- 更多 -->
       <div style="margin-top: 10px; text-align: right">
         <el-button type="primary" @click="goMyList">
-          <Icon icon="ep:view" class="mr-1px" /> 查看全部
+          <Icon icon="ep:view" class="mr-1px" /> Ver todas
         </el-button>
       </div>
     </ElPopover>

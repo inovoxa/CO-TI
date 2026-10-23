@@ -1,41 +1,41 @@
 <template>
-  <Dialog v-model="dialogVisible" title="任务详细" width="700px">
+  <Dialog v-model="dialogVisible" title="Detalhes da tarefa" width="700px">
     <el-descriptions :column="1" border>
-      <el-descriptions-item label="任务编号" min-width="60">
+      <el-descriptions-item label="Nº" min-width="60">
         {{ detailData.id }}
       </el-descriptions-item>
-      <el-descriptions-item label="任务名称">
+      <el-descriptions-item label="Nome da tarefa">
         {{ detailData.name }}
       </el-descriptions-item>
-      <el-descriptions-item label="任务状态">
+      <el-descriptions-item label="Situação">
         <dict-tag :type="DICT_TYPE.INFRA_JOB_STATUS" :value="detailData.status" />
       </el-descriptions-item>
-      <el-descriptions-item label="处理器的名字">
+      <el-descriptions-item label="Handler">
         {{ detailData.handlerName }}
       </el-descriptions-item>
-      <el-descriptions-item label="处理器的参数">
+      <el-descriptions-item label="Parâmetros do handler">
         {{ detailData.handlerParam }}
       </el-descriptions-item>
-      <el-descriptions-item label="Cron 表达式">
+      <el-descriptions-item label="Expressão CRON">
         {{ detailData.cronExpression }}
       </el-descriptions-item>
-      <el-descriptions-item label="重试次数">
+      <el-descriptions-item label="Tentativas">
         {{ detailData.retryCount }}
       </el-descriptions-item>
-      <el-descriptions-item label="重试间隔">
-        {{ detailData.retryInterval + ' 毫秒' }}
+      <el-descriptions-item label="Intervalo entre tentativas">
+        {{ detailData.retryInterval + ' ms' }}
       </el-descriptions-item>
-      <el-descriptions-item label="监控超时时间">
-        {{ detailData.monitorTimeout > 0 ? detailData.monitorTimeout + ' 毫秒' : '未开启' }}
+      <el-descriptions-item label="Tempo limite">
+        {{ detailData.monitorTimeout > 0 ? detailData.monitorTimeout + ' ms' : 'Desligado' }}
       </el-descriptions-item>
-      <el-descriptions-item label="后续执行时间">
+      <el-descriptions-item label="Próximas execuções">
         <el-timeline>
           <el-timeline-item
             v-for="(nextTime, index) in nextTimes"
             :key="index"
             :timestamp="formatDate(nextTime)"
           >
-            第 {{ index + 1 }} 次
+            {{ index + 1 }}ª
           </el-timeline-item>
         </el-timeline>
       </el-descriptions-item>

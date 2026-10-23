@@ -17,16 +17,16 @@ import org.hibernate.validator.constraints.Length;
 public class AuthResetPasswordReqVO {
 
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "1234")
-    @NotEmpty(message = "密码不能为空")
-    @Length(min = 4, max = 16, message = "密码长度为 4-16 位")
+    @NotEmpty(message = "Informe a senha")
+    @Length(min = 4, max = 16, message = "A senha deve ter de 4 a 16 caracteres")
     private String password;
 
     @Schema(description = "手机号", requiredMode = Schema.RequiredMode.REQUIRED, example = "13312341234")
-    @NotEmpty(message = "手机号不能为空")
+    @NotEmpty(message = "Informe o celular")
     @Mobile
     private String mobile;
 
     @Schema(description = "手机短信验证码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
-    @NotEmpty(message = "手机手机短信验证码不能为空")
+    @NotEmpty(message = "Informe o código do SMS")
     private String code;
 }

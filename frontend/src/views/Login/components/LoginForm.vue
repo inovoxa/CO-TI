@@ -50,19 +50,10 @@
       <el-col :span="24" class="px-10px mt-[-20px] mb-[-20px]">
         <el-form-item>
           <el-row justify="space-between" style="width: 100%">
-            <el-col :span="6">
+            <el-col :span="12">
               <el-checkbox v-model="loginData.loginForm.rememberMe">
                 {{ t('login.remember') }}
               </el-checkbox>
-            </el-col>
-            <el-col :offset="6" :span="12">
-              <el-link
-                class="float-right"
-                type="primary"
-                @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
-              >
-                {{ t('login.forgetPassword') }}
-              </el-link>
             </el-col>
           </el-row>
         </el-form-item>
@@ -82,59 +73,42 @@
         mode="pop"
         @success="handleLogin"
       />
-      <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <el-row :gutter="5" justify="space-between" style="width: 100%">
-            <el-col :span="8">
-              <el-button class="w-full" @click="setLoginState(LoginStateEnum.MOBILE)">
-                {{ t('login.btnMobile') }}
-              </el-button>
-            </el-col>
-            <el-col :span="8">
-              <el-button class="w-full" @click="setLoginState(LoginStateEnum.QR_CODE)">
-                {{ t('login.btnQRCode') }}
-              </el-button>
-            </el-col>
-            <el-col :span="8">
-              <el-button class="w-full" @click="setLoginState(LoginStateEnum.REGISTER)">
-                {{ t('login.btnRegister') }}
-              </el-button>
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col>
-      <el-divider content-position="center">{{ t('login.otherLogin') }}</el-divider>
-      <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <div class="w-full flex justify-between">
-            <Icon
-              v-for="(item, key) in socialList"
-              :key="key"
-              :icon="item.icon"
-              :size="30"
-              class="anticon cursor-pointer"
-              color="#999"
-              @click="doSocialLogin(item.type)"
-            />
-          </div>
-        </el-form-item>
-      </el-col>
-      <el-divider content-position="center">萌新必读</el-divider>
-      <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <div class="w-full flex justify-between">
-            <el-link href="https://doc.iocoder.cn/" target="_blank">📚开发指南</el-link>
-            <el-link href="https://doc.iocoder.cn/video/" target="_blank">🔥视频教程</el-link>
-            <el-link href="https://www.iocoder.cn/Interview/good-collection/" target="_blank">
-              ⚡面试手册
-            </el-link>
-            <el-link href="http://static.yudao.iocoder.cn/mp/Aix9975.jpeg" target="_blank">
-              🤝外包咨询
-            </el-link>
-          </div>
-        </el-form-item>
-      </el-col>
     </el-row>
+  </el-form>
+  <!-- CO-TI: segunda etapa (verificação em duas etapas) -->
+  <el-form
+    v-if="mfa.desafio"
+    ref="formMfa"
+    :model="mfa"
+    class="login-form"
+    label-position="top"
+    size="large"
+    @submit.prevent
+  >
+    <el-form-item>
+      <LoginFormTitle class="w-full" />
+    </el-form-item>
+    <p class="mb-16px text-[var(--el-text-color-regular)]">{{ t('coti.mfa.instrucaoLogin') }}</p>
+    <el-form-item prop="codigo" :rules="[{ required: true, message: t('coti.mfa.codigoObrigatorio') }]">
+      <el-input
+        ref="campoCodigoMfa"
+        v-model="mfa.codigo"
+        :placeholder="t('coti.mfa.codigoPlaceholder')"
+        :prefix-icon="iconLock"
+        autocomplete="one-time-code"
+        inputmode="numeric"
+        maxlength="20"
+        @keyup.enter="enviarCodigoMfa()"
+      />
+    </el-form-item>
+    <el-form-item>
+      <el-button :loading="loginLoading" class="w-full" type="primary" @click="enviarCodigoMfa()">
+        {{ t('coti.mfa.verificar') }}
+      </el-button>
+    </el-form-item>
+    <el-form-item>
+      <el-link type="primary" @click="cancelarMfa()">{{ t('coti.mfa.voltar') }}</el-link>
+    </el-form-item>
   </el-form>
 </template>
 <script lang="ts" setup>
@@ -166,7 +140,12 @@ const loginLoading = ref(false)
 const verify = ref()
 const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文字 pictureWord 文字验证码
 
-const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
+const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN && !mfa.desafio)
+
+// CO-TI: login em duas etapas
+const formMfa = ref()
+const campoCodigoMfa = ref()
+const mfa = reactive({ desafio: '', codigo: '', formulario: null as any })
 
 const LoginRules = {
   tenantName: [required],
@@ -185,13 +164,6 @@ const loginData = reactive({
     rememberMe: true // 默认记录我。如果不需要，可手动修改
   }
 })
-
-const socialList = [
-  { icon: 'ant-design:wechat-filled', type: 30 },
-  { icon: 'ant-design:dingtalk-circle-filled', type: 20 },
-  { icon: 'ant-design:github-filled', type: 0 },
-  { icon: 'ant-design:alipay-circle-filled', type: 0 }
-]
 
 // 获取验证码
 const getCode = async () => {
@@ -251,9 +223,59 @@ const handleLogin = async (params: any) => {
     if (!res) {
       return
     }
+    if (res.mfaPendente) {
+      mfa.desafio = res.desafioMfa
+      mfa.codigo = ''
+      mfa.formulario = loginDataLoginForm
+      await nextTick()
+      campoCodigoMfa.value?.focus()
+      return
+    }
+    await entrar(res, loginDataLoginForm)
+  } finally {
+    loginLoading.value = false
+    loading.value?.close()
+  }
+}
+
+// CO-TI: segunda etapa
+const enviarCodigoMfa = async () => {
+  const valido = await formMfa.value?.validate().catch(() => false)
+  if (!valido) {
+    return
+  }
+  loginLoading.value = true
+  try {
+    const res = await LoginApi.loginMfa({ desafio: mfa.desafio, codigo: mfa.codigo.trim() })
+    if (!res) {
+      return
+    }
+    const formulario = mfa.formulario
+    mfa.desafio = ''
+    await entrar(res, formulario)
+  } catch (e: any) {
+    // desafio expirado ou tentativas esgotadas: volta para usuário e senha
+    if (e?.code === 1002000050) {
+      cancelarMfa()
+    }
+    mfa.codigo = ''
+  } finally {
+    loginLoading.value = false
+    loading.value?.close()
+  }
+}
+
+const cancelarMfa = () => {
+  mfa.desafio = ''
+  mfa.codigo = ''
+  mfa.formulario = null
+}
+
+const entrar = async (res: any, loginDataLoginForm: any) => {
+  {
     loading.value = ElLoading.service({
       lock: true,
-      text: '正在加载系统中...',
+      text: t('coti.carregandoSistema'),
       background: 'rgba(0, 0, 0, 0.7)'
     })
     if (loginDataLoginForm.rememberMe) {
@@ -271,47 +293,9 @@ const handleLogin = async (params: any) => {
     } else {
       await push({ path: redirect.value || permissionStore.addRouters[0].path })
     }
-  } finally {
-    loginLoading.value = false
-    loading.value.close()
   }
 }
 
-// 社交登录
-const doSocialLogin = async (type: number) => {
-  if (type === 0) {
-    message.error('此方式未配置')
-  } else {
-    loginLoading.value = true
-    if (loginData.tenantEnable === 'true') {
-      // 尝试先通过 tenantName 获取租户
-      await getTenantId()
-      // 如果获取不到，则需要弹出提示，进行处理
-      if (!authUtil.getTenantId()) {
-        try {
-          const data = await message.prompt('请输入租户名称', t('common.reminder'))
-          if (data?.action !== 'confirm') throw 'cancel'
-          const res = await LoginApi.getTenantIdByName(data.value)
-          authUtil.setTenantId(res)
-        } catch (error) {
-          if (error === 'cancel') return
-        } finally {
-          loginLoading.value = false
-        }
-      }
-    }
-    // 计算 redirectUri
-    // 注意: type、redirect 需要先 encode 一次，否则钉钉回调会丢失。
-    // 配合 social-login.vue#getUrlValue() 使用
-    const redirectUri =
-      location.origin +
-      '/social-login?' +
-      encodeURIComponent(`type=${type}&redirect=${redirect.value || '/'}`)
-
-    // 进行跳转
-    window.location.href = await LoginApi.socialAuthRedirect(type, encodeURIComponent(redirectUri))
-  }
-}
 watch(
   () => currentRoute.value,
   (route: RouteLocationNormalizedLoaded) => {

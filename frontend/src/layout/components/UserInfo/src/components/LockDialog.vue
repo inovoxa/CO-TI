@@ -77,7 +77,7 @@ const handleLock = async () => {
         <el-input
           type="password"
           v-model="formData.password"
-          :placeholder="'请输入' + t('lock.lockPassword')"
+          :placeholder="'Digite' + t('lock.lockPassword')"
           clearable
           show-password
         />

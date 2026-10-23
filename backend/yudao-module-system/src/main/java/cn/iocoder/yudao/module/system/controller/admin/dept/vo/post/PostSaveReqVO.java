@@ -17,17 +17,17 @@ public class PostSaveReqVO {
     private Long id;
 
     @Schema(description = "岗位名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "小土豆")
-    @NotBlank(message = "岗位名称不能为空")
-    @Size(max = 50, message = "岗位名称长度不能超过 50 个字符")
+    @NotBlank(message = "Informe o nome do cargo")
+    @Size(max = 50, message = "O nome do cargo pode ter no máximo 50 caracteres")
     private String name;
 
     @Schema(description = "岗位编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
-    @NotBlank(message = "岗位编码不能为空")
-    @Size(max = 64, message = "岗位编码长度不能超过64个字符")
+    @NotBlank(message = "Informe o código do cargo")
+    @Size(max = 64, message = "O código do cargo pode ter no máximo 64 caracteres")
     private String code;
 
     @Schema(description = "显示顺序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "显示顺序不能为空")
+    @NotNull(message = "Informe a ordem")
     private Integer sort;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")

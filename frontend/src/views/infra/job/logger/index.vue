@@ -1,7 +1,7 @@
 <template>
-  <doc-alert title="定时任务" url="https://doc.iocoder.cn/job/" />
-  <doc-alert title="异步任务" url="https://doc.iocoder.cn/async-task/" />
-  <doc-alert title="消息队列" url="https://doc.iocoder.cn/message-queue/" />
+  <doc-alert title="Tarefas agendadas" url="https://doc.iocoder.cn/job/" />
+  <doc-alert title="Tarefas assíncronas" url="https://doc.iocoder.cn/async-task/" />
+  <doc-alert title="Fila de mensagens" url="https://doc.iocoder.cn/message-queue/" />
 
   <ContentWrap>
     <!-- 搜索工作栏 -->
@@ -12,40 +12,40 @@
       :inline="true"
       label-width="120px"
     >
-      <el-form-item label="处理器的名字" prop="handlerName">
+      <el-form-item label="Handler" prop="handlerName">
         <el-input
           v-model="queryParams.handlerName"
-          placeholder="请输入处理器的名字"
+          placeholder="Digite o handler"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="开始执行时间" prop="beginTime">
+      <el-form-item label="Início" prop="beginTime">
         <el-date-picker
           v-model="queryParams.beginTime"
           type="date"
           value-format="YYYY-MM-DD HH:mm:ss"
-          placeholder="选择开始执行时间"
+          placeholder="Selecione o início"
           clearable
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="结束执行时间" prop="endTime">
+      <el-form-item label="Fim" prop="endTime">
         <el-date-picker
           v-model="queryParams.endTime"
           type="date"
           value-format="YYYY-MM-DD HH:mm:ss"
-          placeholder="选择结束执行时间"
+          placeholder="Selecione o fim"
           clearable
           :default-time="new Date('1 23:59:59')"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="任务状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择任务状态"
+          placeholder="Selecione a situação"
           clearable
           class="!w-240px"
         >
@@ -58,8 +58,8 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="success"
           plain
@@ -67,7 +67,7 @@
           :loading="exportLoading"
           v-hasPermi="['infra:job:export']"
         >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
+          <Icon icon="ep:download" class="mr-5px" /> Exportar
         </el-button>
       </el-form-item>
     </el-form>
@@ -76,27 +76,27 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <el-table-column label="日志编号" align="center" prop="id" />
-      <el-table-column label="任务编号" align="center" prop="jobId" />
-      <el-table-column label="处理器的名字" align="center" prop="handlerName" />
-      <el-table-column label="处理器的参数" align="center" prop="handlerParam" />
-      <el-table-column label="第几次执行" align="center" prop="executeIndex" />
-      <el-table-column label="执行时间" align="center" width="170s">
+      <el-table-column label="Nº" align="center" prop="id" />
+      <el-table-column label="Nº" align="center" prop="jobId" />
+      <el-table-column label="Handler" align="center" prop="handlerName" />
+      <el-table-column label="Parâmetros do handler" align="center" prop="handlerParam" />
+      <el-table-column label="Execução nº" align="center" prop="executeIndex" />
+      <el-table-column label="Executada em" align="center" width="170s">
         <template #default="scope">
           <span>{{ formatDate(scope.row.beginTime) + ' ~ ' + formatDate(scope.row.endTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="执行时长" align="center" prop="duration">
+      <el-table-column label="Duração" align="center" prop="duration">
         <template #default="scope">
-          <span>{{ scope.row.duration + ' 毫秒' }}</span>
+          <span>{{ scope.row.duration + ' ms' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="任务状态" align="center" prop="status">
+      <el-table-column label="Situação" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_LOG_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center">
+      <el-table-column label="Ações" align="center">
         <template #default="scope">
           <el-button
             type="primary"
@@ -104,7 +104,7 @@
             @click="openDetail(scope.row.id)"
             v-hasPermi="['infra:job:query']"
           >
-            详细
+            Detalhes
           </el-button>
         </template>
       </el-table-column>
@@ -186,7 +186,7 @@ const handleExport = async () => {
     // 发起导出
     exportLoading.value = true
     const data = await JobLogApi.exportJobLog(queryParams)
-    download.excel(data, '定时任务执行日志.xls')
+    download.excel(data, 'log-tarefas-agendadas.xls')
   } catch {
   } finally {
     exportLoading.value = false

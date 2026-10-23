@@ -13,7 +13,7 @@ import java.util.Map;
 public class MailTemplateSendReqVO {
 
     @Schema(description = "接收邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "[user1@example.com, user2@example.com]")
-    @NotEmpty(message = "接收邮箱不能为空")
+    @NotEmpty(message = "Informe o destinatário")
     private List<String> toMails;
 
     @Schema(description = "抄送邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "[user3@example.com, user4@example.com]")
@@ -23,7 +23,7 @@ public class MailTemplateSendReqVO {
     private List<String> bccMails;
 
     @Schema(description = "模板编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "test_01")
-    @NotNull(message = "模板编码不能为空")
+    @NotNull(message = "Informe o código do modelo")
     private String templateCode;
 
     @Schema(description = "模板参数")

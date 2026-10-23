@@ -10,11 +10,11 @@ import jakarta.validation.constraints.NotNull;
 public class TenantPackageSimpleRespVO {
 
     @Schema(description = "套餐编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "套餐编号不能为空")
+    @NotNull(message = "Informe o plano")
     private Long id;
 
     @Schema(description = "套餐名", requiredMode = Schema.RequiredMode.REQUIRED, example = "VIP")
-    @NotNull(message = "套餐名不能为空")
+    @NotNull(message = "Informe o nome do plano")
     private String name;
 
 }

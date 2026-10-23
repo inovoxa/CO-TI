@@ -27,6 +27,10 @@ import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.Map;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static cn.hutool.core.util.RandomUtil.randomEle;
@@ -35,8 +39,8 @@ import static cn.iocoder.yudao.framework.test.core.util.AssertUtils.assertServic
 import static cn.iocoder.yudao.framework.test.core.util.RandomUtils.randomPojo;
 import static cn.iocoder.yudao.framework.test.core.util.RandomUtils.randomString;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @Import(AdminAuthServiceImpl.class)
@@ -61,10 +65,23 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
     private MemberService memberService;
     @MockitoBean
     private Validator validator;
+    // CO-TI
+    @MockitoBean
+    private StringRedisTemplate stringRedisTemplate;
+    @MockitoBean
+    private SegundoFator segundoFator;
+    @MockitoBean
+    private EventosSeguranca eventosSeguranca;
+    @SuppressWarnings("rawtypes")
+    private final HashOperations hashOps = mock(HashOperations.class);
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     public void setUp() {
         authService.setCaptchaEnable(true);
+        // CO-TI: os testes originais de SMS, social e registro continuam valendo com o login alternativo ligado
+        ReflectUtil.setFieldValue(AopTestUtils.getUltimateTargetObject(authService), "loginAlternativo", true);
+        when(stringRedisTemplate.opsForHash()).thenReturn(hashOps);
         // 注入一个 Validator 对象
         ReflectUtil.setFieldValue(authService, "validator",
                 Validation.buildDefaultValidatorFactory().getValidator());
@@ -144,6 +161,104 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
                         && o.getResult().equals(LoginResultEnum.USER_DISABLED.getResult())
                         && o.getUserId().equals(user.getId()))
         );
+    }
+
+    // ========== CO-TI: segundo fator e login alternativo ==========
+
+    @Test
+    public void testLogin_comSegundoFatorDevolveDesafioSemToken() {
+        AuthLoginReqVO reqVO = randomPojo(AuthLoginReqVO.class, o ->
+                o.setUsername("ana").setPassword("senha").setSocialType(null));
+        authService.setCaptchaEnable(false);
+        AdminUserDO user = randomPojo(AdminUserDO.class, o -> o.setId(7L).setUsername("ana")
+                .setStatus(CommonStatusEnum.ENABLE.getStatus()));
+        when(userService.getUserByUsername(eq("ana"))).thenReturn(user);
+        when(userService.isPasswordMatch(eq("senha"), eq(user.getPassword()))).thenReturn(true);
+        when(segundoFator.exige(7L)).thenReturn(true);
+
+        AuthLoginRespVO resp = authService.login(reqVO);
+
+        assertEquals(Boolean.TRUE, resp.getMfaPendente());
+        assertTrue(resp.getDesafioMfa().matches("^[a-f0-9]{32}$"));
+        assertNull(resp.getAccessToken());
+        verify(oauth2TokenService, never()).createAccessToken(any(), any(), any(), any());
+        verify(loginLogService, never()).createLoginLog(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLoginSegundoFator_codigoCertoEmiteToken() {
+        AuthMfaLoginReqVO reqVO = new AuthMfaLoginReqVO();
+        reqVO.setDesafio("0123456789abcdef0123456789abcdef");
+        reqVO.setCodigo("123456");
+        when(hashOps.entries(anyString())).thenReturn(Map.of("userId", "7", "username", "ana",
+                "logType", LoginLogTypeEnum.LOGIN_USERNAME.name(), "tentativas", "0"));
+        when(hashOps.increment(anyString(), eq("tentativas"), eq(1L))).thenReturn(1L);
+        when(segundoFator.verificar(7L, "123456")).thenReturn(true);
+        when(stringRedisTemplate.delete(anyString())).thenReturn(true);
+        AdminUserDO user = randomPojo(AdminUserDO.class, o -> o.setId(7L).setStatus(CommonStatusEnum.ENABLE.getStatus()));
+        when(userService.getUser(7L)).thenReturn(user);
+        OAuth2AccessTokenDO token = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(7L));
+        when(oauth2TokenService.createAccessToken(eq(7L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+                .thenReturn(token);
+
+        AuthLoginRespVO resp = authService.loginSegundoFator(reqVO);
+
+        assertEquals(token.getAccessToken(), resp.getAccessToken());
+        verify(stringRedisTemplate).delete("coti:mfa:desafio:0123456789abcdef0123456789abcdef");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLoginSegundoFator_codigoErradoNaoEmiteToken() {
+        AuthMfaLoginReqVO reqVO = new AuthMfaLoginReqVO();
+        reqVO.setDesafio("0123456789abcdef0123456789abcdef");
+        reqVO.setCodigo("000000");
+        when(hashOps.entries(anyString())).thenReturn(Map.of("userId", "7", "username", "ana",
+                "logType", LoginLogTypeEnum.LOGIN_USERNAME.name(), "tentativas", "0"));
+        when(hashOps.increment(anyString(), eq("tentativas"), eq(1L))).thenReturn(1L);
+        when(segundoFator.verificar(7L, "000000")).thenReturn(false);
+
+        assertServiceException(() -> authService.loginSegundoFator(reqVO), AUTH_MFA_CODIGO_INVALIDO);
+        verify(oauth2TokenService, never()).createAccessToken(any(), any(), any(), any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLoginSegundoFator_esgotaTentativas() {
+        AuthMfaLoginReqVO reqVO = new AuthMfaLoginReqVO();
+        reqVO.setDesafio("0123456789abcdef0123456789abcdef");
+        reqVO.setCodigo("123456");
+        when(hashOps.entries(anyString())).thenReturn(Map.of("userId", "7", "username", "ana",
+                "logType", LoginLogTypeEnum.LOGIN_USERNAME.name(), "tentativas", "5"));
+        when(hashOps.increment(anyString(), eq("tentativas"), eq(1L))).thenReturn(6L);
+
+        assertServiceException(() -> authService.loginSegundoFator(reqVO), AUTH_MFA_DESAFIO_INVALIDO);
+        verify(segundoFator, never()).verificar(any(), any());
+    }
+
+    @Test
+    public void testLoginSegundoFator_desafioInexistente() {
+        AuthMfaLoginReqVO reqVO = new AuthMfaLoginReqVO();
+        reqVO.setDesafio("0123456789abcdef0123456789abcdef");
+        reqVO.setCodigo("123456");
+        when(hashOps.entries(anyString())).thenReturn(Map.of());
+        assertServiceException(() -> authService.loginSegundoFator(reqVO), AUTH_MFA_DESAFIO_INVALIDO);
+    }
+
+    @Test
+    public void testLoginAlternativoDesligadoBloqueiaSmsSocialERegistro() {
+        ReflectUtil.setFieldValue(AopTestUtils.getUltimateTargetObject(authService), "loginAlternativo", false);
+        assertServiceException(() -> authService.smsLogin(randomPojo(AuthSmsLoginReqVO.class)),
+                AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        assertServiceException(() -> authService.socialLogin(randomPojo(AuthSocialLoginReqVO.class)),
+                AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        assertServiceException(() -> authService.register(randomPojo(AuthRegisterReqVO.class)),
+                AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        assertServiceException(() -> authService.sendSmsCode(randomPojo(AuthSmsSendReqVO.class)),
+                AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
+        assertServiceException(() -> authService.resetPassword(randomPojo(AuthResetPasswordReqVO.class)),
+                AUTH_LOGIN_ALTERNATIVO_DESLIGADO);
     }
 
     @Test

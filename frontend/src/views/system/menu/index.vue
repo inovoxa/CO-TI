@@ -1,6 +1,6 @@
 <template>
-  <doc-alert title="功能权限" url="https://doc.iocoder.cn/resource-permission" />
-  <doc-alert title="菜单路由" url="https://doc.iocoder.cn/vue3/route/" />
+  <doc-alert title="Permissões de tela" url="https://doc.iocoder.cn/resource-permission" />
+  <doc-alert title="Rota do menu" url="https://doc.iocoder.cn/vue3/route/" />
 
   <!-- 搜索工作栏 -->
   <ContentWrap>
@@ -11,21 +11,21 @@
       class="-mb-15px"
       label-width="68px"
     >
-      <el-form-item label="菜单名称" prop="name">
+      <el-form-item label="Nome do menu" prop="name">
         <el-input
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入菜单名称"
+          placeholder="Digite o nome do menu"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-select
           v-model="queryParams.status"
           class="!w-240px"
           clearable
-          placeholder="请选择菜单状态"
+          placeholder="Selecione a situação"
         >
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -38,11 +38,11 @@
       <el-form-item>
         <el-button @click="handleQuery">
           <Icon class="mr-5px" icon="ep:search" />
-          搜索
+          Buscar
         </el-button>
         <el-button @click="resetQuery">
           <Icon class="mr-5px" icon="ep:refresh" />
-          重置
+          Limpar
         </el-button>
         <el-button
           v-hasPermi="['system:menu:create']"
@@ -51,15 +51,15 @@
           @click="openForm('create')"
         >
           <Icon class="mr-5px" icon="ep:plus" />
-          新增
+          Novo
         </el-button>
         <el-button plain type="danger" @click="toggleExpandAll">
           <Icon class="mr-5px" icon="ep:sort" />
-          展开/折叠
+          Expandir/recolher
         </el-button>
         <el-button plain @click="refreshMenu">
           <Icon class="mr-5px" icon="ep:refresh" />
-          刷新菜单缓存
+          Atualizar cache do menu
         </el-button>
       </el-form-item>
     </el-form>
@@ -105,14 +105,14 @@ defineOptions({ name: 'SystemMenu' })
 const columns: Column<MenuVO>[] = [
   {
     key: 'name',
-    title: '菜单名称',
+    title: 'Nome do menu',
     dataKey: 'name',
     width: 250,
     fixed: TableV2FixedDir.LEFT
   },
   {
     key: 'icon',
-    title: '图标',
+    title: 'Ícone',
     dataKey: 'icon',
     width: 100,
     align: 'center',
@@ -120,31 +120,31 @@ const columns: Column<MenuVO>[] = [
   },
   {
     key: 'sort',
-    title: '排序',
+    title: 'Ordem',
     dataKey: 'sort',
     width: 60
   },
   {
     key: 'permission',
-    title: '权限标识',
+    title: 'Permissão',
     dataKey: 'permission',
     width: 300
   },
   {
     key: 'component',
-    title: '组件路径',
+    title: 'Caminho do componente',
     dataKey: 'component',
     width: 500
   },
   {
     key: 'componentName',
-    title: '组件名称',
+    title: 'Nome do componente',
     dataKey: 'componentName',
     width: 200
   },
   {
     key: 'status',
-    title: '状态',
+    title: 'Situação',
     dataKey: 'status',
     width: 60,
     fixed: TableV2FixedDir.RIGHT,
@@ -169,7 +169,7 @@ const columns: Column<MenuVO>[] = [
   },
   {
     key: 'operations',
-    title: '操作',
+    title: 'Ações',
     align: 'center',
     width: 160,
     fixed: TableV2FixedDir.RIGHT,
@@ -273,7 +273,7 @@ const toggleExpandAll = () => {
 /** 刷新菜单缓存按钮操作 */
 const refreshMenu = async () => {
   try {
-    await message.confirm('即将更新缓存刷新浏览器！', '刷新菜单缓存')
+    await message.confirm('O cache será atualizado e a página recarregada!', 'Atualizar cache do menu')
     // 清空，从而触发刷新
     wsCache.delete(CACHE_KEY.USER)
     wsCache.delete(CACHE_KEY.ROLE_ROUTERS)

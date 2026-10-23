@@ -6,21 +6,21 @@ import type { TableColumnCtx } from 'element-plus'
  */
 export const defaultShortcuts = [
   {
-    text: '今天',
+    text: 'Hoje',
     value: () => {
       const date = dayjs()
       return [date.startOf('day').toDate(), date.endOf('day').toDate()]
     }
   },
   {
-    text: '昨天',
+    text: 'Ontem',
     value: () => {
       const date = dayjs().subtract(1, 'day')
       return [date.startOf('day').toDate(), date.endOf('day').toDate()]
     }
   },
   {
-    text: '最近七天',
+    text: 'Últimos 7 dias',
     value: () => {
       const date = dayjs()
       // 包含今天在内，共 7 个自然日
@@ -28,7 +28,7 @@ export const defaultShortcuts = [
     }
   },
   {
-    text: '最近 30 天',
+    text: 'Últimos 30 dias',
     value: () => {
       const date = dayjs()
       // 包含今天在内，共 30 个自然日
@@ -36,14 +36,14 @@ export const defaultShortcuts = [
     }
   },
   {
-    text: '本月',
+    text: 'Este mês',
     value: () => {
       const date = dayjs()
       return [date.startOf('month').toDate(), date.endOf('day').toDate()]
     }
   },
   {
-    text: '今年',
+    text: 'Este ano',
     value: () => {
       const date = dayjs()
       return [date.startOf('year').toDate(), date.endOf('day').toDate()]
@@ -139,23 +139,23 @@ export function formatPast(param: string | Date, format = 'YYYY-MM-DD HH:mm:ss')
   time = Number.parseInt(`${time - t}`)
   if (time < 10000) {
     // 10秒内
-    return '刚刚'
+    return 'agora mesmo'
   } else if (time < 60000 && time >= 10000) {
     // 超过10秒少于1分钟内
     s = Math.floor(time / 1000)
-    return `${s}秒前`
+    return `há ${s} s`
   } else if (time < 3600000 && time >= 60000) {
     // 超过1分钟少于1小时
     s = Math.floor(time / 60000)
-    return `${s}分钟前`
+    return `há ${s} min`
   } else if (time < 86400000 && time >= 3600000) {
     // 超过1小时少于24小时
     s = Math.floor(time / 3600000)
-    return `${s}小时前`
+    return `há ${s} h`
   } else if (time < 259200000 && time >= 86400000) {
     // 超过1天少于3天内
     s = Math.floor(time / 86400000)
-    return `${s}天前`
+    return `há ${s} dias`
   } else {
     // 超过3天
     const date = typeof param === 'string' || 'object' ? new Date(param) : param
@@ -171,14 +171,14 @@ export function formatPast(param: string | Date, format = 'YYYY-MM-DD HH:mm:ss')
  */
 export function formatAxis(param: Date): string {
   const hour: number = new Date(param).getHours()
-  if (hour < 6) return '凌晨好'
-  else if (hour < 9) return '早上好'
-  else if (hour < 12) return '上午好'
-  else if (hour < 14) return '中午好'
-  else if (hour < 17) return '下午好'
-  else if (hour < 19) return '傍晚好'
-  else if (hour < 22) return '晚上好'
-  else return '夜里好'
+  if (hour < 6) return 'Boa madrugada'
+  else if (hour < 9) return 'Bom dia'
+  else if (hour < 12) return 'Bom dia'
+  else if (hour < 14) return 'Boa tarde'
+  else if (hour < 17) return 'Boa tarde'
+  else if (hour < 19) return 'Boa noite'
+  else if (hour < 22) return 'Boa noite'
+  else return 'Boa noite'
 }
 
 /**
@@ -193,18 +193,18 @@ export function formatPast2(ms: number): string {
   const minute = Math.floor(ms / (60 * 1000) - day * 24 * 60 - hour * 60)
   const second = Math.floor(ms / 1000 - day * 24 * 60 * 60 - hour * 60 * 60 - minute * 60)
   if (day > 0) {
-    return day + ' 天' + hour + ' 小时 ' + minute + ' 分钟'
+    return day + ' dias' + hour + ' h ' + minute + ' min'
   }
   if (hour > 0) {
-    return hour + ' 小时 ' + minute + ' 分钟'
+    return hour + ' h ' + minute + ' min'
   }
   if (minute > 0) {
-    return minute + ' 分钟'
+    return minute + ' min'
   }
   if (second > 0) {
-    return second + ' 秒'
+    return second + ' s'
   } else {
-    return 0 + ' 秒'
+    return 0 + ' s'
   }
 }
 

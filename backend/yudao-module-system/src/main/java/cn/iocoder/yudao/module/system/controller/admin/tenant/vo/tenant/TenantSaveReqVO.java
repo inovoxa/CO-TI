@@ -21,47 +21,47 @@ public class TenantSaveReqVO {
     private Long id;
 
     @Schema(description = "租户名", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
-    @NotNull(message = "租户名不能为空")
+    @NotNull(message = "Informe o nome da empresa")
     private String name;
 
     @Schema(description = "联系人", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋艿")
-    @NotNull(message = "联系人不能为空")
+    @NotNull(message = "Informe o contato")
     private String contactName;
 
     @Schema(description = "联系手机", example = "15601691300")
     private String contactMobile;
 
     @Schema(description = "租户状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "租户状态")
+    @NotNull(message = "Situação da empresa")
     private Integer status;
 
     @Schema(description = "绑定域名数组", example = "https://www.iocoder.cn")
     private List<String> websites;
 
     @Schema(description = "租户套餐编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "租户套餐编号不能为空")
+    @NotNull(message = "Informe o plano da empresa")
     private Long packageId;
 
     @Schema(description = "过期时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "过期时间不能为空")
+    @NotNull(message = "Informe a validade")
     private LocalDateTime expireTime;
 
     @Schema(description = "账号数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "账号数量不能为空")
+    @NotNull(message = "Informe o número de usuários")
     private Integer accountCount;
 
     // ========== 仅【创建】时，需要传递的字段 ==========
 
     @Schema(description = "用户账号", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
-    @Pattern(regexp = "^[a-zA-Z0-9]{4,30}$", message = "用户账号由 数字、字母 组成")
-    @Size(min = 4, max = 30, message = "用户账号长度为 4-30 个字符")
+    @Pattern(regexp = "^[a-zA-Z0-9]{4,30}$", message = "O usuário só pode ter letras, números, ponto, hífen e sublinhado")
+    @Size(min = 4, max = 30, message = "O usuário deve ter de 1 a 30 caracteres")
     private String username;
 
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
-    @Length(min = 4, max = 16, message = "密码长度为 4-16 位")
+    @Length(min = 4, max = 16, message = "A senha deve ter de 4 a 16 caracteres")
     private String password;
 
-    @AssertTrue(message = "用户账号、密码不能为空")
+    @AssertTrue(message = "Informe usuário e senha")
     @JsonIgnore
     public boolean isUsernameValid() {
         return id != null // 修改时，不需要传递

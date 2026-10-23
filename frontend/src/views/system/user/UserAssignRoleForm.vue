@@ -1,21 +1,21 @@
 <template>
-  <Dialog v-model="dialogVisible" title="分配角色">
+  <Dialog v-model="dialogVisible" title="Atribuir perfis">
     <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="80px">
-      <el-form-item label="用户名称">
+      <el-form-item label="Usuário">
         <el-input v-model="formData.username" :disabled="true" />
       </el-form-item>
-      <el-form-item label="用户昵称">
+      <el-form-item label="Nome">
         <el-input v-model="formData.nickname" :disabled="true" />
       </el-form-item>
-      <el-form-item label="角色">
-        <el-select v-model="formData.roleIds" multiple placeholder="请选择角色">
+      <el-form-item label="Perfis">
+        <el-select v-model="formData.roleIds" multiple placeholder="Selecione os perfis">
           <el-option v-for="item in roleList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>

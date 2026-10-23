@@ -21,8 +21,8 @@
       @pagination="getList"
     />
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -36,7 +36,7 @@ withDefaults(
     modelValue?: any[]
     title?: string
   }>(),
-  { modelValue: () => [], title: '选择' }
+  { modelValue: () => [], title: 'Selecionar' }
 )
 const list = ref([]) // 列表的数据
 const total = ref(0) // 列表的总页数

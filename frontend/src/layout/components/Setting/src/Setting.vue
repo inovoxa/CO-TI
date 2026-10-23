@@ -109,73 +109,73 @@ const copyConfig = async () => {
   const { copy, copied, isSupported } = useClipboard({
     legacy: true,
     source: `
-      // 面包屑
+      // trilha de navegação
       breadcrumb: ${appStore.getBreadcrumb},
-      // 面包屑图标
+      // ícone da trilha
       breadcrumbIcon: ${appStore.getBreadcrumbIcon},
-      // 折叠图标
+      // ícone de recolher
       hamburger: ${appStore.getHamburger},
-      // 全屏图标
+      // ícone de tela cheia
       screenfull: ${appStore.getScreenfull},
-      // 尺寸图标
+      // ícone de tamanho
       size: ${appStore.getSize},
-      // 多语言图标
+      // ícone de idioma
       locale: ${appStore.getLocale},
-      // 消息图标
+      // ícone de mensagens
       message: ${appStore.getMessage},
-      // IM 即时通讯图标
+      // ícone do chat
       im: ${appStore.getIm},
-      // 标签页
+      // abas
       tagsView: ${appStore.getTagsView},
-      // 标签页
+      // abas imersivas
       tagsViewImmerse: ${appStore.getTagsViewImmerse},
-      // 标签页图标
+      // ícone das abas
       tagsViewIcon: ${appStore.getTagsViewIcon},
       // logo
       logo: ${appStore.getLogo},
-      // 菜单手风琴
+      // menu sanfona
       uniqueOpened: ${appStore.getUniqueOpened},
-      // 固定header
+      // cabeçalho fixo
       fixedHeader: ${appStore.getFixedHeader},
-      // 页脚
+      // rodapé
       footer: ${appStore.getFooter},
-      // 灰色模式
+      // modo cinza
       greyMode: ${appStore.getGreyMode},
-      // layout布局
+      // layout
       layout: '${appStore.getLayout}',
-      // 暗黑模式
+      // modo escuro
       isDark: ${appStore.getIsDark},
-      // 组件尺寸
+      // tamanho dos componentes
       currentSize: '${appStore.getCurrentSize}',
-      // 主题相关
+      // tema
       theme: {
-        // 主题色
+        // cor principal
         elColorPrimary: '${appStore.getTheme.elColorPrimary}',
-        // 左侧菜单边框颜色
+        // borda do menu lateral
         leftMenuBorderColor: '${appStore.getTheme.leftMenuBorderColor}',
-        // 左侧菜单背景颜色
+        // fundo do menu lateral
         leftMenuBgColor: '${appStore.getTheme.leftMenuBgColor}',
-        // 左侧菜单浅色背景颜色
+        // fundo claro do menu lateral
         leftMenuBgLightColor: '${appStore.getTheme.leftMenuBgLightColor}',
-        // 左侧菜单选中背景颜色
+        // fundo do item selecionado
         leftMenuBgActiveColor: '${appStore.getTheme.leftMenuBgActiveColor}',
-        // 左侧菜单收起选中背景颜色
+        // fundo do item selecionado com menu recolhido
         leftMenuCollapseBgActiveColor: '${appStore.getTheme.leftMenuCollapseBgActiveColor}',
-        // 左侧菜单字体颜色
+        // texto do menu lateral
         leftMenuTextColor: '${appStore.getTheme.leftMenuTextColor}',
-        // 左侧菜单选中字体颜色
+        // texto do item selecionado
         leftMenuTextActiveColor: '${appStore.getTheme.leftMenuTextActiveColor}',
-        // logo字体颜色
+        // texto do logo
         logoTitleTextColor: '${appStore.getTheme.logoTitleTextColor}',
-        // logo边框颜色
+        // borda do logo
         logoBorderColor: '${appStore.getTheme.logoBorderColor}',
-        // 头部背景颜色
+        // fundo do cabeçalho
         topHeaderBgColor: '${appStore.getTheme.topHeaderBgColor}',
-        // 头部字体颜色
+        // texto do cabeçalho
         topHeaderTextColor: '${appStore.getTheme.topHeaderTextColor}',
-        // 头部悬停颜色
+        // cor ao passar o mouse no cabeçalho
         topHeaderHoverColor: '${appStore.getTheme.topHeaderHoverColor}',
-        // 头部边框颜色
+        // borda do cabeçalho
         topToolBorderColor: '${appStore.getTheme.topToolBorderColor}'
       }
     `

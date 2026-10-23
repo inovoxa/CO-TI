@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="上传下载" url="https://doc.iocoder.cn/file/" />
+  <doc-alert title="Envio e download" url="https://doc.iocoder.cn/file/" />
   <!-- 搜索 -->
   <ContentWrap>
     <el-form
@@ -9,40 +9,40 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="文件路径" prop="path">
+      <el-form-item label="Caminho" prop="path">
         <el-input
           v-model="queryParams.path"
-          placeholder="请输入文件路径"
+          placeholder="Digite o caminho"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="文件类型" prop="type" width="80">
+      <el-form-item label="Tipo" prop="type" width="80">
         <el-input
           v-model="queryParams.type"
-          placeholder="请输入文件类型"
+          placeholder="Digite o tipo"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
+      <el-form-item label="Criado em" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          start-placeholder="Data inicial"
+          end-placeholder="Data final"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button type="primary" plain @click="openForm">
-          <Icon icon="ep:upload" class="mr-5px" /> 上传文件
+          <Icon icon="ep:upload" class="mr-5px" /> Enviar arquivo
         </el-button>
         <el-button
           type="danger"
@@ -51,7 +51,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['infra:file:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
+          <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -61,18 +61,18 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="文件名" align="center" prop="name" :show-overflow-tooltip="true" />
-      <el-table-column label="文件路径" align="center" prop="path" :show-overflow-tooltip="true" />
+      <el-table-column label="Nome do arquivo" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column label="Caminho" align="center" prop="path" :show-overflow-tooltip="true" />
       <el-table-column label="URL" align="center" prop="url" :show-overflow-tooltip="true" />
       <el-table-column
-        label="文件大小"
+        label="Tamanho"
         align="center"
         prop="size"
         width="120"
         :formatter="fileSizeFormatter"
       />
-      <el-table-column label="文件类型" align="center" prop="type" width="180px" />
-      <el-table-column label="文件内容" align="center" prop="url" width="110px">
+      <el-table-column label="Tipo" align="center" prop="type" width="180px" />
+      <el-table-column label="Conteúdo" align="center" prop="url" width="110px">
         <template #default="{ row }">
           <el-image
             v-if="row.type.includes('image')"
@@ -90,7 +90,7 @@
             :underline="false"
             target="_blank"
           >
-            预览
+            Visualizar
           </el-link>
           <el-link
             v-else
@@ -100,21 +100,21 @@
             :underline="false"
             target="_blank"
           >
-            下载
+            Baixar
           </el-link>
         </template>
       </el-table-column>
       <el-table-column
-        label="上传时间"
+        label="Enviado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
+      <el-table-column label="Ações" align="center">
         <template #default="scope">
           <el-button link type="primary" @click="copyToClipboard(scope.row.url)">
-            复制链接
+            Copiar link
           </el-button>
           <el-button
             link
@@ -122,7 +122,7 @@
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['infra:file:delete']"
           >
-            删除
+            Excluir
           </el-button>
         </template>
       </el-table-column>

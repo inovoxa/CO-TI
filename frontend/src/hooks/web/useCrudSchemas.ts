@@ -107,7 +107,7 @@ const filterSearchSchema = (crudSchema: CrudSchema[], allSchemas: AllSchemas): F
       const options: ComponentOptions[] = []
       let comonentProps: ComponentProps = {}
       if (schemaItem.dictType) {
-        const allOptions: ComponentOptions = { label: '全部', value: '' }
+        const allOptions: ComponentOptions = { label: 'Todos', value: '' }
         options.push(allOptions)
         getDictOptions(schemaItem.dictType).forEach((dict) => {
           options.push(dict)

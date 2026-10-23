@@ -7,17 +7,17 @@
       :rules="formRules"
       label-width="80px"
     >
-      <el-form-item label="字典名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入字典名称" />
+      <el-form-item label="Nome do dicionário" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome do dicionário" />
       </el-form-item>
-      <el-form-item label="字典类型" prop="type">
+      <el-form-item label="Tipo do dicionário" prop="type">
         <el-input
           v-model="formData.type"
           :disabled="typeof formData.id !== 'undefined'"
-          placeholder="请输入参数名称"
+          placeholder="Digite o nome"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-radio-group v-model="formData.status">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -28,13 +28,13 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输入内容" type="textarea" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite o texto" type="textarea" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -60,9 +60,9 @@ const formData = ref<DictTypeApi.DictTypeVO>({
   remark: ''
 })
 const formRules = reactive({
-  name: [{ required: true, message: '字典名称不能为空', trigger: 'blur' }],
-  type: [{ required: true, message: '字典类型不能为空', trigger: 'blur' }],
-  status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
+  name: [{ required: true, message: 'Informe o nome do dicionário', trigger: 'blur' }],
+  type: [{ required: true, message: 'Informe o tipo do dicionário', trigger: 'blur' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'change' }]
 })
 const formRef = ref() // 表单 Ref
 

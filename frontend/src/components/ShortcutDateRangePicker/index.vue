@@ -1,16 +1,16 @@
 <template>
   <div class="flex flex-row items-center gap-2">
     <el-radio-group v-model="shortcutDays" @change="handleShortcutDaysChange">
-      <el-radio-button :value="1">昨天</el-radio-button>
-      <el-radio-button :value="7">最近7天</el-radio-button>
-      <el-radio-button :value="30">最近30天</el-radio-button>
+      <el-radio-button :value="1">Ontem</el-radio-button>
+      <el-radio-button :value="7">Últimos 7 dias</el-radio-button>
+      <el-radio-button :value="30">Últimos 30 dias</el-radio-button>
     </el-radio-group>
     <el-date-picker
       v-model="times"
       value-format="YYYY-MM-DD HH:mm:ss"
       type="daterange"
-      start-placeholder="开始日期"
-      end-placeholder="结束日期"
+      start-placeholder="Data inicial"
+      end-placeholder="Data final"
       :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
       :shortcuts="shortcuts"
       class="!w-240px"
@@ -32,15 +32,15 @@ defineExpose({ times }) // 暴露时间范围参数
 /** 日期快捷选择 */
 const shortcuts = [
   {
-    text: '昨天',
+    text: 'Ontem',
     value: () => DateUtil.getDayRange(new Date(), -1)
   },
   {
-    text: '最近7天',
+    text: 'Últimos 7 dias',
     value: () => DateUtil.getLast7Days()
   },
   {
-    text: '本月',
+    text: 'Este mês',
     value: () => {
       const date = dayjs()
       // 统计默认截止昨天；每月 1 日兜底为当天，避免逆序范围
@@ -49,11 +49,11 @@ const shortcuts = [
     }
   },
   {
-    text: '最近30天',
+    text: 'Últimos 30 dias',
     value: () => DateUtil.getLast30Days()
   },
   {
-    text: '最近1年',
+    text: 'Último ano',
     value: () => DateUtil.getLast1Year()
   }
 ]

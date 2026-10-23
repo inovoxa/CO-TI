@@ -51,6 +51,8 @@ public class AdProvisionamentoService {
     private PermissionService permissionService;
     @Resource
     private PasswordEncoder passwordEncoder;
+    @Resource
+    private AuditoriaService auditoria;
 
     /**
      * @return o usuário do portal, ou vazio se a conta colide com uma conta local de mesmo login sem vínculo
@@ -85,13 +87,20 @@ public class AdProvisionamentoService {
         usuario.setRemark(limitar(conta.getCargo(), 500));
         usuario.setDeptId(deptId);
         usuario.setStatus(status);
+        Integer statusAnterior = usuario.getId() == null ? null : adminUserMapper.selectById(usuario.getId()).getStatus();
         if (usuario.getId() == null) {
             adminUserMapper.insert(usuario);
+            auditoria.registrar("ad.usuario_criado", usuario.getId(), conta.getLogin(),
+                    Map.of("dn", conta.getDn(), "departamento", deptId));
         } else {
             adminUserMapper.updateById(usuario);
+            if (!Objects.equals(statusAnterior, status)) {
+                auditoria.registrar("ad.usuario_status", usuario.getId(), conta.getLogin(),
+                        Map.of("ativo", conta.isAtivo()));
+            }
         }
 
-        sincronizarPerfis(usuario.getId(), conta.getGrupos());
+        sincronizarPerfis(usuario.getId(), conta.getGrupos(), conta.getLogin());
 
         if (vinculo == null) {
             vinculo = VinculoAdDO.builder().userId(usuario.getId()).guid(conta.getGuid()).build();
@@ -118,6 +127,7 @@ public class AdProvisionamentoService {
             u.setStatus(CommonStatusEnum.DISABLE.getStatus());
             adminUserMapper.updateById(u);
             log.info("[desativarAusente][{} não está mais no AD; desativado no portal]", vinculo.getLogin());
+            auditoria.registrar("ad.usuario_desativado", u.getId(), vinculo.getLogin(), Map.of("motivo", "ausente no AD"));
         }
         vinculo.setAtivoNoAd(false);
         vinculoAdMapper.updateById(vinculo);
@@ -147,7 +157,7 @@ public class AdProvisionamentoService {
      * Perfis mapeados em coti.ad.grupos-perfis são controlados pelo AD (entra e sai conforme o grupo);
      * os demais perfis do usuário, dados à mão no portal, ficam como estão.
      */
-    void sincronizarPerfis(Long userId, Set<String> gruposDn) {
+    void sincronizarPerfis(Long userId, Set<String> gruposDn, String login) {
         if (props.getGruposPerfis().isEmpty()) {
             return;
         }
@@ -170,6 +180,8 @@ public class AdProvisionamentoService {
         novos.addAll(devidos);
         if (!novos.equals(atuais)) {
             permissionService.assignUserRole(userId, novos);
+            auditoria.registrar("ad.perfis_alterados", userId, login,
+                    Map.of("antes", new TreeSet<>(atuais), "depois", new TreeSet<>(novos)));
         }
     }
 

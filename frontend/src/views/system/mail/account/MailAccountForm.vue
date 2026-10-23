@@ -7,32 +7,32 @@
       :rules="formRules"
       label-width="150px"
     >
-      <el-form-item label="邮箱" prop="mail">
-        <el-input v-model="formData.mail" placeholder="请输入邮箱" />
+      <el-form-item label="E-mail" prop="mail">
+        <el-input v-model="formData.mail" placeholder="Digite o e-mail" />
       </el-form-item>
-      <el-form-item label="用户名" prop="username">
-        <el-input v-model="formData.username" placeholder="请输入用户名" />
+      <el-form-item label="Usuário" prop="username">
+        <el-input v-model="formData.username" placeholder="Digite o usuário" />
       </el-form-item>
-      <el-form-item label="密码" prop="password">
+      <el-form-item label="Senha" prop="password">
         <el-input
           v-model="formData.password"
-          placeholder="请输入密码"
+          placeholder="Digite a senha"
           type="password"
           show-password
         />
       </el-form-item>
-      <el-form-item label="SMTP 服务器域名" prop="host">
-        <el-input v-model="formData.host" placeholder="请输入 SMTP 服务器域名" />
+      <el-form-item label="Servidor SMTP" prop="host">
+        <el-input v-model="formData.host" placeholder="Digite o servidor SMTP" />
       </el-form-item>
-      <el-form-item label="SMTP 服务器端口" prop="port">
+      <el-form-item label="Porta SMTP" prop="port">
         <el-input-number
           v-model="formData.port"
-          placeholder="请输入 SMTP 服务器端口"
+          placeholder="Digite a porta SMTP"
           :min="1"
           :max="65535"
         />
       </el-form-item>
-      <el-form-item label="是否开启 SSL">
+      <el-form-item label="Usar SSL">
         <el-radio-group v-model="formData.sslEnable">
           <el-radio
             v-for="dict in getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING)"
@@ -43,7 +43,7 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="是否开启 STARTTLS">
+      <el-form-item label="Usar STARTTLS">
         <el-radio-group v-model="formData.starttlsEnable">
           <el-radio
             v-for="dict in getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING)"
@@ -56,8 +56,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -86,15 +86,15 @@ const formData = ref<MailAccountApi.MailAccountVO>({
 })
 const formRules = reactive({
   mail: [
-    { required: true, message: '邮箱不能为空', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] }
+    { required: true, message: 'Informe o e-mail', trigger: 'blur' },
+    { type: 'email', message: 'E-mail inválido', trigger: ['blur', 'change'] }
   ],
-  username: [{ required: true, message: '用户名不能为空', trigger: 'blur' }],
-  password: [{ required: true, message: '密码不能为空', trigger: 'blur' }],
-  host: [{ required: true, message: 'SMTP 服务器域名不能为空', trigger: 'blur' }],
-  port: [{ required: true, message: 'SMTP 服务器端口不能为空', trigger: 'blur' }],
-  sslEnable: [{ required: true, message: '是否开启 SSL 不能为空', trigger: 'blur' }],
-  starttlsEnable: [{ required: true, message: '是否开启 STARTTLS 不能为空', trigger: 'blur' }]
+  username: [{ required: true, message: 'Informe o usuário', trigger: 'blur' }],
+  password: [{ required: true, message: 'Informe a senha', trigger: 'blur' }],
+  host: [{ required: true, message: 'Informe o servidor SMTP', trigger: 'blur' }],
+  port: [{ required: true, message: 'Informe a porta SMTP', trigger: 'blur' }],
+  sslEnable: [{ required: true, message: 'Informe se usa SSL', trigger: 'blur' }],
+  starttlsEnable: [{ required: true, message: 'Informe se usa STARTTLS', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 

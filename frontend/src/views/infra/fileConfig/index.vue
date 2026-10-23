@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="上传下载" url="https://doc.iocoder.cn/file/" />
+  <doc-alert title="Envio e download" url="https://doc.iocoder.cn/file/" />
 
   <!-- 搜索 -->
   <ContentWrap>
@@ -10,19 +10,19 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="配置名" prop="name">
+      <el-form-item label="Nome da configuração" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入配置名"
+          placeholder="Digite o nome da configuração"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="存储器" prop="storage">
+      <el-form-item label="Armazenamento" prop="storage">
         <el-select
           v-model="queryParams.storage"
-          placeholder="请选择存储器"
+          placeholder="Selecione o armazenamento"
           clearable
           class="!w-240px"
         >
@@ -34,27 +34,27 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
+      <el-form-item label="Criado em" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          start-placeholder="Data inicial"
+          end-placeholder="Data final"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['infra:file-config:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
+          <Icon icon="ep:plus" class="mr-5px" /> Novo
         </el-button>
         <el-button
           type="danger"
@@ -63,7 +63,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['infra:file-config:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
+          <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -73,27 +73,27 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="配置名" align="center" prop="name" />
-      <el-table-column label="存储器" align="center" prop="storage">
+      <el-table-column label="Nº" align="center" prop="id" />
+      <el-table-column label="Nome da configuração" align="center" prop="name" />
+      <el-table-column label="Armazenamento" align="center" prop="storage">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_FILE_STORAGE" :value="scope.row.storage" />
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="主配置" align="center" prop="primary">
+      <el-table-column label="Observações" align="center" prop="remark" />
+      <el-table-column label="Principal" align="center" prop="primary">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
         </template>
       </el-table-column>
       <el-table-column
-        label="创建时间"
+        label="Criado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center" width="240px">
+      <el-table-column label="Ações" align="center" width="240px">
         <template #default="scope">
           <el-button
             link
@@ -101,7 +101,7 @@
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['infra:file-config:update']"
           >
-            编辑
+            Editar
           </el-button>
           <el-button
             link
@@ -110,16 +110,16 @@
             @click="handleMaster(scope.row.id)"
             v-hasPermi="['infra:file-config:update']"
           >
-            主配置
+            Principal
           </el-button>
-          <el-button link type="primary" @click="handleTest(scope.row.id)"> 测试 </el-button>
+          <el-button link type="primary" @click="handleTest(scope.row.id)"> Testar </el-button>
           <el-button
             link
             type="danger"
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['infra:file-config:delete']"
           >
-            删除
+            Excluir
           </el-button>
         </template>
       </el-table-column>
@@ -224,7 +224,7 @@ const handleDeleteBatch = async () => {
 /** 主配置按钮操作 */
 const handleMaster = async (id) => {
   try {
-    await message.confirm('是否确认修改配置编号为"' + id + '"的数据项为主配置?')
+    await message.confirm('Tornar principal a configuração nº ' + id + '?')
     await FileConfigApi.updateFileConfigMaster(id)
     message.success(t('common.updateSuccess'))
     await getList()
@@ -235,7 +235,7 @@ const handleMaster = async (id) => {
 const handleTest = async (id) => {
   try {
     const response = await FileConfigApi.testFileConfig(id)
-    await message.confirm('是否要访问该文件？', '测试上传成功')
+    await message.confirm('Abrir o arquivo?', 'Teste de envio concluído')
     window.open(response, '_blank')
   } catch {}
 }

@@ -86,7 +86,7 @@ const handleCreated = (editor: IDomEditor) => {
 const editorConfig = computed((): IEditorConfig => {
   return merge(
     {
-      placeholder: '请输入内容...',
+      placeholder: 'Digite o texto...',
       readOnly: props.readonly,
       customAlert: (s: string, t: string) => {
         switch (t) {
@@ -137,7 +137,7 @@ const editorConfig = computed((): IEditorConfig => {
               const url = (res as any).data?.data || (res as any).data
               insertFn(url, 'image', url)
             } catch (error: any) {
-              ElMessage.error(error.msg || '图片上传失败')
+              ElMessage.error(error.msg || 'Falha ao enviar a imagem')
               console.error('Upload error:', error)
             }
           }
@@ -163,7 +163,7 @@ const editorConfig = computed((): IEditorConfig => {
               const url = (res as any).data?.data || (res as any).data
               insertFn(url, 'mp4', url)
             } catch (error: any) {
-              ElMessage.error(error.msg || '视频上传失败')
+              ElMessage.error(error.msg || 'Falha ao enviar o vídeo')
               console.error('Upload error:', error)
             }
           }

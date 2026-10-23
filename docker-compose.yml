@@ -10,8 +10,10 @@ services:
       POSTGRES_DB: coti
       POSTGRES_USER: coti
       POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD no .env}
+      CO_TI_DB_APP_PASSWORD: ${CO_TI_DB_APP_PASSWORD:?defina CO_TI_DB_APP_PASSWORD no .env}
     volumes:
       - pgdata:/home/postgres/pgdata/data
+      - ./deploy/postgres/050_papel_aplicacao.sh:/docker-entrypoint-initdb.d/050_papel_aplicacao.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U coti -d coti"]
       interval: 10s
@@ -35,13 +37,18 @@ services:
     build: ./backend
     environment:
       CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
-      CO_TI_DB_USER: coti
-      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      # a aplicação conecta como coti_app (só DML); o Flyway usa o dono (coti)
+      CO_TI_DB_USER: coti_app
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_APP_PASSWORD}
+      CO_TI_FLYWAY_USER: coti
+      CO_TI_FLYWAY_PASSWORD: ${CO_TI_DB_PASSWORD}
       CO_TI_REDIS_HOST: redis
       CO_TI_REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
       CO_TI_ADMIN_MONITOR_PASSWORD: ${CO_TI_ADMIN_MONITOR_PASSWORD:?defina CO_TI_ADMIN_MONITOR_PASSWORD no .env}
       CO_TI_CAPTCHA: ${CO_TI_CAPTCHA:-true}
       CO_TI_ADMIN_SENHA_INICIAL: ${CO_TI_ADMIN_SENHA_INICIAL:-}
+      CO_TI_CHAVE_MESTRA: ${CO_TI_CHAVE_MESTRA:?defina CO_TI_CHAVE_MESTRA no .env (openssl rand -base64 32)}
+      CO_TI_MFA_EMISSOR: ${CO_TI_MFA_EMISSOR:-CO-TI}
       CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
       CO_TI_AD_URL: ${CO_TI_AD_URL:-}
       CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}

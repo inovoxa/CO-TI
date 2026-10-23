@@ -32,6 +32,11 @@ public interface AdminAuthService {
     AuthLoginRespVO login(@Valid AuthLoginReqVO reqVO);
 
     /**
+     * CO-TI: segunda etapa do login, para quem tem segundo fator ativo
+     */
+    AuthLoginRespVO loginSegundoFator(@Valid cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthMfaLoginReqVO reqVO);
+
+    /**
      * 基于 token 退出登录
      *
      * @param token token

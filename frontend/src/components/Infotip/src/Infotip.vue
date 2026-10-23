@@ -45,7 +45,7 @@ const keyClick = (key: string) => {
           :keys="typeof item === 'string' ? [] : item.keys"
           @click="keyClick"
         >
-          {{ showIndex ? `${$index + 1}、` : '' }}{{ typeof item === 'string' ? item : item.label }}
+          {{ showIndex ? `${$index + 1}. ` : '' }}{{ typeof item === 'string' ? item : item.label }}
         </Highlight>
       </p>
     </div>

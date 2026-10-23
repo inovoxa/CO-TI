@@ -9,46 +9,46 @@
     >
       <el-row>
         <el-col :span="12">
-          <el-form-item label="用户昵称" prop="nickname">
-            <el-input v-model="formData.nickname" placeholder="请输入用户昵称" />
+          <el-form-item label="Nome" prop="nickname">
+            <el-input v-model="formData.nickname" placeholder="Digite o nome" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="归属部门" prop="deptId">
+          <el-form-item label="Departamento" prop="deptId">
             <el-tree-select
               v-model="formData.deptId"
               :data="deptList"
               :props="defaultProps"
               check-strictly
               node-key="id"
-              placeholder="请选择归属部门"
+              placeholder="Selecione o departamento"
             />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="12">
-          <el-form-item label="手机号码" prop="mobile">
-            <el-input v-model="formData.mobile" maxlength="11" placeholder="请输入手机号码" />
+          <el-form-item label="Celular" prop="mobile">
+            <el-input v-model="formData.mobile" maxlength="11" placeholder="Digite o celular" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="邮箱" prop="email">
-            <el-input v-model="formData.email" maxlength="50" placeholder="请输入邮箱" />
+          <el-form-item label="E-mail" prop="email">
+            <el-input v-model="formData.email" maxlength="50" placeholder="Digite o e-mail" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="12">
-          <el-form-item v-if="formData.id === undefined" label="用户名称" prop="username">
-            <el-input v-model="formData.username" placeholder="请输入用户名称" />
+          <el-form-item v-if="formData.id === undefined" label="Usuário" prop="username">
+            <el-input v-model="formData.username" placeholder="Digite o usuário" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item v-if="formData.id === undefined" label="用户密码" prop="password">
+          <el-form-item v-if="formData.id === undefined" label="Senha" prop="password">
             <el-input
               v-model="formData.password"
-              placeholder="请输入用户密码"
+              placeholder="Digite a senha"
               show-password
               type="password"
             />
@@ -57,8 +57,8 @@
       </el-row>
       <el-row>
         <el-col :span="12">
-          <el-form-item label="用户性别">
-            <el-select v-model="formData.sex" placeholder="请选择">
+          <el-form-item label="Sexo">
+            <el-select v-model="formData.sex" placeholder="Selecione">
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_USER_SEX)"
                 :key="dict.value"
@@ -69,8 +69,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="岗位">
-            <el-select v-model="formData.postIds" multiple placeholder="请选择">
+          <el-form-item label="Cargos">
+            <el-select v-model="formData.postIds" multiple placeholder="Selecione">
               <el-option
                 v-for="item in postList"
                 :key="item.id"
@@ -83,15 +83,15 @@
       </el-row>
       <el-row>
         <el-col :span="24">
-          <el-form-item label="备注">
-            <el-input v-model="formData.remark" placeholder="请输入内容" type="textarea" />
+          <el-form-item label="Observações">
+            <el-input v-model="formData.remark" placeholder="Digite o texto" type="textarea" />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -128,20 +128,20 @@ const formData = ref({
   roleIds: []
 })
 const formRules = reactive<FormRules>({
-  username: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
-  nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
-  password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
+  username: [{ required: true, message: 'Informe o usuário', trigger: 'blur' }],
+  nickname: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
+  password: [{ required: true, message: 'Informe a senha', trigger: 'blur' }],
   email: [
     {
       type: 'email',
-      message: '请输入正确的邮箱地址',
+      message: 'E-mail inválido',
       trigger: ['blur', 'change']
     }
   ],
   mobile: [
     {
-      pattern: /^1[3-9]\d{9}$/,
-      message: '请输入正确的手机号码',
+      pattern: /^\+?[0-9][0-9 ()-]{6,22}[0-9]$/,
+      message: 'Celular inválido',
       trigger: 'blur'
     }
   ]

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,10 +30,12 @@ public class AdSincronizacaoService {
     private final AdProvisionamentoService provisionamento;
     private final VinculoAdMapper vinculoAdMapper;
     private final AdProperties props;
+    private final AuditoriaService auditoria;
     private final ReentrantLock emAndamento = new ReentrantLock();
 
     public AdSincronizacaoService(AdDiretorio diretorio, AdProvisionamentoService provisionamento,
-                                  VinculoAdMapper vinculoAdMapper, AdProperties props) {
+                                  VinculoAdMapper vinculoAdMapper, AdProperties props, AuditoriaService auditoria) {
+        this.auditoria = auditoria;
         this.diretorio = diretorio;
         this.provisionamento = provisionamento;
         this.vinculoAdMapper = vinculoAdMapper;
@@ -93,6 +96,9 @@ public class AdSincronizacaoService {
             }
             Resumo r = new Resumo(lidas.get(), ok.get(), ignoradas.get(), desativadas, suspensa);
             log.info("[sincronizarTudo][{}]", r);
+            auditoria.registrar("ad.sincronizacao", null, null, Map.of("lidas", r.getLidas(),
+                    "sincronizadas", r.getSincronizadas(), "ignoradas", r.getIgnoradas(),
+                    "desativadas", r.getDesativadas(), "desativacaoSuspensa", r.isDesativacaoSuspensa()));
             return r;
         } finally {
             emAndamento.unlock();

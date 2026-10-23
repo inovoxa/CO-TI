@@ -70,6 +70,13 @@ public class AuthController {
         return success(authService.login(reqVO));
     }
 
+    @PostMapping("/login-mfa")
+    @PermitAll
+    @Operation(summary = "CO-TI: segunda etapa do login (código do autenticador)")
+    public CommonResult<AuthLoginRespVO> loginMfa(@RequestBody @Valid AuthMfaLoginReqVO reqVO) {
+        return success(authService.loginSegundoFator(reqVO));
+    }
+
     @PostMapping("/logout")
     @PermitAll
     @Operation(summary = "登出系统")

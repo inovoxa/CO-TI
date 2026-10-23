@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model="dialogVisible" title="部门选择" width="600">
+  <Dialog v-model="dialogVisible" title="Selecionar departamento" width="600">
     <el-row v-loading="formLoading">
       <el-col :span="24">
         <ContentWrap class="h-1/1">
@@ -24,9 +24,9 @@
         type="primary"
         @click="submitForm"
       >
-        确 定
+        OK
       </el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>

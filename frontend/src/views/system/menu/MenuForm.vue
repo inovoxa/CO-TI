@@ -7,7 +7,7 @@
       :rules="formRules"
       label-width="100px"
     >
-      <el-form-item label="上级菜单">
+      <el-form-item label="Menu superior">
         <el-tree-select
           v-model="formData.parentId"
           :data="menuTree"
@@ -17,10 +17,10 @@
           node-key="id"
         />
       </el-form-item>
-      <el-form-item label="菜单名称" prop="name">
-        <el-input v-model="formData.name" clearable placeholder="请输入菜单名称" />
+      <el-form-item label="Nome do menu" prop="name">
+        <el-input v-model="formData.name" clearable placeholder="Digite o nome do menu" />
       </el-form-item>
-      <el-form-item label="菜单类型" prop="type">
+      <el-form-item label="Tipo" prop="type">
         <el-radio-group v-model="formData.type">
           <el-radio-button
             v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_MENU_TYPE)"
@@ -31,37 +31,37 @@
           </el-radio-button>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" label="菜单图标">
+      <el-form-item v-if="formData.type !== 3" label="Ícone">
         <IconSelect v-model="formData.icon" clearable />
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" label="路由地址" prop="path">
+      <el-form-item v-if="formData.type !== 3" label="Rota" prop="path">
         <template #label>
           <Tooltip
-            message="访问的路由地址，如：`user`。如需外网地址时，则以 `http(s)://` 开头"
-            title="路由地址"
+            message="Rota de acesso, por exemplo `user`. Para endereço externo, comece com `http(s)://`"
+            title="Rota"
           />
         </template>
-        <el-input v-model="formData.path" clearable placeholder="请输入路由地址" />
+        <el-input v-model="formData.path" clearable placeholder="Digite a rota" />
       </el-form-item>
-      <el-form-item v-if="formData.type === 2" label="组件地址" prop="component">
-        <el-input v-model="formData.component" clearable placeholder="例如说：system/user/index" />
+      <el-form-item v-if="formData.type === 2" label="Componente" prop="component">
+        <el-input v-model="formData.component" clearable placeholder="Exemplo: system/user/index" />
       </el-form-item>
-      <el-form-item v-if="formData.type === 2" label="组件名字" prop="componentName">
-        <el-input v-model="formData.componentName" clearable placeholder="例如说：SystemUser" />
+      <el-form-item v-if="formData.type === 2" label="Nome do componente" prop="componentName">
+        <el-input v-model="formData.componentName" clearable placeholder="Exemplo: SystemUser" />
       </el-form-item>
-      <el-form-item v-if="formData.type !== 1" label="权限标识" prop="permission">
+      <el-form-item v-if="formData.type !== 1" label="Permissão" prop="permission">
         <template #label>
           <Tooltip
-            message="Controller 方法上的权限字符，如：@PreAuthorize(`@ss.hasPermission('system:user:list')`)"
-            title="权限标识"
+            message="Permissão exigida no Controller, por exemplo @PreAuthorize(`@ss.hasPermission('system:user:list')`)"
+            title="Permissão"
           />
         </template>
-        <el-input v-model="formData.permission" clearable placeholder="请输入权限标识" />
+        <el-input v-model="formData.permission" clearable placeholder="Digite a permissão" />
       </el-form-item>
-      <el-form-item label="显示排序" prop="sort">
+      <el-form-item label="Ordem" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" clearable controls-position="right" />
       </el-form-item>
-      <el-form-item label="菜单状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-radio-group v-model="formData.status">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -72,43 +72,43 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" label="显示状态" prop="visible">
+      <el-form-item v-if="formData.type !== 3" label="Visível" prop="visible">
         <template #label>
-          <Tooltip message="选择隐藏时，路由将不会出现在侧边栏，但仍然可以访问" title="显示状态" />
+          <Tooltip message="Oculto: a rota não aparece no menu lateral, mas continua acessível" title="Visível" />
         </template>
         <el-radio-group v-model="formData.visible">
-          <el-radio key="true" :value="true" border>显示</el-radio>
-          <el-radio key="false" :value="false" border>隐藏</el-radio>
+          <el-radio key="true" :value="true" border>Mostrar</el-radio>
+          <el-radio key="false" :value="false" border>Ocultar</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" label="总是显示" prop="alwaysShow">
+      <el-form-item v-if="formData.type !== 3" label="Sempre mostrar" prop="alwaysShow">
         <template #label>
           <Tooltip
-            message="选择不是时，当该菜单只有一个子菜单时，不展示自己，直接展示子菜单"
-            title="总是显示"
+            message="Se “Não”, um menu com um único filho mostra direto o filho"
+            title="Sempre mostrar"
           />
         </template>
         <el-radio-group v-model="formData.alwaysShow">
-          <el-radio key="true" :value="true" border>总是</el-radio>
-          <el-radio key="false" :value="false" border>不是</el-radio>
+          <el-radio key="true" :value="true" border>Sempre</el-radio>
+          <el-radio key="false" :value="false" border>Não</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.type === 2" label="缓存状态" prop="keepAlive">
+      <el-form-item v-if="formData.type === 2" label="Manter em cache" prop="keepAlive">
         <template #label>
           <Tooltip
-            message="选择缓存时，则会被 `keep-alive` 缓存，必须填写「组件名称」字段"
-            title="缓存状态"
+            message="Com cache, a página fica em `keep-alive`; exige o campo “Nome do componente”"
+            title="Manter em cache"
           />
         </template>
         <el-radio-group v-model="formData.keepAlive">
-          <el-radio key="true" :value="true" border>缓存</el-radio>
-          <el-radio key="false" :value="false" border>不缓存</el-radio>
+          <el-radio key="true" :value="true" border>Sim</el-radio>
+          <el-radio key="false" :value="false" border>Não</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -146,11 +146,11 @@ const formData = ref({
   alwaysShow: true
 })
 const formRules = reactive({
-  name: [{ required: true, message: '菜单名称不能为空', trigger: 'blur' }],
-  type: [{ required: true, message: '菜单类型不能为空', trigger: 'blur' }],
-  sort: [{ required: true, message: '菜单顺序不能为空', trigger: 'blur' }],
-  path: [{ required: true, message: '路由地址不能为空', trigger: 'blur' }],
-  status: [{ required: true, message: '状态不能为空', trigger: 'blur' }]
+  name: [{ required: true, message: 'Informe o nome do menu', trigger: 'blur' }],
+  type: [{ required: true, message: 'Informe o tipo', trigger: 'blur' }],
+  sort: [{ required: true, message: 'Informe a ordem', trigger: 'blur' }],
+  path: [{ required: true, message: 'Informe a rota', trigger: 'blur' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 
@@ -193,10 +193,10 @@ const submitForm = async () => {
     ) {
       if (!isExternal(formData.value.path)) {
         if (formData.value.parentId === 0 && formData.value.path.charAt(0) !== '/') {
-          message.error('路径必须以 / 开头')
+          message.error('A rota precisa começar com /')
           return
         } else if (formData.value.parentId !== 0 && formData.value.path.charAt(0) === '/') {
-          message.error('路径不能以 / 开头')
+          message.error('A rota não pode começar com /')
           return
         }
       }
@@ -224,7 +224,7 @@ const menuTree = ref<Tree[]>([]) // 树形结构
 const getTree = async () => {
   menuTree.value = []
   const res = await MenuApi.getSimpleMenusList()
-  let menu: Tree = { id: 0, name: '主类目', children: [] }
+  let menu: Tree = { id: 0, name: 'Raiz', children: [] }
   menu.children = handleTree(res)
   menuTree.value.push(menu)
 }

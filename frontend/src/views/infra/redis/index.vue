@@ -1,47 +1,47 @@
 <template>
-  <doc-alert title="Redis 缓存" url="https://doc.iocoder.cn/redis-cache/" />
-  <doc-alert title="本地缓存" url="https://doc.iocoder.cn/local-cache/" />
+  <doc-alert title="Cache Redis" url="https://doc.iocoder.cn/redis-cache/" />
+  <doc-alert title="Cache local" url="https://doc.iocoder.cn/local-cache/" />
 
   <el-scrollbar height="calc(100vh - 88px - 40px - 50px)">
     <el-row>
       <!-- 基本信息 -->
       <el-col :span="24" class="card-box" shadow="hover">
         <el-card>
-          <el-descriptions title="基本信息" :column="6" border>
-            <el-descriptions-item label="Redis版本 :">
+          <el-descriptions title="Informações gerais" :column="6" border>
+            <el-descriptions-item label="Versão do Redis:">
               {{ cache?.info?.redis_version }}
             </el-descriptions-item>
-            <el-descriptions-item label="运行模式 :">
-              {{ cache?.info?.redis_mode == 'standalone' ? '单机' : '集群' }}
+            <el-descriptions-item label="Modo:">
+              {{ cache?.info?.redis_mode == 'standalone' ? 'Instância única' : 'Cluster' }}
             </el-descriptions-item>
-            <el-descriptions-item label="端口 :">
+            <el-descriptions-item label="Porta:">
               {{ cache?.info?.tcp_port }}
             </el-descriptions-item>
-            <el-descriptions-item label="客户端数 :">
+            <el-descriptions-item label="Clientes:">
               {{ cache?.info?.connected_clients }}
             </el-descriptions-item>
-            <el-descriptions-item label="运行时间(天) :">
+            <el-descriptions-item label="No ar há (dias):">
               {{ cache?.info?.uptime_in_days }}
             </el-descriptions-item>
-            <el-descriptions-item label="使用内存 :">
+            <el-descriptions-item label="Memória usada:">
               {{ cache?.info?.used_memory_human }}
             </el-descriptions-item>
-            <el-descriptions-item label="使用CPU :">
+            <el-descriptions-item label="CPU usada:">
               {{ cache?.info ? parseFloat(cache?.info?.used_cpu_user_children).toFixed(2) : '' }}
             </el-descriptions-item>
-            <el-descriptions-item label="内存配置 :">
+            <el-descriptions-item label="Memória máxima:">
               {{ cache?.info?.maxmemory_human }}
             </el-descriptions-item>
-            <el-descriptions-item label="AOF是否开启 :">
-              {{ cache?.info?.aof_enabled == '0' ? '否' : '是' }}
+            <el-descriptions-item label="AOF ligado:">
+              {{ cache?.info?.aof_enabled == '0' ? 'Não' : 'Sim' }}
             </el-descriptions-item>
-            <el-descriptions-item label="RDB是否成功 :">
+            <el-descriptions-item label="Último RDB:">
               {{ cache?.info?.rdb_last_bgsave_status }}
             </el-descriptions-item>
-            <el-descriptions-item label="Key数量 :">
+            <el-descriptions-item label="Chaves:">
               {{ cache?.dbSize }}
             </el-descriptions-item>
-            <el-descriptions-item label="网络入口/出口 :">
+            <el-descriptions-item label="Rede entrada/saída:">
               {{ cache?.info?.instantaneous_input_kbps }}kps/
               {{ cache?.info?.instantaneous_output_kbps }}kps
             </el-descriptions-item>
@@ -79,7 +79,7 @@ const readRedisInfo = async () => {
 const usedmemoryEchartChika = reactive<EChartsOption>({
   title: {
     // 仪表盘标题。
-    text: '内存使用情况',
+    text: 'Uso de memória',
     left: 'center',
     show: true, // 是否显示标题,默认 true。
     textStyle: {
@@ -96,7 +96,7 @@ const usedmemoryEchartChika = reactive<EChartsOption>({
   },
   series: [
     {
-      name: '峰值',
+      name: 'Pico',
       type: 'gauge',
       min: 0,
       max: 50,
@@ -164,7 +164,7 @@ const usedmemoryEchartChika = reactive<EChartsOption>({
 // 指令使用情况
 const commandStatsRefChika = reactive<EChartsOption>({
   title: {
-    text: '命令统计',
+    text: 'Comandos',
     left: 'center'
   },
   tooltip: {
@@ -184,7 +184,7 @@ const commandStatsRefChika = reactive<EChartsOption>({
   },
   series: [
     {
-      name: '命令',
+      name: 'Comando',
       type: 'pie',
       radius: [20, 120],
       center: ['40%', '60%'],
@@ -252,7 +252,7 @@ const usedMemoryInstance = async () => {
 
     usedMemorySeries.data[0] = {
       value: cache.value!.info.used_memory_human,
-      name: '内存消耗'
+      name: 'Memória'
     }
     console.log(cache.value!.info)
     ;(usedmemoryEchartChika as any).tooltip = {

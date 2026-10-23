@@ -12,7 +12,7 @@
     <el-option
       v-for="template in templateList"
       :key="template.id"
-      :label="`${template.name}（${template.code}）`"
+      :label="`${template.name} (${template.code})`"
       :value="template.code"
     />
   </el-select>
@@ -33,7 +33,7 @@ withDefaults(
   {
     disabled: false,
     modelValue: undefined,
-    placeholder: '请选择邮件模板'
+    placeholder: 'Selecione o modelo de e-mail'
   }
 )
 

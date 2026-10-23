@@ -41,7 +41,7 @@
         <el-form-item prop="nickname">
           <el-input
             v-model="registerData.registerForm.nickname"
-            placeholder="昵称"
+            placeholder="Nome"
             size="large"
             :prefix-icon="iconAvatar"
           />
@@ -122,31 +122,31 @@ const getShow = computed(() => unref(getLoginState) === LoginStateEnum.REGISTER)
 
 const equalToPassword = (_rule, value) => {
   if (registerData.registerForm.password !== value) {
-    return Promise.reject(new Error('两次输入的密码不一致'))
+    return Promise.reject(new Error('As senhas não conferem'))
   }
   return Promise.resolve()
 }
 
 const registerRules = {
   tenantName: [
-    { required: true, trigger: 'blur', message: '请输入您所属的租户' },
-    { min: 2, max: 20, message: '租户账号长度必须介于 2 和 20 之间', trigger: 'blur' }
+    { required: true, trigger: 'blur', message: 'Digite a sua empresa' },
+    { min: 2, max: 20, message: 'O nome da empresa deve ter de 2 a 20 caracteres', trigger: 'blur' }
   ],
   username: [
-    { required: true, trigger: 'blur', message: '请输入您的账号' },
-    { min: 4, max: 30, message: '用户账号长度必须介于 4 和 30 之间', trigger: 'blur' }
+    { required: true, trigger: 'blur', message: 'Digite o seu usuário' },
+    { min: 4, max: 30, message: 'O usuário deve ter de 4 a 30 caracteres', trigger: 'blur' }
   ],
   nickname: [
-    { required: true, trigger: 'blur', message: '请输入您的昵称' },
-    { min: 0, max: 30, message: '昵称长度必须介于 0 和 30 之间', trigger: 'blur' }
+    { required: true, trigger: 'blur', message: 'Digite o seu nome' },
+    { min: 0, max: 30, message: 'O nome pode ter no máximo 30 caracteres', trigger: 'blur' }
   ],
   password: [
-    { required: true, trigger: 'blur', message: '请输入您的密码' },
-    { min: 5, max: 20, message: '用户密码长度必须介于 5 和 20 之间', trigger: 'blur' },
+    { required: true, trigger: 'blur', message: 'Digite a sua senha' },
+    { min: 5, max: 20, message: 'A senha deve ter de 5 a 20 caracteres', trigger: 'blur' },
     { pattern: /^[^<>"'|\\]+$/, message: '不能包含非法字符：< > " \' \\\ |', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, trigger: 'blur', message: '请再次输入您的密码' },
+    { required: true, trigger: 'blur', message: 'Digite a senha novamente' },
     { required: true, validator: equalToPassword, trigger: 'blur' }
   ]
 }
@@ -191,7 +191,7 @@ const handleRegister = async (params: any) => {
     }
     loading.value = ElLoading.service({
       lock: true,
-      text: '正在加载系统中...',
+      text: 'Carregando o sistema...',
       background: 'rgba(0, 0, 0, 0.7)'
     })
 

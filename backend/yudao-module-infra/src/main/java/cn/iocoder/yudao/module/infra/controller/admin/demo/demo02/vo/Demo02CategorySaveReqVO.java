@@ -13,11 +13,11 @@ public class Demo02CategorySaveReqVO {
     private Long id;
 
     @Schema(description = "名字", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋艿")
-    @NotEmpty(message = "名字不能为空")
+    @NotEmpty(message = "Informe o nome")
     private String name;
 
     @Schema(description = "父级编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "6080")
-    @NotNull(message = "父级编号不能为空")
+    @NotNull(message = "Informe o superior")
     private Long parentId;
 
 }

@@ -7,41 +7,41 @@
       label-width="120px"
       v-loading="formLoading"
     >
-      <el-form-item label="任务名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入任务名称" />
+      <el-form-item label="Nome da tarefa" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome da tarefa" />
       </el-form-item>
-      <el-form-item label="处理器的名字" prop="handlerName">
+      <el-form-item label="Handler" prop="handlerName">
         <el-input
           :readonly="formData.id !== undefined"
           v-model="formData.handlerName"
-          placeholder="请输入处理器的名字"
+          placeholder="Digite o handler"
         />
       </el-form-item>
-      <el-form-item label="处理器的参数" prop="handlerParam">
-        <el-input v-model="formData.handlerParam" placeholder="请输入处理器的参数" />
+      <el-form-item label="Parâmetros do handler" prop="handlerParam">
+        <el-input v-model="formData.handlerParam" placeholder="Digite os parâmetros do handler" />
       </el-form-item>
-      <el-form-item label="CRON 表达式" prop="cronExpression">
+      <el-form-item label="Expressão CRON" prop="cronExpression">
         <crontab v-model="formData.cronExpression" />
       </el-form-item>
-      <el-form-item label="重试次数" prop="retryCount">
+      <el-form-item label="Tentativas" prop="retryCount">
         <el-input
           v-model="formData.retryCount"
-          placeholder="请输入重试次数。设置为 0 时，不进行重试"
+          placeholder="Número de tentativas. 0 = não tentar de novo"
         />
       </el-form-item>
-      <el-form-item label="重试间隔" prop="retryInterval">
+      <el-form-item label="Intervalo entre tentativas" prop="retryInterval">
         <el-input
           v-model="formData.retryInterval"
-          placeholder="请输入重试间隔，单位：毫秒。设置为 0 时，无需间隔"
+          placeholder="Intervalo em ms. 0 = sem intervalo"
         />
       </el-form-item>
-      <el-form-item label="监控超时时间" prop="monitorTimeout">
-        <el-input v-model="formData.monitorTimeout" placeholder="请输入监控超时时间，单位：毫秒" />
+      <el-form-item label="Tempo limite" prop="monitorTimeout">
+        <el-input v-model="formData.monitorTimeout" placeholder="Tempo limite em ms" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button type="primary" @click="submitForm" :loading="formLoading">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="submitForm" :loading="formLoading">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -68,11 +68,11 @@ const formData = ref({
   monitorTimeout: undefined
 })
 const formRules = reactive({
-  name: [{ required: true, message: '任务名称不能为空', trigger: 'blur' }],
-  handlerName: [{ required: true, message: '处理器的名字不能为空', trigger: 'blur' }],
-  cronExpression: [{ required: true, message: 'CRON 表达式不能为空', trigger: 'blur' }],
-  retryCount: [{ required: true, message: '重试次数不能为空', trigger: 'blur' }],
-  retryInterval: [{ required: true, message: '重试间隔不能为空', trigger: 'blur' }]
+  name: [{ required: true, message: 'Informe o nome da tarefa', trigger: 'blur' }],
+  handlerName: [{ required: true, message: 'Informe o handler', trigger: 'blur' }],
+  cronExpression: [{ required: true, message: 'Informe a expressão CRON', trigger: 'blur' }],
+  retryCount: [{ required: true, message: 'Informe as tentativas', trigger: 'blur' }],
+  retryInterval: [{ required: true, message: 'Informe o intervalo', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 

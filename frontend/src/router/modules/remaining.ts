@@ -100,7 +100,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           noTagsView: false,
           icon: 'ep:message',
-          title: '我的站内信'
+          title: 'Minhas mensagens'
         }
       }
     ]
@@ -118,7 +118,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/system/dict/data/index.vue'),
         name: 'SystemDictData',
         meta: {
-          title: '字典数据',
+          title: 'Dados do dicionário',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -144,7 +144,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }),
         name: 'FmsAuxiliaryItem',
         meta: {
-          title: '辅助核算项目',
+          title: 'Itens de apuração auxiliar',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -171,7 +171,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:edit',
-          title: '修改生成配置',
+          title: 'Editar configuração de geração',
           activeMenu: 'infra/codegen/index'
         }
       }
@@ -194,7 +194,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:edit',
-          title: '调度日志',
+          title: 'Log de execuções',
           activeMenu: 'infra/job/index'
         }
       }
@@ -216,7 +216,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: 'PmsKnowledgeDocumentShare',
     meta: {
       hidden: true,
-      title: '知识文档分享',
+      title: 'Compartilhar documento',
       noTagsView: true
     }
   },
@@ -296,7 +296,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '设计流程表单',
+          title: 'Desenhar formulário do fluxo',
           activeMenu: '/bpm/manager/form'
         }
       },
@@ -308,7 +308,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '流程定义',
+          title: 'Definição do fluxo',
           activeMenu: '/bpm/manager/model'
         }
       },
@@ -320,7 +320,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '流程详情',
+          title: 'Detalhes do fluxo',
           activeMenu: '/bpm/task/my'
         },
         props: (route) => ({
@@ -337,7 +337,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '数据报表',
+          title: 'Relatório',
           activeMenu: '/bpm/manager/model'
         }
       },
@@ -349,7 +349,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '发起 OA 请假',
+          title: 'Pedir licença',
           activeMenu: '/bpm/oa/leave'
         }
       },
@@ -361,7 +361,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '查看 OA 请假',
+          title: 'Ver licença',
           activeMenu: '/bpm/oa/leave'
         }
       },
@@ -373,7 +373,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '创建流程',
+          title: 'Criar fluxo',
           activeMenu: '/bpm/manager/model'
         }
       },
@@ -385,7 +385,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '修改流程',
+          title: 'Editar fluxo',
           activeMenu: '/bpm/manager/model'
         }
       }
@@ -408,7 +408,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:edit',
-          title: '商品添加',
+          title: 'Novo produto',
           activeMenu: '/mall/product/spu'
         }
       },
@@ -421,7 +421,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:edit',
-          title: '商品编辑',
+          title: 'Editar produto',
           activeMenu: '/mall/product/spu'
         }
       },
@@ -434,7 +434,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:view',
-          title: '商品详情',
+          title: 'Detalhes do produto',
           activeMenu: '/mall/product/spu'
         }
       },
@@ -447,7 +447,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: 'ep:view',
-          title: '商品属性值',
+          title: 'Valores do atributo',
           activeMenu: '/product/property'
         }
       }
@@ -465,13 +465,13 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'order/detail/:id(\\d+)',
         component: () => import('@/views/mall/trade/order/detail/index.vue'),
         name: 'TradeOrderDetail',
-        meta: { title: '订单详情', icon: 'ep:view', activeMenu: '/mall/trade/order' }
+        meta: { title: 'Detalhes do pedido', icon: 'ep:view', activeMenu: '/mall/trade/order' }
       },
       {
         path: 'after-sale/detail/:id(\\d+)',
         component: () => import('@/views/mall/trade/afterSale/detail/index.vue'),
         name: 'TradeAfterSaleDetail',
-        meta: { title: '退款详情', icon: 'ep:view', activeMenu: '/mall/trade/after-sale' }
+        meta: { title: 'Detalhes do reembolso', icon: 'ep:view', activeMenu: '/mall/trade/after-sale' }
       }
     ]
   },
@@ -485,7 +485,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'user/detail/:id',
         name: 'MemberUserDetail',
         meta: {
-          title: '会员详情',
+          title: 'Detalhes do membro',
           noCache: true,
           hidden: true
         },
@@ -503,7 +503,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'cashier',
         name: 'PayCashier',
         meta: {
-          title: '收银台',
+          title: 'Caixa',
           noCache: true,
           hidden: true
         },
@@ -521,7 +521,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'template/decorate/:id',
         name: 'DiyTemplateDecorate',
         meta: {
-          title: '模板装修',
+          title: 'Editar modelo',
           noCache: false,
           hidden: true,
           activeMenu: '/mall/promotion/diy-template/diy-template'
@@ -532,7 +532,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'page/decorate/:id',
         name: 'DiyPageDecorate',
         meta: {
-          title: '页面装修',
+          title: 'Editar página',
           noCache: false,
           hidden: true,
           activeMenu: '/mall/promotion/diy-template/diy-page'
@@ -552,7 +552,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'OaReimbursementDetail',
         component: () => import('@/views/oa/reimbursement/detail/index.vue'),
         meta: {
-          title: '费用报销',
+          title: 'Reembolso de despesas',
           hidden: true,
           noCache: true,
           activeMenu: '/oa/process/reimbursement'
@@ -562,32 +562,32 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'overtime/detail/:id',
         name: 'OaOvertimeApplyDetail',
         component: () => import('@/views/oa/overtime/detail/index.vue'),
-        meta: { title: '加班申请', hidden: true, noCache: true, activeMenu: '/oa/process/overtime' }
+        meta: { title: 'Pedido de hora extra', hidden: true, noCache: true, activeMenu: '/oa/process/overtime' }
       },
       {
         path: 'leave/detail/:id',
         name: 'OaLeaveApplyDetail',
         component: () => import('@/views/oa/leave/detail/index.vue'),
-        meta: { title: '请假申请', hidden: true, noCache: true, activeMenu: '/oa/process/leave' }
+        meta: { title: 'Pedido de licença', hidden: true, noCache: true, activeMenu: '/oa/process/leave' }
       },
       {
         path: 'regular/detail/:id',
         name: 'OaRegularApplyDetail',
         component: () => import('@/views/oa/regular/detail/index.vue'),
-        meta: { title: '转正申请', hidden: true, noCache: true, activeMenu: '/oa/process/regular' }
+        meta: { title: 'Pedido de efetivação', hidden: true, noCache: true, activeMenu: '/oa/process/regular' }
       },
       {
         path: 'resign/detail/:id',
         name: 'OaResignApplyDetail',
         component: () => import('@/views/oa/resign/detail/index.vue'),
-        meta: { title: '离职申请', hidden: true, noCache: true, activeMenu: '/oa/process/resign' }
+        meta: { title: 'Pedido de desligamento', hidden: true, noCache: true, activeMenu: '/oa/process/resign' }
       },
       {
         path: 'discussion/detail/:id',
         name: 'OaDiscussionDetail',
         component: () => import('@/views/oa/discussion/detail/index.vue'),
         meta: {
-          title: '讨论详情',
+          title: 'Detalhes da discussão',
           hidden: true,
           noCache: true,
           activeMenu: '/oa/discussion/list'
@@ -605,7 +605,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'pm/iteration/detail/:id(\\d+)',
         name: 'PmsIterationDetail',
         meta: {
-          title: '迭代详情',
+          title: 'Detalhes da iteração',
           noCache: true,
           hidden: true,
           activeMenu: '/pms/pm/project/list'
@@ -616,7 +616,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'pm/project/detail/:id(\\d+)',
         name: 'PmsProjectDetail',
         meta: {
-          title: '项目详情',
+          title: 'Detalhes do projeto',
           noCache: true,
           hidden: true,
           viewKey: 'PmsProjectDetail',
@@ -628,7 +628,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'pm/project/config/:id(\\d+)',
         name: 'PmsProjectConfig',
         meta: {
-          title: '项目设置',
+          title: 'Configurações do projeto',
           noCache: true,
           hidden: true,
           activeMenu: '/pms/pm/project/list'
@@ -639,7 +639,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'kb/library/:libraryId(\\d+)',
         name: 'PmsKnowledgeLibraryDetail',
         meta: {
-          title: '知识库详情',
+          title: 'Detalhes da base de conhecimento',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -652,7 +652,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'kb/library/:libraryId(\\d+)/folder/:folderId(\\d+)',
         name: 'PmsKnowledgeFolderDetail',
         meta: {
-          title: '文件夹详情',
+          title: 'Detalhes da pasta',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -665,7 +665,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'kb/library/:libraryId(\\d+)/document/:documentId(\\d+)',
         name: 'PmsKnowledgeDocumentDetail',
         meta: {
-          title: '文档详情',
+          title: 'Detalhes do documento',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -686,7 +686,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'clue/detail/:id',
         name: 'CrmClueDetail',
         meta: {
-          title: '线索详情',
+          title: 'Detalhes do lead',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/clue'
@@ -697,7 +697,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'customer/detail/:id',
         name: 'CrmCustomerDetail',
         meta: {
-          title: '客户详情',
+          title: 'Detalhes do cliente',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/customer'
@@ -708,7 +708,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'business/detail/:id',
         name: 'CrmBusinessDetail',
         meta: {
-          title: '商机详情',
+          title: 'Detalhes da oportunidade',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/business'
@@ -719,7 +719,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'contract/detail/:id',
         name: 'CrmContractDetail',
         meta: {
-          title: '合同详情',
+          title: 'Detalhes do contrato',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/contract'
@@ -730,7 +730,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'receivable-plan/detail/:id',
         name: 'CrmReceivablePlanDetail',
         meta: {
-          title: '回款计划详情',
+          title: 'Detalhes do plano de recebimento',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/receivable-plan'
@@ -741,7 +741,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'receivable/detail/:id',
         name: 'CrmReceivableDetail',
         meta: {
-          title: '回款详情',
+          title: 'Detalhes do recebimento',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/receivable'
@@ -752,7 +752,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'contact/detail/:id',
         name: 'CrmContactDetail',
         meta: {
-          title: '联系人详情',
+          title: 'Detalhes do contato',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/contact'
@@ -763,7 +763,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'product/detail/:id',
         name: 'CrmProductDetail',
         meta: {
-          title: '产品详情',
+          title: 'Detalhes do produto',
           noCache: true,
           hidden: true,
           activeMenu: '/crm/product'
@@ -782,7 +782,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'portal/opening-guide',
         name: 'HrmPortalOpeningGuide',
         meta: {
-          title: '员工端开通引导',
+          title: 'Guia de ativação do colaborador',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/portal/home'
@@ -793,7 +793,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'recruit/post/detail/:id',
         name: 'HrmRecruitPostDetail',
         meta: {
-          title: '招聘职位详情',
+          title: 'Detalhes da vaga',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/recruit/post'
@@ -804,7 +804,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'recruit/candidate/detail/:id',
         name: 'HrmRecruitCandidateDetail',
         meta: {
-          title: '招聘候选人详情',
+          title: 'Detalhes do candidato',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/recruit/candidate'
@@ -815,7 +815,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'employee/detail/:id',
         name: 'HrmEmployeeDetail',
         meta: {
-          title: '员工档案详情',
+          title: 'Ficha do colaborador',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/employee/list'
@@ -826,7 +826,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'dept/detail/:id',
         name: 'HrmDeptDetail',
         meta: {
-          title: '组织详情',
+          title: 'Detalhes da organização',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/dept'
@@ -837,7 +837,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'attendance/month/detail/:employeeId',
         name: 'HrmAttendanceMonthDetail',
         meta: {
-          title: '月度考勤详情',
+          title: 'Ponto do mês',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/attendance/month'
@@ -848,7 +848,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'performance/plan/detail/:id',
         name: 'HrmPerformancePlanDetail',
         meta: {
-          title: '绩效计划详情',
+          title: 'Plano de desempenho',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/performance/plan'
@@ -859,7 +859,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'performance/plan/form',
         name: 'HrmPerformancePlanForm',
         meta: {
-          title: 'KPI 考核配置',
+          title: 'Configuração de KPI',
           noCache: true,
           hidden: true,
           canTo: true,
@@ -871,7 +871,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'performance/assessment/employee/:employeeId',
         name: 'HrmPerformanceAssessmentEmployee',
         meta: {
-          title: '员工绩效档案',
+          title: 'Histórico de desempenho',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/performance/assessment'
@@ -882,7 +882,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'performance/assessment/detail/:id',
         name: 'HrmPerformanceAssessmentDetail',
         meta: {
-          title: '员工考核详情',
+          title: 'Detalhes da avaliação',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/performance/assessment'
@@ -893,7 +893,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'insurance/month-record/detail/:id',
         name: 'HrmInsuranceMonthRecordDetail',
         meta: {
-          title: '月度社保详情',
+          title: 'Encargos do mês',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/insurance/month-record'
@@ -904,7 +904,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'salary/employee-info/detail/:id',
         name: 'HrmSalaryEmployeeInfoDetail',
         meta: {
-          title: '薪资档案详情',
+          title: 'Ficha salarial',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/salary/employee-info'
@@ -915,7 +915,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'salary/history/detail/:id',
         name: 'HrmSalaryHistoryDetail',
         meta: {
-          title: '历史工资详情',
+          title: 'Histórico salarial',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/salary/history'
@@ -926,7 +926,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'salary/slip/detail/:id',
         name: 'HrmSalarySlipSendRecordDetail',
         meta: {
-          title: '工资条发放详情',
+          title: 'Envio de holerites',
           noCache: true,
           hidden: true,
           activeMenu: '/hrm/salary/slip'
@@ -948,7 +948,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/image/square/index.vue'),
         name: 'AiImageSquare',
         meta: {
-          title: '绘图作品',
+          title: 'Imagens geradas',
           icon: 'ep:home-filled',
           noCache: false
         }
@@ -958,7 +958,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/knowledge/document/index.vue'),
         name: 'AiKnowledgeDocument',
         meta: {
-          title: '知识库文档',
+          title: 'Documentos da base de conhecimento',
           icon: 'ep:document',
           noCache: false,
           activeMenu: '/ai/knowledge'
@@ -969,7 +969,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/knowledge/document/form/index.vue'),
         name: 'AiKnowledgeDocumentCreate',
         meta: {
-          title: '创建文档',
+          title: 'Criar documento',
           icon: 'ep:plus',
           noCache: true,
           hidden: true,
@@ -981,7 +981,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/knowledge/document/form/index.vue'),
         name: 'AiKnowledgeDocumentUpdate',
         meta: {
-          title: '修改文档',
+          title: 'Editar documento',
           icon: 'ep:edit',
           noCache: true,
           hidden: true,
@@ -993,7 +993,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/knowledge/knowledge/retrieval/index.vue'),
         name: 'AiKnowledgeRetrieval',
         meta: {
-          title: '文档召回测试',
+          title: 'Teste de busca nos documentos',
           icon: 'ep:search',
           noCache: true,
           hidden: true,
@@ -1005,7 +1005,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai/knowledge/segment/index.vue'),
         name: 'AiKnowledgeSegment',
         meta: {
-          title: '知识库分段',
+          title: 'Trechos da base de conhecimento',
           icon: 'ep:tickets',
           noCache: true,
           hidden: true,
@@ -1020,7 +1020,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '设计 AI 工作流',
+          title: 'Desenhar fluxo de IA',
           activeMenu: '/ai/console/workflow'
         }
       },
@@ -1032,7 +1032,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
           hidden: true,
           canTo: true,
-          title: '设计 AI 工作流',
+          title: 'Desenhar fluxo de IA',
           activeMenu: '/ai/console/workflow'
         }
       }
@@ -1051,7 +1051,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai1/model/index.vue'),
         name: 'Ai1ProviderModel',
         meta: {
-          title: '模型管理',
+          title: 'Modelos',
           noCache: true,
           hidden: true,
           activeMenu: '/ai1/provider'
@@ -1062,7 +1062,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai1/knowledge/document/index.vue'),
         name: 'Ai1KnowledgeDocument',
         meta: {
-          title: '知识库文档',
+          title: 'Documentos da base de conhecimento',
           noCache: true,
           hidden: true,
           activeMenu: '/ai1/knowledge'
@@ -1073,7 +1073,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai1/skill/file/index.vue'),
         name: 'Ai1SkillFile',
         meta: {
-          title: 'SKILL 内容',
+          title: 'Conteúdo da skill',
           noCache: true,
           hidden: true,
           activeMenu: '/ai1/skill'
@@ -1084,7 +1084,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/ai1/agent/session/index.vue'),
         name: 'Ai1AgentSession',
         meta: {
-          title: '会话记录',
+          title: 'Histórico de conversas',
           noCache: true,
           hidden: true,
           activeMenu: '/ai1/agent'
@@ -1104,7 +1104,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'product/product/detail/:id',
         name: 'IoTProductDetail',
         meta: {
-          title: '产品详情',
+          title: 'Detalhes do produto',
           noCache: true,
           hidden: true,
           activeMenu: '/iot/device/product'
@@ -1115,7 +1115,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'device/detail/:id',
         name: 'IoTDeviceDetail',
         meta: {
-          title: '设备详情',
+          title: 'Detalhes do dispositivo',
           noCache: true,
           hidden: true,
           activeMenu: '/iot/device/device'
@@ -1126,7 +1126,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: 'ota/operation/firmware/detail/:id',
         name: 'IoTOtaFirmwareDetail',
         meta: {
-          title: '固件详情',
+          title: 'Detalhes do firmware',
           noCache: true,
           hidden: true,
           activeMenu: '/iot/operation/ota/firmware'
@@ -1152,7 +1152,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: '',
-          title: '库区设置',
+          title: 'Configurar área do estoque',
           activeMenu: '/mes/wm/warehouse'
         }
       },
@@ -1165,7 +1165,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: '',
-          title: '库位设置',
+          title: 'Configurar posição do estoque',
           activeMenu: '/mes/wm/warehouse'
         }
       },
@@ -1178,7 +1178,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           icon: '',
-          title: '甘特图编辑',
+          title: 'Editar gráfico de Gantt',
           activeMenu: '/mes/pro/task'
         }
       }
@@ -1188,26 +1188,26 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: '/im',
     name: 'Im',
     redirect: '/im/home/conversation',
-    meta: { hidden: true, title: 'IM 即时通讯' },
+    meta: { hidden: true, title: 'Chat' },
     children: [
       {
         path: 'home',
         component: () => import('@/views/im/home/index.vue'),
         name: 'ImHome',
         redirect: '/im/home/conversation',
-        meta: { hidden: true, title: '聊天' },
+        meta: { hidden: true, title: 'Chat' },
         children: [
           {
             path: 'conversation',
             component: () => import('@/views/im/home/pages/conversation/index.vue'),
             name: 'ImHomeConversation',
-            meta: { hidden: true, title: '消息' }
+            meta: { hidden: true, title: 'Mensagens' }
           },
           {
             path: 'contact',
             component: () => import('@/views/im/home/pages/contact/index.vue'),
             name: 'ImHomeContact',
-            meta: { hidden: true, title: '通讯录' }
+            meta: { hidden: true, title: 'Contatos' }
           }
         ]
       }

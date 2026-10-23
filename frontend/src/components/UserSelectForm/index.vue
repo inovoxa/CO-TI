@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model="dialogVisible" title="人员选择" width="800">
+  <Dialog v-model="dialogVisible" title="Selecionar pessoas" width="800">
     <el-row class="gap2" v-loading="formLoading">
       <el-col :span="6">
         <ContentWrap class="h-1/1">
@@ -18,9 +18,9 @@
       <el-col :span="17">
         <el-transfer
           v-model="selectedUserIdList"
-          :titles="['未选', '已选']"
+          :titles="['Disponíveis', 'Selecionadas']"
           filterable
-          filter-placeholder="搜索成员"
+          filter-placeholder="Buscar pessoa"
           :data="transferUserList"
           :props="{ label: 'nickname', key: 'id' }"
         />
@@ -32,9 +32,9 @@
         type="primary"
         @click="submitForm"
       >
-        确 定
+        OK
       </el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>

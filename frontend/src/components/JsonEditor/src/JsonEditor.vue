@@ -77,7 +77,7 @@ watch(
         jsonEditor.update(newValue)
       }
     } catch (error) {
-      console.error('JSON更新失败:', error)
+      console.error('Falha ao atualizar o JSON:', error)
     }
   },
   { deep: true }
@@ -91,7 +91,7 @@ watch(
     try {
       jsonEditor.setMode(newMode)
     } catch (error) {
-      console.error('切换模式失败:', error)
+      console.error('Falha ao trocar o modo:', error)
     }
   }
 )

@@ -58,7 +58,7 @@
                     {{ t('login.getSmsCode') }}
                   </span>
                   <span v-if="mobileCodeTimer > 0" class="getMobileCode" style="cursor: pointer">
-                    {{ mobileCodeTimer }}秒后可重新获取
+                    Reenviar em {{ mobileCodeTimer }} s
                   </span>
                 </template>
               </el-input>
@@ -126,7 +126,7 @@ const loginData = reactive({
   },
   loginForm: {
     uuid: '',
-    tenantName: '芋道源码',
+    tenantName: 'CO-TI',
     mobileNumber: '',
     code: ''
   }
@@ -181,7 +181,7 @@ const signIn = async () => {
   if (!data) return
   ElLoading.service({
     lock: true,
-    text: '正在加载系统中...',
+    text: 'Carregando o sistema...',
     background: 'rgba(0, 0, 0, 0.7)'
   })
   loginLoading.value = true

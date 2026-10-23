@@ -2,7 +2,7 @@
   <div>
     <el-select
       filterable
-      placeholder="请选择租户"
+      placeholder="Selecione a empresa"
       class="!w-180px"
       v-model="value"
       @change="handleChange"
@@ -36,7 +36,7 @@ const handleChange = (id: number) => {
   // 提示切换成功
   const tenant = tenants.value.find((item) => item.id === id)
   if (tenant) {
-    message.success(`切换当前租户为: ${tenant.name}`)
+    message.success(`Empresa atual alterada para: ${tenant.name}`)
   }
 }
 

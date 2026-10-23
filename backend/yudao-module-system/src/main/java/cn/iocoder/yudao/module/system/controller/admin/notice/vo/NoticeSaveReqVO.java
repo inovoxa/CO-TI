@@ -15,12 +15,12 @@ public class NoticeSaveReqVO {
     private Long id;
 
     @Schema(description = "公告标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "小博主")
-    @NotBlank(message = "公告标题不能为空")
-    @Size(max = 50, message = "公告标题不能超过50个字符")
+    @NotBlank(message = "Informe o título")
+    @Size(max = 50, message = "O título pode ter no máximo 50 caracteres")
     private String title;
 
     @Schema(description = "公告类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "小博主")
-    @NotNull(message = "公告类型不能为空")
+    @NotNull(message = "Informe o tipo")
     private Integer type;
 
     @Schema(description = "公告内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "半生编码")

@@ -254,8 +254,9 @@ spring:
   flyway:
     enabled: true
     url: ${CO_TI_DB_URL:jdbc:postgresql://127.0.0.1:5432/coti}
-    user: ${CO_TI_DB_USER:coti}
-    password: ${CO_TI_DB_PASSWORD}
+    # migrations com o DONO das tabelas; a aplicação conecta como coti_app (só DML)
+    user: ${CO_TI_FLYWAY_USER:${CO_TI_DB_USER:coti}}
+    password: ${CO_TI_FLYWAY_PASSWORD:${CO_TI_DB_PASSWORD}}
     locations: classpath:db/migration
     baseline-on-migrate: false
 
@@ -278,6 +279,12 @@ coti:
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}
+    # 32 bytes em Base64 (openssl rand -base64 32). Cifra o segredo do MFA e, depois, o cofre. NÃO PERCA: sem ela,
+    # quem tem verificação em duas etapas precisa recadastrar.
+    chave-mestra: ${CO_TI_CHAVE_MESTRA:}
+    mfa:
+      emissor: ${CO_TI_MFA_EMISSOR:CO-TI}   # nome que aparece no aplicativo autenticador
+    login-alternativo: false               # auto-cadastro, SMS e login social do RuoYi ficam desligados
   ad:
     habilitado: ${CO_TI_AD_HABILITADO:false}
     url: ${CO_TI_AD_URL:}                         # ldaps://dc01.empresa.local:636,ldaps://dc02.empresa.local:636

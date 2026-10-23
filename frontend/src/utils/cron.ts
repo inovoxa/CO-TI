@@ -25,13 +25,13 @@ export interface CronFieldConfig {
 
 /** CRON 字段配置常量 */
 export const CRON_FIELD_CONFIGS: Record<CronFieldType, CronFieldConfig> = {
-  [CronFieldType.SECOND]: { key: CronFieldType.SECOND, label: '秒', min: 0, max: 59 },
-  [CronFieldType.MINUTE]: { key: CronFieldType.MINUTE, label: '分', min: 0, max: 59 },
-  [CronFieldType.HOUR]: { key: CronFieldType.HOUR, label: '时', min: 0, max: 23 },
-  [CronFieldType.DAY]: { key: CronFieldType.DAY, label: '日', min: 1, max: 31 },
+  [CronFieldType.SECOND]: { key: CronFieldType.SECOND, label: 'Segundo', min: 0, max: 59 },
+  [CronFieldType.MINUTE]: { key: CronFieldType.MINUTE, label: 'Minuto', min: 0, max: 59 },
+  [CronFieldType.HOUR]: { key: CronFieldType.HOUR, label: 'Hora', min: 0, max: 23 },
+  [CronFieldType.DAY]: { key: CronFieldType.DAY, label: 'Dia', min: 1, max: 31 },
   [CronFieldType.MONTH]: {
     key: CronFieldType.MONTH,
-    label: '月',
+    label: 'Mês',
     min: 1,
     max: 12,
     names: {
@@ -51,7 +51,7 @@ export const CRON_FIELD_CONFIGS: Record<CronFieldType, CronFieldConfig> = {
   },
   [CronFieldType.WEEK]: {
     key: CronFieldType.WEEK,
-    label: '周',
+    label: 'Semana',
     min: 0,
     max: 7,
     names: {
@@ -64,7 +64,7 @@ export const CRON_FIELD_CONFIGS: Record<CronFieldType, CronFieldConfig> = {
       SAT: 6
     }
   },
-  [CronFieldType.YEAR]: { key: CronFieldType.YEAR, label: '年', min: 1970, max: 2099 }
+  [CronFieldType.YEAR]: { key: CronFieldType.YEAR, label: 'Ano', min: 1970, max: 2099 }
 }
 
 /** 解析后的 CRON 字段 */
@@ -139,14 +139,14 @@ export class CronUtils {
     // 处理特殊字符
     if (fieldValue === '*' || fieldValue === '?') {
       field.type = 'any'
-      field.description = `每${config.label}`
+      field.description = `A cada ${config.label}`
       return field
     }
 
     // 处理最后一天 (L)
     if (fieldValue === 'L' && fieldType === CronFieldType.DAY) {
       field.type = 'last'
-      field.description = '每月最后一天'
+      field.description = 'Último dia do mês'
       return field
     }
 
@@ -168,10 +168,10 @@ export class CronUtils {
       if (!isNaN(stepNum) && stepNum > 0) {
         field.type = 'step'
         if (base === '*') {
-          field.description = `每${stepNum}${config.label}`
+          field.description = `A cada ${stepNum} ${config.label}`
         } else {
           const startNum = Number(base)
-          field.description = `从${startNum}开始每${stepNum}${config.label}`
+          field.description = `A partir de ${startNum}, a cada ${stepNum} ${config.label}`
         }
       }
       return field
@@ -205,18 +205,18 @@ export class CronUtils {
   /** 解析完整的 CRON 表达式 */
   static parse(cronExpression: string): ParsedCronExpression {
     const result: ParsedCronExpression = {
-      second: { type: 'any', values: [], original: '*', description: '每秒' },
-      minute: { type: 'any', values: [], original: '*', description: '每分' },
-      hour: { type: 'any', values: [], original: '*', description: '每时' },
-      day: { type: 'any', values: [], original: '*', description: '每日' },
-      month: { type: 'any', values: [], original: '*', description: '每月' },
-      week: { type: 'any', values: [], original: '?', description: '任意周' },
+      second: { type: 'any', values: [], original: '*', description: 'A cada segundo' },
+      minute: { type: 'any', values: [], original: '*', description: 'A cada minuto' },
+      hour: { type: 'any', values: [], original: '*', description: 'A cada hora' },
+      day: { type: 'any', values: [], original: '*', description: 'Todo dia' },
+      month: { type: 'any', values: [], original: '*', description: 'Todo mês' },
+      week: { type: 'any', values: [], original: '?', description: 'Qualquer dia da semana' },
       isValid: false,
       description: ''
     }
 
     if (!this.validate(cronExpression)) {
-      result.description = '无效的 CRON 表达式'
+      result.description = 'Expressão CRON inválida'
       return result
     }
 
@@ -263,38 +263,38 @@ export class CronUtils {
       const minute = parsed.minute.values[0]
       parts.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`)
     } else if (parsed.hour.type === 'specific') {
-      parts.push(`每天${parsed.hour.values[0]}点`)
+      parts.push(`Todo dia às ${parsed.hour.values[0]}h`)
     } else if (parsed.minute.type === 'specific' && parsed.minute.values[0] === 0) {
       if (parsed.hour.type === 'any') {
-        parts.push('每小时整点')
+        parts.push('A cada hora cheia')
       }
     } else if (parsed.minute.type === 'step') {
       const step = parsed.minute.original.split('/')[1]
-      parts.push(`每${step}分钟`)
+      parts.push(`A cada ${step} minutos`)
     } else if (parsed.hour.type === 'step') {
       const step = parsed.hour.original.split('/')[1]
-      parts.push(`每${step}小时`)
+      parts.push(`A cada ${step} horas`)
     }
 
     // 构建日期部分描述
     if (parsed.day.type === 'specific') {
-      parts.push(`每月${parsed.day.values[0]}日`)
+      parts.push(`Todo dia ${parsed.day.values[0]} do mês`)
     } else if (parsed.week.type === 'specific') {
-      const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      const weekNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
       const weekDay = parsed.week.values[0]
       if (weekDay >= 0 && weekDay <= 6) {
-        parts.push(`每${weekNames[weekDay]}`)
+        parts.push(`Toda ${weekNames[weekDay]}`)
       }
     } else if (parsed.week.type === 'range') {
-      parts.push('工作日')
+      parts.push('Dias úteis')
     }
 
     // 构建月份部分描述
     if (parsed.month.type === 'specific') {
-      parts.push(`${parsed.month.values[0]}月`)
+      parts.push(`Mês ${parsed.month.values[0]}`)
     }
 
-    return parts.length > 0 ? parts.join(' ') : '自定义时间规则'
+    return parts.length > 0 ? parts.join(' ') : 'Regra de horário personalizada'
   }
 
   /** 格式化 CRON 表达式为可读文本 */
@@ -392,31 +392,31 @@ export class CronUtils {
   static getFrequencyDescription(cronExpression: string): string {
     const parsed = this.parse(cronExpression)
     if (!parsed.isValid) {
-      return '无效表达式'
+      return 'Expressão inválida'
     }
 
     // 计算大概的执行频率
     if (parsed.second.type === 'any' && parsed.minute.type === 'any') {
-      return '每秒执行'
+      return 'Executa a cada segundo'
     }
 
     if (parsed.minute.type === 'any' && parsed.hour.type === 'any') {
-      return '每分钟执行'
+      return 'Executa a cada minuto'
     }
 
     if (parsed.hour.type === 'any' && parsed.day.type === 'any') {
-      return '每小时执行'
+      return 'Executa a cada hora'
     }
 
     if (parsed.day.type === 'any' && parsed.month.type === 'any') {
-      return '每天执行'
+      return 'Executa todo dia'
     }
 
     if (parsed.month.type === 'any') {
-      return '每月执行'
+      return 'Executa todo mês'
     }
 
-    return '按计划执行'
+    return 'Executa conforme agenda'
   }
 
   /** 检查 CRON 表达式是否会在指定时间执行 */

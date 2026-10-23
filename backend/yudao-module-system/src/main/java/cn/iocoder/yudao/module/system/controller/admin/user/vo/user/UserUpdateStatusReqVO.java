@@ -13,12 +13,12 @@ import lombok.Data;
 public class UserUpdateStatusReqVO {
 
     @Schema(description = "用户编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "角色编号不能为空")
+    @NotNull(message = "Informe o perfil")
     private Long id;
 
     @Schema(description = "状态，见 CommonStatusEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "状态不能为空")
-    @InEnum(value = CommonStatusEnum.class, message = "修改状态必须是 {value}")
+    @NotNull(message = "Informe a situação")
+    @InEnum(value = CommonStatusEnum.class, message = "A situação deve ser {value}")
     @InDict(type = DictTypeConstants.COMMON_STATUS)
     private Integer status;
 

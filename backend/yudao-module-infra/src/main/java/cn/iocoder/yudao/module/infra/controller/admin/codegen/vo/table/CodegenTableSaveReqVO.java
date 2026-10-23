@@ -18,49 +18,49 @@ public class CodegenTableSaveReqVO {
     private Long id;
 
     @Schema(description = "生成场景，参见 CodegenSceneEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "导入类型不能为空")
+    @NotNull(message = "Informe o tipo de importação")
     private Integer scene;
 
     @Schema(description = "表名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
-    @NotNull(message = "表名称不能为空")
+    @NotNull(message = "Informe a tabela")
     private String tableName;
 
     @Schema(description = "表描述", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
-    @NotNull(message = "表描述不能为空")
+    @NotNull(message = "Informe a descrição")
     private String tableComment;
 
     @Schema(description = "备注", example = "我是备注")
     private String remark;
 
     @Schema(description = "模块名", requiredMode = Schema.RequiredMode.REQUIRED, example = "system")
-    @NotNull(message = "模块名不能为空")
-    @Pattern(regexp = "^[a-z][a-z0-9]*$", message = "模块名只能由小写字母和数字组成，且不能以数字开头")
+    @NotNull(message = "Informe o módulo")
+    @Pattern(regexp = "^[a-z][a-z0-9]*$", message = "O módulo só pode ter letras minúsculas e números, sem começar por número")
     private String moduleName;
 
     @Schema(description = "业务名", requiredMode = Schema.RequiredMode.REQUIRED, example = "codegen")
-    @NotNull(message = "业务名不能为空")
-    @Pattern(regexp = "^[a-z][a-z0-9]*$", message = "业务名只能由小写字母和数字组成，且不能以数字开头")
+    @NotNull(message = "Informe a funcionalidade")
+    @Pattern(regexp = "^[a-z][a-z0-9]*$", message = "A funcionalidade só pode ter letras minúsculas e números, sem começar por número")
     private String businessName;
 
     @Schema(description = "类名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "CodegenTable")
-    @NotNull(message = "类名称不能为空")
-    @Pattern(regexp = "^[A-Z][A-Za-z0-9]*$", message = "类名称必须以大写字母开头，且只能由字母和数字组成")
+    @NotNull(message = "Informe a classe")
+    @Pattern(regexp = "^[A-Z][A-Za-z0-9]*$", message = "A classe deve começar com maiúscula e ter só letras e números")
     private String className;
 
     @Schema(description = "类描述", requiredMode = Schema.RequiredMode.REQUIRED, example = "代码生成器的表定义")
-    @NotNull(message = "类描述不能为空")
+    @NotNull(message = "Informe a descrição da classe")
     private String classComment;
 
     @Schema(description = "作者", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道源码")
-    @NotNull(message = "作者不能为空")
+    @NotNull(message = "Informe o autor")
     private String author;
 
     @Schema(description = "模板类型，参见 CodegenTemplateTypeEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "模板类型不能为空")
+    @NotNull(message = "Informe o modelo")
     private Integer templateType;
 
     @Schema(description = "前端类型，参见 CodegenFrontTypeEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "20")
-    @NotNull(message = "前端类型不能为空")
+    @NotNull(message = "Informe o frontend")
     private Integer frontType;
 
     @Schema(description = "父菜单编号", example = "1024")
@@ -78,7 +78,7 @@ public class CodegenTableSaveReqVO {
     @Schema(description = "树表的名字字段编号", example = "16384")
     private Long treeNameColumnId;
 
-    @AssertTrue(message = "上级菜单不能为空，请前往 [修改生成配置 -> 生成信息] 界面，设置“上级菜单”字段")
+    @AssertTrue(message = "Informe o menu superior em [Editar configuração de geração -> Geração]")
     @JsonIgnore
     public boolean isParentMenuIdValid() {
         // 生成场景为管理后台时，必须设置上级菜单，不然生成的菜单 SQL 是无父级菜单的
@@ -86,14 +86,14 @@ public class CodegenTableSaveReqVO {
                 || getParentMenuId() != null;
     }
 
-    @AssertTrue(message = "关联的父表信息不全")
+    @AssertTrue(message = "Faltam dados da tabela mestre")
     @JsonIgnore
     public boolean isSubValid() {
         return ObjectUtil.notEqual(getTemplateType(), CodegenTemplateTypeEnum.SUB)
                 || (ObjectUtil.isAllNotEmpty(masterTableId, subJoinColumnId, subJoinMany));
     }
 
-    @AssertTrue(message = "关联的树表信息不全")
+    @AssertTrue(message = "Faltam dados da árvore")
     @JsonIgnore
     public boolean isTreeValid() {
         return ObjectUtil.notEqual(templateType, CodegenTemplateTypeEnum.TREE)

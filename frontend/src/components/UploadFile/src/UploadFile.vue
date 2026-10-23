@@ -22,14 +22,14 @@
     >
       <el-button type="primary">
         <Icon icon="ep:upload-filled" />
-        选取文件
+        Escolher arquivo
       </el-button>
       <template v-if="isShowTip" #tip>
         <div style="font-size: 8px">
-          大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b>
+          Tamanho máximo <b style="color: #f56c6c">{{ fileSize }}MB</b>
         </div>
         <div v-if="fileType.length" style="font-size: 8px">
-          格式为 <b style="color: #f56c6c">{{ fileType.join('/') }}</b> 的文件
+          Formatos <b style="color: #f56c6c">{{ fileType.join('/') }}</b> 
         </div>
       </template>
       <template #file="row">
@@ -43,11 +43,11 @@
               target="_blank"
               type="primary"
             >
-              下载
+              Baixar
             </el-link>
           </div>
           <div class="ml-10px">
-            <el-button link type="danger" @click="handleRemove(row.file)"> 删除</el-button>
+            <el-button link type="danger" @click="handleRemove(row.file)"> Excluir</el-button>
           </div>
         </div>
       </template>
@@ -60,7 +60,7 @@
       <span>{{ file.name }}</span>
       <div class="ml-10px">
         <el-link :href="file.url" :underline="false" download target="_blank" type="primary">
-          下载
+          Baixar
         </el-link>
       </div>
     </div>
@@ -108,7 +108,7 @@ const removeRejectedFile = (file: UploadRawFile) => {
 // 文件上传之前判断
 const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
   if (fileList.value.length >= props.limit) {
-    message.error(`上传文件数量不能超过${props.limit}个!`)
+    message.error(`Envie no máximo ${props.limit} arquivos!`)
     removeRejectedFile(file)
     return false
   }
@@ -124,16 +124,16 @@ const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
     })
   const isLimit = file.size < props.fileSize * 1024 * 1024
   if (!isAllowedType) {
-    message.error(`文件格式不正确, 请上传${props.fileType.join('/')}格式!`)
+    message.error(`Formato inválido. Envie arquivos ${props.fileType.join('/')}!`)
     removeRejectedFile(file)
     return false
   }
   if (!isLimit) {
-    message.error(`上传文件大小不能超过${props.fileSize}MB!`)
+    message.error(`O arquivo não pode passar de ${props.fileSize} MB!`)
     removeRejectedFile(file)
     return false
   }
-  message.success('正在上传文件，请稍候...')
+  message.success('Enviando arquivo, aguarde...')
   return true
 }
 // 处理上传的文件发生变化
@@ -155,17 +155,17 @@ const handleFileSuccess: UploadProps['onSuccess'] = (res: any, uploadFile): void
     url: response.data,
     status: 'success'
   }
-  message.success('上传成功')
+  message.success('Enviado')
   emitUpdateModelValue()
   emit('update:fileSize', fileSize)
 }
 // 文件数超出提示
 const handleExceed: UploadProps['onExceed'] = (): void => {
-  message.error(`上传文件数量不能超过${props.limit}个!`)
+  message.error(`Envie no máximo ${props.limit} arquivos!`)
 }
 // 上传错误提示
 const excelUploadError: UploadProps['onError'] = (): void => {
-  message.error('导入数据失败，请您重新上传！')
+  message.error('Falha ao importar. Envie de novo!')
 }
 // 删除上传文件
 const handleRemove = (file: UploadFile) => {

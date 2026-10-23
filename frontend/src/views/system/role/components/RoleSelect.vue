@@ -36,7 +36,7 @@ const props = withDefaults(
   {
     disabled: false,
     clearable: true,
-    placeholder: '请选择角色'
+    placeholder: 'Selecione os perfis'
   }
 )
 

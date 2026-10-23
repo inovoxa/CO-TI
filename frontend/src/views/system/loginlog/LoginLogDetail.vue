@@ -1,25 +1,25 @@
 <template>
-  <Dialog v-model="dialogVisible" title="详情" width="800">
+  <Dialog v-model="dialogVisible" title="Detalhes" width="800">
     <el-descriptions :column="1" border>
-      <el-descriptions-item label="日志编号" min-width="120">
+      <el-descriptions-item label="Nº" min-width="120">
         {{ detailData.id }}
       </el-descriptions-item>
-      <el-descriptions-item label="登录类型">
+      <el-descriptions-item label="Tipo de acesso">
         <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_TYPE" :value="detailData.logType" />
       </el-descriptions-item>
-      <el-descriptions-item label="用户名称">
+      <el-descriptions-item label="Usuário">
         {{ detailData.username }}
       </el-descriptions-item>
-      <el-descriptions-item label="登录地址">
+      <el-descriptions-item label="IP">
         {{ detailData.userIp }}
       </el-descriptions-item>
-      <el-descriptions-item label="浏览器">
+      <el-descriptions-item label="Navegador">
         {{ detailData.userAgent }}
       </el-descriptions-item>
-      <el-descriptions-item label="登陆结果">
+      <el-descriptions-item label="Resultado">
         <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_RESULT" :value="detailData.result" />
       </el-descriptions-item>
-      <el-descriptions-item label="登录日期">
+      <el-descriptions-item label="Data">
         {{ formatDate(detailData.createTime) }}
       </el-descriptions-item>
     </el-descriptions>

@@ -15,19 +15,19 @@ public class Demo01ContactSaveReqVO {
     private Long id;
 
     @Schema(description = "名字", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
-    @NotEmpty(message = "名字不能为空")
+    @NotEmpty(message = "Informe o nome")
     private String name;
 
     @Schema(description = "性别", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "性别不能为空")
+    @NotNull(message = "Informe o sexo")
     private Integer sex;
 
     @Schema(description = "出生年", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "出生年不能为空")
+    @NotNull(message = "Informe o ano de nascimento")
     private LocalDateTime birthday;
 
     @Schema(description = "简介", requiredMode = Schema.RequiredMode.REQUIRED, example = "你说的对")
-    @NotEmpty(message = "简介不能为空")
+    @NotEmpty(message = "Informe a descrição")
     private String description;
 
     @Schema(description = "头像")

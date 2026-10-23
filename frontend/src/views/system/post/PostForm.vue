@@ -7,17 +7,17 @@
       :rules="formRules"
       label-width="80px"
     >
-      <el-form-item label="岗位标题" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入岗位标题" />
+      <el-form-item label="Nome do cargo" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome do cargo" />
       </el-form-item>
-      <el-form-item label="岗位编码" prop="code">
-        <el-input v-model="formData.code" placeholder="请输入岗位编码" />
+      <el-form-item label="Código do cargo" prop="code">
+        <el-input v-model="formData.code" placeholder="Digite o código do cargo" />
       </el-form-item>
-      <el-form-item label="岗位顺序" prop="sort">
-        <el-input v-model="formData.sort" placeholder="请输入岗位顺序" />
+      <el-form-item label="Ordem" prop="sort">
+        <el-input v-model="formData.sort" placeholder="Digite a ordem" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="formData.status" clearable placeholder="请选择状态">
+      <el-form-item label="Situação" prop="status">
+        <el-select v-model="formData.status" clearable placeholder="Selecione a situação">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -26,13 +26,13 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输备注" type="textarea" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite as observações" type="textarea" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -59,10 +59,10 @@ const formData = ref({
   remark: ''
 })
 const formRules = reactive({
-  name: [{ required: true, message: '岗位标题不能为空', trigger: 'blur' }],
-  code: [{ required: true, message: '岗位编码不能为空', trigger: 'change' }],
-  status: [{ required: true, message: '岗位状态不能为空', trigger: 'change' }],
-  remark: [{ required: false, message: '岗位内容不能为空', trigger: 'blur' }]
+  name: [{ required: true, message: 'Informe o nome do cargo', trigger: 'blur' }],
+  code: [{ required: true, message: 'Informe o código do cargo', trigger: 'change' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'change' }],
+  remark: [{ required: false, message: 'Informe a ordem', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 

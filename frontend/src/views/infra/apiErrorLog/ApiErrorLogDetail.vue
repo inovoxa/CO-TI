@@ -1,38 +1,38 @@
 <template>
-  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="详情" width="800">
+  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="Detalhes" width="800">
     <el-descriptions :column="1" border>
-      <el-descriptions-item label="日志主键" min-width="120">
+      <el-descriptions-item label="Nº do log" min-width="120">
         {{ detailData.id }}
       </el-descriptions-item>
-      <el-descriptions-item label="链路追踪">
+      <el-descriptions-item label="Rastreamento">
         {{ detailData.traceId }}
       </el-descriptions-item>
-      <el-descriptions-item label="应用名">
+      <el-descriptions-item label="Aplicação">
         {{ detailData.applicationName }}
       </el-descriptions-item>
-      <el-descriptions-item label="用户编号">
+      <el-descriptions-item label="Nº">
         {{ detailData.userId }}
         <dict-tag :type="DICT_TYPE.USER_TYPE" :value="detailData.userType" />
       </el-descriptions-item>
-      <el-descriptions-item label="用户 IP">
+      <el-descriptions-item label="IP">
         {{ detailData.userIp }}
       </el-descriptions-item>
-      <el-descriptions-item label="用户 UA">
+      <el-descriptions-item label="Navegador">
         {{ detailData.userAgent }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求信息">
+      <el-descriptions-item label="Requisição">
         {{ detailData.requestMethod }} {{ detailData.requestUrl }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求参数">
+      <el-descriptions-item label="Parâmetros">
         {{ detailData.requestParams }}
       </el-descriptions-item>
-      <el-descriptions-item label="异常时间">
+      <el-descriptions-item label="Data do erro">
         {{ formatDate(detailData.exceptionTime) }}
       </el-descriptions-item>
-      <el-descriptions-item label="异常名">
+      <el-descriptions-item label="Exceção">
         {{ detailData.exceptionName }}
       </el-descriptions-item>
-      <el-descriptions-item v-if="detailData.exceptionStackTrace" label="异常堆栈">
+      <el-descriptions-item v-if="detailData.exceptionStackTrace" label="Pilha de chamadas">
         <el-input
           v-model="detailData.exceptionStackTrace"
           :autosize="{ maxRows: 20 }"
@@ -40,16 +40,16 @@
           type="textarea"
         />
       </el-descriptions-item>
-      <el-descriptions-item label="处理状态">
+      <el-descriptions-item label="Tratamento">
         <dict-tag
           :type="DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS"
           :value="detailData.processStatus"
         />
       </el-descriptions-item>
-      <el-descriptions-item v-if="detailData.processUserId" label="处理人">
+      <el-descriptions-item v-if="detailData.processUserId" label="Tratado por">
         {{ detailData.processUserId }}
       </el-descriptions-item>
-      <el-descriptions-item v-if="detailData.processTime" label="处理时间">
+      <el-descriptions-item v-if="detailData.processTime" label="Tratado em">
         {{ formatDate(detailData.processTime) }}
       </el-descriptions-item>
     </el-descriptions>

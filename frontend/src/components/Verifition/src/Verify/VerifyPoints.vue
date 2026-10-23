@@ -233,7 +233,7 @@ const getPictrue = async () => {
     backToken.value = res.repData.token
     secretKey.value = res.repData.secretKey
     poinTextList.value = res.repData.wordList
-    text.value = t('captcha.point') + '【' + poinTextList.value.join(',') + '】'
+    text.value = t('captcha.point') + '[' + poinTextList.value.join(',') + ']'
   } else {
     text.value = res.repMsg
   }

@@ -524,7 +524,7 @@ export function jsonParse(str: string) {
   try {
     return JSON.parse(str)
   } catch (e) {
-    console.warn(`str[${str}] 不是一个 JSON 字符串`)
+    console.warn(`str[${str}] não é um JSON válido`)
     return str
   }
 }

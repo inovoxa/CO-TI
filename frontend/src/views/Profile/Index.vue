@@ -11,15 +11,15 @@
     </el-card>
     <el-card class="user ml-3 w-2/3" shadow="hover">
       <div>
-        <el-tabs v-model="activeName" class="profile-tabs" style="height: 400px" tab-position="top">
+        <el-tabs v-model="activeName" class="profile-tabs" style="min-height: 400px" tab-position="top">
           <el-tab-pane :label="t('profile.info.basicInfo')" name="basicInfo">
             <BasicInfo @success="handleBasicInfoSuccess" />
           </el-tab-pane>
           <el-tab-pane :label="t('profile.info.resetPwd')" name="resetPwd">
             <ResetPwd />
           </el-tab-pane>
-          <el-tab-pane :label="t('profile.info.userSocial')" name="userSocial">
-            <UserSocial v-model:activeName="activeName" />
+          <el-tab-pane :label="t('coti.mfa.titulo')" name="mfa">
+            <VerificacaoDuasEtapas />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -27,7 +27,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { BasicInfo, ProfileUser, ResetPwd, UserSocial } from './components'
+import { BasicInfo, ProfileUser, ResetPwd, VerificacaoDuasEtapas } from './components'
 
 const { t } = useI18n()
 defineOptions({ name: 'Profile' })

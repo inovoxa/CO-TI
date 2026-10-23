@@ -65,7 +65,7 @@
                     {{ t('login.getSmsCode') }}
                   </span>
                   <span v-if="mobileCodeTimer > 0" class="getMobileCode" style="cursor: pointer">
-                    {{ mobileCodeTimer }}秒后可重新获取
+                    Reenviar em {{ mobileCodeTimer }} s
                   </span>
                 </template>
               </el-input>
@@ -141,24 +141,24 @@ const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文
 
 const validatePass2 = (_rule, value) => {
   if (value === '') {
-    return Promise.reject(new Error('请再次输入密码'))
+    return Promise.reject(new Error('Digite a senha novamente'))
   }
   if (value !== resetPasswordData.password) {
-    return Promise.reject(new Error('两次输入密码不一致!'))
+    return Promise.reject(new Error('As senhas não conferem!'))
   }
   return Promise.resolve()
 }
 
 const rules = {
-  tenantName: [{ required: true, min: 2, max: 20, trigger: 'blur', message: '长度为4到16位' }],
-  mobile: [{ required: true, min: 11, max: 11, trigger: 'blur', message: '手机号长度为11位' }],
+  tenantName: [{ required: true, min: 2, max: 20, trigger: 'blur', message: 'Deve ter de 4 a 16 caracteres' }],
+  mobile: [{ required: true, min: 11, max: 11, trigger: 'blur', message: 'Celular inválido' }],
   password: [
     {
       required: true,
       min: 4,
       max: 16,
       trigger: 'blur',
-      message: '密码长度为4到16位'
+      message: 'A senha deve ter de 4 a 16 caracteres'
     }
   ],
   check_password: [{ required: true, validator: validatePass2, trigger: 'blur' }],

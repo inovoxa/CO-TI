@@ -27,6 +27,8 @@ public class SenhaInicialAdminRunner implements ApplicationRunner {
     private AdminUserMapper adminUserMapper;
     @Resource
     private PasswordEncoder passwordEncoder;
+    @Resource
+    private AuditoriaService auditoria;
 
     @Value("${coti.seguranca.senha-inicial-admin:}")
     private String senhaInicial;
@@ -41,6 +43,7 @@ public class SenhaInicialAdminRunner implements ApplicationRunner {
         validar(senhaInicial);
         admin.setPassword(passwordEncoder.encode(senhaInicial));
         adminUserMapper.updateById(admin);
+        auditoria.registrar("admin.senha_inicial_definida", admin.getId(), admin.getUsername(), java.util.Map.of());
         log.warn("[SenhaInicialAdminRunner][senha padrão do admin substituída pela de coti.seguranca.senha-inicial-admin;"
                 + " remova a variável CO_TI_ADMIN_SENHA_INICIAL do ambiente]");
     }

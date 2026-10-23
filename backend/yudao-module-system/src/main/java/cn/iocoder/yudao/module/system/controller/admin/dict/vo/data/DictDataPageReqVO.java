@@ -15,15 +15,15 @@ import jakarta.validation.constraints.Size;
 public class DictDataPageReqVO extends PageParam {
 
     @Schema(description = "字典标签", example = "芋道")
-    @Size(max = 100, message = "字典标签长度不能超过100个字符")
+    @Size(max = 100, message = "O rótulo pode ter no máximo 100 caracteres")
     private String label;
 
     @Schema(description = "字典类型，模糊匹配", example = "sys_common_sex")
-    @Size(max = 100, message = "字典类型类型长度不能超过100个字符")
+    @Size(max = 100, message = "O tipo pode ter no máximo 100 caracteres")
     private String dictType;
 
     @Schema(description = "展示状态，参见 CommonStatusEnum 枚举类", example = "1")
-    @InEnum(value = CommonStatusEnum.class, message = "修改状态必须是 {value}")
+    @InEnum(value = CommonStatusEnum.class, message = "A situação deve ser {value}")
     private Integer status;
 
 }

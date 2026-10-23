@@ -7,23 +7,23 @@
       :rules="formRules"
       label-width="80px"
     >
-      <el-form-item label="字典类型" prop="type">
+      <el-form-item label="Tipo do dicionário" prop="type">
         <el-input
           v-model="formData.dictType"
           :disabled="typeof formData.id !== 'undefined'"
-          placeholder="请输入参数名称"
+          placeholder="Digite o nome"
         />
       </el-form-item>
-      <el-form-item label="数据标签" prop="label">
-        <el-input v-model="formData.label" placeholder="请输入数据标签" />
+      <el-form-item label="Rótulo" prop="label">
+        <el-input v-model="formData.label" placeholder="Digite o rótulo" />
       </el-form-item>
-      <el-form-item label="数据键值" prop="value">
-        <el-input v-model="formData.value" placeholder="请输入数据键值" />
+      <el-form-item label="Valor" prop="value">
+        <el-input v-model="formData.value" placeholder="Digite o valor" />
       </el-form-item>
-      <el-form-item label="显示排序" prop="sort">
+      <el-form-item label="Ordem" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" controls-position="right" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-radio-group v-model="formData.status">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -34,7 +34,7 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="颜色类型" prop="colorType">
+      <el-form-item label="Cor" prop="colorType">
         <el-select v-model="formData.colorType">
           <el-option
             v-for="item in colorTypeOptions"
@@ -45,15 +45,15 @@
         </el-select>
       </el-form-item>
       <el-form-item label="CSS Class" prop="cssClass">
-        <el-input v-model="formData.cssClass" placeholder="请输入 CSS Class" />
+        <el-input v-model="formData.cssClass" placeholder="Digite a classe CSS" />
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输入内容" type="textarea" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite o texto" type="textarea" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -83,10 +83,10 @@ const formData = ref<DictDataApi.DictDataVO>({
   remark: ''
 })
 const formRules = reactive({
-  label: [{ required: true, message: '数据标签不能为空', trigger: 'blur' }],
-  value: [{ required: true, message: '数据键值不能为空', trigger: 'blur' }],
-  sort: [{ required: true, message: '数据顺序不能为空', trigger: 'blur' }],
-  status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
+  label: [{ required: true, message: 'Informe o rótulo', trigger: 'blur' }],
+  value: [{ required: true, message: 'Informe o valor', trigger: 'blur' }],
+  sort: [{ required: true, message: 'Informe a ordem', trigger: 'blur' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'change' }]
 })
 const formRef = ref() // 表单 Ref
 
@@ -94,27 +94,27 @@ const formRef = ref() // 表单 Ref
 const colorTypeOptions = readonly([
   {
     value: 'default',
-    label: '默认'
+    label: 'Padrão'
   },
   {
     value: 'primary',
-    label: '主要'
+    label: 'Principal'
   },
   {
     value: 'success',
-    label: '成功'
+    label: 'Sucesso'
   },
   {
     value: 'info',
-    label: '信息'
+    label: 'Informação'
   },
   {
     value: 'warning',
-    label: '警告'
+    label: 'Atenção'
   },
   {
     value: 'danger',
-    label: '危险'
+    label: 'Perigo'
   }
 ])
 

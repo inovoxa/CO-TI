@@ -7,19 +7,19 @@
       :rules="formRules"
       label-width="80px"
     >
-      <el-form-item label="参数分类" prop="category">
-        <el-input v-model="formData.category" placeholder="请输入参数分类" />
+      <el-form-item label="Categoria" prop="category">
+        <el-input v-model="formData.category" placeholder="Digite a categoria" />
       </el-form-item>
-      <el-form-item label="参数名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入参数名称" />
+      <el-form-item label="Nome" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome" />
       </el-form-item>
-      <el-form-item label="参数键名" prop="key">
-        <el-input v-model="formData.key" placeholder="请输入参数键名" />
+      <el-form-item label="Chave" prop="key">
+        <el-input v-model="formData.key" placeholder="Digite a chave" />
       </el-form-item>
-      <el-form-item label="参数键值" prop="value">
-        <el-input v-model="formData.value" placeholder="请输入参数键值" />
+      <el-form-item label="Valor" prop="value">
+        <el-input v-model="formData.value" placeholder="Digite o valor" />
       </el-form-item>
-      <el-form-item label="是否可见" prop="visible">
+      <el-form-item label="Visível" prop="visible">
         <el-radio-group v-model="formData.visible">
           <el-radio
             v-for="dict in getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING)"
@@ -30,13 +30,13 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输入内容" type="textarea" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite o texto" type="textarea" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -63,11 +63,11 @@ const formData = ref({
   remark: ''
 })
 const formRules = reactive({
-  category: [{ required: true, message: '参数分类不能为空', trigger: 'blur' }],
-  name: [{ required: true, message: '参数名称不能为空', trigger: 'blur' }],
-  key: [{ required: true, message: '参数键名不能为空', trigger: 'blur' }],
-  value: [{ required: true, message: '参数键值不能为空', trigger: 'blur' }],
-  visible: [{ required: true, message: '是否可见不能为空', trigger: 'blur' }]
+  category: [{ required: true, message: 'Informe a categoria', trigger: 'blur' }],
+  name: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
+  key: [{ required: true, message: 'Informe a chave', trigger: 'blur' }],
+  value: [{ required: true, message: 'Informe o valor', trigger: 'blur' }],
+  visible: [{ required: true, message: 'Informe se é visível', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 

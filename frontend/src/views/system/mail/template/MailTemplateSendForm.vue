@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model="dialogVisible" title="测试">
+  <Dialog v-model="dialogVisible" title="Testar">
     <el-form
       ref="formRef"
       v-loading="formLoading"
@@ -7,45 +7,45 @@
       :rules="formRules"
       label-width="140px"
     >
-      <el-form-item label="模板内容" prop="content">
+      <el-form-item label="Conteúdo do modelo" prop="content">
         <Editor :model-value="formData.content" height="150px" readonly />
       </el-form-item>
-      <el-form-item label="收件邮箱" prop="toMails">
+      <el-form-item label="Para" prop="toMails">
         <el-input-tag
           v-model="formData.toMails"
-          placeholder="请输入收件邮箱，多个邮箱用回车分隔"
+          placeholder="E-mails dos destinatários, um por linha"
           class="!w-full"
         />
       </el-form-item>
-      <el-form-item label="抄送邮箱" prop="ccMails">
+      <el-form-item label="Cc" prop="ccMails">
         <el-input-tag
           v-model="formData.ccMails"
-          placeholder="请输入抄送邮箱，多个邮箱用回车分隔"
+          placeholder="E-mails em cópia, um por linha"
           class="!w-full"
         />
       </el-form-item>
-      <el-form-item label="密送邮箱" prop="bccMails">
+      <el-form-item label="Cco" prop="bccMails">
         <el-input-tag
           v-model="formData.bccMails"
-          placeholder="请输入密送邮箱，多个邮箱用回车分隔"
+          placeholder="E-mails em cópia oculta, um por linha"
           class="!w-full"
         />
       </el-form-item>
       <el-form-item
         v-for="param in formData.params"
         :key="param"
-        :label="'参数 {' + param + '}'"
+        :label="'Parâmetro {' + param + '}'"
         :prop="'templateParams.' + param"
       >
         <el-input
           v-model="formData.templateParams[param]"
-          :placeholder="'请输入 ' + param + ' 参数'"
+          :placeholder="'Digite ' + param + ''"
         />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -68,7 +68,7 @@ const formData = ref({
   templateParams: new Map()
 })
 const formRules = reactive({
-  templateCode: [{ required: true, message: '模版编号不能为空', trigger: 'blur' }],
+  templateCode: [{ required: true, message: 'Informe o nº do modelo', trigger: 'blur' }],
   templateParams: {}
 })
 const formRef = ref() // 表单 Ref
@@ -90,7 +90,7 @@ const open = async (id: number) => {
       return obj
     }, {})
     formRules.templateParams = data.params.reduce((obj, item) => {
-      obj[item] = { required: true, message: '参数 ' + item + ' 不能为空', trigger: 'blur' }
+      obj[item] = { required: true, message: 'Parâmetro ' + item + ' é obrigatório', trigger: 'blur' }
       return obj
     }, {})
   } finally {
@@ -111,7 +111,7 @@ const submitForm = async () => {
     const data = formData.value as MailTemplateApi.MailSendReqVO
     const logId = await MailTemplateApi.sendMail(data)
     if (logId) {
-      message.success('提交发送成功！发送结果，见发送日志编号：' + logId)
+      message.success('Envio solicitado! Acompanhe no log de envio nº ' + logId)
     }
     dialogVisible.value = false
   } finally {

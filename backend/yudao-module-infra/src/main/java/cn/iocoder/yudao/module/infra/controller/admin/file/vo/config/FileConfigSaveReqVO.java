@@ -14,15 +14,15 @@ public class FileConfigSaveReqVO {
     private Long id;
 
     @Schema(description = "配置名", requiredMode = Schema.RequiredMode.REQUIRED, example = "S3 - 阿里云")
-    @NotNull(message = "配置名不能为空")
+    @NotNull(message = "Informe o nome da configuração")
     private String name;
 
     @Schema(description = "存储器，参见 FileStorageEnum 枚举类", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "存储器不能为空")
+    @NotNull(message = "Informe o armazenamento")
     private Integer storage;
 
     @Schema(description = "存储配置,配置是动态参数，所以使用 Map 接收", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "存储配置不能为空")
+    @NotNull(message = "Informe o armazenamento")
     private Map<String, Object> config;
 
     @Schema(description = "备注", example = "我是备注")

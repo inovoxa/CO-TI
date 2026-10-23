@@ -7,20 +7,20 @@
       label-width="140px"
       v-loading="formLoading"
     >
-      <el-form-item label="模版编码" prop="code">
-        <el-input v-model="formData.code" placeholder="请输入模版编码" />
+      <el-form-item label="Código do modelo" prop="code">
+        <el-input v-model="formData.code" placeholder="Digite o código do modelo" />
       </el-form-item>
-      <el-form-item label="模板名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入模版名称" />
+      <el-form-item label="Nome do modelo" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome do modelo" />
       </el-form-item>
-      <el-form-item label="发件人名称" prop="nickname">
-        <el-input v-model="formData.nickname" placeholder="请输入发件人名称" />
+      <el-form-item label="Remetente" prop="nickname">
+        <el-input v-model="formData.nickname" placeholder="Digite o remetente" />
       </el-form-item>
-      <el-form-item label="模板内容" prop="content">
-        <el-input type="textarea" v-model="formData.content" placeholder="请输入模板内容" />
+      <el-form-item label="Conteúdo do modelo" prop="content">
+        <el-input type="textarea" v-model="formData.content" placeholder="Digite o conteúdo do modelo" />
       </el-form-item>
-      <el-form-item label="类型" prop="type">
-        <el-select v-model="formData.type" placeholder="请选择类型">
+      <el-form-item label="Tipo" prop="type">
+        <el-select v-model="formData.type" placeholder="Selecione o tipo">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE)"
             :key="dict.value"
@@ -29,7 +29,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="开启状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-radio-group v-model="formData.status">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -40,13 +40,13 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" placeholder="请输入备注" />
+      <el-form-item label="Observações" prop="remark">
+        <el-input v-model="formData.remark" placeholder="Digite as observações" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="submitForm" type="primary" :disabled="formLoading">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -72,12 +72,12 @@ const formData = ref<NotifyTemplateApi.NotifyTemplateVO>({
   remark: ''
 })
 const formRules = reactive({
-  type: [{ required: true, message: '消息类型不能为空', trigger: 'change' }],
-  status: [{ required: true, message: '开启状态不能为空', trigger: 'blur' }],
-  code: [{ required: true, message: '模板编码不能为空', trigger: 'blur' }],
-  name: [{ required: true, message: '模板名称不能为空', trigger: 'blur' }],
-  nickname: [{ required: true, message: '发件人姓名不能为空', trigger: 'blur' }],
-  content: [{ required: true, message: '模板内容不能为空', trigger: 'blur' }]
+  type: [{ required: true, message: 'Informe o tipo de mensagem', trigger: 'change' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'blur' }],
+  code: [{ required: true, message: 'Informe o código do modelo', trigger: 'blur' }],
+  name: [{ required: true, message: 'Informe o nome do modelo', trigger: 'blur' }],
+  nickname: [{ required: true, message: 'Informe o remetente', trigger: 'blur' }],
+  content: [{ required: true, message: 'Informe o conteúdo do modelo', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 
@@ -111,10 +111,10 @@ const submitForm = async () => {
     const data = formData.value as unknown as NotifyTemplateApi.NotifyTemplateVO
     if (formType.value === 'create') {
       await NotifyTemplateApi.createNotifyTemplate(data)
-      message.success('新增成功')
+      message.success('Criado')
     } else {
       await NotifyTemplateApi.updateNotifyTemplate(data)
-      message.success('修改成功')
+      message.success('Alterações salvas')
     }
     dialogVisible.value = false
     // 发送操作成功的事件

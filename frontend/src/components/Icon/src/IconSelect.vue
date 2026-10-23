@@ -150,7 +150,7 @@ watch(
             </div>
           </template>
 
-          <ElInput v-model="filterValue" class="p-2" clearable placeholder="搜索图标" />
+          <ElInput v-model="filterValue" class="p-2" clearable placeholder="Buscar ícone" />
           <ElDivider border-style="dashed" />
 
           <ElTabs v-model="currentActiveType" @tab-click="handleClick">

@@ -24,7 +24,7 @@ const md = new MarkdownIt({
   highlight: function (str, lang) {
     // 语言标记、代码正文和复制内容均来自不可信输入，输出 HTML 前必须转义
     const languageHtml = `<span style="position: absolute; left: 10px; top: 5px; color: #fff;">${md.utils.escapeHtml(lang || 'text')}</span>`
-    const copyHtml = `<div id="copy" data-copy="${md.utils.escapeHtml(str)}" style="position: absolute; right: 10px; top: 5px; color: #fff;cursor: pointer;">复制</div>`
+    const copyHtml = `<div id="copy" data-copy="${md.utils.escapeHtml(str)}" style="position: absolute; right: 10px; top: 5px; color: #fff;cursor: pointer;">Copiar</div>`
     let codeHtml = md.utils.escapeHtml(str)
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -46,7 +46,7 @@ onMounted(async () => {
   contentRef.value.addEventListener('click', (e: any) => {
     if (e.target.id === 'copy') {
       copy(e.target?.dataset?.copy)
-      message.success('复制成功!')
+      message.success('Copiado!')
     }
   })
 })

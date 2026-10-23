@@ -8,19 +8,19 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="公告标题" prop="title">
+      <el-form-item label="Título" prop="title">
         <el-input
           v-model="queryParams.title"
-          placeholder="请输入公告标题"
+          placeholder="Digite o título"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="公告状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择公告状态"
+          placeholder="Selecione a situação"
           clearable
           class="!w-240px"
         >
@@ -33,15 +33,15 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['system:notice:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
+          <Icon icon="ep:plus" class="mr-5px" /> Novo
         </el-button>
         <el-button
           type="danger"
@@ -50,7 +50,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['system:notice:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
+          <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
       </el-form-item>
     </el-form>
@@ -60,26 +60,26 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="公告编号" align="center" prop="id" />
-      <el-table-column label="公告标题" align="center" prop="title" />
-      <el-table-column label="公告类型" align="center" prop="type">
+      <el-table-column label="Nº" align="center" prop="id" />
+      <el-table-column label="Título" align="center" prop="title" />
+      <el-table-column label="Tipo" align="center" prop="type">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTICE_TYPE" :value="scope.row.type" />
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="Situação" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column
-        label="创建时间"
+        label="Criado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
+      <el-table-column label="Ações" align="center">
         <template #default="scope">
           <el-button
             link
@@ -87,7 +87,7 @@
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['system:notice:update']"
           >
-            编辑
+            Editar
           </el-button>
           <el-button
             link
@@ -95,10 +95,10 @@
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['system:notice:delete']"
           >
-            删除
+            Excluir
           </el-button>
           <el-button link @click="handlePush(scope.row.id)" v-hasPermi="['system:notice:update']">
-            推送
+            Enviar
           </el-button>
         </template>
       </el-table-column>
@@ -204,10 +204,10 @@ const handleDeleteBatch = async () => {
 const handlePush = async (id: number) => {
   try {
     // 推送的二次确认
-    await message.confirm('是否推送所选中通知？')
+    await message.confirm('Enviar o aviso selecionado?')
     // 发起推送
     await NoticeApi.pushNotice(id)
-    message.success(t('推送成功'))
+    message.success(t('Aviso enviado'))
   } catch {}
 }
 

@@ -14,11 +14,11 @@ import java.util.List;
 public class CodegenUpdateReqVO {
 
     @Valid // 校验内嵌的字段
-    @NotNull(message = "表定义不能为空")
+    @NotNull(message = "Informe a tabela")
     private CodegenTableSaveReqVO table;
 
     @Valid // 校验内嵌的字段
-    @NotNull(message = "字段定义不能为空")
+    @NotNull(message = "Informe as colunas")
     private List<CodegenColumnSaveReqVO> columns;
 
 }

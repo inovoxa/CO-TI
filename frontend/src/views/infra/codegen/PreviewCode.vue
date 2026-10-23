@@ -3,7 +3,7 @@
     v-model="dialogVisible"
     align-center
     class="app-infra-codegen-preview-container"
-    title="代码预览"
+    title="Prévia do código"
     width="80%"
   >
     <div class="flex">
@@ -12,7 +12,7 @@
         v-loading="loading"
         :gutter="12"
         class="w-1/3"
-        element-loading-text="生成文件目录中..."
+        element-loading-text="Gerando a estrutura de arquivos..."
         shadow="hover"
       >
         <el-scrollbar height="100%">
@@ -32,7 +32,7 @@
         v-loading="loading"
         :gutter="12"
         class="ml-3 w-2/3"
-        element-loading-text="加载代码中..."
+        element-loading-text="Carregando o código..."
         shadow="hover"
       >
         <el-tabs v-model="preview.activeName">

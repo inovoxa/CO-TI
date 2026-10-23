@@ -51,13 +51,13 @@ export const SystemDataScopeEnum = {
  */
 export const SystemUserSocialTypeEnum = {
   DINGTALK: {
-    title: '钉钉',
+    title: 'DingTalk',
     type: 20,
     source: 'dingtalk',
     img: 'https://s1.ax1x.com/2022/05/22/OzMDRs.png'
   },
   WECHAT_ENTERPRISE: {
-    title: '企业微信',
+    title: 'WeCom',
     type: 30,
     source: 'wechat_enterprise',
     img: 'https://s1.ax1x.com/2022/05/22/OzMrzn.png'
@@ -108,55 +108,55 @@ export const InfraApiErrorLogProcessStatusEnum = {
 export const PayChannelEnum = {
   WX_PUB: {
     code: 'wx_pub',
-    name: '微信 JSAPI 支付'
+    name: 'WeChat JSAPI'
   },
   WX_LITE: {
     code: 'wx_lite',
-    name: '微信小程序支付'
+    name: 'WeChat Mini Program'
   },
   WX_APP: {
     code: 'wx_app',
-    name: '微信 APP 支付'
+    name: 'WeChat App'
   },
   WX_NATIVE: {
     code: 'wx_native',
-    name: '微信 Native 支付'
+    name: 'WeChat Native'
   },
   WX_WAP: {
     code: 'wx_wap',
-    name: '微信 WAP 网站支付'
+    name: 'WeChat WAP'
   },
   WX_BAR: {
     code: 'wx_bar',
-    name: '微信条码支付'
+    name: 'WeChat código de barras'
   },
   ALIPAY_PC: {
     code: 'alipay_pc',
-    name: '支付宝 PC 网站支付'
+    name: 'Alipay PC'
   },
   ALIPAY_WAP: {
     code: 'alipay_wap',
-    name: '支付宝 WAP 网站支付'
+    name: 'Alipay WAP'
   },
   ALIPAY_APP: {
     code: 'alipay_app',
-    name: '支付宝 APP 支付'
+    name: 'Alipay App'
   },
   ALIPAY_QR: {
     code: 'alipay_qr',
-    name: '支付宝扫码支付'
+    name: 'Alipay QR code'
   },
   ALIPAY_BAR: {
     code: 'alipay_bar',
-    name: '支付宝条码支付'
+    name: 'Alipay código de barras'
   },
   WALLET: {
     code: 'wallet',
-    name: '钱包支付'
+    name: 'Carteira'
   },
   MOCK: {
     code: 'mock',
-    name: '模拟支付'
+    name: 'Pagamento simulado'
   }
 }
 
@@ -196,15 +196,15 @@ export const PayType = {
 export const PayOrderStatusEnum = {
   WAITING: {
     status: 0,
-    name: '未支付'
+    name: 'Não pago'
   },
   SUCCESS: {
     status: 10,
-    name: '已支付'
+    name: 'Pago'
   },
   CLOSED: {
     status: 20,
-    name: '未支付'
+    name: 'Não pago'
   }
 }
 
@@ -215,15 +215,15 @@ export const PayOrderStatusEnum = {
 export const ProductSpuStatusEnum = {
   RECYCLE: {
     status: -1,
-    name: '回收站'
+    name: 'Lixeira'
   },
   DISABLE: {
     status: 0,
-    name: '下架'
+    name: 'Indisponível'
   },
   ENABLE: {
     status: 1,
-    name: '上架'
+    name: 'Disponível'
   }
 }
 
@@ -234,11 +234,11 @@ export const ProductSpuStatusEnum = {
 export const CouponTemplateValidityTypeEnum = {
   DATE: {
     type: 1,
-    name: '固定日期可用'
+    name: 'Válido em datas fixas'
   },
   TERM: {
     type: 2,
-    name: '领取之后可用'
+    name: 'Válido após resgate'
   }
 }
 
@@ -248,15 +248,15 @@ export const CouponTemplateValidityTypeEnum = {
 export const CouponTemplateTakeTypeEnum = {
   USER: {
     type: 1,
-    name: '直接领取'
+    name: 'Resgate direto'
   },
   ADMIN: {
     type: 2,
-    name: '指定发放'
+    name: 'Distribuição dirigida'
   },
   REGISTER: {
     type: 3,
-    name: '新人券'
+    name: 'Cupom de boas-vindas'
   }
 }
 
@@ -266,15 +266,15 @@ export const CouponTemplateTakeTypeEnum = {
 export const PromotionProductScopeEnum = {
   ALL: {
     scope: 1,
-    name: '通用劵'
+    name: 'Cupom geral'
   },
   SPU: {
     scope: 2,
-    name: '商品劵'
+    name: 'Cupom de produto'
   },
   CATEGORY: {
     scope: 3,
-    name: '品类劵'
+    name: 'Cupom de categoria'
   }
 }
 
@@ -284,11 +284,11 @@ export const PromotionProductScopeEnum = {
 export const PromotionConditionTypeEnum = {
   PRICE: {
     type: 10,
-    name: '满 N 元'
+    name: 'Acima de N reais'
   },
   COUNT: {
     type: 20,
-    name: '满 N 件'
+    name: 'Acima de N itens'
   }
 }
 
@@ -298,11 +298,11 @@ export const PromotionConditionTypeEnum = {
 export const PromotionDiscountTypeEnum = {
   PRICE: {
     type: 1,
-    name: '满减'
+    name: 'Desconto por valor'
   },
   PERCENT: {
     type: 2,
-    name: '折扣'
+    name: 'Desconto'
   }
 }
 
@@ -313,15 +313,15 @@ export const PromotionDiscountTypeEnum = {
 export const BrokerageBindModeEnum = {
   ANYTIME: {
     mode: 1,
-    name: '首次绑定'
+    name: 'Primeiro vínculo'
   },
   REGISTER: {
     mode: 2,
-    name: '注册绑定'
+    name: 'Vínculo no cadastro'
   },
   OVERRIDE: {
     mode: 3,
-    name: '覆盖绑定'
+    name: 'Substituir vínculo'
   }
 }
 /**
@@ -330,11 +330,11 @@ export const BrokerageBindModeEnum = {
 export const BrokerageEnabledConditionEnum = {
   ALL: {
     condition: 1,
-    name: '人人分销'
+    name: 'Todos revendem'
   },
   ADMIN: {
     condition: 2,
-    name: '指定分销'
+    name: 'Revenda autorizada'
   }
 }
 /**
@@ -343,11 +343,11 @@ export const BrokerageEnabledConditionEnum = {
 export const BrokerageRecordBizTypeEnum = {
   ORDER: {
     type: 1,
-    name: '获得推广佣金'
+    name: 'Comissão recebida'
   },
   WITHDRAW: {
     type: 2,
-    name: '提现申请'
+    name: 'Pedido de saque'
   }
 }
 /**
@@ -356,23 +356,23 @@ export const BrokerageRecordBizTypeEnum = {
 export const BrokerageWithdrawStatusEnum = {
   AUDITING: {
     status: 0,
-    name: '审核中'
+    name: 'Em análise'
   },
   AUDIT_SUCCESS: {
     status: 10,
-    name: '审核通过'
+    name: 'Aprovado'
   },
   AUDIT_FAIL: {
     status: 20,
-    name: '审核不通过'
+    name: 'Reprovado'
   },
   WITHDRAW_SUCCESS: {
     status: 11,
-    name: '提现成功'
+    name: 'Saque concluído'
   },
   WITHDRAW_FAIL: {
     status: 21,
-    name: '提现失败'
+    name: 'Saque falhou'
   }
 }
 /**
@@ -381,19 +381,19 @@ export const BrokerageWithdrawStatusEnum = {
 export const BrokerageWithdrawTypeEnum = {
   WALLET: {
     type: 1,
-    name: '钱包'
+    name: 'Carteira'
   },
   BANK: {
     type: 2,
-    name: '银行卡'
+    name: 'Cartão bancário'
   },
   WECHAT: {
     type: 3,
-    name: '微信'
+    name: 'WeChat'
   },
   ALIPAY: {
     type: 4,
-    name: '支付宝'
+    name: 'Alipay'
   }
 }
 
@@ -403,11 +403,11 @@ export const BrokerageWithdrawTypeEnum = {
 export const DeliveryTypeEnum = {
   EXPRESS: {
     type: 1,
-    name: '快递发货'
+    name: 'Entrega'
   },
   PICK_UP: {
     type: 2,
-    name: '到店自提'
+    name: 'Retirada na loja'
   }
 }
 /**
@@ -416,23 +416,23 @@ export const DeliveryTypeEnum = {
 export const TradeOrderStatusEnum = {
   UNPAID: {
     status: 0,
-    name: '待支付'
+    name: 'Aguardando pagamento'
   },
   UNDELIVERED: {
     status: 10,
-    name: '待发货'
+    name: 'Aguardando envio'
   },
   DELIVERED: {
     status: 20,
-    name: '已发货'
+    name: 'Enviado'
   },
   COMPLETED: {
     status: 30,
-    name: '已完成'
+    name: 'Concluído'
   },
   CANCELED: {
     status: 40,
-    name: '已取消'
+    name: 'Cancelado'
   }
 }
 
@@ -485,16 +485,16 @@ export const AreaLevelEnum = {
 
 /** 执行监听器事件选项 */
 export const BPM_PROCESS_LISTENER_EXECUTION_EVENT_OPTIONS = [
-  { label: '开始', value: 'start' },
-  { label: '结束', value: 'end' }
+  { label: 'Início', value: 'start' },
+  { label: 'Fim', value: 'end' }
 ]
 
 /** 任务监听器事件选项 */
 export const BPM_PROCESS_LISTENER_TASK_EVENT_OPTIONS = [
-  { label: '创建', value: 'create' },
-  { label: '指派', value: 'assignment' },
-  { label: '完成', value: 'complete' },
-  { label: '删除', value: 'delete' },
-  { label: '更新', value: 'update' },
-  { label: '超时', value: 'timeout' }
+  { label: 'Criar', value: 'create' },
+  { label: 'Atribuir', value: 'assignment' },
+  { label: 'Concluir', value: 'complete' },
+  { label: 'Excluir', value: 'delete' },
+  { label: 'Atualizar', value: 'update' },
+  { label: 'Tempo esgotado', value: 'timeout' }
 ]

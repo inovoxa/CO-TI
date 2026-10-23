@@ -22,8 +22,8 @@ const { result_code, base_url, request_timeout } = config
 
 // 需要忽略的提示。忽略后，自动 Promise.reject('error')
 const ignoreMsgs = [
-  '无效的刷新令牌', // 刷新令牌被删除时，不用提示
-  '刷新令牌已过期' // 使用刷新令牌，刷新获取新的访问令牌时，结果因为过期失败，此时需要忽略。否则，会导致继续 401，无法跳转到登出界面
+  'Sessão inválida: entre novamente', // 刷新令牌被删除时，不用提示
+  'Sua sessão expirou: entre novamente' // 使用刷新令牌，刷新获取新的访问令牌时，结果因为过期失败，此时需要忽略。否则，会导致继续 401，无法跳转到登出界面
 ]
 // 是否显示重新登录
 export const isRelogin = { show: false }
@@ -95,7 +95,7 @@ service.interceptors.request.use(
           config.headers[ApiEncrypt.getEncryptHeader()] = 'true'
         }
       } catch (error) {
-        console.error('请求数据加密失败:', error)
+        console.error('Falha ao cifrar a requisição:', error)
         throw error
       }
     }
@@ -128,8 +128,8 @@ service.interceptors.response.use(
         // 解密响应数据
         data = ApiEncrypt.decryptResponse(data)
       } catch (error) {
-        console.error('响应数据解密失败:', error)
-        throw new Error('响应数据解密失败: ' + (error as Error).message)
+        console.error('Falha ao decifrar a resposta:', error)
+        throw new Error('Falha ao decifrar a resposta: ' + (error as Error).message)
       }
     }
 
@@ -207,13 +207,13 @@ service.interceptors.response.use(
           t('sys.api.errMsg901') +
           '</div>' +
           '<div> &nbsp; </div>' +
-          '<div>参考 https://doc.iocoder.cn/ 教程</div>' +
+          '<div>Documentação do CO-TI</div>' +
           '<div> &nbsp; </div>' +
-          '<div>5 分钟搭建本地环境</div>'
+          '<div>Ambiente de desenvolvimento: veja o README</div>'
       })
       return Promise.reject(new Error(msg))
     } else if (code !== 0 && code !== 200) {
-      if (msg === '无效的刷新令牌') {
+      if (msg === 'Sessão inválida: entre novamente') {
         // hard coding：忽略这个提示，直接登出
         console.log(msg)
         return handleAuthorized()

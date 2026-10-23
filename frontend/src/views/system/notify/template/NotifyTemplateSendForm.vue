@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model="dialogVisible" title="测试发送" :max-height="500">
+  <Dialog v-model="dialogVisible" title="Enviar teste" :max-height="500">
     <el-form
       ref="formRef"
       v-loading="formLoading"
@@ -7,15 +7,15 @@
       :rules="formRules"
       label-width="140px"
     >
-      <el-form-item label="模板内容" prop="content">
+      <el-form-item label="Conteúdo do modelo" prop="content">
         <el-input
           v-model="formData.content"
-          placeholder="请输入模板内容"
+          placeholder="Digite o conteúdo do modelo"
           readonly
           type="textarea"
         />
       </el-form-item>
-      <el-form-item label="用户类型" prop="userType">
+      <el-form-item label="Tipo de usuário" prop="userType">
         <el-radio-group v-model="formData.userType">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.USER_TYPE)"
@@ -26,11 +26,11 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-show="formData.userType === 1" label="接收人ID" prop="userId">
+      <el-form-item v-show="formData.userType === 1" label="Nº do destinatário" prop="userId">
         <el-input v-model="formData.userId" style="width: 160px" />
       </el-form-item>
-      <el-form-item v-show="formData.userType === 2" label="接收人" prop="userId">
-        <el-select v-model="formData.userId" placeholder="请选择接收人">
+      <el-form-item v-show="formData.userType === 2" label="Destinatário" prop="userId">
+        <el-select v-model="formData.userId" placeholder="Selecione o destinatário">
           <el-option
             v-for="item in userOption"
             :key="item.id"
@@ -42,18 +42,18 @@
       <el-form-item
         v-for="param in formData.params"
         :key="param"
-        :label="'参数 {' + param + '}'"
+        :label="'Parâmetro {' + param + '}'"
         :prop="'templateParams.' + param"
       >
         <el-input
           v-model="formData.templateParams[param]"
-          :placeholder="'请输入 ' + param + ' 参数'"
+          :placeholder="'Digite ' + param + ''"
         />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -77,8 +77,8 @@ const formData = ref({
   templateParams: new Map()
 })
 const formRules = reactive({
-  userId: [{ required: true, message: '用户编号不能为空', trigger: 'change' }],
-  templateCode: [{ required: true, message: '模版编号不能为空', trigger: 'blur' }],
+  userId: [{ required: true, message: 'Informe o nº do usuário', trigger: 'change' }],
+  templateCode: [{ required: true, message: 'Informe o nº do modelo', trigger: 'blur' }],
   templateParams: {}
 })
 const formRef = ref() // 表单 Ref
@@ -100,7 +100,7 @@ const open = async (id: number) => {
       return obj
     }, {})
     formRules.templateParams = data.params.reduce((obj, item) => {
-      obj[item] = { required: true, message: '参数 ' + item + ' 不能为空', trigger: 'blur' }
+      obj[item] = { required: true, message: 'Parâmetro ' + item + ' é obrigatório', trigger: 'blur' }
       return obj
     }, {})
   } finally {
@@ -123,7 +123,7 @@ const submitForm = async () => {
     const data = formData.value as unknown as NotifyTemplateApi.NotifySendReqVO
     const logId = await NotifyTemplateApi.sendNotify(data)
     if (logId) {
-      message.success('提交发送成功！发送结果，见发送日志编号：' + logId)
+      message.success('Envio solicitado! Acompanhe no log de envio nº ' + logId)
     }
     dialogVisible.value = false
   } finally {

@@ -26,10 +26,10 @@ export class AES {
   static encrypt(data: string, key: string): string {
     try {
       if (!key) {
-        throw new Error('AES 加密密钥不能为空')
+        throw new Error('A chave de cifra AES é obrigatória')
       }
       if (key.length !== 32) {
-        throw new Error(`AES 加密密钥长度必须为 32 位，当前长度: ${key.length}`)
+        throw new Error(`A chave AES precisa ter 32 caracteres; tamanho atual: ${key.length}`)
       }
 
       const keyUtf8 = CryptoJS.enc.Utf8.parse(key)
@@ -39,7 +39,7 @@ export class AES {
       })
       return encrypted.toString()
     } catch (error) {
-      console.error('AES 加密失败:', error)
+      console.error('Falha ao cifrar com AES:', error)
       throw error
     }
   }
@@ -53,13 +53,13 @@ export class AES {
   static decrypt(encryptedData: string, key: string): string {
     try {
       if (!key) {
-        throw new Error('AES 解密密钥不能为空')
+        throw new Error('A chave de decifração AES é obrigatória')
       }
       if (key.length !== 32) {
-        throw new Error(`AES 解密密钥长度必须为 32 位，当前长度: ${key.length}`)
+        throw new Error(`A chave AES precisa ter 32 caracteres; tamanho atual: ${key.length}`)
       }
       if (!encryptedData) {
-        throw new Error('AES 解密数据不能为空')
+        throw new Error('Não há dados para decifrar com AES')
       }
 
       const keyUtf8 = CryptoJS.enc.Utf8.parse(key)
@@ -69,11 +69,11 @@ export class AES {
       })
       const result = decrypted.toString(CryptoJS.enc.Utf8)
       if (!result) {
-        throw new Error('AES 解密结果为空，可能是密钥错误或数据损坏')
+        throw new Error('A decifração AES voltou vazia: chave errada ou dados corrompidos')
       }
       return result
     } catch (error) {
-      console.error('AES 解密失败:', error)
+      console.error('Falha ao decifrar com AES:', error)
       throw error
     }
   }
@@ -92,18 +92,18 @@ export class RSA {
   static encrypt(data: string, publicKey: string): string | false {
     try {
       if (!publicKey) {
-        throw new Error('RSA 公钥不能为空')
+        throw new Error('A chave pública RSA é obrigatória')
       }
 
       const encryptor = new JSEncrypt()
       encryptor.setPublicKey(publicKey)
       const result = encryptor.encrypt(data)
       if (result === false) {
-        throw new Error('RSA 加密失败，可能是公钥格式错误或数据过长')
+        throw new Error('Falha ao cifrar com RSA: chave pública inválida ou dados longos demais')
       }
       return result
     } catch (error) {
-      console.error('RSA 加密失败:', error)
+      console.error('Falha ao cifrar com RSA:', error)
       throw error
     }
   }
@@ -117,21 +117,21 @@ export class RSA {
   static decrypt(encryptedData: string, privateKey: string): string | false {
     try {
       if (!privateKey) {
-        throw new Error('RSA 私钥不能为空')
+        throw new Error('A chave privada RSA é obrigatória')
       }
       if (!encryptedData) {
-        throw new Error('RSA 解密数据不能为空')
+        throw new Error('Não há dados para decifrar com RSA')
       }
 
       const encryptor = new JSEncrypt()
       encryptor.setPrivateKey(privateKey)
       const result = encryptor.decrypt(encryptedData)
       if (result === false) {
-        throw new Error('RSA 解密失败，可能是私钥错误或数据损坏')
+        throw new Error('Falha ao decifrar com RSA: chave privada errada ou dados corrompidos')
       }
       return result
     } catch (error) {
-      console.error('RSA 解密失败:', error)
+      console.error('Falha ao decifrar com RSA:', error)
       throw error
     }
   }
@@ -163,23 +163,23 @@ export class ApiEncrypt {
 
       if (API_ENCRYPT_ALGORITHM.toUpperCase() === 'AES') {
         if (!API_ENCRYPT_REQUEST_KEY) {
-          throw new Error('AES 请求加密密钥未配置')
+          throw new Error('Chave AES de requisição não configurada')
         }
         return AES.encrypt(jsonData, API_ENCRYPT_REQUEST_KEY)
       } else if (API_ENCRYPT_ALGORITHM.toUpperCase() === 'RSA') {
         if (!API_ENCRYPT_REQUEST_KEY) {
-          throw new Error('RSA 公钥未配置')
+          throw new Error('Chave pública RSA não configurada')
         }
         const result = RSA.encrypt(jsonData, API_ENCRYPT_REQUEST_KEY)
         if (result === false) {
-          throw new Error('RSA 加密失败')
+          throw new Error('Falha ao cifrar com RSA')
         }
         return result
       } else {
-        throw new Error(`不支持的加密算法: ${API_ENCRYPT_ALGORITHM}`)
+        throw new Error(`Algoritmo de cifra não suportado: ${API_ENCRYPT_ALGORITHM}`)
       }
     } catch (error) {
-      console.error('请求数据加密失败:', error)
+      console.error('Falha ao cifrar a requisição:', error)
       throw error
     }
   }
@@ -198,23 +198,23 @@ export class ApiEncrypt {
       let decryptedData: string | false = ''
       if (API_ENCRYPT_ALGORITHM.toUpperCase() === 'AES') {
         if (!API_ENCRYPT_RESPONSE_KEY) {
-          throw new Error('AES 响应解密密钥未配置')
+          throw new Error('Chave AES de resposta não configurada')
         }
         decryptedData = AES.decrypt(encryptedData, API_ENCRYPT_RESPONSE_KEY)
       } else if (API_ENCRYPT_ALGORITHM.toUpperCase() === 'RSA') {
         if (!API_ENCRYPT_RESPONSE_KEY) {
-          throw new Error('RSA 私钥未配置')
+          throw new Error('Chave privada RSA não configurada')
         }
         decryptedData = RSA.decrypt(encryptedData, API_ENCRYPT_RESPONSE_KEY)
         if (decryptedData === false) {
-          throw new Error('RSA 解密失败')
+          throw new Error('Falha ao decifrar com RSA')
         }
       } else {
-        throw new Error(`不支持的解密算法: ${API_ENCRYPT_ALGORITHM}`)
+        throw new Error(`Algoritmo de decifração não suportado: ${API_ENCRYPT_ALGORITHM}`)
       }
 
       if (!decryptedData) {
-        throw new Error('解密结果为空')
+        throw new Error('A decifração voltou vazia')
       }
 
       // 尝试解析为 JSON，如果失败则返回原字符串
@@ -224,7 +224,7 @@ export class ApiEncrypt {
         return decryptedData
       }
     } catch (error) {
-      console.error('响应数据解密失败:', error)
+      console.error('Falha ao decifrar a resposta:', error)
       throw error
     }
   }

@@ -1,6 +1,5 @@
 import { useCache, CACHE_KEY } from '@/hooks/web/useCache'
 import { TokenType } from '@/api/login/types'
-import { decrypt, encrypt } from '@/utils/jsencrypt'
 
 const { wsCache } = useCache()
 
@@ -50,17 +49,22 @@ export type LoginFormType = {
   rememberMe: boolean
 }
 
+// CO-TI: "lembrar" guarda só o usuário. A senha (do AD) nunca vai para o navegador: a "criptografia" do RuoYi
+// usava uma chave privada embutida no próprio bundle, o que equivale a texto puro.
 export const getLoginForm = () => {
   const loginForm: LoginFormType = wsCache.get(CACHE_KEY.LoginForm)
   if (loginForm) {
-    loginForm.password = decrypt(loginForm.password) as string
+    loginForm.password = ''
   }
   return loginForm
 }
 
 export const setLoginForm = (loginForm: LoginFormType) => {
-  loginForm.password = encrypt(loginForm.password) as string
-  wsCache.set(CACHE_KEY.LoginForm, loginForm, { exp: 30 * 24 * 60 * 60 })
+  wsCache.set(
+    CACHE_KEY.LoginForm,
+    { ...loginForm, password: '', captchaVerification: undefined },
+    { exp: 30 * 24 * 60 * 60 }
+  )
 }
 
 export const removeLoginForm = () => {

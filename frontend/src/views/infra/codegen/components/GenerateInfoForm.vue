@@ -2,7 +2,7 @@
   <el-form ref="formRef" :model="formData" :rules="rules" label-width="150px">
     <el-row>
       <el-col :span="12">
-        <el-form-item label="生成模板" prop="templateType">
+        <el-form-item label="Modelo" prop="templateType">
           <el-select v-model="formData.templateType">
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_CODEGEN_TEMPLATE_TYPE)"
@@ -14,7 +14,7 @@
         </el-form-item>
       </el-col>
       <el-col :span="12">
-        <el-form-item label="前端类型" prop="frontType">
+        <el-form-item label="Frontend" prop="frontType">
           <el-select v-model="formData.frontType">
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_CODEGEN_FRONT_TYPE)"
@@ -27,7 +27,7 @@
       </el-col>
 
       <el-col :span="12">
-        <el-form-item label="生成场景" prop="scene">
+        <el-form-item label="Destino" prop="scene">
           <el-select v-model="formData.scene">
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_CODEGEN_SCENE)"
@@ -42,8 +42,8 @@
         <el-form-item>
           <template #label>
             <span>
-              上级菜单
-              <el-tooltip content="分配到指定菜单下，例如 系统管理" placement="top">
+              Menu superior
+              <el-tooltip content="Menu onde a tela fica, por exemplo Sistema" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
@@ -54,7 +54,7 @@
             :props="menuTreeProps"
             check-strictly
             node-key="id"
-            placeholder="请选择系统菜单"
+            placeholder="Selecione o menu"
           />
         </el-form-item>
       </el-col>
@@ -75,9 +75,9 @@
         <el-form-item prop="moduleName">
           <template #label>
             <span>
-              模块名
+              Módulo
               <el-tooltip
-                content="模块名，即一级目录，例如 system、infra、tool 等等"
+                content="Módulo (primeiro nível), por exemplo system, infra, itsm"
                 placement="top"
               >
                 <Icon icon="ep:question-filled" />
@@ -92,9 +92,9 @@
         <el-form-item prop="businessName">
           <template #label>
             <span>
-              业务名
+              Funcionalidade
               <el-tooltip
-                content="业务名，即二级目录，例如 user、permission、dict 等等"
+                content="Funcionalidade (segundo nível), por exemplo user, permission, dict"
                 placement="top"
               >
                 <Icon icon="ep:question-filled" />
@@ -121,9 +121,9 @@
         <el-form-item prop="className">
           <template #label>
             <span>
-              类名称
+              Classe
               <el-tooltip
-                content="类名称（首字母大写），例如SysUser、SysMenu、SysDictData 等等"
+                content="Nome da classe (inicial maiúscula), por exemplo SysUser, SysMenu"
                 placement="top"
               >
                 <Icon icon="ep:question-filled" />
@@ -138,8 +138,8 @@
         <el-form-item prop="classComment">
           <template #label>
             <span>
-              类描述
-              <el-tooltip content="用作类描述，例如 用户" placement="top">
+              Descrição da classe
+              <el-tooltip content="Descrição da classe, por exemplo Usuário" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
@@ -152,9 +152,9 @@
         <el-form-item prop="genPath">
           <template #label>
             <span>
-              自定义路径
+              Caminho personalizado
               <el-tooltip
-                content="填写磁盘绝对路径，若不填写，则生成到当前Web项目下"
+                content="Caminho absoluto no disco; vazio gera dentro do projeto atual"
                 placement="top"
               >
                 <Icon icon="ep:question-filled" />
@@ -165,13 +165,13 @@
             <template #append>
               <el-dropdown>
                 <el-button type="primary">
-                  最近路径快速选择
+                  Caminhos recentes
                   <i class="el-icon-arrow-down el-icon--right"></i>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="formData.genPath = '/'">
-                      恢复默认的生成基础路径
+                      Voltar ao caminho padrão
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -185,23 +185,23 @@
     <!-- 树表信息 -->
     <el-row v-if="formData.templateType == 2">
       <el-col :span="24">
-        <h4 class="form-header">树表信息</h4>
+        <h4 class="form-header">Árvore</h4>
       </el-col>
       <el-col :span="12">
         <el-form-item prop="treeParentColumnId">
           <template #label>
             <span>
-              父编号字段
-              <el-tooltip content="树显示的父编码字段名， 如：parent_Id" placement="top">
+              Campo do pai
+              <el-tooltip content="Coluna com o pai, por exemplo parent_id" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
-          <el-select v-model="formData.treeParentColumnId" placeholder="请选择">
+          <el-select v-model="formData.treeParentColumnId" placeholder="Selecione">
             <el-option
               v-for="(column, index) in props.columns"
               :key="index"
-              :label="column.columnName + '：' + column.columnComment"
+              :label="column.columnName + ': ' + column.columnComment"
               :value="column.id"
             />
           </el-select>
@@ -211,17 +211,17 @@
         <el-form-item prop="treeNameColumnId">
           <template #label>
             <span>
-              树名称字段
-              <el-tooltip content="树节点的显示名称字段名， 如：dept_name" placement="top">
+              Campo do nome
+              <el-tooltip content="Coluna exibida no nó, por exemplo dept_name" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
-          <el-select v-model="formData.treeNameColumnId" placeholder="请选择">
+          <el-select v-model="formData.treeNameColumnId" placeholder="Selecione">
             <el-option
               v-for="(column, index) in props.columns"
               :key="index"
-              :label="column.columnName + '：' + column.columnComment"
+              :label="column.columnName + ': ' + column.columnComment"
               :value="column.id"
             />
           </el-select>
@@ -232,23 +232,23 @@
     <!-- 主表信息 -->
     <el-row v-if="formData.templateType == 15">
       <el-col :span="24">
-        <h4 class="form-header">主表信息</h4>
+        <h4 class="form-header">Tabela mestre</h4>
       </el-col>
       <el-col :span="12">
         <el-form-item prop="masterTableId">
           <template #label>
             <span>
-              关联的主表
-              <el-tooltip content="关联主表（父表）的表名， 如：system_user" placement="top">
+              Tabela mestre
+              <el-tooltip content="Nome da tabela mestre, por exemplo system_users" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
-          <el-select v-model="formData.masterTableId" placeholder="请选择">
+          <el-select v-model="formData.masterTableId" placeholder="Selecione">
             <el-option
               v-for="(table0, index) in tables"
               :key="index"
-              :label="table0.tableName + '：' + table0.tableComment"
+              :label="table0.tableName + ': ' + table0.tableComment"
               :value="table0.id"
             />
           </el-select>
@@ -258,17 +258,17 @@
         <el-form-item prop="subJoinColumnId">
           <template #label>
             <span>
-              子表关联的字段
-              <el-tooltip content="子表关联的字段， 如：user_id" placement="top">
+              Campo de ligação
+              <el-tooltip content="Coluna da tabela detalhe que aponta para a mestre, por exemplo user_id" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
-          <el-select v-model="formData.subJoinColumnId" placeholder="请选择">
+          <el-select v-model="formData.subJoinColumnId" placeholder="Selecione">
             <el-option
               v-for="(column, index) in props.columns"
               :key="index"
-              :label="column.columnName + '：' + column.columnComment"
+              :label="column.columnName + ': ' + column.columnComment"
               :value="column.id"
             />
           </el-select>
@@ -278,15 +278,15 @@
         <el-form-item prop="subJoinMany">
           <template #label>
             <span>
-              关联关系
-              <el-tooltip content="主表与子表的关联关系" placement="top">
+              Relação
+              <el-tooltip content="Relação entre mestre e detalhe" placement="top">
                 <Icon icon="ep:question-filled" />
               </el-tooltip>
             </span>
           </template>
-          <el-radio-group v-model="formData.subJoinMany" placeholder="请选择">
-            <el-radio :value="true">一对多</el-radio>
-            <el-radio :value="false">一对一</el-radio>
+          <el-radio-group v-model="formData.subJoinMany" placeholder="Selecione">
+            <el-radio :value="true">Um para muitos</el-radio>
+            <el-radio :value="false">Um para um</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-col>

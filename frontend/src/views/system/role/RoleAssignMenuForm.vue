@@ -1,28 +1,28 @@
 <template>
-  <Dialog v-model="dialogVisible" title="菜单权限">
+  <Dialog v-model="dialogVisible" title="Permissões de menu">
     <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="80px">
-      <el-form-item label="角色名称">
+      <el-form-item label="Nome do perfil">
         <el-tag>{{ formData.name }}</el-tag>
       </el-form-item>
-      <el-form-item label="角色标识">
+      <el-form-item label="Código do perfil">
         <el-tag>{{ formData.code }}</el-tag>
       </el-form-item>
-      <el-form-item label="菜单权限">
+      <el-form-item label="Permissões de menu">
         <el-card class="w-full h-400px !overflow-y-scroll" shadow="never">
           <template #header>
-            全选/全不选:
+            Marcar/desmarcar tudo:
             <el-switch
               v-model="treeNodeAll"
-              active-text="是"
-              inactive-text="否"
+              active-text="Sim"
+              inactive-text="Não"
               inline-prompt
               @change="handleCheckedTreeNodeAll"
             />
-            全部展开/折叠:
+            Expandir/recolher tudo:
             <el-switch
               v-model="menuExpand"
-              active-text="展开"
-              inactive-text="折叠"
+              active-text="Expandir"
+              inactive-text="Recolher"
               inline-prompt
               @change="handleCheckedTreeExpand"
             />
@@ -31,7 +31,7 @@
             ref="treeRef"
             :data="menuOptions"
             :props="defaultProps"
-            empty-text="加载中，请稍候"
+            empty-text="Carregando, aguarde"
             node-key="id"
             show-checkbox
           />
@@ -39,8 +39,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>

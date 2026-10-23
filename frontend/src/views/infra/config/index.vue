@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="配置中心" url="https://doc.iocoder.cn/config-center/" />
+  <doc-alert title="Configurações" url="https://doc.iocoder.cn/config-center/" />
 
   <!-- 搜索 -->
   <ContentWrap>
@@ -10,28 +10,28 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="参数名称" prop="name">
+      <el-form-item label="Nome" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入参数名称"
+          placeholder="Digite o nome"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="参数键名" prop="key">
+      <el-form-item label="Chave" prop="key">
         <el-input
           v-model="queryParams.key"
-          placeholder="请输入参数键名"
+          placeholder="Digite a chave"
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="系统内置" prop="type">
+      <el-form-item label="Do sistema" prop="type">
         <el-select
           v-model="queryParams.type"
-          placeholder="请选择系统内置"
+          placeholder="Selecione"
           clearable
           class="!w-240px"
         >
@@ -43,27 +43,27 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
+      <el-form-item label="Criado em" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          start-placeholder="Data inicial"
+          end-placeholder="Data final"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
         />
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
+        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['infra:config:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
+          <Icon icon="ep:plus" class="mr-5px" /> Novo
         </el-button>
         <el-button
           type="danger"
@@ -72,7 +72,7 @@
           @click="handleDeleteBatch"
           v-hasPermi="['infra:config:delete']"
         >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
+          <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
         <el-button
           type="success"
@@ -81,7 +81,7 @@
           :loading="exportLoading"
           v-hasPermi="['infra:config:export']"
         >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
+          <Icon icon="ep:download" class="mr-5px" /> Exportar
         </el-button>
       </el-form-item>
     </el-form>
@@ -91,30 +91,30 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="参数主键" align="center" prop="id" />
-      <el-table-column label="参数分类" align="center" prop="category" />
-      <el-table-column label="参数名称" align="center" prop="name" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键名" align="center" prop="key" :show-overflow-tooltip="true" />
-      <el-table-column label="参数键值" align="center" prop="value" />
-      <el-table-column label="是否可见" align="center" prop="visible">
+      <el-table-column label="Nº" align="center" prop="id" />
+      <el-table-column label="Categoria" align="center" prop="category" />
+      <el-table-column label="Nome" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column label="Chave" align="center" prop="key" :show-overflow-tooltip="true" />
+      <el-table-column label="Valor" align="center" prop="value" />
+      <el-table-column label="Visível" align="center" prop="visible">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.visible" />
         </template>
       </el-table-column>
-      <el-table-column label="系统内置" align="center" prop="type">
+      <el-table-column label="Do sistema" align="center" prop="type">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_CONFIG_TYPE" :value="scope.row.type" />
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
+      <el-table-column label="Observações" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column
-        label="创建时间"
+        label="Criado em"
         align="center"
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
+      <el-table-column label="Ações" align="center">
         <template #default="scope">
           <el-button
             link
@@ -122,7 +122,7 @@
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['infra:config:update']"
           >
-            编辑
+            Editar
           </el-button>
           <el-button
             link
@@ -130,7 +130,7 @@
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['infra:config:delete']"
           >
-            删除
+            Excluir
           </el-button>
         </template>
       </el-table-column>
@@ -243,7 +243,7 @@ const handleExport = async () => {
     // 发起导出
     exportLoading.value = true
     const data = await ConfigApi.exportConfig(queryParams)
-    download.excel(data, '参数配置.xls')
+    download.excel(data, 'configuracoes.xls')
   } catch {
   } finally {
     exportLoading.value = false

@@ -7,8 +7,8 @@
       :rules="formRules"
       label-width="140px"
     >
-      <el-form-item label="邮箱账号" prop="accountId">
-        <el-select v-model="formData.accountId" placeholder="请选择邮箱账号">
+      <el-form-item label="Conta de e-mail" prop="accountId">
+        <el-select v-model="formData.accountId" placeholder="Selecione a conta de e-mail">
           <el-option
             v-for="account in accountList"
             :key="account.id"
@@ -17,22 +17,22 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="模板编码" prop="code">
-        <el-input v-model="formData.code" placeholder="请输入模板编码" />
+      <el-form-item label="Código do modelo" prop="code">
+        <el-input v-model="formData.code" placeholder="Digite o código do modelo" />
       </el-form-item>
-      <el-form-item label="模板名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入模板名称" />
+      <el-form-item label="Nome do modelo" prop="name">
+        <el-input v-model="formData.name" placeholder="Digite o nome do modelo" />
       </el-form-item>
-      <el-form-item label="发送人名称" prop="nickname">
-        <el-input v-model="formData.nickname" placeholder="请输入发送人名称" />
+      <el-form-item label="Remetente" prop="nickname">
+        <el-input v-model="formData.nickname" placeholder="Digite o remetente" />
       </el-form-item>
-      <el-form-item label="模板标题" prop="title">
-        <el-input v-model="formData.title" placeholder="请输入模板标题" />
+      <el-form-item label="Assunto do modelo" prop="title">
+        <el-input v-model="formData.title" placeholder="Digite o assunto" />
       </el-form-item>
-      <el-form-item label="模板内容" prop="content">
+      <el-form-item label="Conteúdo do modelo" prop="content">
         <Editor v-model="formData.content" height="200px" />
       </el-form-item>
-      <el-form-item label="开启状态" prop="status">
+      <el-form-item label="Situação" prop="status">
         <el-radio-group v-model="formData.status">
           <el-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -45,8 +45,8 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">OK</el-button>
+      <el-button @click="dialogVisible = false">Cancelar</el-button>
     </template>
   </Dialog>
 </template>
@@ -76,12 +76,12 @@ const formData = ref({
   status: CommonStatusEnum.ENABLE
 })
 const formRules = reactive({
-  accountId: [{ required: true, message: '邮箱账号不能为空', trigger: 'change' }],
-  code: [{ required: true, message: '模板编码不能为空', trigger: 'blur' }],
-  name: [{ required: true, message: '模板名称不能为空', trigger: 'blur' }],
-  title: [{ required: true, message: '模板标题不能为空', trigger: 'blur' }],
-  content: [{ required: true, message: '模板内容不能为空', trigger: 'blur' }],
-  status: [{ required: true, message: '开启状态不能为空', trigger: 'blur' }]
+  accountId: [{ required: true, message: 'Informe a conta de e-mail', trigger: 'change' }],
+  code: [{ required: true, message: 'Informe o código do modelo', trigger: 'blur' }],
+  name: [{ required: true, message: 'Informe o nome do modelo', trigger: 'blur' }],
+  title: [{ required: true, message: 'Informe o assunto', trigger: 'blur' }],
+  content: [{ required: true, message: 'Informe o conteúdo do modelo', trigger: 'blur' }],
+  status: [{ required: true, message: 'Informe a situação', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 const accountList = ref<MailAccountApi.MailAccountVO[]>([]) // 邮箱账号列表

@@ -36,7 +36,7 @@ const props = withDefaults(
   {
     disabled: false,
     clearable: true,
-    placeholder: '请选择用户'
+    placeholder: 'Selecione o usuário'
   }
 )
 

@@ -18,32 +18,32 @@ public class DeptSaveReqVO {
     private Long id;
 
     @Schema(description = "部门名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
-    @NotBlank(message = "部门名称不能为空")
-    @Size(max = 30, message = "部门名称长度不能超过 30 个字符")
+    @NotBlank(message = "Informe o nome do departamento")
+    @Size(max = 30, message = "O nome do departamento pode ter no máximo 30 caracteres")
     private String name;
 
     @Schema(description = "父部门 ID", example = "1024")
     private Long parentId;
 
     @Schema(description = "显示顺序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
-    @NotNull(message = "显示顺序不能为空")
+    @NotNull(message = "Informe a ordem")
     private Integer sort;
 
     @Schema(description = "负责人的用户编号", example = "2048")
     private Long leaderUserId;
 
     @Schema(description = "联系电话", example = "15601691000")
-    @Size(max = 11, message = "联系电话长度不能超过11个字符")
+    @Size(max = 11, message = "Telefone inválido")
     private String phone;
 
     @Schema(description = "邮箱", example = "yudao@iocoder.cn")
-    @Email(message = "邮箱格式不正确")
-    @Size(max = 50, message = "邮箱长度不能超过 50 个字符")
+    @Email(message = "E-mail inválido")
+    @Size(max = 50, message = "O e-mail pode ter no máximo 128 caracteres")
     private String email;
 
     @Schema(description = "状态,见 CommonStatusEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "状态不能为空")
-    @InEnum(value = CommonStatusEnum.class, message = "修改状态必须是 {value}")
+    @NotNull(message = "Informe a situação")
+    @InEnum(value = CommonStatusEnum.class, message = "A situação deve ser {value}")
     private Integer status;
 
 }

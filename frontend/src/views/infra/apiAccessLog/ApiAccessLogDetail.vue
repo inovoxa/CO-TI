@@ -1,51 +1,51 @@
 <template>
-  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="详情" width="800">
+  <Dialog v-model="dialogVisible" :max-height="500" :scroll="true" title="Detalhes" width="800">
     <el-descriptions :column="1" border>
-      <el-descriptions-item label="日志主键" min-width="120">
+      <el-descriptions-item label="Nº do log" min-width="120">
         {{ detailData.id }}
       </el-descriptions-item>
-      <el-descriptions-item label="链路追踪">
+      <el-descriptions-item label="Rastreamento">
         {{ detailData.traceId }}
       </el-descriptions-item>
-      <el-descriptions-item label="应用名">
+      <el-descriptions-item label="Aplicação">
         {{ detailData.applicationName }}
       </el-descriptions-item>
-      <el-descriptions-item label="用户信息">
+      <el-descriptions-item label="Usuário">
         {{ detailData.userId }}
         <dict-tag :type="DICT_TYPE.USER_TYPE" :value="detailData.userType" />
       </el-descriptions-item>
-      <el-descriptions-item label="用户 IP">
+      <el-descriptions-item label="IP">
         {{ detailData.userIp }}
       </el-descriptions-item>
-      <el-descriptions-item label="用户 UA">
+      <el-descriptions-item label="Navegador">
         {{ detailData.userAgent }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求信息">
+      <el-descriptions-item label="Requisição">
         {{ detailData.requestMethod }} {{ detailData.requestUrl }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求参数">
+      <el-descriptions-item label="Parâmetros">
         {{ detailData.requestParams }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求结果">
+      <el-descriptions-item label="Resposta">
         {{ detailData.responseBody }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求时间">
+      <el-descriptions-item label="Data">
         {{ formatDate(detailData.beginTime) }} ~ {{ formatDate(detailData.endTime) }}
       </el-descriptions-item>
-      <el-descriptions-item label="请求耗时">{{ detailData.duration }} ms</el-descriptions-item>
-      <el-descriptions-item label="操作结果">
-        <div v-if="detailData.resultCode === 0">正常</div>
+      <el-descriptions-item label="Duração">{{ detailData.duration }} ms</el-descriptions-item>
+      <el-descriptions-item label="Resultado">
+        <div v-if="detailData.resultCode === 0">Ativo</div>
         <div v-else-if="detailData.resultCode > 0">
-          失败 | {{ detailData.resultCode }} | {{ detailData.resultMsg }}
+          Falha | {{ detailData.resultCode }} | {{ detailData.resultMsg }}
         </div>
       </el-descriptions-item>
-      <el-descriptions-item label="操作模块">
+      <el-descriptions-item label="Módulo">
         {{ detailData.operateModule }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作名">
+      <el-descriptions-item label="Operação">
         {{ detailData.operateName }}
       </el-descriptions-item>
-      <el-descriptions-item label="操作名">
+      <el-descriptions-item label="Operação">
         <dict-tag :type="DICT_TYPE.INFRA_OPERATE_TYPE" :value="detailData.operateType" />
       </el-descriptions-item>
     </el-descriptions>
