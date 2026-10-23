@@ -60,6 +60,12 @@
             <artifactId>yudao-spring-boot-starter-redis</artifactId>
         </dependency>
 
+        <!-- CO-TI: WebSocket do telão (MonitorPushJob → monitor-kpi / monitor-ocorrencia) -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- Job 定时任务相关 -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>

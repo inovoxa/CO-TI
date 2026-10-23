@@ -1,0 +1,1172 @@
+<title>Centro de Operações de TI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operations console — module rail on the left, unit filter in the top bar, one module view at a time */
+:root{
+  --bg:#eef2f6; --panel:#ffffff; --panel2:#f6f8fb; --line:#d6dee8; --fg:#13202f; --muted:#5d6b7d;
+  --accent:#1f5fbf; --accent-fg:#ffffff; --land:#dfe7f0; --land-line:#b9c6d6; --sel:#e6eefa; --rail:#13202f; --rail-fg:#c9d4e3;
+  --ok:#15803d; --warn:#b45309; --crit:#c81e1e; --info:#2563eb;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1220; --panel:#111a2e; --panel2:#0e1627; --line:#22304d; --fg:#e6ecf7; --muted:#8b98b3;
+  --accent:#6aa3ff; --accent-fg:#0b1220; --land:#16223a; --land-line:#2c3d5f; --sel:#1b2a48; --rail:#070c16; --rail-fg:#9fb0cc;
+  --ok:#22c55e; --warn:#f59e0b; --crit:#f87171; --info:#60a5fa; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0b1220; --panel:#111a2e; --panel2:#0e1627; --line:#22304d; --fg:#e6ecf7; --muted:#8b98b3;
+  --accent:#6aa3ff; --accent-fg:#0b1220; --land:#16223a; --land-line:#2c3d5f; --sel:#1b2a48; --rail:#070c16; --rail-fg:#9fb0cc;
+  --ok:#22c55e; --warn:#f59e0b; --crit:#f87171; --info:#60a5fa; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:212px minmax(0,1fr);min-height:100%}
+
+/* rail */
+.rail{background:var(--rail);color:var(--rail-fg);padding-block:16px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 14px;color:#fff}
+.brand svg{flex:none}
+.brand b{display:block;font-size:14px;font-weight:600;line-height:1.2}
+.brand small{display:block;font-size:11px;color:var(--rail-fg)}
+.nav{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13.5px}
+.nav:hover{background:rgb(255 255 255 / .06);color:#fff}
+.nav.on{background:rgb(255 255 255 / .1);color:#fff;box-shadow:inset 3px 0 0 #6aa3ff}
+.nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav .badge{margin-left:auto;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:9px;background:rgb(255 255 255 / .1)}
+.nav .badge.crit{background:#c81e1e;color:#fff}
+.rail .foot{margin-top:auto;font-size:11px;line-height:1.5;padding:8px;color:var(--rail-fg);opacity:.85}
+
+/* main */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:14px;padding-left:20px;padding-right:max(20px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.top h1{margin:0;font-size:18px;font-weight:600}
+.src{font-size:12px;color:var(--muted)}
+.top .grow{flex:1}
+.top select{padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);min-width:0;max-width:260px}
+.live{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ok);white-space:nowrap}
+.live .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite}
+.live small{color:var(--muted);font-family:var(--mono)}
+.view{padding-block:16px;padding-left:20px;padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* shared */
+.grid-kpi{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.grid-kpi.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:8px;padding:9px 12px;min-width:0}
+.kpi span{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi strong{display:block;font-family:var(--mono);font-size:21px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi em{display:block;font-style:normal;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
+.kpi.warn{border-top-color:var(--warn)} .kpi.crit{border-top-color:var(--crit)} .kpi.crit strong{color:var(--crit)} .kpi.ok{border-top-color:var(--ok)}
+.kpi.click{cursor:pointer} .kpi.click:hover{background:var(--sel)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;min-width:0;display:flex;flex-direction:column}
+.panel>h2{margin:0;padding:10px 12px 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.panel>h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+.pad{padding:0 12px 12px}
+.scroll{overflow:auto;min-height:0}
+.sd{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;vertical-align:middle}
+.s-ok,.s-up{background:var(--ok)} .s-atencao,.s-pend{background:var(--warn)} .s-critico,.s-down{background:var(--crit)} .s-info{background:var(--info)}
+.c-ok{color:var(--ok)} .c-warn{color:var(--warn)} .c-crit{color:var(--crit)} .c-muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tag.crit{border-color:var(--crit);color:var(--crit)} .tag.warn{border-color:var(--warn);color:var(--warn)} .tag.ok{border-color:var(--ok);color:var(--ok)} .tag.info{border-color:var(--info);color:var(--info)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px}
+.btn:hover{background:var(--sel)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:4px 11px;font-size:12.5px;cursor:pointer}
+.chip.on{background:var(--sel);border-color:var(--accent);color:var(--accent)}
+.chip b{font-family:var(--mono);font-weight:500;margin-left:4px}
+.search{padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);min-width:0;flex:1;max-width:340px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0;max-width:95ch}
+.empty{padding:16px 12px;color:var(--muted);font-size:13px}
+
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+.t th{position:sticky;top:0;background:var(--panel);text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.t td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.t tr:last-child td{border-bottom:0}
+.t tbody tr:hover td{background:var(--sel)}
+.t tr.click{cursor:pointer}
+.twrap{overflow:auto;max-height:560px}
+.sub2{display:block;font-size:12px;color:var(--muted)}
+
+/* overview */
+.ov{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
+.map{position:relative;height:440px}
+.map svg{width:100%;height:100%;display:block}
+.legend{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.legend i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:12px;line-height:1.55;box-shadow:0 6px 20px rgb(0 0 0 / .18);width:240px}
+.tip .r{display:flex;justify-content:space-between;gap:10px}
+.tip .r span:first-child{color:var(--muted)}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:6px 12px;border-left:3px solid var(--line);cursor:pointer}
+.feed li:hover{background:var(--sel)}
+.feed li.n-critico{border-left-color:var(--crit)} .feed li.n-atencao{border-left-color:var(--warn)} .feed li.n-info{border-left-color:var(--ok)}
+.feed time{font-family:var(--mono);font-size:11.5px;color:var(--muted);padding-top:1px}
+.feed .m{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.feed p{margin:1px 0 0;font-size:13px}
+.feed li.new{animation:flash 1.2s ease-out}
+.ovfeed{max-height:440px}
+
+/* cameras */
+.camgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cam{position:relative;background:#05080f;border-radius:8px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.cam canvas{width:100%;height:100%;display:block}
+.camwrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+.camside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lgpd{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.lgpd b{color:var(--fg);font-weight:600}
+.evlist{list-style:none;margin:0;padding:0;max-height:330px;overflow:auto}
+.evlist li{padding:6px 12px;border-top:1px solid var(--line);font-size:12.5px;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px}
+.evlist time{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.evlist li.alert{background:color-mix(in srgb,var(--crit) 9%,transparent)}
+.plate{font-family:var(--mono);font-size:11.5px;padding:0 5px;border:1px solid var(--line);border-radius:3px;background:var(--panel2)}
+
+/* links */
+.beats{display:flex;gap:2px;align-items:center}
+.beats i{display:block;width:5px;height:18px;border-radius:2px;background:var(--line)}
+.beats i.u{background:var(--ok)} .beats i.p{background:var(--warn)} .beats i.d{background:var(--crit)}
+
+/* bars */
+.hbar{display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:12.5px;padding:3px 0}
+.hbar .b{height:10px;border-radius:5px;background:var(--panel2);overflow:hidden}
+.hbar .b i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.hbar .b i.w{background:var(--warn)}
+.hist{display:flex;align-items:flex-end;gap:3px;height:90px;padding:0 12px 4px}
+.hist .col{flex:1;display:flex;flex-direction:column-reverse;min-width:0}
+.hist .col i{display:block;width:100%}
+.hist .l-info{background:color-mix(in srgb,var(--info) 55%,transparent)} .hist .l-aviso{background:var(--warn)} .hist .l-erro{background:var(--crit)} .hist .l-critico{background:#7f1d1d}
+.histax{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 12px 10px;font-family:var(--mono)}
+.lv{font-family:var(--mono);font-size:11px;padding:0 6px;border-radius:4px;white-space:nowrap}
+.lv-info{color:var(--info)} .lv-aviso{color:var(--warn)} .lv-erro{color:var(--crit)} .lv-critico{background:var(--crit);color:#fff}
+.logt td{font-family:var(--mono);font-size:12px;padding:4px 10px}
+.logt td.msg{font-family:var(--sans);font-size:12.5px}
+
+/* tickets form */
+.form{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr)) auto;gap:8px;padding:0 12px 12px;align-items:end}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;min-width:0}
+.form input,.form select{padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);text-transform:none;letter-spacing:0;font-size:13px;min-width:0}
+
+/* estrutura */
+.est{display:grid;grid-template-columns:270px minmax(0,1fr) 340px;gap:14px;align-items:start}
+.tree ul{list-style:none;margin:0;padding-left:14px}
+.tree>ul{padding-left:4px}
+.tree button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;padding:4px 6px;border-radius:5px;cursor:pointer;line-height:1.3}
+.tree button:hover{background:var(--sel)}
+.tree button.on{background:var(--sel);color:var(--accent);font-weight:500}
+.tree .count{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tree .caret{width:12px;color:var(--muted);font-size:10px}
+.ucard h3{margin:0;font-size:16px}
+.ucard dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:4px 10px;margin:10px 0 0;font-size:13px}
+.ucard dt{color:var(--muted)}
+.ucard dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.ucard h4{margin:14px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ucard ul{list-style:none;margin:0;padding:0;font-size:12.5px}
+.ucard li{padding:5px 0;border-top:1px solid var(--line)}
+.av{width:40px;height:40px;border-radius:50%;background:var(--sel);color:var(--accent);display:grid;place-items:center;font-weight:600}
+
+.hist.tall{height:130px}
+.hist .s-log{background:color-mix(in srgb,var(--info) 60%,transparent)} .hist .s-met{background:color-mix(in srgb,var(--ok) 55%,transparent)} .hist .s-cam{background:var(--warn)} .hist .s-out{background:var(--muted)}
+.legend2{display:flex;gap:10px;flex-wrap:wrap;text-transform:none;letter-spacing:0;font-weight:400}
+.legend2 i{font-style:normal;display:inline-flex;align-items:center;gap:4px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px}
+.sw-log{background:color-mix(in srgb,var(--info) 60%,transparent)} .sw-met{background:color-mix(in srgb,var(--ok) 55%,transparent)} .sw-cam{background:var(--warn)} .sw-out{background:var(--muted)}
+.sizing{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.sz{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2);min-width:0}
+.sz span{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.sz strong{display:block;font-family:var(--mono);font-weight:500;font-size:17px;margin-top:2px}
+.sz em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
+.more{padding:8px 10px;font-size:12px;color:var(--muted)}
+/* mensagens */
+.mx{display:grid;grid-template-columns:280px minmax(0,1fr) 270px;gap:14px;height:calc(100vh - 130px);min-height:560px}
+.mx .panel{min-height:0}
+.mx-tree{flex:1}
+.mx-tree .hash{width:12px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center}
+.mx-tree .sec{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 6px 4px}
+.unr{margin-left:auto;font-family:var(--mono);font-size:11px;background:var(--accent);color:var(--accent-fg);border-radius:9px;padding:0 6px;line-height:17px}
+.unr.alert{background:var(--crit);color:#fff}
+.mx-head{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.mx-head b{font-size:15px;font-weight:600}
+.mx-head span{color:var(--muted);font-size:12.5px}
+.mx-tl{flex:1;padding:6px 14px}
+.msg{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+.msg .av{width:32px;height:32px;font-size:12px}
+.msg .av.bot{background:var(--rail);color:#fff}
+.msg .who{font-weight:500}
+.msg .meta{font-size:12px;color:var(--muted);margin-left:6px}
+.msg .body{margin-top:2px;overflow-wrap:anywhere;line-height:1.5}
+.msg.bot .body{border-left:3px solid var(--info);padding-left:8px}
+.msg.bot.critico .body{border-left-color:var(--crit)} .msg.bot.atencao .body{border-left-color:var(--warn)} .msg.bot.info .body{border-left-color:var(--ok)}
+.msg.me .who{color:var(--accent)}
+.msg pre{margin:4px 0 0;font-family:var(--mono);font-size:12px;white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.mx-comp{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.mx-comp input{flex:1;min-width:0;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--panel2)}
+.mx-info dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:5px 8px;margin:0;font-size:12.5px}
+.mx-info dt{color:var(--muted)} .mx-info dd{margin:0;overflow-wrap:anywhere}
+.mx-mem{list-style:none;margin:0;padding:0 12px 12px;flex:1}
+.mx-mem li{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.mx-mem small{color:var(--muted);margin-left:auto;font-size:11px}
+.pres{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}.pres.on{background:var(--ok)}
+@media (max-width:1250px){.mx{grid-template-columns:240px minmax(0,1fr)}.mx-side{display:none}}
+@media (max-width:820px){.mx{grid-template-columns:minmax(0,1fr);height:auto}.mx-tree{max-height:260px}.mx-tl{height:55vh}}
+@keyframes pulse{50%{opacity:.35}}
+@keyframes flash{from{background:color-mix(in srgb,var(--accent) 22%,transparent)}to{background:transparent}}
+@keyframes ring{from{r:9;opacity:.8}to{r:26;opacity:0}}
+.ring{animation:ring 1.8s ease-out infinite}
+@media (prefers-reduced-motion:reduce){.ring,.live .dot,.feed li.new{animation:none}}
+
+@media (max-width:1250px){
+  .grid-kpi{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .camwrap,.ov{grid-template-columns:minmax(0,1fr)}
+  .est{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .est .ucardp{grid-column:1/-1}
+  .form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:sticky;top:0;z-index:5;height:auto;flex-direction:row;overflow-x:auto;padding-block:8px;padding-right:max(12px,env(safe-area-inset-right,0px));gap:2px}
+  .brand,.rail .foot{display:none}
+  .nav{flex:none;padding:7px 10px}
+  .nav .lbl{display:none}
+  .nav.on .lbl{display:inline}
+  .camgrid{grid-template-columns:minmax(0,1fr)}
+  .est{grid-template-columns:minmax(0,1fr)}
+  .grid-kpi,.grid-kpi.k4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .map{height:340px}
+  .hbar{grid-template-columns:110px minmax(0,1fr) 40px}
+}
+</style>
+
+<div class="app">
+  <nav class="rail" aria-label="Módulos">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="6" fill="#1f5fbf"/><path d="M7 18l4-5 3 3 6-8" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>Centro de Operações</b><small>Tecnologia e Inteligência</small></div>
+    </div>
+    <button class="nav" data-v="visao" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span class="lbl">Visão geral</span><span class="badge" id="bVisao"></span></button>
+    <button class="nav" data-v="cameras" type="button"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg><span class="lbl">Câmeras e acesso</span><span class="badge" id="bCam"></span></button>
+    <button class="nav" data-v="chamados" type="button"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Chamados</span><span class="badge" id="bCh"></span></button>
+    <button class="nav" data-v="links" type="button"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span class="lbl">Links e serviços</span><span class="badge" id="bLk"></span></button>
+    <button class="nav" data-v="inventario" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span class="lbl">Inventário</span><span class="badge" id="bInv"></span></button>
+    <button class="nav" data-v="logs" type="button"><svg viewBox="0 0 24 24"><path d="M5 4h14M5 9h14M5 14h9M5 19h6"/></svg><span class="lbl">Logs</span><span class="badge" id="bLog"></span></button>
+    <button class="nav" data-v="mensagens" type="button"><svg viewBox="0 0 24 24"><path d="M4 5h12v8H8l-4 3z"/><path d="M16 9h4v8l-3-2h-7v-2"/></svg><span class="lbl">Mensagens</span><span class="badge" id="bMx"></span></button>
+    <button class="nav" data-v="plataforma" type="button"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg><span class="lbl">Plataforma e escala</span><span class="badge" id="bPl"></span></button>
+    <button class="nav" data-v="estrutura" type="button"><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="9" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3M12 12v5"/></svg><span class="lbl">Estrutura</span></button>
+    <div class="foot">Prévia com dados fictícios. No sistema real cada módulo lê a sua ferramenta: GLPI, Uptime Kuma, OCS Inventory, Graylog e Frigate.</div>
+  </nav>
+
+  <div class="main">
+    <div class="top">
+      <div><h1 id="vTitle">Visão geral</h1><div class="src" id="vSrc"></div></div>
+      <div class="grow"></div>
+      <label class="src" for="scale">Escala</label>
+      <select id="scale"><option value="piloto">Piloto · 12 unidades</option><option value="regional">Regional · 40 unidades</option><option value="nacional">Nacional · 108 unidades</option></select>
+      <label class="src" for="uf">Unidade</label>
+      <select id="uf"><option value="">Todas as unidades</option></select>
+      <div class="live" id="live"><span class="dot"></span>Ao vivo <small id="clock"></small></div>
+      <button class="btn" id="pause" type="button">Pausar</button>
+    </div>
+
+    <!-- ============ VISÃO GERAL ============ -->
+    <section class="view" data-view="visao">
+      <div class="grid-kpi">
+        <div class="kpi click" data-go="links" id="kLinks"><span>Links online</span><strong id="oLinks">—</strong><em id="oLinksE"></em></div>
+        <div class="kpi click" data-go="chamados" id="kCh"><span>Chamados abertos</span><strong id="oCh">—</strong><em id="oChE"></em></div>
+        <div class="kpi click" data-go="inventario" id="kInv"><span>Equipamentos</span><strong id="oInv">—</strong><em id="oInvE"></em></div>
+        <div class="kpi click" data-go="logs" id="kLog"><span>Alertas de segurança 1 h</span><strong id="oLog">—</strong><em id="oLogE"></em></div>
+        <div class="kpi click" data-go="cameras" id="kPark"><span>Estacionamento sede</span><strong id="oPark">—</strong><em id="oParkE"></em></div>
+        <div class="kpi click" data-go="cameras" id="kPpl"><span>Pessoas na sede</span><strong id="oPpl">—</strong><em id="oPplE"></em></div>
+      </div>
+      <div class="ov">
+        <div class="panel">
+          <h2>Unidades no mapa <small>clique para filtrar todos os módulos</small></h2>
+          <div class="map" id="mapBox">
+            <svg id="map" viewBox="0 0 820 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa do Brasil com as unidades"><g id="land"></g><g id="pins"></g></svg>
+            <div class="legend"><i><span class="sd s-ok"></span>Normal</i><i><span class="sd s-atencao"></span>Atenção</i><i><span class="sd s-critico"></span>Crítico</i></div>
+            <div class="tip" id="tip" hidden></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Ocorrências de todos os módulos <small id="ovCount"></small></h2>
+          <div class="scroll ovfeed"><ol class="feed" id="ovFeed"></ol></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CÂMERAS ============ -->
+    <section class="view" data-view="cameras" hidden>
+      <div class="grid-kpi">
+        <div class="kpi" id="kcCams"><span>Câmeras no órgão</span><strong id="cCams">—</strong><em id="cCamsE"></em></div>
+        <div class="kpi"><span>Veículos na sede hoje</span><strong id="cIn">—</strong><em id="cInE"></em></div>
+        <div class="kpi" id="kcPark"><span>No estacionamento</span><strong id="cPark">—</strong><em id="cParkE"></em></div>
+        <div class="kpi"><span>Funcionários no prédio</span><strong id="cEmp">—</strong><em id="cEmpE"></em></div>
+        <div class="kpi"><span>Visitantes no prédio</span><strong id="cVis">—</strong><em id="cVisE"></em></div>
+        <div class="kpi" id="kcAl"><span>Alertas de acesso hoje</span><strong id="cAl">—</strong><em>carona na catraca, placa sem cadastro</em></div>
+      </div>
+      <div class="camwrap">
+        <div class="panel">
+          <h2>Sede · Brasília <small>4 câmeras com detecção ao vivo</small></h2>
+          <div class="pad camgrid">
+            <div class="cam"><canvas id="cam1" aria-label="Câmera do portão de veículos"></canvas></div>
+            <div class="cam"><canvas id="cam2" aria-label="Câmera do estacionamento"></canvas></div>
+            <div class="cam"><canvas id="cam3" aria-label="Câmera da recepção"></canvas></div>
+            <div class="cam"><canvas id="cam4" aria-label="Câmera das catracas"></canvas></div>
+          </div>
+        </div>
+        <div class="camside">
+          <div class="panel">
+            <h2>Eventos das câmeras <small id="camEvCount"></small></h2>
+            <ul class="evlist" id="camEv"></ul>
+          </div>
+          <div class="lgpd"><b>Como a identificação funciona.</b> A IA conta veículos e pessoas sem identificar ninguém. Funcionário ou visitante vem do <b>crachá</b> na catraca, do <b>cadastro da recepção</b> e da <b>placa</b> já vinculada ao veículo do servidor. Reconhecimento facial fica desligado: é dado biométrico sensível pela LGPD e só deve ser ativado com base legal definida e relatório de impacto (RIPD) aprovado pelo encarregado de dados.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAMADOS ============ -->
+    <section class="view" data-view="chamados" hidden>
+      <div class="grid-kpi k4">
+        <div class="kpi"><span>Abertos</span><strong id="tAb">—</strong><em id="tAbE"></em></div>
+        <div class="kpi" id="ktSla"><span>SLA vencido</span><strong id="tSla">—</strong><em id="tSlaE"></em></div>
+        <div class="kpi"><span>Abertos automaticamente</span><strong id="tAuto">—</strong><em>pelo monitoramento e pelos logs</em></div>
+        <div class="kpi"><span>Solucionados hoje</span><strong id="tSol">—</strong><em id="tSolE"></em></div>
+      </div>
+      <div class="panel">
+        <h2>Fila de chamados
+          <span class="toolbar"><input class="search" id="tq" type="search" placeholder="Buscar por título, solicitante, número"><button class="btn primary" id="tNew" type="button">Novo chamado</button></span>
+        </h2>
+        <form class="form" id="tForm" hidden>
+          <label>Título<input id="fTitle" required placeholder="Ex.: Sem acesso à pasta do setor"></label>
+          <label>Categoria<select id="fCat"></select></label>
+          <label>Prioridade<select id="fPri"></select></label>
+          <label>Unidade<select id="fUnit"></select></label>
+          <button class="btn primary" type="submit">Abrir chamado</button>
+        </form>
+        <div class="pad chips" id="tChips"></div>
+        <div class="twrap"><table class="t"><thead><tr><th>Nº</th><th>Chamado</th><th>Categoria</th><th>Prioridade</th><th>Status</th><th>Técnico</th><th>SLA</th></tr></thead><tbody id="tBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ============ LINKS ============ -->
+    <section class="view" data-view="links" hidden>
+      <div class="grid-kpi k4">
+        <div class="kpi" id="klUp"><span>Monitores no ar</span><strong id="lUp">—</strong><em id="lUpE"></em></div>
+        <div class="kpi" id="klDown"><span>Fora do ar</span><strong id="lDown">—</strong><em id="lDownE"></em></div>
+        <div class="kpi"><span>Disponibilidade média 24 h</span><strong id="lUpt">—</strong><em>todos os monitores filtrados</em></div>
+        <div class="kpi" id="klCert"><span>Certificados vencendo</span><strong id="lCert">—</strong><em>em menos de 30 dias</em></div>
+      </div>
+      <div class="panel">
+        <h2>Monitores <span class="chips" id="lChips"></span></h2>
+        <div class="twrap"><table class="t"><thead><tr><th>Monitor</th><th>Tipo</th><th>Últimas 40 verificações</th><th>Resposta</th><th>24 h</th><th>30 dias</th><th>Certificado</th></tr></thead><tbody id="lBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ============ INVENTÁRIO ============ -->
+    <section class="view" data-view="inventario" hidden>
+      <div class="grid-kpi k4">
+        <div class="kpi"><span>Equipamentos inventariados</span><strong id="iTot">—</strong><em id="iTotE"></em></div>
+        <div class="kpi" id="kiEol"><span>Sistema sem suporte</span><strong id="iEol">—</strong><em>Windows 10 (suporte encerrado em 10/2025)</em></div>
+        <div class="kpi" id="kiAv"><span>Antivírus com problema</span><strong id="iAv">—</strong><em>desatualizado ou ausente</em></div>
+        <div class="kpi" id="kiOld"><span>Sem comunicação</span><strong id="iOld">—</strong><em>há mais de 7 dias</em></div>
+      </div>
+      <div class="ov">
+        <div class="panel">
+          <h2>Equipamentos <span class="toolbar"><input class="search" id="iq" type="search" placeholder="Buscar hostname, usuário, sistema"></span></h2>
+          <div class="pad chips" id="iChips"></div>
+          <div class="twrap"><table class="t"><thead><tr><th>Equipamento</th><th>Usuário</th><th>Sistema</th><th>Hardware</th><th>Antivírus</th><th>Última comunicação</th></tr></thead><tbody id="iBody"></tbody></table></div>
+        </div>
+        <div class="panel">
+          <h2>Sistemas operacionais</h2>
+          <div class="pad" id="iOs"></div>
+          <h2>Por tipo</h2>
+          <div class="pad" id="iTipo"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LOGS ============ -->
+    <section class="view" data-view="logs" hidden>
+      <div class="grid-kpi k4">
+        <div class="kpi"><span>Mensagens por minuto</span><strong id="gRate">—</strong><em id="gRateE"></em></div>
+        <div class="kpi" id="kgFail"><span>Falhas de logon 1 h</span><strong id="gFail">—</strong><em>Active Directory</em></div>
+        <div class="kpi" id="kgBlk"><span>Bloqueios no firewall 1 h</span><strong id="gBlk">—</strong><em>conexões externas negadas</em></div>
+        <div class="kpi" id="kgAl"><span>Alertas gerados</span><strong id="gAl">—</strong><em>força bruta, varredura de portas</em></div>
+      </div>
+      <div class="panel">
+        <h2>Volume nos últimos 5 minutos <small>blocos de 10 s</small></h2>
+        <div class="hist" id="gHist"></div>
+        <div class="histax"><span>−5 min</span><span>agora</span></div>
+      </div>
+      <div class="panel">
+        <h2>Mensagens
+          <span class="toolbar"><input class="search" id="gq" type="search" placeholder="Filtrar: usuário, IP, texto"></span>
+        </h2>
+        <div class="pad chips" id="gChips"></div>
+        <div class="twrap"><table class="t logt"><thead><tr><th>Hora</th><th>Origem</th><th>Nível</th><th>Mensagem</th></tr></thead><tbody id="gBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ============ MENSAGENS (Matrix / Synapse) ============ -->
+    <section class="view" data-view="mensagens" hidden>
+      <div class="mx">
+        <div class="panel">
+          <h2>Spaces e salas <small id="mxCount"></small></h2>
+          <div class="pad"><input class="search" id="mq" type="search" placeholder="Buscar sala ou unidade" style="max-width:none;width:100%"></div>
+          <div class="pad scroll tree mx-tree" id="mxTree"></div>
+        </div>
+        <div class="panel mx-room">
+          <div class="mx-head" id="mxHead"></div>
+          <div class="mx-tl scroll" id="mxTl" aria-live="polite"></div>
+          <form class="mx-comp" id="mxForm"><input id="mxIn" autocomplete="off" placeholder="Mensagem · experimente !status Curitiba, !chamado Impressora sem toner ou !ajuda"><button class="btn primary" type="submit">Enviar</button></form>
+        </div>
+        <div class="panel mx-side">
+          <h2>Sobre a sala</h2>
+          <div class="pad mx-info" id="mxInfo"></div>
+          <h2>Membros <small id="mxMemC"></small></h2>
+          <ul class="mx-mem scroll" id="mxMem"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PLATAFORMA ============ -->
+    <section class="view" data-view="plataforma" hidden>
+      <div class="grid-kpi k4">
+        <div class="kpi"><span>Eventos por segundo agora</span><strong id="pEps">—</strong><em id="pEpsE"></em></div>
+        <div class="kpi" id="kpLag"><span>Atraso da fila</span><strong id="pLag">—</strong><em id="pLagE"></em></div>
+        <div class="kpi" id="kpEdge"><span>Bordas conectadas</span><strong id="pEdge">—</strong><em id="pEdgeE"></em></div>
+        <div class="kpi"><span>Dados gravados por dia</span><strong id="pDay">—</strong><em id="pDayE"></em></div>
+      </div>
+      <div class="panel">
+        <h2>Entrada no barramento <small>eventos por segundo, últimos 3 minutos</small>
+          <span class="legend2"><i><b class="sw sw-log"></b>Logs</i><i><b class="sw sw-met"></b>Métricas</i><i><b class="sw sw-cam"></b>Câmeras</i><i><b class="sw sw-out"></b>Outros</i></span></h2>
+        <div class="hist tall" id="pHist"></div>
+        <div class="histax"><span>−3 min</span><span id="pPeak"></span><span>agora</span></div>
+      </div>
+      <div class="ov">
+        <div class="panel">
+          <h2>Fluxos de dados</h2>
+          <div class="twrap"><table class="t"><thead><tr><th>Fluxo</th><th>Taxa agora</th><th>Pico hoje</th><th>Volume por dia</th><th>Destino</th><th>Retenção</th></tr></thead><tbody id="pFlows"></tbody></table></div>
+        </div>
+        <div class="panel">
+          <h2>Bordas das unidades <small>guardam os dados quando o link cai</small></h2>
+          <div class="twrap" style="max-height:420px"><table class="t"><thead><tr><th>Unidade</th><th>Estado</th><th>Buffer</th></tr></thead><tbody id="pEdges"></tbody></table></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Dimensionamento desta escala <small>ordem de grandeza, para planejar</small></h2>
+        <div class="pad sizing" id="pSize"></div>
+      </div>
+      <p class="note">Os números saem do tamanho da escala escolhida (pessoas, equipamentos, câmeras) e de taxas típicas por item. Servem para planejar a ordem de grandeza do hardware; o dimensionamento final se faz medindo o ambiente real.</p>
+    </section>
+
+    <!-- ============ ESTRUTURA ============ -->
+    <section class="view" data-view="estrutura" hidden>
+      <div class="est">
+        <div class="panel">
+          <h2>Órgão · unidades · departamentos</h2>
+          <div class="pad"><input class="search" id="eq" type="search" placeholder="Buscar pessoa ou departamento" style="max-width:none;width:100%"></div>
+          <div class="pad scroll tree" id="eTree" style="max-height:620px"></div>
+        </div>
+        <div class="panel">
+          <h2 id="eListH">Pessoas</h2>
+          <div class="twrap"><table class="t"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Ramal</th></tr></thead><tbody id="eBody"></tbody></table></div>
+        </div>
+        <div class="panel ucardp">
+          <h2>Ficha</h2>
+          <div class="pad ucard" id="eCard"><div class="empty">Escolha uma pessoa para ver equipamentos, chamados e acessos dela.</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+// ===================== utilidades =====================
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let R=mulberry32(1);
+const pick=(a)=>a[Math.floor(R()*a.length)];
+const rint=(a,b)=>a+Math.floor(R()*(b-a+1));
+const rnd=Math.random, rpick=a=>a[Math.floor(rnd()*a.length)], rri=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const int=v=>Math.round(v).toLocaleString("pt-BR"), dec=(v,n=1)=>v.toLocaleString("pt-BR",{minimumFractionDigits:n,maximumFractionDigits:n});
+const hms=t=>new Date(t).toLocaleTimeString("pt-BR");
+function ago(t){const m=Math.round((Date.now()-t)/60000);if(m<1)return"agora";if(m<60)return`há ${m} min`;const h=Math.round(m/60);if(h<48)return`há ${h} h`;return`há ${Math.round(h/24)} dias`}
+function bytes(b){const u=["B","KB","MB","GB","TB","PB"];let i=0;while(b>=1000&&i<u.length-1){b/=1000;i++}return`${dec(b,b<10?1:0)} ${u[i]}`}
+const deacc=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+let paused=false;
+
+// ===================== cenários de escala =====================
+const CIDADES=[["Brasília","DF",-15.79,-47.88],["São Paulo","SP",-23.55,-46.63],["Osasco","SP",-23.53,-46.79],["Campinas","SP",-22.91,-47.06],["Rio de Janeiro","RJ",-22.91,-43.17],["Belo Horizonte","MG",-19.92,-43.94],["Curitiba","PR",-25.43,-49.27],["Porto Alegre","RS",-30.03,-51.23],["Salvador","BA",-12.97,-38.5],["Recife","PE",-8.05,-34.88],["Belém","PA",-1.46,-48.5],["Manaus","AM",-3.12,-60.02],["Fortaleza","CE",-3.73,-38.52],["Goiânia","GO",-16.68,-49.25],["São Luís","MA",-2.53,-44.3],["Maceió","AL",-9.67,-35.74],["Natal","RN",-5.79,-35.21],["Teresina","PI",-5.09,-42.8],["João Pessoa","PB",-7.12,-34.86],["Aracaju","SE",-10.91,-37.07],["Campo Grande","MS",-20.47,-54.62],["Cuiabá","MT",-15.6,-56.1],["Florianópolis","SC",-27.6,-48.55],["Vitória","ES",-20.32,-40.34],["Porto Velho","RO",-8.76,-63.9],["Rio Branco","AC",-9.97,-67.81],["Macapá","AP",0.03,-51.07],["Boa Vista","RR",2.82,-60.67],["Palmas","TO",-10.18,-48.33],["Guarulhos","SP",-23.46,-46.53],["Santos","SP",-23.96,-46.33],["Ribeirão Preto","SP",-21.18,-47.81],["São José dos Campos","SP",-23.18,-45.89],["Sorocaba","SP",-23.5,-47.46],["Uberlândia","MG",-18.92,-48.28],["Juiz de Fora","MG",-21.76,-43.35],["Londrina","PR",-23.31,-51.16],["Joinville","SC",-26.3,-48.85],["Caxias do Sul","RS",-29.17,-51.18],["Feira de Santana","BA",-12.27,-38.97],["Santo André","SP",-23.66,-46.53],["São Bernardo do Campo","SP",-23.69,-46.56],["Jundiaí","SP",-23.19,-46.88],["Piracicaba","SP",-22.73,-47.65],["Bauru","SP",-22.31,-49.06],["São José do Rio Preto","SP",-20.82,-49.38],["Presidente Prudente","SP",-22.12,-51.39],["Marília","SP",-22.21,-49.95],["Araraquara","SP",-21.79,-48.18],["Franca","SP",-20.54,-47.4],["Taubaté","SP",-23.03,-45.56],["Barueri","SP",-23.51,-46.88],["Mogi das Cruzes","SP",-23.52,-46.19],["Niterói","RJ",-22.88,-43.1],["Duque de Caxias","RJ",-22.79,-43.31],["Nova Iguaçu","RJ",-22.76,-43.45],["Campos dos Goytacazes","RJ",-21.75,-41.32],["Petrópolis","RJ",-22.51,-43.18],["Volta Redonda","RJ",-22.52,-44.1],["Macaé","RJ",-22.37,-41.79],["Contagem","MG",-19.93,-44.05],["Montes Claros","MG",-16.73,-43.86],["Uberaba","MG",-19.75,-47.93],["Governador Valadares","MG",-18.85,-41.95],["Ipatinga","MG",-19.47,-42.54],["Divinópolis","MG",-20.14,-44.89],["Poços de Caldas","MG",-21.79,-46.56],["Maringá","PR",-23.42,-51.94],["Ponta Grossa","PR",-25.09,-50.16],["Cascavel","PR",-24.96,-53.46],["Foz do Iguaçu","PR",-25.55,-54.59],["Blumenau","SC",-26.92,-49.07],["Chapecó","SC",-27.1,-52.62],["Criciúma","SC",-28.68,-49.37],["Itajaí","SC",-26.91,-48.66],["Pelotas","RS",-31.77,-52.34],["Santa Maria","RS",-29.68,-53.81],["Passo Fundo","RS",-28.26,-52.41],["Novo Hamburgo","RS",-29.68,-51.13],["Vitória da Conquista","BA",-14.86,-40.84],["Ilhéus","BA",-14.79,-39.05],["Juazeiro","BA",-9.41,-40.5],["Barreiras","BA",-12.15,-45.0],["Caruaru","PE",-8.28,-35.98],["Petrolina","PE",-9.39,-40.5],["Jaboatão dos Guararapes","PE",-8.11,-35.01],["Juazeiro do Norte","CE",-7.21,-39.31],["Sobral","CE",-3.69,-40.35],["Santarém","PA",-2.44,-54.71],["Marabá","PA",-5.37,-49.12],["Anápolis","GO",-16.33,-48.95],["Rio Verde","GO",-17.8,-50.92],["Rondonópolis","MT",-16.47,-54.64],["Sinop","MT",-11.86,-55.51],["Dourados","MS",-22.22,-54.81],["Três Lagoas","MS",-20.75,-51.68],["Imperatriz","MA",-5.52,-47.49],["Vila Velha","ES",-20.33,-40.29],["Serra","ES",-20.13,-40.31],["Cachoeiro de Itapemirim","ES",-20.85,-41.11],["Campina Grande","PB",-7.23,-35.88],["Mossoró","RN",-5.19,-37.34],["Arapiraca","AL",-9.75,-36.66],["Parnaíba","PI",-2.9,-41.78],["Araguaína","TO",-7.19,-48.21],["Ji-Paraná","RO",-10.88,-61.95],["Parintins","AM",-2.63,-56.74],["Taguatinga","DF",-15.83,-48.06]];
+const PRESETS={
+  piloto:{n:12,ppd:[2,5],sede:[4,8],dc:[3,5],camsReg:3},
+  regional:{n:40,ppd:[14,28],sede:[16,30],dc:[6,10],camsReg:6},
+  nacional:{n:108,ppd:[75,110],sede:[60,110],dc:[12,20],camsReg:8}
+};
+const DEPT_TPL={
+  sede:[["Gabinete da Diretoria",["Diretor de Tecnologia e Inteligência","Assessor"]],["Segurança da Informação (SOC)",["Analista de Segurança","Coordenador do SOC"]],["Infraestrutura e Datacenter",["Analista de Infraestrutura","Técnico de Datacenter"]],["Redes e Telecomunicações",["Analista de Redes","Técnico de Telecom"]],["Sistemas e Dados",["Desenvolvedor","Analista de Dados","Arquiteto de Software"]],["Inteligência e Análise",["Analista de Inteligência","Cientista de Dados"]],["Suporte (Service Desk)",["Técnico de Suporte","Coordenador de Atendimento"]],["Administração",["Assistente Administrativo","Gestor Administrativo"]]],
+  dc:[["Operação do Datacenter",["Operador de Datacenter","Analista de Infraestrutura"]],["Backup e Recuperação",["Analista de Backup"]]],
+  reg:[["Atendimento ao Público",["Atendente","Supervisor de Atendimento"]],["Administrativo",["Assistente Administrativo","Chefe de Seção"]],["Suporte Local de TI",["Técnico de Suporte"]]]
+};
+const FN=["Ana","Bruno","Carla","Daniel","Eduarda","Felipe","Gabriela","Henrique","Isabela","João","Karina","Lucas","Mariana","Nicolas","Olívia","Paulo","Rafaela","Rodrigo","Sabrina","Thiago","Vanessa","Vinícius","Larissa","Marcelo","Patrícia","Gustavo","Juliana","André","Camila","Fernando","Letícia","Ricardo","Beatriz","Diego","Aline","Leonardo","Renata","Márcio","Tatiane","Fábio","Helena","Igor","Jéssica","Kleber","Luana","Mateus","Natália","Otávio","Priscila","Raul","Simone","Túlio","Valéria","Wagner","Yasmin"];
+const LN=["Silva","Santos","Oliveira","Souza","Rodrigues","Ferreira","Alves","Pereira","Lima","Gomes","Costa","Ribeiro","Martins","Carvalho","Almeida","Lopes","Soares","Fernandes","Vieira","Barbosa","Rocha","Dias","Nascimento","Andrade","Moreira","Nunes","Marques","Machado","Mendes","Freitas","Cardoso","Teixeira","Araújo","Cavalcanti","Monteiro","Correia","Pinto","Batista","Campos","Moura"];
+const CPUS=["Intel Core i5-12500","Intel Core i7-12700","Intel Core i5-10400","AMD Ryzen 5 5600G","Intel Core i5-1235U","Intel Core i7-1255U"];
+const SRVCPU=["Intel Xeon Silver 4314","AMD EPYC 7313","Intel Xeon Gold 6338"];
+const CAT={"Rede":["Sem acesso à rede no 3º andar","Wi-Fi instável na sala de reuniões","Ponto de rede sem sinal"],"Hardware":["Notebook não liga","Monitor piscando","Teclado com teclas falhando"],"Software":["Erro ao abrir o SEI","Atualizar pacote Office","Instalar leitor de certificado digital"],"Acesso e senha":["Desbloqueio de senha de rede","Liberar acesso à pasta do setor","Criar conta para novo servidor"],"Impressão":["Impressora sem toner","Impressora não aparece na rede"],"Segurança":["E-mail suspeito recebido (phishing)","Mensagem de antivírus na tela"],"Telefonia":["Ramal mudo","Transferir ramal para outra mesa"]};
+const PRI=[["Crítica",4],["Alta",8],["Média",24],["Baixa",72]];
+
+// ===================== estado global (refeito a cada troca de escala) =====================
+let MX=null,PL={lag:.6,offline:0},SCALE="nacional",P,UNITS,DEPTS,USERS,UBI,DBI,DEPT_USERS,SUPPORT,INV,HOSTS,MON,LINK,TK,tkn,LOG,HIST,bucket,bucketT,gStats,CAMS,SC,OCC,EDGE,FLOW,PHIST,LOGK,UF=null;
+const U=id=>UNITS[id-1]; const D=id=>DBI.get(id);
+const uShort=id=>{const u=U(id);return u.short||u.name.replace("Regional ","")};
+const hostOf=userId=>HOSTS.get(userId)||[];
+const inUF=uid=>!UF||uid===UF;
+const open=t=>t.status!=="Solucionado", slaLeft=t=>t.due-Date.now();
+function occ(unit,mod,nivel,texto,go){OCC.unshift({t:Date.now(),unit,mod,nivel,texto,go,fresh:true});if(OCC.length>150)OCC.length=150;
+  if(MX){mxBot("noc-alertas",texto,nivel,Date.now(),unit,mod);if(nivel==="critico"){mxBot("u"+unit,texto,nivel,Date.now(),unit,mod);if(mod==="Logs"||mod==="Câmeras")mxBot("soc",texto,nivel,Date.now(),unit,mod)}}}
+
+function build(scale){
+  SCALE=scale;P=PRESETS[scale];R=mulberry32(20261021);UF=null;
+  // ---- unidades ----
+  UNITS=CIDADES.slice(0,P.n).map(([c,uf,lat,lon],i)=>{
+    const FIX=["BSB","SPO","OSA","CPS","RIO","BHZ","CWB","POA","SSA","REC","BEL","MAO"],code=i<12?FIX[i]:deacc(c).replace(/[^a-z]/g,"").slice(0,3).toUpperCase()+String(i).padStart(2,"0");
+    if(i===0)return{id:1,code:"BSB",name:"Sede · Datacenter principal",short:"Sede",city:`${c}/${uf}`,lat,lon,dc:true};
+    if(i===1)return{id:2,code:"SPO",name:"Datacenter de contingência",short:"DC contingência",city:`${c}/${uf}`,lat,lon,dc:true};
+    return{id:i+1,code,name:`Regional ${c}`,city:`${c}/${uf}`,lat,lon};
+  });
+  // ---- departamentos e pessoas ----
+  DEPTS=[];USERS=[];DBI=new Map();UBI=new Map();DEPT_USERS=new Map();let did=100,uid=1000;const logins=new Set();
+  UNITS.forEach(u=>{
+    const tpl=u.id===1?DEPT_TPL.sede:u.dc?DEPT_TPL.dc:DEPT_TPL.reg, range=u.id===1?P.sede:u.dc?P.dc:P.ppd;
+    tpl.forEach(([dn,cargos])=>{
+      const d={id:++did,unit:u.id,name:dn};DEPTS.push(d);DBI.set(d.id,d);DEPT_USERS.set(d.id,[]);
+      const n=rint(range[0],range[1]);
+      for(let i=0;i<n;i++){
+        const f=pick(FN),l=pick(LN),l2=R()<.4?" "+pick(LN):"";let base=deacc(`${f}.${l}`),login=base,k=1;while(logins.has(login))login=base+(++k);logins.add(login);
+        const p={id:++uid,name:`${f}${l2} ${l}`,login,cargo:i===0&&cargos.length>1?cargos[cargos.length-1]:cargos[i%Math.max(1,cargos.length-1)],unit:u.id,dept:d.id,ramal:`${rint(2,9)}${rint(100,999)}`};
+        USERS.push(p);UBI.set(p.id,p);DEPT_USERS.get(d.id).push(p);
+      }
+    });
+  });
+  SUPPORT=USERS.filter(u=>/Suporte/.test(D(u.dept).name));
+  // ---- inventário (estilo OCS) ----
+  INV=[];HOSTS=new Map();let seq=1;
+  const addInv=o=>{INV.push(o);if(o.user){if(!HOSTS.has(o.user))HOSTS.set(o.user,[]);HOSTS.get(o.user).push(o)}};
+  USERS.forEach(u=>{const nb=R()<.35,r=R();
+    const os=r<.55?"Windows 11 Pro":r<.8?"Windows 10 Pro":r<.92?"Ubuntu 24.04 LTS":"Ubuntu 22.04 LTS";
+    const av=os.startsWith("Ubuntu")?(R()<.85?"Atualizado":"Ausente"):(R()<.88?"Atualizado":R()<.6?"Desatualizado":"Ausente");
+    addInv({host:`${U(u.unit).code}-${nb?"NB":"DT"}-${String(seq++).padStart(5,"0")}`,tipo:nb?"Notebook":"Desktop",unit:u.unit,user:u.id,os,cpu:pick(CPUS),ram:pick([8,16,16,16,32]),disk:pick([256,512,512,1024]),free:rint(6,78),av,last:R()<.93?Date.now()-rint(1,240)*60000:Date.now()-rint(8,40)*86400000,ip:`10.${u.unit}.${rint(10,60)}.${rint(10,250)}`});
+  });
+  const srv=(un,os,n)=>{for(let i=0;i<n;i++)addInv({host:`${U(un).code}-SRV-${String(seq++).padStart(5,"0")}`,tipo:"Servidor",unit:un,user:null,os,cpu:pick(SRVCPU),ram:pick([64,128,256]),disk:pick([2048,4096,8192]),free:rint(9,60),av:os.startsWith("Windows")?(R()<.9?"Atualizado":"Desatualizado"):"Atualizado",last:Date.now()-rint(1,30)*60000,ip:`10.${un}.1.${rint(10,250)}`})};
+  const f=scale==="nacional"?6:scale==="regional"?2.5:1;
+  [[1,"Windows Server 2022",14],[1,"Red Hat Enterprise Linux 9",10],[1,"Ubuntu Server 24.04",12],[2,"Windows Server 2022",8],[2,"Ubuntu Server 24.04",7],[2,"Debian 12",5]].forEach(([un,os,n])=>srv(un,os,Math.round(n*f)));
+  UNITS.filter(u=>!u.dc).forEach(u=>{srv(u.id,"Windows Server 2022",1);srv(u.id,"Ubuntu Server 24.04",1)});
+  // ---- monitores (estilo Uptime Kuma) ----
+  MON=[];let mid=1;
+  UNITS.forEach(u=>{const s=u.short||u.name.replace("Regional ","");
+    MON.push({id:mid++,unit:u.id,name:`Link principal · ${s}`,type:"Ping",target:`10.${u.id}.0.1`,role:"principal",beats:[],ping:rint(12,60),u30:99.6+R()*.38});
+    MON.push({id:mid++,unit:u.id,name:`Link redundante · ${s}`,type:"Ping",target:`10.${u.id}.0.2`,role:"redundante",beats:[],ping:rint(20,80),u30:99.5+R()*.45});});
+  [["Portal da intranet","HTTP","https://intranet.orgao.gov.br",54],["SEI · processo eletrônico","HTTP","https://sei.orgao.gov.br",19],["E-mail institucional","TCP","smtp.orgao.gov.br:587"],["VPN de acesso remoto","TCP","vpn.orgao.gov.br:443",143],["DNS interno","DNS","dns1.orgao.local"],["Active Directory","TCP","dc01.orgao.local:636"],["Sistema de câmeras (NVR central)","HTTP","https://nvr.orgao.local",88],["Graylog","HTTP","https://logs.orgao.local",201],["Kafka · barramento","TCP","kafka01.orgao.local:9093"]].forEach(([n,t,g,c])=>MON.push({id:mid++,unit:1,name:n,type:t,target:g,role:"servico",beats:[],ping:rint(30,180),cert:c,u30:99.7+R()*.29}));
+  [["Storage principal","Ping","10.2.1.20"],["Servidor de backup","TCP","backup01.orgao.local:9102"]].forEach(([n,t,g])=>MON.push({id:mid++,unit:2,name:n,type:t,target:g,role:"servico",beats:[],ping:rint(2,12),u30:99.9}));
+  LINK={};UNITS.forEach(u=>LINK[u.id]="up");LINK[7]="pend";
+  MON.forEach(m=>{for(let i=0;i<40;i++)m.beats.push(R()<.012?"d":R()<.025?"p":"u");if(m.unit===7&&m.role==="principal"){m.beats.splice(-4,4,"p","p","p","p");m.ping=176}m.beats[39]=m.unit===7&&m.role==="principal"?"p":"u"});
+  // ---- chamados (estilo GLPI) ----
+  TK=[];tkn=26041;
+  const nT=Math.max(46,Math.min(1500,Math.round(USERS.length/18)));
+  const req=USERS.filter(x=>!/Suporte/.test(D(x.dept).name));
+  for(let i=0;i<nT;i++){const u=pick(req),cat=pick(Object.keys(CAT)),pri=R()<.06?"Crítica":R()<.25?"Alta":R()<.7?"Média":"Baixa";
+    const opened=Date.now()-rint(5,60*30)*60000,st=R()<.25?"Novo":R()<.6?"Em atendimento":R()<.75?"Pendente":"Solucionado";
+    const t=newTicket({title:pick(CAT[cat]),cat,pri,unit:u.unit,req:u.id,opened,status:st,tech:st==="Novo"?null:pick(SUPPORT).id});
+    if(st==="Solucionado")t.solved=Math.min(Date.now(),opened+rint(20,300)*60000);}
+  TK.sort((a,b)=>b.opened-a.opened);
+  // ---- fluxos de dados (base para logs, plataforma e dimensionamento) ----
+  const nCams=4+6+(UNITS.length-2)*P.camsReg;
+  FLOW={
+    logs:{label:"Logs (AD, firewall, VPN, proxy, servidores)",eps:USERS.length*.15+INV.filter(i=>i.tipo==="Servidor").length*2,bytes:650,dest:"Graylog → OpenSearch",ret:"30 dias rápido · 1 ano arquivo",ratio:.3},
+    met:{label:"Métricas de rede e servidores",eps:INV.length*20/60+MON.length*1,bytes:120,dest:"VictoriaMetrics / TDengine",ret:"30 s por 15 dias · 5 min por 1 ano",ratio:.02},
+    cam:{label:"Eventos das câmeras (IA na borda)",eps:nCams*.03,bytes:450,dest:"ClickHouse / Apache Doris",ret:"definida na análise LGPD",ratio:.12},
+    inv:{label:"Inventário de equipamentos",eps:INV.length/86400*3,bytes:40000,dest:"OCS → PostgreSQL",ret:"histórico de 2 anos",ratio:.2},
+    tk:{label:"Chamados e atualizações",eps:USERS.length/400/3600*8,bytes:3000,dest:"GLPI → PostgreSQL",ret:"permanente",ratio:.5}
+  };
+  Object.values(FLOW).forEach(f=>{f.now=f.eps;f.peak=f.eps});
+  PL={lag:.6,offline:0};PHIST=[];for(let i=0;i<60;i++)PHIST.push(flowSample());
+  LOGK=Math.max(1,FLOW.logs.eps/5);
+  // ---- logs (estilo Graylog): amostra exibida + contagem escalada ----
+  LOG=[];HIST=[];bucket={info:0,aviso:0,erro:0,critico:0};bucketT=Date.now();
+  for(let i=0;i<30;i++){const s=FLOW.logs.eps*10/LOGK;HIST.push({info:Math.round(s*(.85+R()*.1)),aviso:Math.round(s*.08),erro:Math.round(s*.02*R()*2),critico:R()<.05?1:0})}
+  gStats={fail:FLOW.logs.eps*3600*.012,blk:FLOW.logs.eps*3600*.18,al:2};
+  OCC=[];
+  for(let i=0;i<120;i++){genLog(true);LOG[0].t=Date.now()-(120-i)*2500}
+  bucket={info:0,aviso:0,erro:0,critico:0};
+  // ---- câmeras ----
+  CAMS={capPark:180,inPark:118,vIn:236,vOut:118,emp:Math.min(USERS.filter(u=>u.unit===1).length,261),empIn:274,vis:17,visIn:31,alerts:1,ev:[],total:nCams};
+  CAMS.emp=Math.round(USERS.filter(u=>u.unit===1).length*.8);CAMS.empIn=Math.round(CAMS.emp*1.05);
+  [["Portão 1","Veículo entrou · placa vinculada a servidor",0],["Recepção","Visitante registrado · crachá V-028",0],["Catracas","Possível carona na catraca 2: 2 pessoas, 1 crachá",1],["Portão 1","Veículo saiu",0]].forEach(([c,t,a],i)=>CAMS.ev.push({t:Date.now()-(i+1)*95000,cam:c,txt:t,alert:a}));
+  SC={cars:[],people:[],lobby:[],spotOrder:[...Array(32).keys()].sort(()=>R()-.5),fullWarn:false};
+  // ---- bordas ----
+  EDGE={};const tot=USERS.length;UNITS.forEach(u=>{const share=USERS.filter(x=>x.unit===u.id).length/tot;EDGE[u.id]={share,buf:0,state:"ok"}});
+  EDGE[11].buf=0;
+  // ---- ocorrências iniciais ----
+  const n=Date.now(),u10=USERS.find(u=>u.unit===10);
+  [[7,"Links","atencao","Link principal · "+uShort(7)+" com latência alta (176 ms)","links",60],[1,"Câmeras","critico","Catraca 2: possível entrada sem crachá (carona)","cameras",190],[10,"Logs","critico","Possível força bruta contra a conta "+u10.login,"logs",320],[10,"Chamados","atencao","Chamado aberto automaticamente pelo Graylog","chamados",318],[4,"Inventário","atencao","3 equipamentos sem antivírus atualizado","inventario",700],[2,"Links","info","Servidor de backup voltou ao ar","links",900]].forEach(([u,m,nv,t,g,s])=>OCC.push({t:n-s*1000,unit:u,mod:m,nivel:nv,texto:t,go:g}));
+  buildMatrix();
+  // ---- interface dependente da escala ----
+  $("uf").innerHTML=`<option value="">Todas as unidades (${UNITS.length})</option>`+UNITS.map(u=>`<option value="${u.id}">${esc(u.name)} · ${u.city}</option>`).join("");
+  $("fUnit").innerHTML=UNITS.map(u=>`<option value="${u.id}">${esc(u.short||u.name)}</option>`).join("");
+  eSel={type:"unit",id:1};eUser=null;eOpen=new Set([1]);
+  $("eCard").innerHTML='<div class="empty">Escolha uma pessoa para ver equipamentos, chamados e acessos dela.</div>';
+  drawMap();
+}
+function newTicket(o){const t=Object.assign({id:tkn++,opened:Date.now(),status:"Novo",tech:null,auto:false},o);t.due=t.opened+PRI.find(p=>p[0]===t.pri)[1]*3600000;TK.unshift(t);return t}
+const upt24=m=>{const d=m.beats.filter(b=>b==="d").length,p=m.beats.filter(b=>b==="p").length;return Math.max(95,100-d*.35-p*.05)};
+
+// ===================== LOGS =====================
+const EXTIP=()=>`${rpick([177,186,191,45,103,185,201])}.${rri(1,254)}.${rri(1,254)}.${rri(1,254)}`;
+function pushLog(src,lv,msg,unit){LOG.unshift({t:Date.now(),src,lv,msg,unit});if(LOG.length>400)LOG.length=400;bucket[lv]++}
+const servers=()=>INV.filter(i=>i.tipo==="Servidor");let SRVC=null;
+function genLog(init){
+  const u=rpick(USERS),r=rnd();if(!SRVC||init)SRVC=servers();
+  if(r<.32){const h=hostOf(u.id);pushLog("ad-dc01","info",`Logon bem-sucedido: ${u.login} em ${h.length?h[0].host:"estação"}`,u.unit)}
+  else if(r<.42){pushLog("ad-dc01","aviso",`Falha de logon: ${u.login} (senha incorreta)`,u.unit);gStats.fail+=LOGK*.12}
+  else if(r<.62){pushLog(`fw-${U(rpick([1,1,1,2,u.unit])).code.toLowerCase()}`,"info",`Conexão bloqueada de ${EXTIP()} para 10.${u.unit}.1.${rri(10,99)}:${rpick([22,3389,445,23,1433])}`,u.unit);gStats.blk+=LOGK*.2}
+  else if(r<.72)pushLog("vpn-gw","info",`Usuário ${u.login} conectou à VPN a partir de ${EXTIP()}`,u.unit);
+  else if(r<.82)pushLog(`proxy-${U(u.unit).code.toLowerCase()}`,"info",`Acesso negado para ${u.login}: categoria ${rpick(["jogos","streaming","apostas","sites não classificados"])}`,u.unit);
+  else if(r<.9)pushLog(rpick(SRVC).host.toLowerCase(),"aviso",rpick(["Uso de disco acima de 85% em /var","Serviço reiniciado automaticamente","Tempo de resposta do banco acima de 2 s"]),u.unit);
+  else if(r<.95)pushLog("fw-bsb","info",`Política aplicada: ${int(rri(1200,1900)*Math.max(1,USERS.length/2000))} sessões ativas`,1);
+  else if(r<.985)pushLog(rpick(SRVC).host.toLowerCase(),"erro",rpick(["Falha ao gravar no volume de dados","Certificado não confiável recebido de cliente","Timeout na replicação do AD"]),u.unit);
+  else if(!init)bruteForce();
+}
+function bruteForce(){
+  const u=rpick(USERS.filter(x=>x.unit!==2)),ip=EXTIP();
+  for(let i=0;i<6;i++)pushLog("ad-dc01","aviso",`Falha de logon: ${u.login} (senha incorreta) origem ${ip}`,u.unit);
+  gStats.al++;
+  pushLog("graylog-alerta","critico",`Possível força bruta contra a conta ${u.login}: 6 falhas em 30 s vindas de ${ip}`,u.unit);
+  occ(u.unit,"Logs","critico",`Possível força bruta contra a conta ${u.login} (${ip})`,"logs");
+  const t=newTicket({title:`Força bruta contra a conta ${u.login}`,cat:"Segurança",pri:"Alta",unit:u.unit,req:null,auto:"Graylog"});
+  occ(u.unit,"Chamados","atencao",`Chamado ${t.id} aberto automaticamente pelo Graylog`,"chamados");
+}
+
+// ===================== CÂMERAS (cena da sede) =====================
+function camEv(cam,txt,alert){CAMS.ev.unshift({t:Date.now(),cam,txt,alert});if(CAMS.ev.length>80)CAMS.ev.length=80}
+const LET="ABCDEFGHIJKLMNOPRSTUVWXYZ";
+const plate=()=>`${LET[rri(0,24)]}${LET[rri(0,24)]}${LET[rri(0,24)]}${rri(0,9)}${LET[rri(0,24)]}${rri(0,9)}${rri(0,9)}`;
+const CARCOL=["#d9dee7","#2b2f36","#8a929e","#b8322f","#2f5d9e","#e6e6e6","#4a4f57"];
+function spawnCar(dir){SC.cars.push({x:dir>0?-.12:1.12,y:dir>0?.66:.36,dir,v:.0035+rnd()*.002,type:rnd()<.85?"carro":rnd()<.6?"moto":"caminhonete",conf:(.86+rnd()*.12).toFixed(2),col:rpick(CARCOL),plate:plate(),counted:false,tag:null})}
+function spawnEmp(){const lane=rri(0,2);SC.people.push({lane,y:1.1,v:.0035+rnd()*.0015,badge:true,counted:false,conf:(.88+rnd()*.1).toFixed(2)});
+  if(rnd()<.05)SC.people.push({lane,y:1.19,v:SC.people[SC.people.length-1].v,badge:false,counted:false,conf:(.8+rnd()*.15).toFixed(2)})}
+function spawnVis(){SC.lobby.push({x:.06,y:.86,stage:0,wait:0,conf:(.85+rnd()*.12).toFixed(2),badge:null})}
+function camStep(){
+  if(paused||!SC)return;
+  if(rnd()<.018)spawnCar(1); if(rnd()<.011)spawnCar(-1); if(rnd()<.03)spawnEmp(); if(rnd()<.006)spawnVis();
+  SC.cars.forEach(c=>{c.x+=c.v*c.dir;
+    if(!c.counted&&((c.dir>0&&c.x>.5)||(c.dir<0&&c.x<.5))){c.counted=true;
+      if(c.dir>0){CAMS.vIn++;CAMS.inPark=Math.min(CAMS.capPark,CAMS.inPark+1);const r=rnd();c.tag=r<.76?"servidor":r<.92?"visitante":"sem cadastro";
+        camEv("Portão 1",c.tag==="servidor"?`${c.type[0].toUpperCase()+c.type.slice(1)} entrou · placa ${c.plate} vinculada a servidor`:c.tag==="visitante"?`Visitante pré-cadastrado · placa ${c.plate}`:`Placa ${c.plate} sem cadastro · portaria acionada`,c.tag==="sem cadastro");
+        if(c.tag==="sem cadastro"){CAMS.alerts++;occ(1,"Câmeras","atencao",`Portão 1: placa ${c.plate} sem cadastro`,"cameras")}
+        if(CAMS.inPark/CAMS.capPark>=.95&&!SC.fullWarn){SC.fullWarn=true;occ(1,"Câmeras","atencao","Estacionamento da sede com mais de 95% das vagas ocupadas","cameras")}
+      }else{CAMS.vOut++;CAMS.inPark=Math.max(0,CAMS.inPark-1);c.tag="saída";camEv("Portão 1",`Veículo saiu · placa ${c.plate}`,0);if(CAMS.inPark/CAMS.capPark<.9)SC.fullWarn=false}}});
+  SC.cars=SC.cars.filter(c=>c.x>-.2&&c.x<1.2);
+  SC.people.forEach(p=>{p.y-=p.v;if(!p.counted&&p.y<.5){p.counted=true;
+    if(p.badge){CAMS.emp++;CAMS.empIn++}else{CAMS.alerts++;camEv("Catracas",`Possível carona na catraca ${p.lane+1}: 2 pessoas, 1 crachá`,1);occ(1,"Câmeras","critico",`Catraca ${p.lane+1}: possível entrada sem crachá (carona)`,"cameras")}}});
+  SC.people=SC.people.filter(p=>p.y>-.15);
+  SC.lobby.forEach(p=>{const tgt=p.stage===0?{x:.5,y:.42}:{x:.97,y:.52};if(p.stage===1&&p.wait>0){p.wait--;return}
+    const dx=tgt.x-p.x,dy=tgt.y-p.y,d=Math.hypot(dx,dy),s=.0032;
+    if(d<s){if(p.stage===0){p.stage=1;p.wait=110;p.badge=`V-${String(CAMS.visIn+1).padStart(3,"0")}`}else{p.done=true;CAMS.vis++;CAMS.visIn++;const host=rpick(USERS.filter(u=>u.unit===1));camEv("Recepção",`Visitante registrado · crachá ${p.badge} · visita a ${host.name} (${D(host.dept).name})`,0)}}
+    else{p.x+=dx/d*s;p.y+=dy/d*s}});
+  SC.lobby=SC.lobby.filter(p=>!p.done);
+  if(rnd()<.012&&CAMS.emp>0)CAMS.emp--; if(rnd()<.005&&CAMS.vis>0)CAMS.vis--;
+}
+function canvasCtx(id){const c=$(id),w=c.clientWidth,h=c.clientHeight,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
+  const x=c.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);return{x,w,h}}
+function hud(x,w,h,name){x.fillStyle="rgba(0,0,0,.55)";x.fillRect(0,0,w,22);x.fillStyle="#fff";x.font="500 11px IBM Plex Mono, monospace";x.textBaseline="middle";x.fillText(name,8,11);
+  const ts=new Date().toLocaleString("pt-BR");x.textAlign="right";x.fillText(ts,w-8,11);x.textAlign="left";
+  if(Math.floor(Date.now()/600)%2){x.fillStyle="#ef4444";x.beginPath();x.arc(w-x.measureText(ts).width-18,11,4,0,7);x.fill()}}
+function box(x,X,Y,W,H,col,label){x.strokeStyle=col;x.lineWidth=1.6;x.strokeRect(X,Y,W,H);x.font="500 10px IBM Plex Mono, monospace";const tw=x.measureText(label).width+8;
+  x.fillStyle=col;x.fillRect(X-.8,Y-14,tw,14);x.fillStyle="#04130a";x.textBaseline="middle";x.fillText(label,X+3,Y-7)}
+function rr(x,X,Y,W,H,r){x.beginPath();x.roundRect?x.roundRect(X,Y,W,H,r):x.rect(X,Y,W,H)}
+function drawGate(){const{x,w,h}=canvasCtx("cam1");
+  x.fillStyle="#1c2128";x.fillRect(0,0,w,h);x.fillStyle="#2a3038";x.fillRect(0,h*.22,w,h*.6);
+  x.strokeStyle="#c9a227";x.setLineDash([14,10]);x.lineWidth=2;x.beginPath();x.moveTo(0,h*.52);x.lineTo(w,h*.52);x.stroke();
+  x.setLineDash([]);x.fillStyle="#3b434d";x.fillRect(0,h*.2,w,h*.03);x.fillRect(0,h*.81,w,h*.03);
+  x.fillStyle="#454e59";rr(x,w*.46,h*.05,w*.08,h*.12,3);x.fill();
+  x.strokeStyle="#22d3ee";x.setLineDash([6,5]);x.lineWidth=2;x.beginPath();x.moveTo(w*.5,h*.22);x.lineTo(w*.5,h*.82);x.stroke();x.setLineDash([]);
+  x.fillStyle="#22d3ee";x.font="500 10px IBM Plex Mono, monospace";x.fillText("linha virtual",w*.5+5,h*.86);
+  x.fillStyle="#9aa4b1";x.fillText("→ entrada",8,h*.9);x.textAlign="right";x.fillText("saída ←",w-8,h*.15);x.textAlign="left";
+  SC.cars.forEach(c=>{const cw=c.type==="moto"?w*.05:w*.13,ch=c.type==="moto"?h*.07:h*.14,X=c.x*w-cw/2,Y=c.y*h-ch/2;
+    x.fillStyle=c.col;rr(x,X,Y,cw,ch,5);x.fill();x.fillStyle="rgba(120,170,220,.55)";x.fillRect(c.dir>0?X+cw*.62:X+cw*.18,Y+ch*.15,cw*.2,ch*.7);
+    box(x,X-4,Y-4,cw+8,ch+8,c.tag==="sem cadastro"?"#f87171":"#4ade80",c.tag&&c.tag!=="saída"?`${c.plate} · ${c.tag}`:`${c.type} ${c.conf}`)});
+  hud(x,w,h,"CAM 01 · PORTÃO 1 · VEÍCULOS")}
+function drawPark(){const{x,w,h}=canvasCtx("cam2");x.fillStyle="#20252c";x.fillRect(0,0,w,h);
+  const occN=Math.round(CAMS.inPark/CAMS.capPark*32),cols=8,rows=4,gx=w*.04,gy=h*.16,sw=(w-gx*2)/cols,sh=(h-gy-h*.08)/rows;
+  x.strokeStyle="#d9d9d9";x.lineWidth=1.5;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const X=gx+c*sw,Y=gy+r*sh+(r>=2?h*.04:0);x.strokeRect(X+2,Y+2,sw-4,sh-6)}
+  for(let i=0;i<occN;i++){const s=SC.spotOrder[i],r=Math.floor(s/cols),c=s%cols,X=gx+c*sw+sw*.18,Y=gy+r*sh+(r>=2?h*.04:0)+sh*.12,cw=sw*.64,ch=sh*.66;
+    x.fillStyle=CARCOL[s%CARCOL.length];rr(x,X,Y,cw,ch,4);x.fill();x.strokeStyle="#38bdf8";x.lineWidth=1.2;x.strokeRect(X-2,Y-2,cw+4,ch+4)}
+  x.fillStyle="rgba(0,0,0,.6)";x.fillRect(w-150,h-26,142,20);x.fillStyle="#fff";x.font="500 11px IBM Plex Mono, monospace";x.textBaseline="middle";x.fillText(`Setor A: ${occN}/32 vagas`,w-144,h-16);
+  hud(x,w,h,"CAM 02 · ESTACIONAMENTO · SETOR A")}
+function person(x,X,Y,s,col){x.fillStyle=col;x.beginPath();x.arc(X,Y-s*1.15,s*.42,0,7);x.fill();rr(x,X-s*.5,Y-s*.68,s,s*1.25,s*.35);x.fill()}
+function drawLobby(){const{x,w,h}=canvasCtx("cam3");x.fillStyle="#262019";x.fillRect(0,0,w,h);
+  for(let i=0;i<10;i++){x.fillStyle=i%2?"#2d261e":"#29231c";x.fillRect(0,h*(.25+i*.075),w,h*.075)}
+  x.fillStyle="#5b4a36";rr(x,w*.36,h*.24,w*.28,h*.11,4);x.fill();x.fillStyle="#9aa4b1";x.font="500 10px IBM Plex Mono, monospace";x.fillText("balcão de recepção",w*.38,h*.21);
+  x.fillStyle="#3a4652";x.fillRect(0,h*.78,w*.05,h*.18);x.fillText("porta",6,h*.75);x.fillRect(w*.95,h*.4,w*.05,h*.24);x.textAlign="right";x.fillText("acesso interno",w-6,h*.37);x.textAlign="left";
+  SC.lobby.forEach(p=>{const X=p.x*w,Y=p.y*h,s=h*.08;person(x,X,Y,s,"#c9b8a3");box(x,X-s*.75,Y-s*1.7,s*1.5,s*1.8,p.badge?"#facc15":"#4ade80",p.badge?`visitante ${p.badge}`:`pessoa ${p.conf}`)});
+  hud(x,w,h,"CAM 03 · RECEPÇÃO")}
+function drawTurn(){const{x,w,h}=canvasCtx("cam4");x.fillStyle="#1d2329";x.fillRect(0,0,w,h);
+  [.3,.5,.7].forEach((lx,i)=>{x.fillStyle="#2a323b";x.fillRect(w*(lx-.07),h*.1,w*.14,h*.9);x.fillStyle="#56616e";x.fillRect(w*(lx-.085),h*.47,w*.02,h*.08);x.fillRect(w*(lx+.065),h*.47,w*.02,h*.08);
+    x.fillStyle="#9aa4b1";x.font="500 10px IBM Plex Mono, monospace";x.fillText(`catraca ${i+1}`,w*(lx-.05),h*.6+12)});
+  x.strokeStyle="#22d3ee";x.setLineDash([6,5]);x.lineWidth=2;x.beginPath();x.moveTo(w*.18,h*.5);x.lineTo(w*.82,h*.5);x.stroke();x.setLineDash([]);
+  SC.people.forEach(p=>{const X=w*[.3,.5,.7][p.lane],Y=p.y*h,s=h*.075;person(x,X,Y,s,p.badge?"#b9c2cc":"#d6a06a");
+    box(x,X-s*.75,Y-s*1.7,s*1.5,s*1.8,p.counted&&!p.badge?"#f87171":"#4ade80",p.counted?(p.badge?"funcionário · crachá":"sem crachá"):`pessoa ${p.conf}`)});
+  hud(x,w,h,"CAM 04 · CATRACAS · ENTRADA")}
+function camLoop(){if(view==="cameras"&&SC){drawGate();drawPark();drawLobby();drawTurn()}requestAnimationFrame(camLoop)}
+
+// ===================== estado das unidades =====================
+const lastBeat=(id,role)=>MON[(id-1)*2+(role==="principal"?0:1)].beats.at(-1);
+function unitStatus(id){
+  const lp=lastBeat(id,"principal"),lr=lastBeat(id,"redundante");
+  const recentSec=OCC.some(o=>o.unit===id&&o.nivel==="critico"&&Date.now()-o.t<180000);
+  const sla=TK.some(t=>t.unit===id&&open(t)&&slaLeft(t)<0);
+  const svcDown=id<=2&&MON.some(m=>m.unit===id&&m.role==="servico"&&m.beats.at(-1)==="d");
+  if((lp==="d"&&lr==="d")||recentSec||svcDown)return"critico";
+  if(lp!=="u"||lr==="d"||sla)return"atencao";
+  return"ok";
+}
+
+// ===================== simulação periódica =====================
+function stepLinks(){
+  const k=Math.min(1,30/UNITS.length);
+  UNITS.forEach(u=>{const p=rnd()*1000;if(LINK[u.id]==="up")LINK[u.id]=p<8*k?"d":p<24*k?"pend":"up";else if(p<330)LINK[u.id]="up"});
+  MON.forEach(m=>{
+    let b="u";
+    if(m.role==="principal")b=LINK[m.unit]==="up"?"u":LINK[m.unit]==="d"?"d":"p";
+    else if(m.role==="redundante")b=rnd()<.003*k?"d":"u";
+    else b=rnd()<.004?"d":rnd()<.008?"p":"u";
+    const prev=m.beats.at(-1);m.beats.push(b);if(m.beats.length>40)m.beats.shift();
+    m.ping=b==="d"?null:Math.max(2,(m.ping||40)+rri(-8,8)+(b==="p"&&prev!=="p"?90:0));if(b==="u"&&m.ping>150)m.ping-=90;
+    if(prev!==b){
+      if(b==="d"){occ(m.unit,"Links","critico",`${m.name} fora do ar`+(m.role==="principal"?" · borda guardando dados localmente":""),"links");
+        const t=newTicket({title:`${m.name} fora do ar`,cat:"Rede",pri:m.role==="servico"?"Crítica":"Alta",unit:m.unit,req:null,auto:"Uptime Kuma"});
+        occ(m.unit,"Chamados","atencao",`Chamado ${t.id} aberto automaticamente pelo monitoramento`,"chamados");}
+      else if(b==="p"&&prev==="u")occ(m.unit,"Links","atencao",`${m.name} com latência alta (${m.ping} ms)`,"links");
+      else if(b==="u"&&prev==="d"){occ(m.unit,"Links","info",`${m.name} voltou ao ar`+(m.role==="principal"&&EDGE[m.unit].buf>0?` · reenviando ${bytes(EDGE[m.unit].buf*1e6)} guardados`:""),"links");
+        TK.filter(t=>t.auto==="Uptime Kuma"&&open(t)&&t.title===`${m.name} fora do ar`).forEach(t=>{t.status="Solucionado";t.solved=Date.now()})}
+    }});
+}
+function stepTickets(){
+  const lam=.06+USERS.length/40000;let n=0;for(let x=rnd();x<lam&&n<5;x+=rnd())n++;
+  for(let i=0;i<n;i++){const u=rpick(USERS),cat=rpick(Object.keys(CAT)),pri=rnd()<.05?"Crítica":rnd()<.2?"Alta":rnd()<.7?"Média":"Baixa";
+    const t=newTicket({title:rpick(CAT[cat]),cat,pri,unit:u.unit,req:u.id});if(pri==="Crítica")occ(u.unit,"Chamados","atencao",`Chamado crítico ${t.id}: ${t.title}`,"chamados")}
+  TK.forEach(t=>{if(!open(t))return;const r=rnd();
+    if(t.status==="Novo"&&r<.06){t.status="Em atendimento";t.tech=rpick(SUPPORT).id}
+    else if(t.status==="Em atendimento"&&r<.04){t.status="Solucionado";t.solved=Date.now()}
+    else if(t.status==="Em atendimento"&&r<.05)t.status="Pendente";
+    else if(t.status==="Pendente"&&r<.05)t.status="Em atendimento";
+    if(slaLeft(t)<0&&!t.slaWarned){t.slaWarned=true;if(rnd()<Math.min(1,40/UNITS.length))occ(t.unit,"Chamados","atencao",`Chamado ${t.id} ultrapassou o SLA (${t.pri})`,"chamados")}});
+  if(TK.length>4000)TK=TK.filter((t,i)=>open(t)||i<3000);
+}
+function diurnal(){const h=new Date().getHours()+new Date().getMinutes()/60;return .35+.65*Math.max(0,Math.sin((h-6)/12*Math.PI))}
+function flowSample(){const d=diurnal(),o={};Object.entries(FLOW).forEach(([k,f])=>{o[k]=f.eps*(k==="met"?1:d)*(.9+rnd()*.2)});return o}
+function stepPlatform(){
+  const s=flowSample();
+  // bordas: link principal fora = dados ficam na unidade; voltou = reenvia
+  let drainMB=0,offline=0;const bps=Object.values(FLOW).reduce((a,f)=>a+f.eps*f.bytes,0);
+  UNITS.forEach(u=>{const e=EDGE[u.id],lp=lastBeat(u.id,"principal");
+    if(lp==="d"){e.state="buffer";e.buf+=e.share*bps*3/1e6*(u.id<=2?.2:1);offline++}
+    else if(e.buf>0){e.state="flush";const d=Math.min(e.buf,Math.max(2,e.buf*.25));e.buf-=d;drainMB+=d}
+    else e.state="ok"});
+  Object.entries(FLOW).forEach(([k,f])=>{f.now=s[k];f.peak=Math.max(f.peak,f.now)});
+  s.out=(s.inv||0)+(s.tk||0);s.flush=drainMB*1e6/3/500;
+  PHIST.push(s);if(PHIST.length>60)PHIST.shift();
+  const lagNow=.3+rnd()*.9+drainMB/40;PL.lag=PL.lag?PL.lag*.6+lagNow*.4:lagNow;PL.offline=offline;
+}
+function stepLogs(){if(paused||!LOG)return;const n=rri(3,7);for(let i=0;i<n;i++)genLog();
+  if(Date.now()-bucketT>=10000){HIST.push(bucket);if(HIST.length>30)HIST.shift();bucket={info:0,aviso:0,erro:0,critico:0};bucketT=Date.now()}
+  if(rnd()<.004){const ip=EXTIP();pushLog("fw-bsb","critico",`Varredura de portas detectada a partir de ${ip}: 412 portas em 20 s · IP bloqueado`,1);gStats.al++;occ(1,"Logs","critico",`Varredura de portas a partir de ${ip}, IP bloqueado no firewall`,"logs")}
+  if(view==="logs")renderLogs();}
+
+// ===================== mapa =====================
+const BR=[[-73.99,-7.5],[-72.9,-5],[-70,-4.2],[-69.4,-1.1],[-69.9,1.7],[-67.3,2.2],[-66.9,1.2],[-64,1.9],[-63.4,3.9],[-61,4.3],[-60,5.2],[-58,4],[-56.5,1.9],[-54,2.2],[-51.6,4.2],[-50,1.8],[-49.6,0],[-48.5,-1.4],[-44.5,-2.5],[-41,-2.9],[-38.5,-3.7],[-35.2,-5.4],[-34.8,-7.5],[-35.3,-9.5],[-37,-11],[-38.9,-13.5],[-39.1,-17.8],[-40.3,-20.3],[-41,-22],[-43.2,-23],[-45,-23.8],[-48,-25.4],[-48.6,-28.4],[-50,-30.3],[-51.2,-31.8],[-53.4,-33.7],[-53.6,-32.4],[-55.6,-30.9],[-57.6,-30.2],[-56,-28],[-54.6,-25.6],[-54.3,-24],[-55.4,-22.5],[-57.9,-22.1],[-58.1,-20.2],[-57.5,-18],[-58.4,-16.3],[-60.2,-16.2],[-60.5,-13.8],[-62.5,-13.1],[-65,-11.9],[-65.3,-9.8],[-68,-10.7],[-70.5,-11],[-70.6,-9.5],[-72.4,-9.5]];
+const K=20,px=lon=>(lon+75)*K,py=lat=>(6-lat)*K,NS="http://www.w3.org/2000/svg";
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
+let LNK={},PIN={};
+function drawMap(){
+  $("land").innerHTML="";$("pins").innerHTML="";LNK={};PIN={};
+  $("land").appendChild(el("polygon",{points:BR.map(([a,b])=>px(a)+","+py(b)).join(" "),fill:"var(--land)",stroke:"var(--land-line)","stroke-width":2,"stroke-linejoin":"round"}));
+  const big=UNITS.length>40,r=big?6:10;
+  UNITS.slice(1).forEach(u=>{LNK[u.id]=el("line",{x1:px(UNITS[0].lon),y1:py(UNITS[0].lat),x2:px(u.lon),y2:py(u.lat),"stroke-width":u.dc?3:big?.8:1.5,opacity:big?.35:.6});$("land").appendChild(LNK[u.id])});
+  [...UNITS].reverse().forEach(u=>{const g=el("g",{tabindex:0,role:"button","aria-label":u.name,style:"cursor:pointer"});
+    const ring=el("circle",{cx:px(u.lon),cy:py(u.lat),r:9,fill:"none","stroke-width":2,class:"ring"});
+    const dot=u.dc?el("rect",{x:px(u.lon)-12,y:py(u.lat)-12,width:24,height:24,rx:3,"stroke-width":3}):el("circle",{cx:px(u.lon),cy:py(u.lat),r,"stroke-width":big?2:3});
+    g.append(ring,dot);$("pins").appendChild(g);PIN[u.id]={ring,dot};
+    g.addEventListener("mouseenter",()=>tip(u));g.addEventListener("mouseleave",()=>$("tip").hidden=true);
+    g.addEventListener("click",()=>setUF(UF===u.id?null:u.id));
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setUF(UF===u.id?null:u.id)}})});
+}
+function tip(u){const s=unitStatus(u.id),pr=MON[(u.id-1)*2];
+  const tks=TK.filter(t=>t.unit===u.id&&open(t));
+  $("tip").innerHTML=`<strong>${esc(u.name)}</strong><br><span class="c-muted">${u.city} · <span class="sd s-${s}"></span> ${{ok:"Normal",atencao:"Atenção",critico:"Crítico"}[s]}</span>
+   <div class="r"><span>Link principal</span><span>${{u:"Online",p:"Lento",d:"Fora do ar"}[pr.beats.at(-1)]}${pr.ping?` · ${pr.ping} ms`:""}</span></div>
+   <div class="r"><span>Chamados abertos</span><span>${tks.length} · ${tks.filter(t=>slaLeft(t)<0).length} SLA venc.</span></div>
+   <div class="r"><span>Pessoas · equipamentos</span><span>${int(USERS.filter(x=>x.unit===u.id).length)} · ${int(INV.filter(i=>i.unit===u.id).length)}</span></div>
+   ${EDGE[u.id].buf>0?`<div class="r"><span>Borda</span><span>${EDGE[u.id].state==="buffer"?"guardando":"reenviando"} ${bytes(EDGE[u.id].buf*1e6)}</span></div>`:""}<div class="c-muted" style="margin-top:4px">Clique para filtrar</div>`;
+  const svg=$("map"),box=$("mapBox").getBoundingClientRect(),pt=svg.createSVGPoint();pt.x=px(u.lon);pt.y=py(u.lat);const p=pt.matrixTransform(svg.getScreenCTM());
+  const T=$("tip");T.hidden=false;let x=p.x-box.left+16,y=p.y-box.top-T.offsetHeight/2;if(x+T.offsetWidth>box.width-8)x=p.x-box.left-T.offsetWidth-16;
+  T.style.left=Math.max(8,x)+"px";T.style.top=Math.max(8,Math.min(box.height-T.offsetHeight-8,y))+"px";}
+
+// ===================== RENDER: visão geral =====================
+function kcls(id,c){$(id).className="kpi click"+(c?" "+c:"")}
+function renderVisao(){
+  const mons=MON.filter(m=>m.role!=="servico"&&inUF(m.unit)),lu=mons.filter(m=>m.beats.at(-1)==="u").length,ld=mons.filter(m=>m.beats.at(-1)==="d").length;
+  $("oLinks").textContent=`${lu}/${mons.length}`;$("oLinksE").textContent=ld?`${ld} fora · ${mons.length-lu-ld} lento`:mons.length-lu?`${mons.length-lu} com latência alta`:"todos normais";kcls("kLinks",ld?"crit":lu<mons.length?"warn":"ok");
+  const tk=TK.filter(t=>open(t)&&inUF(t.unit)),sla=tk.filter(t=>slaLeft(t)<0).length;
+  $("oCh").textContent=int(tk.length);$("oChE").textContent=`${int(sla)} com SLA vencido`;kcls("kCh",sla?"warn":"");
+  const inv=INV.filter(i=>inUF(i.unit)),bad=inv.filter(i=>i.av!=="Atualizado"||i.os.startsWith("Windows 10")).length;
+  $("oInv").textContent=int(inv.length);$("oInvE").textContent=`${int(bad)} precisam de atenção`;kcls("kInv",bad?"warn":"");
+  const al=LOG.filter(l=>l.lv==="critico"&&inUF(l.unit)&&Date.now()-l.t<3600000).length;
+  $("oLog").textContent=al;$("oLogE").textContent=al?"força bruta ou varredura":"nenhum";kcls("kLog",al?"crit":"");
+  $("oPark").textContent=`${CAMS.inPark}/${CAMS.capPark}`;$("oParkE").textContent=`${Math.round(CAMS.inPark/CAMS.capPark*100)}% das vagas`;kcls("kPark",CAMS.inPark/CAMS.capPark>.9?"warn":"");
+  $("oPpl").textContent=int(CAMS.emp+CAMS.vis);$("oPplE").textContent=`${int(CAMS.emp)} funcionários · ${CAMS.vis} visitantes`;
+  UNITS.forEach(u=>{const s=unitStatus(u.id),c=`var(--${s==="ok"?"ok":s==="atencao"?"warn":"crit"})`;
+    PIN[u.id].dot.setAttribute("fill",c);PIN[u.id].ring.setAttribute("stroke",c);PIN[u.id].ring.style.display=s==="critico"?"":"none";
+    PIN[u.id].dot.setAttribute("stroke",UF===u.id?"var(--fg)":"var(--panel)");PIN[u.id].dot.style.opacity=!UF||UF===u.id?1:.35;
+    if(LNK[u.id]){const pr=lastBeat(u.id,"principal");LNK[u.id].setAttribute("stroke",pr==="d"?"var(--crit)":pr==="p"?"var(--warn)":"var(--land-line)");LNK[u.id].setAttribute("stroke-dasharray",pr==="d"?"6 6":"")}});
+  const list=OCC.filter(o=>inUF(o.unit));
+  $("ovFeed").innerHTML=list.slice(0,60).map(o=>`<li class="n-${o.nivel}${o.fresh?" new":""}" data-go="${o.go}" data-u="${o.unit}" tabindex="0" role="button"><time>${hms(o.t)}</time><div><span class="m">${o.mod} · ${esc(uShort(o.unit))}</span><p>${esc(o.texto)}</p></div></li>`).join("")||`<li class="empty" style="border:0;display:block">Nenhuma ocorrência ${UF?"nesta unidade ":""}desde que o painel abriu.</li>`;
+  $("ovCount").textContent=`${list.length} registradas`;OCC.forEach(o=>o.fresh=false);
+}
+
+// ===================== RENDER: câmeras =====================
+function renderCams(){
+  const offU=UNITS.filter(u=>lastBeat(u.id,"principal")==="d"),offC=offU.reduce((s,u)=>s+(u.id===1?4:u.id===2?6:P.camsReg),0);
+  $("cCams").textContent=`${int(CAMS.total-offC)}/${int(CAMS.total)}`;$("cCamsE").textContent=offC?`${offC} gravando só na unidade (link fora)`:`em ${UNITS.length} unidades, IA na borda`;$("kcCams").className="kpi"+(offC?" warn":"");
+  $("cIn").textContent=CAMS.vIn;$("cInE").textContent=`${CAMS.vOut} saíram · portão 1`;
+  $("cPark").textContent=`${CAMS.inPark}/${CAMS.capPark}`;$("cParkE").textContent=`${Math.round(CAMS.inPark/CAMS.capPark*100)}% ocupado`;$("kcPark").className="kpi"+(CAMS.inPark/CAMS.capPark>.9?" warn":"");
+  $("cEmp").textContent=int(CAMS.emp);$("cEmpE").textContent=`${int(CAMS.empIn)} entradas por crachá hoje`;
+  $("cVis").textContent=CAMS.vis;$("cVisE").textContent=`${CAMS.visIn} registrados na recepção hoje`;
+  $("cAl").textContent=CAMS.alerts;$("kcAl").className="kpi"+(CAMS.alerts?" warn":"");
+  $("camEv").innerHTML=CAMS.ev.slice(0,40).map(e=>`<li class="${e.alert?"alert":""}"><time>${hms(e.t)}</time><div><b style="font-weight:500">${e.cam}</b><br>${esc(e.txt).replace(/placa ([A-Z0-9]{7})/,'placa <span class="plate">$1</span>')}</div></li>`).join("");
+  $("camEvCount").textContent=`${CAMS.ev.length} hoje`;
+}
+
+// ===================== RENDER: chamados =====================
+let tFilter="abertos",tQ="";
+const priCls={Crítica:"crit",Alta:"warn",Média:"info",Baixa:""};
+function slaTxt(t){if(!open(t))return`<span class="c-ok">resolvido em ${Math.max(1,Math.round((t.solved-t.opened)/3600000))} h</span>`;const l=slaLeft(t),h=Math.abs(l)/3600000;
+  const s=h<1?`${Math.round(h*60)} min`:`${Math.round(h)} h`;return l<0?`<span class="c-crit">vencido há ${s}</span>`:h<2?`<span class="c-warn">${s} restantes</span>`:`${s} restantes`}
+function renderTickets(){
+  const base=TK.filter(t=>inUF(t.unit));
+  const counts={abertos:0,Novo:0,"Em atendimento":0,Pendente:0,sla:0,auto:0,Solucionado:0};
+  base.forEach(t=>{counts[t.status]++;if(open(t)){counts.abertos++;if(slaLeft(t)<0)counts.sla++;if(t.auto)counts.auto++}});
+  const chips=[["abertos","Abertos"],["Novo","Novos"],["Em atendimento","Em atendimento"],["Pendente","Pendentes"],["sla","SLA vencido"],["auto","Automáticos"],["Solucionado","Solucionados"],["todos","Todos"]];
+  $("tChips").innerHTML=chips.map(([k,l])=>`<button type="button" class="chip${tFilter===k?" on":""}" data-f="${k}">${l}<b>${int(k==="todos"?base.length:counts[k]||0)}</b></button>`).join("");
+  let rows=base.filter(t=>tFilter==="todos"?true:tFilter==="abertos"?open(t):tFilter==="sla"?open(t)&&slaLeft(t)<0:tFilter==="auto"?t.auto&&open(t):t.status===tFilter);
+  if(tQ){const q=deacc(tQ);rows=rows.filter(t=>deacc(`${t.id} ${t.title} ${t.req?UBI.get(t.req).name:""} ${uShort(t.unit)}`).includes(q))}
+  rows.sort((a,b)=>open(b)-open(a)||(open(a)?slaLeft(a)-slaLeft(b):b.solved-a.solved));
+  $("tBody").innerHTML=rows.slice(0,150).map(t=>{const req=t.req?UBI.get(t.req):null,tech=t.tech?UBI.get(t.tech):null;
+    return`<tr><td class="mono">${t.id}</td><td><b style="font-weight:500">${esc(t.title)}</b>${t.auto?` <span class="tag info">auto · ${t.auto}</span>`:""}<span class="sub2">${req?esc(req.name)+" · ":""}${esc(uShort(t.unit))} · aberto ${ago(t.opened)}</span></td><td>${t.cat}</td><td><span class="tag ${priCls[t.pri]}">${t.pri}</span></td><td>${t.status}</td><td>${tech?esc(tech.name):'<span class="c-muted">sem técnico</span>'}</td><td class="mono" style="white-space:nowrap">${slaTxt(t)}</td></tr>`}).join("")+(rows.length>150?`<tr><td colspan="7" class="more">Mostrando 150 de ${int(rows.length)}. Use a busca ou o filtro de unidade para refinar.</td></tr>`:"")||`<tr><td colspan="7" class="empty">Nenhum chamado neste filtro.</td></tr>`;
+  $("tAb").textContent=int(counts.abertos);$("tAbE").textContent=`${int(counts.Novo)} sem técnico`;
+  $("tSla").textContent=int(counts.sla);$("tSlaE").textContent=counts.sla?"priorizar na fila":"todos dentro do prazo";$("ktSla").className="kpi"+(counts.sla?" crit":" ok");
+  $("tAuto").textContent=counts.auto;
+  const today=base.filter(t=>t.solved&&new Date(t.solved).toDateString()===new Date().toDateString());$("tSol").textContent=int(today.length);
+  $("tSolE").textContent=today.length?`tempo médio ${Math.round(today.reduce((s,t)=>s+(t.solved-t.opened),0)/today.length/3600000)} h`:"—";
+}
+
+// ===================== RENDER: links =====================
+let lFilter="problema";
+function renderLinks(){
+  const base=MON.filter(m=>inUF(m.unit));
+  const c={todos:base.length,links:0,servicos:0,problema:0};base.forEach(m=>{m.role==="servico"?c.servicos++:c.links++;if(m.beats.at(-1)!=="u")c.problema++});
+  if(lFilter==="problema"&&!c.problema&&base.length<60)lFilter="todos";
+  $("lChips").innerHTML=[["problema","Com problema"],["links","Links"],["servicos","Serviços"],["todos","Todos"]].map(([k,l])=>`<button type="button" class="chip${lFilter===k?" on":""}" data-f="${k}">${l}<b>${c[k]}</b></button>`).join("");
+  const rows=base.filter(m=>lFilter==="todos"||(lFilter==="links"&&m.role!=="servico")||(lFilter==="servicos"&&m.role==="servico")||(lFilter==="problema"&&m.beats.at(-1)!=="u"))
+    .sort((a,b)=>({d:0,p:1,u:2}[a.beats.at(-1)]-{d:0,p:1,u:2}[b.beats.at(-1)])||a.id-b.id);
+  $("lBody").innerHTML=rows.slice(0,120).map(m=>{const last=m.beats.at(-1),s={u:"up",p:"pend",d:"down"}[last];
+    return`<tr><td><span class="sd s-${s}"></span> <b style="font-weight:500">${esc(m.name)}</b><span class="sub2 mono">${esc(m.target)}</span></td><td>${m.type}</td>
+     <td><div class="beats">${m.beats.map(b=>`<i class="${b}"></i>`).join("")}</div></td>
+     <td class="mono">${last==="d"?'<span class="c-crit">fora</span>':`${m.ping} ms`}</td><td class="mono">${dec(upt24(m),2)}%</td><td class="mono">${dec(m.u30,2)}%</td>
+     <td>${m.cert?`<span class="tag ${m.cert<30?"warn":"ok"}">${m.cert} dias</span>`:'<span class="c-muted">—</span>'}</td></tr>`}).join("")+(rows.length>120?`<tr><td colspan="7" class="more">Mostrando 120 de ${rows.length}.</td></tr>`:"")||`<tr><td colspan="7" class="empty">Nenhum monitor com problema agora.</td></tr>`;
+  const up=base.filter(m=>m.beats.at(-1)==="u").length,dn=base.filter(m=>m.beats.at(-1)==="d").length;
+  $("lUp").textContent=`${up}/${base.length}`;$("lUpE").textContent=base.length-up-dn?`${base.length-up-dn} com latência alta`:"verificação a cada 3 s";$("klUp").className="kpi"+(up===base.length?" ok":" warn");
+  $("lDown").textContent=dn;$("lDownE").textContent=dn?base.filter(m=>m.beats.at(-1)==="d").map(m=>m.name).join(", "):"nenhum";$("klDown").className="kpi"+(dn?" crit":"");
+  $("lUpt").textContent=dec(base.reduce((s,m)=>s+upt24(m),0)/base.length,2)+"%";
+  const cert=base.filter(m=>m.cert&&m.cert<30).length;$("lCert").textContent=cert;$("klCert").className="kpi"+(cert?" warn":"");
+}
+
+// ===================== RENDER: inventário =====================
+let iFilter="todos",iQ="";
+function renderInv(){
+  const base=INV.filter(i=>inUF(i.unit)),old=i=>Date.now()-i.last>7*86400000;
+  const c={todos:base.length,Desktop:0,Notebook:0,Servidor:0,eol:0,av:0,old:0},os={};
+  base.forEach(i=>{c[i.tipo]++;if(i.os.startsWith("Windows 10"))c.eol++;if(i.av!=="Atualizado")c.av++;if(old(i))c.old++;os[i.os]=(os[i.os]||0)+1});
+  $("iChips").innerHTML=[["todos","Todos"],["Desktop","Desktops"],["Notebook","Notebooks"],["Servidor","Servidores"],["eol","Sem suporte"],["av","Antivírus"],["old","Sem comunicação"]].map(([k,l])=>`<button type="button" class="chip${iFilter===k?" on":""}" data-f="${k}">${l}<b>${int(c[k])}</b></button>`).join("");
+  let rows=base.filter(i=>iFilter==="todos"||i.tipo===iFilter||(iFilter==="eol"&&i.os.startsWith("Windows 10"))||(iFilter==="av"&&i.av!=="Atualizado")||(iFilter==="old"&&old(i)));
+  if(iQ){const q=deacc(iQ);rows=rows.filter(i=>deacc(`${i.host} ${i.os} ${i.ip} ${i.user?UBI.get(i.user).name:""}`).includes(q))}
+  $("iBody").innerHTML=rows.slice(0,150).map(i=>{const u=i.user?UBI.get(i.user):null;
+    return`<tr><td><b class="mono" style="font-weight:500">${i.host}</b><span class="sub2">${i.tipo} · ${esc(uShort(i.unit))} · <span class="mono">${i.ip}</span></span></td><td>${u?esc(u.name)+`<span class="sub2">${esc(D(u.dept).name)}</span>`:'<span class="c-muted">servidor</span>'}</td>
+    <td>${i.os}${i.os.startsWith("Windows 10")?' <span class="tag warn">sem suporte</span>':""}</td><td><span class="mono" style="font-size:12px">${i.cpu}</span><span class="sub2">${i.ram} GB RAM · ${i.disk>=1024?i.disk/1024+" TB":i.disk+" GB"} · ${i.free}% livre</span></td>
+    <td><span class="tag ${i.av==="Atualizado"?"ok":i.av==="Ausente"?"crit":"warn"}">${i.av}</span></td><td class="${old(i)?"c-crit":""}">${ago(i.last)}</td></tr>`}).join("")+(rows.length>150?`<tr><td colspan="6" class="more">Mostrando 150 de ${int(rows.length)}. Use a busca ou os filtros para refinar.</td></tr>`:"")||`<tr><td colspan="6" class="empty">Nenhum equipamento neste filtro.</td></tr>`;
+  $("iTot").textContent=int(base.length);$("iTotE").textContent=`${int(c.Desktop)} desktops · ${int(c.Notebook)} notebooks · ${int(c.Servidor)} servidores`;
+  $("iEol").textContent=int(c.eol);$("kiEol").className="kpi"+(c.eol?" warn":" ok");$("iAv").textContent=int(c.av);$("kiAv").className="kpi"+(c.av?" crit":" ok");$("iOld").textContent=int(c.old);$("kiOld").className="kpi"+(c.old?" warn":" ok");
+  const mx=Math.max(...Object.values(os));
+  $("iOs").innerHTML=Object.entries(os).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="hbar"><span>${k}</span><span class="b"><i class="${k.startsWith("Windows 10")?"w":""}" style="width:${v/mx*100}%"></i></span><span class="mono" style="text-align:right">${int(v)}</span></div>`).join("");
+  const tp=["Desktop","Notebook","Servidor"],mt=Math.max(1,...tp.map(t=>c[t]));
+  $("iTipo").innerHTML=tp.map(t=>`<div class="hbar"><span>${t}</span><span class="b"><i style="width:${c[t]/mt*100}%"></i></span><span class="mono" style="text-align:right">${int(c[t])}</span></div>`).join("");
+}
+
+// ===================== RENDER: logs =====================
+let gLv="todos",gQ="";
+function renderLogs(){
+  const base=LOG.filter(l=>inUF(l.unit));
+  const lv={todos:base.length,info:0,aviso:0,erro:0,critico:0};base.forEach(l=>lv[l.lv]++);
+  $("gChips").innerHTML=[["todos","Todos"],["info","Info"],["aviso","Aviso"],["erro","Erro"],["critico","Crítico"]].map(([k,l])=>`<button type="button" class="chip${gLv===k?" on":""}" data-f="${k}">${l}<b>${lv[k]}</b></button>`).join("");
+  let rows=base.filter(l=>gLv==="todos"||l.lv===gLv);if(gQ){const q=deacc(gQ);rows=rows.filter(l=>deacc(l.src+" "+l.msg).includes(q))}
+  $("gBody").innerHTML=rows.slice(0,120).map(l=>`<tr><td>${hms(l.t)}</td><td>${esc(l.src)}</td><td><span class="lv lv-${l.lv}">${l.lv}</span></td><td class="msg">${esc(l.msg)}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">Nenhuma mensagem com esse filtro.</td></tr>`;
+  const all=HIST.concat([bucket]).slice(-30),tot=b=>b.info+b.aviso+b.erro+b.critico,mx=Math.max(1,...all.map(tot));
+  $("gHist").innerHTML=all.map(b=>`<div class="col" title="${int(tot(b)*LOGK)} mensagens">${["info","aviso","erro","critico"].map(k=>b[k]?`<i class="l-${k}" style="height:${b[k]/mx*86}px"></i>`:"").join("")}</div>`).join("");
+  $("gRate").textContent=int(FLOW.logs.now*60);$("gRateE").textContent=`${int(FLOW.logs.now)} por segundo · a tabela mostra uma amostra`;
+  $("gFail").textContent=int(gStats.fail);$("kgFail").className="kpi"+(gStats.fail>FLOW.logs.eps*60?" warn":"");$("gBlk").textContent=int(gStats.blk);$("gAl").textContent=gStats.al;$("kgAl").className="kpi"+(gStats.al?" crit":"");
+}
+
+// ===================== RENDER: plataforma =====================
+function renderPlat(){
+  const last=PHIST.at(-1),tot=o=>(o.logs||0)+(o.met||0)+(o.cam||0)+(o.out||0)+(o.flush||0),now=tot(last),mx=Math.max(...PHIST.map(tot));
+  $("pEps").textContent=int(now);$("pEpsE").textContent=`${bytes(Object.values(FLOW).filter(f=>f.bytes).reduce((a,f)=>a+f.now*f.bytes,0))}/s entrando no Kafka`;
+  $("pLag").textContent=`${dec(PL.lag||.5,1)} s`;$("pLagE").textContent=PL.lag>3?"bordas reenviando dados guardados":"consumidores em dia";$("kpLag").className="kpi"+(PL.lag>5?" crit":PL.lag>3?" warn":" ok");
+  $("pEdge").textContent=`${UNITS.length-PL.offline}/${UNITS.length}`;const buffering=UNITS.filter(u=>EDGE[u.id].buf>0).length;
+  $("pEdgeE").textContent=PL.offline?`${PL.offline} guardando localmente`:buffering?`${buffering} reenviando`:"todas enviando normalmente";$("kpEdge").className="kpi"+(PL.offline?" warn":" ok");
+  const day=Object.values(FLOW).filter(f=>f.bytes).reduce((a,f)=>a+f.eps*f.bytes*86400*(f===FLOW.met?1:.6),0),dayc=Object.values(FLOW).filter(f=>f.bytes).reduce((a,f)=>a+f.eps*f.bytes*86400*(f===FLOW.met?1:.6)*f.ratio,0);
+  $("pDay").textContent=bytes(dayc);$("pDayE").textContent=`${bytes(day)} antes de comprimir`;
+  $("pHist").innerHTML=PHIST.map(o=>`<div class="col" title="${int(tot(o))} eventos/s">${[["logs","s-log"],["met","s-met"],["cam","s-cam"],["out","s-out"]].map(([k,c])=>`<i class="${c}" style="height:${(o[k]||0)/mx*124}px"></i>`).join("")}${o.flush?`<i class="s-out" style="height:${o.flush/mx*124}px;opacity:.5"></i>`:""}</div>`).join("");
+  $("pPeak").textContent=`pico na janela: ${int(mx)} eventos/s`;
+  const fmtRate=f=>f.eps<1?`${dec(f.now*3600,0)}/h`:`${int(f.now)}/s`;
+  $("pFlows").innerHTML=Object.entries(FLOW).filter(([k,f])=>f.bytes).map(([k,f])=>`<tr><td><b style="font-weight:500">${f.label}</b><span class="sub2">${bytes(f.bytes)} por evento</span></td><td class="mono">${fmtRate(f)}</td><td class="mono">${f.eps<1?dec(f.peak*3600,0)+"/h":int(f.peak)+"/s"}</td><td class="mono">${bytes(f.eps*f.bytes*86400*(k==="met"?1:.6)*f.ratio)}<span class="sub2">bruto ${bytes(f.eps*f.bytes*86400*(k==="met"?1:.6))}</span></td><td>${f.dest}</td><td>${f.ret}</td></tr>`).join("");
+  const edges=UNITS.filter(u=>EDGE[u.id].buf>0||lastBeat(u.id,"principal")!=="u").sort((a,b)=>EDGE[b.id].buf-EDGE[a.id].buf);
+  $("pEdges").innerHTML=edges.slice(0,40).map(u=>{const e=EDGE[u.id],lp=lastBeat(u.id,"principal");
+    const st=lp==="d"?'<span class="tag crit">link fora · guardando</span>':e.buf>0?'<span class="tag warn">reenviando</span>':'<span class="tag warn">link lento</span>';
+    return`<tr><td>${esc(uShort(u.id))}<span class="sub2">${u.city}</span></td><td>${st}</td><td class="mono">${e.buf>0?bytes(e.buf*1e6):"—"}</td></tr>`}).join("")+
+    `<tr><td colspan="3" class="more">${int(UNITS.length-edges.length)} bordas enviando normalmente.</td></tr>`;
+  // dimensionamento
+  const C=CAMS.total,mbps=Object.values(FLOW).filter(f=>f.bytes).reduce((a,f)=>a+f.peak*f.bytes,0)/1e6;
+  const logsDayC=FLOW.logs.eps*FLOW.logs.bytes*86400*.6*FLOW.logs.ratio,hotTB=logsDayC*30*2/1e12;
+  const brokers=Math.max(3,Math.ceil(mbps*3/40)),osn=Math.max(3,Math.ceil(hotTB/3)),pts=FLOW.met.eps,camRows=FLOW.cam.eps*86400*.6;
+  const items=[
+    ["Pessoas · equipamentos · câmeras",`${int(USERS.length)} · ${int(INV.length)} · ${int(C)}`,`${UNITS.length} unidades, ${DEPTS.length} departamentos`],
+    ["Vídeo se fosse centralizado",`${dec(C*4/1000,1)} Gbps`,`${int(C)} câmeras × ~4 Mbps: por isso o vídeo fica gravado em cada unidade e só sobem eventos`],
+    ["Kafka / RocketMQ",`${brokers} brokers`,`pico de ~${dec(mbps,1)} MB/s com 3 réplicas por partição`],
+    ["OpenSearch (atrás do Graylog)",`${osn} nós de dados`,`~${dec(hotTB,1)} TB quentes: 30 dias de logs com 1 réplica`],
+    ["Métricas",pts>300000?"cluster VictoriaMetrics":"1 nó + réplica",`~${int(pts)} pontos por segundo`],
+    ["Eventos (ClickHouse / Doris)",camRows>5e7?"3 nós":"2 nós (réplica)",`~${int(camRows+FLOW.tk.eps*86400)} linhas por dia`],
+    ["Portal (yudao)",USERS.length>5000?"yudao-cloud · 3+ réplicas":"RuoYi-Vue-Pro · 2 réplicas",USERS.length>5000?"microsserviços em Kubernetes, sessões no Redis":"monólito atende bem nesta escala"],
+    ["Borda por unidade",SCALE==="piloto"?"mini PC":"servidor pequeno",`Frigate + coletor de logs + Zabbix proxy · ~${P.camsReg} câmeras com acelerador de IA`]
+  ];
+  $("pSize").innerHTML=items.map(([a,b,c])=>`<div class="sz"><span>${a}</span><strong>${b}</strong><em>${c}</em></div>`).join("");
+}
+
+// ===================== MENSAGENS (Matrix / Synapse) =====================
+// Árvore do órgão → Spaces do Matrix: Órgão (space) → Unidade (space) → Departamento (sala).
+// No sistema real isso é criado pelo script integracoes/matrix/sincronizar_synapse.py.
+const HS="orgao.gov.br";
+const CHAT={
+  avisos:["Lembrete: a atualização obrigatória do Windows será aplicada na sexta, a partir das 19h.","Comunicado: o SEI ficará indisponível no domingo das 6h às 8h para manutenção.","Campanha de segurança: não compartilhe senhas por mensagem. A TI nunca pede sua senha."],
+  plantao:["Assumindo o plantão agora. Sem pendências críticas na passagem.","Alguém consegue olhar o link de {u}? Está oscilando desde cedo.","Operadora confirmou manutenção na região de {u}, previsão de 2 h.","Backup da madrugada concluído sem erros nos dois datacenters.","Vou reiniciar o serviço de impressão da sede às 12h30, ok?","Chamado da {u} resolvido, era cabo de rede solto no rack."],
+  soc:["Bloqueei o IP no firewall e abri chamado para trocar a senha da conta.","Phishing reportado por 3 pessoas hoje, mesmo remetente. Já está na lista de bloqueio.","Varredura de portas parou depois do bloqueio. Monitorando.","Revisão de acessos privilegiados marcada para quinta."],
+  mudancas:["Janela de hoje 22h: atualização do firmware dos switches do core.","Mudança de ontem concluída, sem impacto.","Proposta: migrar o DNS secundário para o datacenter de contingência na próxima semana."],
+  geral:["Bom dia, pessoal!","A impressora do 2º andar voltou a funcionar.","Reunião geral às 15h na sala principal.","O ar-condicionado da sala técnica foi revisado hoje.","Alguém sabe se o sistema de agendamento voltou?"],
+  "Suporte":["Atendi 6 chamados de senha só nesta manhã.","Notebook novo do setor administrativo já está configurado.","Vou passar nas mesas do 3º andar para atualizar o leitor de certificado."],
+  "Atendimento":["Fila de atendimento tranquila agora.","Sistema de senhas lento de novo, abri chamado.","Vou cobrir o balcão 2 até as 14h."],
+  "Administrativo":["Processo de compra de toner enviado para assinatura no SEI.","Inventário físico do setor marcado para o dia 30.","Alguém tem o modelo do ofício de solicitação de acesso?"],
+  "Segurança":["Novas regras de detecção no Wazuh entram amanhã.","Relatório semanal de incidentes publicado na pasta do SOC."],
+  "Infraestrutura":["Storage principal com 71% de ocupação, dentro do planejado.","Troca do nobreak da sala 2 agendada para sábado."],
+  "Redes":["VLAN de visitantes isolada em todas as regionais.","Link redundante de {u} testado, failover em 4 s."],
+  "Sistemas":["Deploy da versão nova do portal às 18h.","API do inventário respondendo em menos de 200 ms."],
+  "Inteligência":["Painel de indicadores de acesso atualizado.","Cruzamento dos dados de catraca com o ponto eletrônico pronto para revisão."]
+};
+function chatLine(r){
+  let pool=CHAT[r.kind]||null;
+  if(!pool&&r.dept){const n=D(r.dept).name;const k=Object.keys(CHAT).find(k=>n.includes(k));pool=k?CHAT[k]:CHAT.geral}
+  pool=pool||CHAT.geral;const u=UNITS[rri(2,UNITS.length-1)];return rpick(pool).replace("{u}",uShort(u.id));
+}
+const nocUsers=()=>USERS.filter(u=>(u.unit===1&&/SOC|Infraestrutura|Redes|Suporte|Sistemas/.test(D(u.dept).name))||u.unit===2);
+function buildMatrix(){
+  MX=null;const M={rooms:new Map(),active:"noc-alertas",open:new Set(["sp-org","sp-noc","sp-u1"]),q:"",dms:[]};
+  const add=(id,o)=>{const r=Object.assign({id,msgs:[],unread:0,alert:false,seeded:false,e2ee:true,join:"Restrita: membros do space",rid:"!"+Math.abs(id.split("").reduce((a,c)=>a*31+c.charCodeAt(0)|0,7)).toString(36)+":"+HS},o);M.rooms.set(id,r);return r};
+  const kids=[];
+  kids.push({room:add("avisos",{name:"Avisos gerais",kind:"avisos",topic:"Comunicados da diretoria para todo o órgão. Só a diretoria publica.",members:()=>USERS,alias:"#avisos",join:"Todos do órgão (entrada automática)"})});
+  kids.push({space:"sp-noc",name:"Centro de Operações",kids:[
+    {room:add("noc-alertas",{name:"NOC · alertas",kind:"bot",topic:"Ocorrências de todos os módulos, postadas pelo bot do portal. Comandos: !status, !chamado, !quem.",members:nocUsers,alias:"#noc-alertas",e2ee:false,bot:true,join:"Somente por convite"})},
+    {room:add("soc",{name:"SOC · segurança",kind:"soc",topic:"Incidentes de segurança e resposta",members:()=>USERS.filter(u=>/SOC/.test(D(u.dept).name)),alias:"#soc",join:"Somente por convite"})},
+    {room:add("plantao",{name:"Plantão de TI",kind:"plantao",topic:"Escala de plantão e passagem de turno",members:nocUsers,alias:"#plantao-ti"})},
+    {room:add("mudancas",{name:"Janela de mudanças",kind:"mudancas",topic:"Mudanças programadas na infraestrutura",members:nocUsers,alias:"#mudancas"})}]});
+  UNITS.forEach(u=>{const sp={space:"sp-u"+u.id,name:u.name,unit:u.id,kids:[{room:add("u"+u.id,{name:`Geral · ${uShort(u.id)}`,kind:"geral",topic:`Todos de ${u.name}`,members:()=>USERS.filter(x=>x.unit===u.id),alias:`#${u.code.toLowerCase()}-geral`,unit:u.id})}]};
+    DEPTS.filter(d=>d.unit===u.id).forEach(d=>sp.kids.push({room:add("d"+d.id,{name:d.name,topic:`${d.name} · ${u.name}`,members:()=>DEPT_USERS.get(d.id),alias:`#${u.code.toLowerCase()}-${deacc(d.name).replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"")}`,unit:u.id,dept:d.id})}));
+    kids.push(sp)});
+  M.tree={space:"sp-org",name:"Diretoria de Tecnologia e Inteligência",kids};
+  MX=M;
+  OCC.slice().reverse().forEach(o=>mxBot("noc-alertas",o.texto,o.nivel,o.t,o.unit,o.mod,true));
+  ["plantao","soc","avisos","u1"].forEach(id=>seedRoom(MX.rooms.get(id)));
+  [["plantao",3],["soc",1],["u7",2],["u10",1]].forEach(([id,n])=>{const r=MX.rooms.get(id);if(r){r.unread+=n}});
+}
+function seedRoom(r){if(!r||r.seeded)return;r.seeded=true;if(r.bot||r.dm)return;const mem=r.members();if(!mem.length)return;
+  const n=rri(4,8)+(r.pending||0),now=Date.now(),arr=[];
+  for(let i=0;i<n;i++){const u=r.kind==="avisos"?rpick(USERS.filter(x=>/Gabinete/.test(D(x.dept).name))):rpick(mem);arr.push({t:now-rri(3,480)*60000,from:u.id,body:chatLine(r)})}
+  arr.sort((a,b)=>a.t-b.t);r.msgs=arr.concat(r.msgs);r.pending=0}
+function mxBot(id,text,nivel,t,unit,mod,silent){const r=MX&&MX.rooms.get(id);if(!r)return;
+  r.msgs.push({t:t||Date.now(),from:"bot",body:text,nivel,unit,mod});if(r.msgs.length>300)r.msgs.splice(0,r.msgs.length-300);
+  if(!silent&&!(view==="mensagens"&&MX.active===id)){r.unread++;if(nivel==="critico")r.alert=true}}
+function mxSay(id,from,body){const r=MX.rooms.get(id);if(!r)return;r.msgs.push({t:Date.now(),from,body});if(!(view==="mensagens"&&MX.active===id))r.unread++}
+function stepMx(){
+  if(!MX)return;
+  if(rnd()<.35){const id=rpick(["plantao","plantao","soc","mudancas","u1"]);const r=MX.rooms.get(id);seedRoom(r);mxSay(id,rpick(r.members()).id,chatLine(r))}
+  if(rnd()<.4){const rooms=[...MX.rooms.values()].filter(r=>r.dept||r.kind==="geral");const r=rpick(rooms);
+    if(r.seeded)mxSay(r.id,rpick(r.members()).id,chatLine(r));else{r.pending=(r.pending||0)+1;r.unread++}}
+}
+function mxCmd(room,txt){
+  const [cmd,...rest]=txt.trim().split(/\s+/),arg=rest.join(" ");
+  const reply=(b,n)=>mxBot(room.id,b,n||"info");
+  if(cmd==="!ajuda")return reply("Comandos do bot:\n!status <unidade> · situação de uma unidade\n!chamado <descrição> · abre um chamado para a unidade desta sala\n!quem <nome> · encontra uma pessoa na estrutura");
+  if(cmd==="!status"){const q=deacc(arg||"");const u=UNITS.find(x=>deacc(x.name+" "+x.city).includes(q))||UNITS[0];
+    const s=unitStatus(u.id),tk=TK.filter(t=>t.unit===u.id&&open(t)),pr=MON[(u.id-1)*2];
+    return reply(`${u.name} (${u.city}): ${{ok:"normal",atencao:"atenção",critico:"crítico"}[s]}\nLink principal: ${{u:"online",p:"lento",d:"fora do ar"}[pr.beats.at(-1)]}${pr.ping?` · ${pr.ping} ms`:""}\nChamados abertos: ${tk.length} (${tk.filter(t=>slaLeft(t)<0).length} com SLA vencido)\nPessoas: ${int(USERS.filter(x=>x.unit===u.id).length)} · equipamentos: ${int(INV.filter(i=>i.unit===u.id).length)}`,s==="critico"?"critico":s==="atencao"?"atencao":"info")}
+  if(cmd==="!chamado"){if(!arg)return reply("Use: !chamado <descrição do problema>","atencao");const un=room.unit||1;
+    const t=newTicket({title:arg,cat:"Software",pri:"Média",unit:un,req:null,auto:"Matrix"});return reply(`Chamado ${t.id} aberto para ${U(un).name}: ${arg}. Acompanhe no módulo Chamados.`)}
+  if(cmd==="!quem"){const q=deacc(arg||"");const u=q&&USERS.find(x=>deacc(x.name).includes(q));
+    return reply(u?`${u.name} · ${u.cargo}\n${D(u.dept).name} · ${U(u.unit).name}\nRamal ${u.ramal} · @${u.login}:${HS}`:`Ninguém encontrado para "${arg}".`,u?"info":"atencao")}
+  return reply(`Comando desconhecido: ${cmd}. Digite !ajuda.`,"atencao");
+}
+function openDM(uid){const u=UBI.get(uid);if(!u)return;const id="dm-"+uid;
+  if(!MX.rooms.has(id)){MX.rooms.set(id,{id,name:u.name,dm:true,uid,msgs:[],unread:0,seeded:true,e2ee:true,join:"Privada (mensagem direta)",alias:"—",rid:"!dm"+uid.toString(36)+":"+HS,topic:`Conversa direta com ${u.name}`,members:()=>[u]});MX.dms.unshift(id);
+    setTimeout(()=>{mxSay(id,uid,rpick(["Oi! Pode falar.","Olá, estou em reunião, respondo em 10 min.","Bom dia! Em que posso ajudar?"]));if(view==="mensagens")renderMx()},2500)}
+  MX.active=id;go("mensagens")}
+function mxCountRooms(){let s=0,r=0;(function w(n){if(n.space){s++;n.kids.forEach(w)}else r++})(MX.tree);return{s,r}}
+function renderMx(){
+  if(!MX)return;
+  const act=MX.rooms.get(MX.active)||MX.rooms.get("noc-alertas");MX.active=act.id;seedRoom(act);act.unread=0;act.alert=false;
+  const q=deacc(MX.q);
+  const unreadOf=n=>n.room?n.room.unread:n.kids.reduce((a,k)=>a+unreadOf(k),0),alertOf=n=>n.room?n.room.alert:n.kids.some(alertOf);
+  const match=n=>!q||deacc(n.room?n.room.name+" "+(n.room.alias||""):n.name).includes(q)||(n.kids&&n.kids.some(match));
+  const node=n=>{
+    if(n.room){const r=n.room;return`<li><button type="button" data-r="${r.id}" class="${r.id===act.id?"on":""}"><span class="hash">${r.bot?"!":"#"}</span>${esc(r.name)}${r.unread?`<span class="unr${r.alert?" alert":""}">${r.unread}</span>`:""}</button></li>`}
+    if(UF&&n.unit&&n.unit!==UF)return"";
+    if(!match(n))return"";
+    const opened=MX.open.has(n.space)||(q&&n.kids.length)||(UF&&n.unit===UF),u=unreadOf(n);
+    return`<li><button type="button" data-s="${n.space}"><span class="caret">${opened?"▾":"▸"}</span>${n.unit?`<span class="sd s-${unitStatus(n.unit)}"></span>`:""}<b style="font-weight:500">${esc(n.name)}</b>${u&&!opened?`<span class="unr${alertOf(n)?" alert":""}">${u}</span>`:""}</button>${opened?`<ul>${n.kids.map(node).join("")}</ul>`:""}</li>`};
+  $("mxTree").innerHTML=`<ul>${node(MX.tree)}</ul>`+(MX.dms.length?`<div class="sec">Mensagens diretas</div><ul>${MX.dms.map(id=>{const r=MX.rooms.get(id);return`<li><button type="button" data-r="${id}" class="${id===act.id?"on":""}"><span class="hash">@</span>${esc(r.name)}${r.unread?`<span class="unr">${r.unread}</span>`:""}</button></li>`}).join("")}</ul>`:"");
+  const c=mxCountRooms();$("mxCount").textContent=`${c.s} spaces · ${c.r} salas`;
+  const mem=act.members();
+  $("mxHead").innerHTML=`<b>${act.dm?"@":act.bot?"!":"#"} ${esc(act.name)}</b><span>${esc(act.topic||"")}</span>`;
+  const tl=$("mxTl"),atBottom=tl.scrollHeight-tl.scrollTop-tl.clientHeight<60;
+  tl.innerHTML=act.msgs.slice(-120).map(m=>{
+    if(m.from==="bot")return`<div class="msg bot ${m.nivel||"info"}"><div class="av bot">CO</div><div><span class="who">Centro de Operações</span> <span class="tag info">bot</span><span class="meta">${hms(m.t)}${m.mod?` · ${m.mod} · ${esc(uShort(m.unit))}`:""}</span><div class="body">${m.body.includes("\n")?`<pre>${esc(m.body)}</pre>`:esc(m.body)}</div></div></div>`;
+    if(m.from==="me")return`<div class="msg me"><div class="av">VC</div><div><span class="who">Você</span><span class="meta">${hms(m.t)} · operador do NOC</span><div class="body">${esc(m.body)}</div></div></div>`;
+    const u=UBI.get(m.from);if(!u)return"";const ini=u.name.split(" ").map(s=>s[0]).join("").slice(0,2);
+    return`<div class="msg"><div class="av">${ini}</div><div><span class="who">${esc(u.name)}</span><span class="meta">${hms(m.t)} · ${esc(D(u.dept).name)}</span><div class="body">${esc(m.body)}</div></div></div>`}).join("")||`<div class="empty">Nenhuma mensagem ainda. Escreva a primeira.</div>`;
+  if(atBottom||tl.dataset.room!==act.id)tl.scrollTop=tl.scrollHeight;tl.dataset.room=act.id;
+  const parent=act.unit?U(act.unit).name:act.dm?"—":"Centro de Operações";
+  $("mxInfo").innerHTML=`<dl><dt>Endereço</dt><dd class="mono">${act.alias&&act.alias!=="—"?act.alias+":"+HS:"—"}</dd><dt>ID da sala</dt><dd class="mono">${act.rid}</dd><dt>Space</dt><dd>${esc(parent)}</dd>
+    <dt>Entrada</dt><dd>${esc(act.join)}</dd><dt>Criptografia</dt><dd>${act.e2ee?'<span class="tag ok">ponta a ponta</span>':'<span class="tag warn">desligada</span> para o bot ler e postar'}</dd>
+    <dt>Federação</dt><dd>desligada · só o servidor do órgão</dd>${act.dept?`<dt>Origem</dt><dd>departamento ${act.dept} da estrutura; membros sincronizados automaticamente</dd>`:""}</dl>`;
+  const on=u=>((u.id*2654435761)>>>0)%10<(new Date().getHours()>=8&&new Date().getHours()<19?6:2);
+  $("mxMemC").textContent=`${int(mem.length)}${act.dm?"":` · ${int(mem.filter(on).length)} online`}`;
+  $("mxMem").innerHTML=mem.slice(0,60).map(u=>`<li><span class="pres${on(u)?" on":""}"></span>${esc(u.name)}<small>${esc(u.cargo.split(" ")[0])}</small></li>`).join("")+(mem.length>60?`<li class="c-muted" style="font-size:12px">e mais ${int(mem.length-60)} pessoas</li>`:"");
+}
+$("mxTree").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.s){MX.open.has(b.dataset.s)?MX.open.delete(b.dataset.s):MX.open.add(b.dataset.s)}else if(b.dataset.r)MX.active=b.dataset.r;renderMx();renderBadges()});
+$("mq").addEventListener("input",e=>{MX.q=e.target.value;renderMx()});
+$("mxForm").addEventListener("submit",e=>{e.preventDefault();const v=$("mxIn").value.trim();if(!v)return;const r=MX.rooms.get(MX.active);
+  r.msgs.push({t:Date.now(),from:"me",body:v});$("mxIn").value="";if(v.startsWith("!"))mxCmd(r,v);renderMx()});
+
+// ===================== RENDER: estrutura =====================
+let eSel={type:"unit",id:1},eUser=null,eQ="",eOpen=new Set([1]);
+function renderTree(){
+  const q=deacc(eQ);
+  const deptMatch=d=>!q||deacc(d.name).includes(q)||DEPT_USERS.get(d.id).some(u=>deacc(u.name).includes(q));
+  const units=UNITS.filter(u=>inUF(u.id)&&(!q||DEPTS.some(d=>d.unit===u.id&&deptMatch(d))));
+  const cnt=id=>int(USERS.filter(x=>x.unit===id).length);
+  $("eTree").innerHTML=`<ul><li><button type="button" data-t="org" class="${eSel.type==="org"?"on":""}"><span class="caret">▾</span>Órgão · Diretoria de Tecnologia e Inteligência<span class="count">${int(USERS.length)}</span></button><ul>`+
+    units.slice(0,q?300:1000).map(u=>{const opened=eOpen.has(u.id)||(q&&units.length<15)||UF;const ds=DEPTS.filter(d=>d.unit===u.id&&deptMatch(d));
+      return`<li><button type="button" data-t="unit" data-id="${u.id}" class="${eSel.type==="unit"&&eSel.id===u.id?"on":""}"><span class="caret">${opened?"▾":"▸"}</span><span class="sd s-${unitStatus(u.id)}"></span>${esc(u.short||u.name)}<span class="count">${cnt(u.id)}</span></button>`+
+      (opened?`<ul>${ds.map(d=>`<li><button type="button" data-t="dept" data-id="${d.id}" class="${eSel.type==="dept"&&eSel.id===d.id?"on":""}"><span class="caret"></span>${esc(d.name)}<span class="count">${DEPT_USERS.get(d.id).length}</span></button></li>`).join("")}</ul>`:"")+`</li>`}).join("")+`</ul></li></ul>`;
+}
+function renderPeople(){
+  const q=deacc(eQ);let ppl=eSel.type==="dept"?DEPT_USERS.get(eSel.id):USERS.filter(u=>inUF(u.unit)&&(eSel.type!=="unit"||u.unit===eSel.id));
+  if(q)ppl=ppl.filter(u=>deacc(u.name+" "+D(u.dept).name+" "+u.cargo).includes(q));
+  $("eListH").innerHTML=`Pessoas <small>${eSel.type==="org"?"todo o órgão":eSel.type==="unit"?esc(U(eSel.id).name):esc(D(eSel.id).name)} · ${int(ppl.length)}</small>`;
+  $("eBody").innerHTML=ppl.slice(0,200).map(u=>`<tr class="click" data-p="${u.id}" tabindex="0"><td><b style="font-weight:500">${esc(u.name)}</b><span class="sub2 mono">${u.login}</span></td><td>${esc(u.cargo)}</td><td>${esc(D(u.dept).name)}<span class="sub2">${esc(uShort(u.unit))}</span></td><td class="mono">${u.ramal}</td></tr>`).join("")+(ppl.length>200?`<tr><td colspan="4" class="more">Mostrando 200 de ${int(ppl.length)}. Escolha um departamento ou busque pelo nome.</td></tr>`:"")||`<tr><td colspan="4" class="empty">Ninguém encontrado.</td></tr>`;
+}
+function renderCard(){
+  if(!eUser)return;const u=UBI.get(eUser);if(!u)return;
+  const eq=hostOf(u.id),tk=TK.filter(t=>t.req===u.id).slice(0,5),lg=LOG.filter(l=>l.msg.includes(u.login+" ")||l.msg.endsWith(u.login)).slice(0,5);
+  const ini=u.name.split(" ").map(s=>s[0]).join("").slice(0,2);
+  $("eCard").innerHTML=`<div style="display:flex;gap:10px;align-items:center"><div class="av">${ini}</div><div><h3>${esc(u.name)}</h3><span class="c-muted">${esc(u.cargo)}</span></div></div>
+   <dl><dt>Unidade</dt><dd>${esc(U(u.unit).name)}</dd><dt>Departamento</dt><dd>${esc(D(u.dept).name)}</dd><dt>Login de rede</dt><dd class="mono">${u.login}</dd><dt>E-mail</dt><dd>${u.login}@orgao.gov.br</dd><dt>Ramal</dt><dd class="mono">${u.ramal}</dd><dt>Matrix</dt><dd class="mono">@${u.login}:${HS}</dd></dl>
+   <div style="margin-top:10px"><button class="btn" type="button" data-dm="${u.id}">Conversar no Matrix</button></div>
+   <h4>Equipamentos · inventário</h4><ul>${eq.map(i=>`<li><span class="mono">${i.host}</span> · ${i.os}${i.os.startsWith("Windows 10")?' <span class="tag warn">sem suporte</span>':""} · antivírus <span class="tag ${i.av==="Atualizado"?"ok":"warn"}">${i.av}</span></li>`).join("")||'<li class="c-muted">Nenhum equipamento vinculado.</li>'}</ul>
+   <h4>Chamados abertos por ela</h4><ul>${tk.map(t=>`<li><span class="mono">${t.id}</span> · ${esc(t.title)} · ${t.status}</li>`).join("")||'<li class="c-muted">Nenhum chamado.</li>'}</ul>
+   <h4>Últimos acessos · logs</h4><ul>${lg.map(l=>`<li><span class="mono">${hms(l.t)}</span> · <span class="lv lv-${l.lv}">${l.lv}</span> ${esc(l.msg)}</li>`).join("")||'<li class="c-muted">Nenhum registro recente na amostra.</li>'}</ul>`;
+}
+function renderEst(){if(UF&&eSel.type!=="dept"){eSel={type:"unit",id:UF};eOpen.add(UF)}renderTree();renderPeople();renderCard()}
+
+// ===================== navegação e eventos =====================
+const VIEWS={visao:["Visão geral","Consolida todos os módulos por unidade"],cameras:["Câmeras e acesso","No sistema real: Frigate (detecção local) + controle de acesso + cadastro da recepção"],chamados:["Chamados","No sistema real: GLPI via API REST, ou o módulo de chamados próprio"],links:["Links e serviços","No sistema real: Uptime Kuma (endpoint /metrics) ou Zabbix"],inventario:["Inventário de equipamentos","No sistema real: OCS Inventory NG via API REST"],logs:["Logs de usuários e rede","No sistema real: Graylog via API REST (busca e alertas)"],mensagens:["Mensagens","No sistema real: Matrix Synapse com Element; spaces e salas criados a partir da estrutura do órgão"],plataforma:["Plataforma e escala","Bordas nas unidades → Kafka → bancos por tipo de dado → portal"],estrutura:["Estrutura organizacional","No sistema real: árvore de departamentos e usuários do RuoYi-Vue-Pro, sincronizada com o Active Directory"]};
+let view="visao";
+function go(v){if(!VIEWS[v])v="visao";view=v;document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.view!==v);
+  document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("on",n.dataset.v===v));
+  $("vTitle").textContent=VIEWS[v][0];$("vSrc").textContent=VIEWS[v][1];renderView();window.scrollTo(0,0)}
+function setUF(id){UF=id;$("uf").value=id||"";renderAll()}
+function renderView(){({visao:renderVisao,cameras:renderCams,chamados:renderTickets,links:renderLinks,inventario:renderInv,logs:renderLogs,mensagens:renderMx,plataforma:renderPlat,estrutura:renderEst})[view]()}
+function renderBadges(){
+  const cr=UNITS.filter(u=>unitStatus(u.id)==="critico").length;
+  const b=(id,v,crit)=>{$(id).textContent=v?int(v):"";$(id).className="badge"+(crit&&v?" crit":"");$(id).hidden=!v};
+  b("bVisao",cr,1);b("bCh",TK.filter(t=>open(t)&&inUF(t.unit)).length,0);b("bLk",MON.filter(m=>inUF(m.unit)&&m.beats.at(-1)==="d").length,1);
+  b("bInv",INV.filter(i=>inUF(i.unit)&&i.av==="Ausente").length,1);b("bLog",LOG.filter(l=>l.lv==="critico"&&inUF(l.unit)&&Date.now()-l.t<3600000).length,1);b("bCam",CAMS.alerts,0);b("bPl",PL.offline,1);if(MX){let un=0,al=false;MX.rooms.forEach(r=>{un+=r.unread;al=al||r.alert});b("bMx",un,al)}
+}
+function renderAll(){renderView();renderBadges()}
+
+document.querySelectorAll(".nav").forEach(n=>n.addEventListener("click",()=>go(n.dataset.v)));
+document.querySelectorAll(".kpi[data-go]").forEach(k=>k.addEventListener("click",()=>go(k.dataset.go)));
+$("ovFeed").addEventListener("click",e=>{const li=e.target.closest("[data-go]");if(li){setUF(+li.dataset.u);go(li.dataset.go)}});
+$("ovFeed").addEventListener("keydown",e=>{const li=e.target.closest("[data-go]");if(li&&(e.key==="Enter"||e.key===" ")){e.preventDefault();setUF(+li.dataset.u);go(li.dataset.go)}});
+$("uf").addEventListener("change",e=>{UF=e.target.value?+e.target.value:null;renderAll()});
+$("scale").addEventListener("change",e=>{try{localStorage.setItem("coti-escala",e.target.value)}catch(_){}build(e.target.value);renderAll()});
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"Retomar":"Pausar";$("live").style.color=paused?"var(--muted)":""};
+$("tChips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){tFilter=b.dataset.f;renderTickets()}});
+$("tq").addEventListener("input",e=>{tQ=e.target.value;renderTickets()});
+$("tNew").onclick=()=>{$("tForm").hidden=!$("tForm").hidden;if(!$("tForm").hidden)$("fTitle").focus()};
+Object.keys(CAT).forEach(c=>$("fCat").insertAdjacentHTML("beforeend",`<option>${c}</option>`));
+PRI.forEach(([p])=>$("fPri").insertAdjacentHTML("beforeend",`<option${p==="Média"?" selected":""}>${p}</option>`));
+$("tForm").addEventListener("submit",e=>{e.preventDefault();const title=$("fTitle").value.trim();if(!title)return;
+  const t=newTicket({title,cat:$("fCat").value,pri:$("fPri").value,unit:+$("fUnit").value,req:null});
+  occ(t.unit,"Chamados",t.pri==="Crítica"?"atencao":"info",`Chamado ${t.id} aberto: ${title}`,"chamados");
+  $("fTitle").value="";$("tForm").hidden=true;tFilter="Novo";renderTickets();renderBadges()});
+$("lChips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){lFilter=b.dataset.f;renderLinks()}});
+$("iChips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){iFilter=b.dataset.f;renderInv()}});
+$("iq").addEventListener("input",e=>{iQ=e.target.value;renderInv()});
+$("gChips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){gLv=b.dataset.f;renderLogs()}});
+$("gq").addEventListener("input",e=>{gQ=e.target.value;renderLogs()});
+$("eTree").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.t==="org")eSel={type:"org"};else{eSel={type:b.dataset.t,id:+b.dataset.id};if(b.dataset.t==="unit"){eOpen.has(eSel.id)?eOpen.delete(eSel.id):eOpen.add(eSel.id)}}
+  renderTree();renderPeople()});
+$("eBody").addEventListener("click",e=>{const r=e.target.closest("[data-p]");if(r){eUser=+r.dataset.p;renderCard()}});
+$("eBody").addEventListener("keydown",e=>{const r=e.target.closest("[data-p]");if(r&&e.key==="Enter"){eUser=+r.dataset.p;renderCard()}});
+$("eCard").addEventListener("click",e=>{const b=e.target.closest("[data-dm]");if(b)openDM(+b.dataset.dm)});
+$("eq").addEventListener("input",e=>{eQ=e.target.value;renderTree();renderPeople()});
+window.addEventListener("resize",()=>$("tip").hidden=true);
+
+// ===================== laços =====================
+setInterval(()=>{$("clock").textContent=new Date().toLocaleTimeString("pt-BR")},1000);
+setInterval(camStep,60);
+setInterval(stepLogs,1000);
+setInterval(()=>{if(paused)return;stepLinks();stepTickets();stepPlatform();stepMx();renderAll()},3000);
+setInterval(()=>{if(!paused&&view==="cameras")renderCams()},1000);
+
+let saved=null;try{saved=localStorage.getItem("coti-escala")}catch(_){}
+const startScale=PRESETS[saved]?saved:"nacional";$("scale").value=startScale;build(startScale);
+const hh=(location.hash||"").slice(1);go(VIEWS[hh]?hh:"visao");renderBadges();requestAnimationFrame(camLoop);
+
+</script>

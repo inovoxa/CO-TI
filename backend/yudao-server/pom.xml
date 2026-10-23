@@ -32,6 +32,27 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- CO-TI: login e sincronização com o Active Directory -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-module-identidade</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!-- CO-TI: banco único PostgreSQL com migrations versionadas (db/migration) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
         <!-- 会员中心。默认注释，保证编译速度 -->
 <!--        <dependency>-->
 <!--            <groupId>cn.iocoder.boot</groupId>-->

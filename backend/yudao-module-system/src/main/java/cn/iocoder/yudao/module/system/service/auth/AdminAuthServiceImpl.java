@@ -34,6 +34,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Validator;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +56,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     @Resource
     private AdminUserService userService;
+    @Autowired(required = false)
+    private AutenticadorExterno autenticadorExterno;
     @Resource
     private LoginLogService loginLogService;
     @Resource
@@ -80,6 +83,19 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     @Override
     public AdminUserDO authenticate(String username, String password) {
         final LoginLogTypeEnum logTypeEnum = LoginLogTypeEnum.LOGIN_USERNAME;
+        // CO-TI: diretório externo (AD) primeiro; se ele não decidir, segue a senha local
+        if (autenticadorExterno != null) {
+            AutenticadorExterno.Resultado externo = autenticadorExterno.autenticar(username, password);
+            if (externo.getTipo() == AutenticadorExterno.Tipo.ACEITO) {
+                validateUserStatus(externo.getUsuario(), username, logTypeEnum);
+                return externo.getUsuario();
+            }
+            if (externo.getTipo() == AutenticadorExterno.Tipo.RECUSADO) {
+                createLoginLog(externo.getUsuario() != null ? externo.getUsuario().getId() : null,
+                        username, logTypeEnum, LoginResultEnum.BAD_CREDENTIALS);
+                throw exception(AUTH_LOGIN_BAD_CREDENTIALS);
+            }
+        }
         // 校验账号是否存在
         AdminUserDO user = userService.getUserByUsername(username);
         if (user == null) {

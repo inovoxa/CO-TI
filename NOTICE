@@ -1,0 +1,21 @@
+CO-TI — Centro de Operações de TI
+Núcleo licenciado sob a GNU General Public License v3.0 (arquivo LICENSE).
+
+Este produto inclui código de terceiros, mantido sob a licença original de cada um:
+
+1. RuoYi-Vue-Pro (pasta backend/) — MIT
+   Copyright (c) 2021 ruoyi-vue-pro
+   https://github.com/YunaiV/ruoyi-vue-pro — texto da licença em backend/LICENSE
+
+2. yudao-ui-admin-vue3 (pasta frontend/) — MIT
+   Copyright (c) 2021-present Archer
+   https://github.com/yudaocode/yudao-ui-admin-vue3 — texto da licença em frontend/LICENSE
+
+Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
+
+- GLPI 12.0.0 (GPL-3.0-or-later), Copyright (C) Teclib' e contribuidores — ainda nenhuma parte portada.
+- OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
+- Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
+- Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.
+  O conteúdo de enterprise/ (Chatwoot Enterprise License) NÃO é copiado nem traduzido: os recursos
+  equivalentes são escritos do zero, a partir de especificações próprias em docs/specs/.

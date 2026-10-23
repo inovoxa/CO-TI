@@ -1,0 +1,6 @@
+# Só para desenvolvimento: expõe banco (55432, a 5432 costuma estar reservada no Windows) e Redis para rodar o backend fora do Docker.
+services:
+  postgres:
+    ports: ["127.0.0.1:55432:5432"]
+  redis:
+    ports: ["127.0.0.1:6379:6379"]

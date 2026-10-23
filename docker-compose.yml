@@ -1,0 +1,68 @@
+# CO-TI — uma instalação por empresa. Suba com:  docker compose --env-file .env up -d --build
+# Segredos ficam no .env (copie de .env.example); nada sensível neste arquivo.
+name: coti
+
+services:
+  postgres:
+    # PostgreSQL 16 com TimescaleDB e pgvector na mesma imagem (banco único do CO-TI)
+    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    environment:
+      POSTGRES_DB: coti
+      POSTGRES_USER: coti
+      POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD no .env}
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coti -d coti"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--requirepass", "${CO_TI_REDIS_PASSWORD:?defina CO_TI_REDIS_PASSWORD no .env}", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
+      CO_TI_DB_USER: coti
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_REDIS_HOST: redis
+      CO_TI_REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+      CO_TI_ADMIN_MONITOR_PASSWORD: ${CO_TI_ADMIN_MONITOR_PASSWORD:?defina CO_TI_ADMIN_MONITOR_PASSWORD no .env}
+      CO_TI_CAPTCHA: ${CO_TI_CAPTCHA:-true}
+      CO_TI_ADMIN_SENHA_INICIAL: ${CO_TI_ADMIN_SENHA_INICIAL:-}
+      CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
+      CO_TI_AD_URL: ${CO_TI_AD_URL:-}
+      CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}
+      CO_TI_AD_BIND_SENHA: ${CO_TI_AD_BIND_SENHA:-}
+      CO_TI_AD_BASE_USUARIOS: ${CO_TI_AD_BASE_USUARIOS:-}
+    volumes:
+      - backendlogs:/app/logs
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${CO_TI_HTTP_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  backendlogs:

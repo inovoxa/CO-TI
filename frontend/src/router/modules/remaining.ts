@@ -1,4 +1,5 @@
 import { Layout } from '@/utils/routerHelper'
+import { telaoRoute } from './monitor-telao'
 
 const { t } = useI18n()
 /**
@@ -1211,7 +1212,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
         ]
       }
     ]
-  }
+  },
+  telaoRoute
 ]
 
 export default remainingRouter

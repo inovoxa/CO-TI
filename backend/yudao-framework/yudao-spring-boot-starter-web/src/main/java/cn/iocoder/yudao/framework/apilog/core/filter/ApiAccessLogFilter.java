@@ -182,7 +182,7 @@ public class ApiAccessLogFilter extends ApiRequestFilter {
 
     // ========== 请求和响应的脱敏逻辑，移除类似 password、token 等敏感字段 ==========
 
-    private static String sanitizeMap(Map<String, ?> map, String[] sanitizeKeys) {
+    public static String sanitizeMap(Map<String, ?> map, String[] sanitizeKeys) {
         if (CollUtil.isEmpty(map)) {
             return null;
         }
@@ -193,7 +193,7 @@ public class ApiAccessLogFilter extends ApiRequestFilter {
         return JsonUtils.toJsonString(map);
     }
 
-    private static String sanitizeJson(String jsonString, String[] sanitizeKeys) {
+    public static String sanitizeJson(String jsonString, String[] sanitizeKeys) {
         if (StrUtil.isEmpty(jsonString)) {
             return null;
         }
@@ -202,9 +202,9 @@ public class ApiAccessLogFilter extends ApiRequestFilter {
             sanitizeJson(rootNode, sanitizeKeys);
             return JsonUtils.toJsonString(rootNode);
         } catch (Exception e) {
-            // 脱敏失败的情况下，直接忽略异常，避免影响用户请求
-            log.error("[sanitizeJson][脱敏({}) 发生异常]", jsonString, e);
-            return jsonString;
+            // CO-TI: corpo que não é JSON pode conter senha (ex.: formulário); não gravar nem logar o conteúdo
+            log.warn("[sanitizeJson][corpo não é JSON; omitido do log ({} caracteres)]", jsonString.length());
+            return "[omitido]";
         }
     }
 

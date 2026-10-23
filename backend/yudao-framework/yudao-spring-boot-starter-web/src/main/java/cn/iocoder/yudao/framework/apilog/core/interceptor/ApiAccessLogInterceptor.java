@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.apilog.core.filter.ApiAccessLogFilter;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.common.util.spring.SpringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,8 +49,10 @@ public class ApiAccessLogInterceptor implements HandlerInterceptor {
             if (CollUtil.isEmpty(queryString) && StrUtil.isEmpty(requestBody)) {
                 log.info("[preHandle][开始请求 URL({}) 无参数]", request.getRequestURI());
             } else {
+                // CO-TI: mesmo fora de produção, nunca escrever senha e token no console
                 log.info("[preHandle][开始请求 URL({}) 参数({})]", request.getRequestURI(),
-                        StrUtil.blankToDefault(requestBody, queryString.toString()));
+                        StrUtil.isNotEmpty(requestBody) ? ApiAccessLogFilter.sanitizeJson(requestBody, null)
+                                : ApiAccessLogFilter.sanitizeMap(new java.util.HashMap<>(queryString), null));
             }
             // 计时
             StopWatch stopWatch = new StopWatch();

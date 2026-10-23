@@ -23,13 +23,14 @@ public class AuthLoginReqVO extends CaptchaVerificationReqVO {
 
     @Schema(description = "账号", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudaoyuanma")
     @NotEmpty(message = "登录账号不能为空")
-    @Length(min = 4, max = 30, message = "账号长度为 4-30 位")
-    @Pattern(regexp = "^[a-zA-Z0-9]{4,30}$", message = "账号格式为数字以及字母")
+    @Length(min = 1, max = 30, message = "Usuário deve ter de 1 a 30 caracteres")
+    // CO-TI: aceita o sAMAccountName do AD (joao.silva, ana-souza, svc_backup)
+    @Pattern(regexp = "^[a-zA-Z0-9._-]{1,30}$", message = "Usuário só pode ter letras, números, ponto, hífen e sublinhado")
     private String username;
 
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "buzhidao")
     @NotEmpty(message = "密码不能为空")
-    @Length(min = 4, max = 16, message = "密码长度为 4-16 位")
+    @Length(min = 1, max = 128, message = "Senha deve ter até 128 caracteres") // CO-TI: senhas do AD podem passar de 16
     private String password;
 
     // ========== 绑定社交登录时，需要传递如下参数 ==========
