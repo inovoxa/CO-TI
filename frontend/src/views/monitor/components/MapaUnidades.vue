@@ -42,7 +42,7 @@ function desenhar() {
     let m = marcadores.get(u.id)
     if (!m) {
       m = L.circleMarker([Number(u.latitude), Number(u.longitude)], { radius: muitos ? 6 : 10, weight: 2, color: '#fff', fillOpacity: 0.95 })
-        .addTo(mapa.value)
+        .addTo(mapa.value!)
       if (props.interativo) m.on('click', () => emit('selecionar', props.selecionada === u.id ? undefined : u.id))
       marcadores.set(u.id, m)
     }

@@ -90,6 +90,7 @@ public class AdProvisionamentoService {
         Integer statusAnterior = usuario.getId() == null ? null : adminUserMapper.selectById(usuario.getId()).getStatus();
         if (usuario.getId() == null) {
             adminUserMapper.insert(usuario);
+            atribuirPerfilPadrao(usuario.getId());
             auditoria.registrar("ad.usuario_criado", usuario.getId(), conta.getLogin(),
                     Map.of("dn", conta.getDn(), "departamento", deptId));
         } else {
@@ -182,6 +183,22 @@ public class AdProvisionamentoService {
             permissionService.assignUserRole(userId, novos);
             auditoria.registrar("ad.perfis_alterados", userId, login,
                     Map.of("antes", new TreeSet<>(atuais), "depois", new TreeSet<>(novos)));
+        }
+    }
+
+    /** Quem entra pela primeira vez recebe o perfil básico (ex.: portal de chamados). */
+    private void atribuirPerfilPadrao(Long userId) {
+        if (props.getPerfilPadrao() == null || props.getPerfilPadrao().isBlank()) {
+            return;
+        }
+        RoleDO perfil = roleMapper.selectByCode(props.getPerfilPadrao());
+        if (perfil == null) {
+            log.warn("[atribuirPerfilPadrao][perfil {} (coti.ad.perfil-padrao) não existe]", props.getPerfilPadrao());
+            return;
+        }
+        Set<Long> atuais = new HashSet<>(permissionService.getUserRoleIdListByUserId(userId));
+        if (atuais.add(perfil.getId())) {
+            permissionService.assignUserRole(userId, atuais);
         }
     }
 

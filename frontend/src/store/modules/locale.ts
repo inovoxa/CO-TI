@@ -13,8 +13,8 @@ const elLocaleMap = {
 }
 
 // CO-TI: idioma padrão português; um valor antigo em cache (ex.: zh-CN) volta para o padrão
-const IDIOMA_PADRAO = 'pt-BR'
-const idiomaSalvo = (): string => {
+const IDIOMA_PADRAO: LocaleType = 'pt-BR'
+const idiomaSalvo = (): LocaleType => {
   const l = wsCache.get(CACHE_KEY.LANG)
   return l && elLocaleMap[l] ? l : IDIOMA_PADRAO
 }

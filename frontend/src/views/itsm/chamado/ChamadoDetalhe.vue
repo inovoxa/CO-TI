@@ -1,0 +1,422 @@
+<template>
+  <el-drawer v-model="visivel" :size="largura" destroy-on-close @closed="chamado = undefined">
+    <template #header>
+      <div v-if="chamado" class="min-w-0">
+        <div class="truncate text-17px font-bold">#{{ chamado.id }} · {{ chamado.titulo }}</div>
+        <div class="mt-6px flex flex-wrap items-center gap-6px">
+          <el-tag :type="corStatus(chamado.status)" disable-transitions>{{ chamado.statusRotulo }}</el-tag>
+          <el-tag :type="corPrioridade(chamado.prioridade)" disable-transitions effect="plain">
+            Prioridade {{ chamado.prioridadeRotulo.toLowerCase() }}
+          </el-tag>
+          <el-tag disable-transitions effect="plain" type="info">{{ chamado.tipoRotulo }}</el-tag>
+          <el-tag v-if="chamado.slaVencido" disable-transitions effect="dark" type="danger">Prazo vencido</el-tag>
+        </div>
+      </div>
+    </template>
+
+    <div v-if="chamado" v-loading="carregando" class="flex gap-16px">
+      <!-- coluna principal -->
+      <div class="min-w-0 flex-1">
+        <!-- ações -->
+        <div class="mb-12px flex flex-wrap gap-8px">
+          <el-button v-if="pode('assumir')" type="primary" @click="acao(() => ItsmApi.assumir(chamado!.id))">
+            <Icon class="mr-4px" icon="ep:pointer" />Assumir
+          </el-button>
+          <el-button v-if="pode('pendente')" @click="pendente">
+            <Icon class="mr-4px" icon="ep:video-pause" />Pendente
+          </el-button>
+          <el-button v-if="pode('retomar')" @click="acao(() => ItsmApi.retomar(chamado!.id))">
+            <Icon class="mr-4px" icon="ep:video-play" />Retomar
+          </el-button>
+          <el-button v-if="pode('fechar')" @click="fechar"><Icon class="mr-4px" icon="ep:circle-check" />Fechar</el-button>
+          <el-button v-if="pode('reabrir')" @click="acao(() => ItsmApi.reabrir(chamado!.id), 'Reabrir o chamado?')">
+            <Icon class="mr-4px" icon="ep:refresh-left" />Reabrir
+          </el-button>
+          <el-button v-if="pode('excluir')" plain type="danger" @click="excluir">
+            <Icon class="mr-4px" icon="ep:delete" />Excluir
+          </el-button>
+        </div>
+
+        <el-alert
+          v-if="pode('avaliar-solucao')"
+          :closable="false"
+          class="mb-12px"
+          show-icon
+          title="Solução aguardando aprovação do solicitante"
+          type="success"
+        >
+          <template #default>
+            <el-button size="small" type="success" @click="avaliar(true)">Aprovar em nome dele (fecha)</el-button>
+            <el-button size="small" @click="avaliar(false)">Recusar (reabre)</el-button>
+          </template>
+        </el-alert>
+
+        <el-tabs v-model="aba">
+          <el-tab-pane label="Linha do tempo" name="tempo">
+            <div class="mb-12px" v-html="chamado.descricao || '<i>Sem descrição</i>'"></div>
+            <el-divider class="!my-12px" />
+            <LinhaDoTempo :itens="linha" />
+
+            <!-- nova interação -->
+            <el-card v-if="tiposPermitidos.length" class="mt-12px" shadow="never">
+              <el-radio-group v-model="nova.tipo" class="mb-10px" size="small">
+                <el-radio-button v-for="t in tiposPermitidos" :key="t.valor" :value="t.valor">{{ t.rotulo }}</el-radio-button>
+              </el-radio-group>
+              <Editor :key="editorKey" v-model="nova.conteudo" directory="chamados" height="180px" />
+              <div class="mt-10px flex flex-wrap items-center gap-12px">
+                <el-checkbox v-if="nova.tipo !== 'solucao'" v-model="nova.privado">Privado (só a equipe técnica vê)</el-checkbox>
+                <template v-if="nova.tipo === 'tarefa'">
+                  <el-input-number v-model="nova.tempoGastoMin" :max="100000" :min="0" controls-position="right" size="small" />
+                  <span class="text-13px">min gastos</span>
+                  <el-select v-model="nova.estadoTarefa" class="!w-140px" size="small">
+                    <el-option :value="1" label="A fazer" />
+                    <el-option :value="2" label="Feita" />
+                    <el-option :value="0" label="Informativa" />
+                  </el-select>
+                  <el-date-picker
+                    v-model="nova.periodo"
+                    end-placeholder="Fim"
+                    size="small"
+                    start-placeholder="Planejar início"
+                    type="datetimerange"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                  />
+                </template>
+                <el-button :loading="enviando" class="ml-auto" type="primary" @click="enviar">
+                  {{ nova.tipo === 'solucao' ? 'Registrar solução' : 'Enviar' }}
+                </el-button>
+              </div>
+            </el-card>
+          </el-tab-pane>
+
+          <el-tab-pane v-if="pode('editar')" label="Dados" name="dados">
+            <el-form :model="edicao" label-width="100px">
+              <el-form-item label="Título"><el-input v-model="edicao.titulo" maxlength="255" /></el-form-item>
+              <el-form-item label="Tipo">
+                <el-radio-group v-model="edicao.tipo">
+                  <el-radio-button :value="1">Incidente</el-radio-button>
+                  <el-radio-button :value="2">Requisição</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="Categoria">
+                <el-select v-model="edicao.categoriaId" class="w-full" clearable filterable>
+                  <el-option v-for="c in categorias" :key="c.id" :label="c.nomeCompleto" :value="c.id" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Urgência">
+                <el-select v-model="edicao.urgencia">
+                  <el-option v-for="e in ESCALA" :key="e.valor" :label="e.rotulo" :value="e.valor" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Impacto">
+                <el-select v-model="edicao.impacto">
+                  <el-option v-for="e in ESCALA" :key="e.valor" :label="e.rotulo" :value="e.valor" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Prioridade">
+                <el-select v-model="edicao.prioridade" clearable placeholder="Recalcular pela matriz">
+                  <el-option v-for="p in PRIORIDADES" :key="p.valor" :label="p.rotulo" :value="p.valor" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Descrição">
+                <Editor v-model="edicao.descricao" directory="chamados" height="220px" />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="salvarEdicao">Salvar</el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="Histórico" lazy name="historico">
+            <el-table :data="historico" size="small">
+              <el-table-column :formatter="dateFormatter" label="Quando" prop="momento" width="160" />
+              <el-table-column label="Quem" prop="usuario" width="150" />
+              <el-table-column label="O quê" width="140">
+                <template #default="{ row }">{{ rotuloCampo(row.campo) }}</template>
+              </el-table-column>
+              <el-table-column label="De" prop="valorAntigo" show-overflow-tooltip />
+              <el-table-column label="Para" prop="valorNovo" show-overflow-tooltip />
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
+      <!-- coluna lateral -->
+      <div class="w-300px shrink-0">
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item label="Categoria">{{ chamado.categoria || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="Unidade">{{ chamado.dept || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="Origem">
+            {{ chamado.origem || '—' }}<span v-if="chamado.origemAutomatica"> ({{ chamado.origemAutomatica }})</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Aberto em">{{ formatDate(chamado.abertoEm) }}</el-descriptions-item>
+          <el-descriptions-item label="Assumido">
+            <template v-if="chamado.assumidoEm">{{ formatDate(chamado.assumidoEm) }} ({{ duracao(chamado.tempoAssumirSeg) }})</template>
+            <template v-else>—</template>
+          </el-descriptions-item>
+          <el-descriptions-item label="Prazo">
+            <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.slaVencido }">
+              {{ chamado.prazoSolucao ? formatDate(chamado.prazoSolucao) : 'sem SLA' }}
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="chamado.solucionadoEm" label="Solucionado">
+            {{ formatDate(chamado.solucionadoEm) }} ({{ duracao(chamado.tempoSolucaoSeg) }})
+          </el-descriptions-item>
+          <el-descriptions-item v-if="chamado.fechadoEm" label="Fechado">{{ formatDate(chamado.fechadoEm) }}</el-descriptions-item>
+          <el-descriptions-item label="Pendente">{{ duracao(chamado.esperaSeg) }}</el-descriptions-item>
+          <el-descriptions-item label="Tempo gasto">{{ duracao(chamado.tempoGastoSeg) }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div v-for="g in GRUPOS" :key="g.tipo" class="mt-14px">
+          <div class="mb-6px flex items-center justify-between text-13px font-bold">
+            {{ g.rotulo }}
+            <el-button v-if="pode('atribuir')" link size="small" type="primary" @click="abrirAtor(g.tipo)">
+              <Icon icon="ep:plus" />
+            </el-button>
+          </div>
+          <div class="flex flex-wrap gap-6px">
+            <el-tag
+              v-for="a in (chamado as any)[g.campo]"
+              :key="a.id"
+              :closable="pode('atribuir')"
+              disable-transitions
+              effect="plain"
+              @close="removerAtor(a)"
+            >
+              <Icon :icon="a.equipeId ? 'ep:user-filled' : 'ep:user'" class="mr-2px" />{{ a.nome }}
+            </el-tag>
+            <span v-if="!(chamado as any)[g.campo].length" class="text-12px text-[var(--el-text-color-placeholder)]">ninguém</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- incluir participante -->
+    <Dialog v-model="atorDialogo.visivel" :title="`Incluir ${atorDialogo.rotulo.toLowerCase()}`" width="420px">
+      <el-radio-group v-if="atorDialogo.tipo === 2" v-model="atorDialogo.modo" class="mb-10px">
+        <el-radio-button value="pessoa">Pessoa</el-radio-button>
+        <el-radio-button value="equipe">Equipe</el-radio-button>
+      </el-radio-group>
+      <el-select v-if="atorDialogo.modo === 'pessoa'" v-model="atorDialogo.userId" class="w-full" filterable placeholder="Pessoa">
+        <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
+      </el-select>
+      <el-select v-else v-model="atorDialogo.equipeId" class="w-full" filterable placeholder="Equipe">
+        <el-option v-for="e in equipes" :key="e.id" :label="e.nome" :value="e.id!" />
+      </el-select>
+      <template #footer>
+        <el-button type="primary" @click="incluirAtor">Incluir</el-button>
+        <el-button @click="atorDialogo.visivel = false">Cancelar</el-button>
+      </template>
+    </Dialog>
+  </el-drawer>
+</template>
+
+<script lang="ts" setup>
+import { ElMessageBox } from 'element-plus'
+import { dateFormatter, formatDate } from '@/utils/formatTime'
+import * as ItsmApi from '@/api/itsm'
+import { ESCALA, PRIORIDADES, corPrioridade, corStatus, duracao } from '@/api/itsm'
+import * as UserApi from '@/api/system/user'
+import LinhaDoTempo from '../components/LinhaDoTempo.vue'
+
+defineOptions({ name: 'ChamadoDetalhe' })
+const emit = defineEmits(['alterado'])
+const message = useMessage()
+
+const GRUPOS = [
+  { tipo: 1, rotulo: 'Solicitantes', campo: 'solicitantes' },
+  { tipo: 2, rotulo: 'Técnicos', campo: 'tecnicos' },
+  { tipo: 3, rotulo: 'Observadores', campo: 'observadores' }
+]
+const CAMPOS: Record<string, string> = {
+  criado: 'Abertura',
+  status: 'Situação',
+  titulo: 'Título',
+  tipo: 'Tipo',
+  urgencia: 'Urgência',
+  impacto: 'Impacto',
+  prioridade: 'Prioridade',
+  categoria: 'Categoria',
+  unidade: 'Unidade',
+  descricao: 'Descrição',
+  'solicitante+': '+ Solicitante',
+  'solicitante-': '− Solicitante',
+  'tecnico+': '+ Técnico',
+  'tecnico-': '− Técnico',
+  'observador+': '+ Observador',
+  'observador-': '− Observador',
+  excluido: 'Exclusão'
+}
+const rotuloCampo = (c: string) => CAMPOS[c] || c
+
+const visivel = ref(false)
+const carregando = ref(false)
+const enviando = ref(false)
+const aba = ref('tempo')
+const chamado = ref<ItsmApi.Chamado>()
+const linha = ref<ItsmApi.Interacao[]>([])
+const historico = ref<ItsmApi.Historico[]>([])
+const categorias = ref<ItsmApi.Categoria[]>([])
+const equipes = ref<ItsmApi.Equipe[]>([])
+const usuarios = ref<UserApi.UserVO[]>([])
+const edicao = ref<any>({})
+const editorKey = ref(0)
+const largura = computed(() => (window.innerWidth < 1200 ? '100%' : '75%'))
+
+const novaVazia = () => ({ tipo: 'acompanhamento', conteudo: '', privado: false, tempoGastoMin: 0, estadoTarefa: 2, periodo: [] as string[] })
+const nova = ref(novaVazia())
+const atorDialogo = reactive({ visivel: false, tipo: 1, rotulo: '', modo: 'pessoa', userId: undefined as number | undefined, equipeId: undefined as number | undefined })
+
+const pode = (a: string) => !!chamado.value?.acoes.includes(a)
+const tiposPermitidos = computed(() =>
+  [
+    { valor: 'acompanhamento', rotulo: 'Acompanhamento', acao: 'acompanhar' },
+    { valor: 'tarefa', rotulo: 'Tarefa', acao: 'tarefa' },
+    { valor: 'solucao', rotulo: 'Solução', acao: 'solucionar' }
+  ].filter((t) => pode(t.acao))
+)
+
+const carregar = async (id: number) => {
+  carregando.value = true
+  try {
+    const [c, l] = await Promise.all([ItsmApi.getChamado(id), ItsmApi.getLinhaDoTempo(id)])
+    chamado.value = c
+    linha.value = l
+    edicao.value = {
+      id: c.id,
+      titulo: c.titulo,
+      tipo: c.tipo,
+      categoriaId: c.categoriaId,
+      urgencia: c.urgencia,
+      impacto: c.impacto,
+      prioridade: c.prioridade,
+      descricao: c.descricao
+    }
+    if (aba.value === 'historico') historico.value = await ItsmApi.getHistorico(id)
+  } finally {
+    carregando.value = false
+  }
+}
+
+const open = async (id: number) => {
+  visivel.value = true
+  aba.value = 'tempo'
+  nova.value = novaVazia()
+  await carregar(id)
+  ;[categorias.value, equipes.value, usuarios.value] = await Promise.all([
+    ItsmApi.getCategorias(true),
+    ItsmApi.getEquipes(true),
+    UserApi.getSimpleUserList()
+  ])
+}
+defineExpose({ open })
+
+watch(aba, async (a) => {
+  if (a === 'historico' && chamado.value) historico.value = await ItsmApi.getHistorico(chamado.value.id)
+})
+
+const recarregar = async () => {
+  await carregar(chamado.value!.id)
+  emit('alterado')
+}
+
+const acao = async (fn: () => Promise<any>, confirmar?: string) => {
+  if (confirmar) await message.confirm(confirmar)
+  await fn()
+  await recarregar()
+}
+
+const pendente = async () => {
+  const { value } = await ElMessageBox.prompt('Motivo (vai para a linha do tempo, visível ao solicitante)', 'Colocar em pendente', {
+    inputPlaceholder: 'Ex.: aguardando o fornecedor',
+    confirmButtonText: 'Colocar pendente',
+    cancelButtonText: 'Cancelar'
+  })
+  await ItsmApi.colocarPendente(chamado.value!.id, value)
+  await recarregar()
+}
+
+const fechar = () =>
+  acao(() => ItsmApi.fechar(chamado.value!.id), 'Fechar o chamado sem esperar a aprovação do solicitante?')
+
+const excluir = async () => {
+  await message.delConfirm('Excluir o chamado #' + chamado.value!.id + '?')
+  await ItsmApi.excluirChamado(chamado.value!.id)
+  visivel.value = false
+  emit('alterado')
+}
+
+const avaliar = async (aprovar: boolean) => {
+  let comentario: string | undefined
+  if (!aprovar) {
+    comentario = (
+      await ElMessageBox.prompt('Por que a solução foi recusada?', 'Recusar solução', {
+        confirmButtonText: 'Recusar e reabrir',
+        cancelButtonText: 'Cancelar'
+      })
+    ).value
+  }
+  await ItsmApi.avaliarSolucaoTecnico({ chamadoId: chamado.value!.id, aprovar, comentario })
+  await recarregar()
+}
+
+const enviar = async () => {
+  if (!nova.value.conteudo || nova.value.conteudo === '<p><br></p>') {
+    message.warning('Escreva o texto')
+    return
+  }
+  enviando.value = true
+  try {
+    const n = nova.value
+    await ItsmApi.adicionarInteracao({
+      chamadoId: chamado.value!.id,
+      tipo: n.tipo,
+      conteudo: n.conteudo,
+      privado: n.tipo !== 'solucao' && n.privado,
+      tempoGastoSeg: n.tipo === 'tarefa' ? n.tempoGastoMin * 60 : undefined,
+      estadoTarefa: n.tipo === 'tarefa' ? (n.periodo?.length ? 1 : n.estadoTarefa) : undefined,
+      inicio: n.tipo === 'tarefa' && n.periodo?.length ? n.periodo[0] : undefined,
+      fim: n.tipo === 'tarefa' && n.periodo?.length ? n.periodo[1] : undefined
+    })
+    nova.value = novaVazia()
+    editorKey.value++
+    await recarregar()
+  } finally {
+    enviando.value = false
+  }
+}
+
+const salvarEdicao = async () => {
+  await ItsmApi.atualizarChamado(edicao.value)
+  message.success('Alterações salvas')
+  await recarregar()
+}
+
+const abrirAtor = (tipo: number) => {
+  Object.assign(atorDialogo, {
+    visivel: true,
+    tipo,
+    rotulo: GRUPOS.find((g) => g.tipo === tipo)!.rotulo.slice(0, -1),
+    modo: 'pessoa',
+    userId: undefined,
+    equipeId: undefined
+  })
+}
+
+const incluirAtor = async () => {
+  await ItsmApi.adicionarAtor({
+    chamadoId: chamado.value!.id,
+    tipo: atorDialogo.tipo,
+    userId: atorDialogo.modo === 'pessoa' ? atorDialogo.userId : undefined,
+    equipeId: atorDialogo.modo === 'equipe' ? atorDialogo.equipeId : undefined
+  })
+  atorDialogo.visivel = false
+  await recarregar()
+}
+
+const removerAtor = async (a: ItsmApi.Ator) => {
+  await message.confirm(`Remover ${a.nome} do chamado?`)
+  await ItsmApi.removerAtor(a.id)
+  await recarregar()
+}
+</script>

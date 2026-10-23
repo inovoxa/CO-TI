@@ -53,6 +53,9 @@ public class AdProperties {
      */
     private Map<String, String> gruposPerfis = new LinkedHashMap<>();
 
+    /** Perfil dado a quem entra pela primeira vez (código em system_role); vazio = nenhum. "common" = portal. */
+    private String perfilPadrao = "common";
+
     /** Sincronização completa periódica (cron do Spring). Vazio desliga. */
     private String cronSincronizacao = "0 */30 * * * *";
     /** Desativa no portal quem sumiu do AD ou foi desativado lá. */

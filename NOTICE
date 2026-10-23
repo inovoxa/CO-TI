@@ -13,7 +13,14 @@ Este produto inclui código de terceiros, mantido sob a licença original de cad
 
 Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
 
-- GLPI 12.0.0 (GPL-3.0-or-later), Copyright (C) Teclib' e contribuidores — ainda nenhuma parte portada.
+- GLPI 12.0.0 (GPL-3.0-or-later), Copyright (C) Teclib' e contribuidores. Partes portadas para Java em
+  backend/yudao-module-itsm:
+    * códigos de situação, tipo e papel (src/CommonITILObject.php, src/Ticket.php, src/CommonITILActor.php);
+    * matriz padrão urgência × impacto → prioridade (install/empty_data.php, priority_matrix) e a regra de média;
+    * regras do ciclo do chamado: atribuição, planejamento, pendência, solução, aprovação/recusa, reabertura por
+      acompanhamento do solicitante e "assumido em" (src/CommonITILObject.php, src/Ticket.php, src/ITILSolution.php);
+    * modelo de dados de chamados, atores, acompanhamentos, tarefas, soluções, categorias e origens
+      (install/mysql/glpi-empty.sql).
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.

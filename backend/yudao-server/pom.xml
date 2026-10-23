@@ -39,6 +39,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- CO-TI: Service Desk (chamados) -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-module-itsm</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- CO-TI: banco único PostgreSQL com migrations versionadas (db/migration) -->
         <dependency>
             <groupId>org.postgresql</groupId>
