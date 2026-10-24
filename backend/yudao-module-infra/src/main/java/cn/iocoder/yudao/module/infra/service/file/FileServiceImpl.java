@@ -74,7 +74,9 @@ public class FileServiceImpl implements FileService {
      * 算法：当前时间戳（毫秒）+ 5 位随机数；目的是保证文件的唯一性，避免覆盖
      * 定制：可按需调整成 UUID、或者其他方式
      */
-    static boolean PATH_SUFFIX_TIMESTAMP_ENABLE = false;
+    // CO-TI: ligado. Sem sufixo, o endereço (público) seria "pasta/data/nome" — adivinhável e sobrescrito por outro
+    // arquivo de mesmo nome no mesmo dia.
+    static boolean PATH_SUFFIX_TIMESTAMP_ENABLE = true;
     /**
      * 后缀是否作为上级目录
      *
@@ -149,8 +151,9 @@ public class FileServiceImpl implements FileService {
         }
         String suffix = null;
         if (PATH_SUFFIX_TIMESTAMP_ENABLE) {
-            // 5 位随机数，避免同一毫秒内的重复
-            suffix = String.valueOf(System.currentTimeMillis()) + RandomUtil.randomInt(10000, 100000);
+            // CO-TI: o download de arquivos é público (@PermitAll, para <img> funcionar sem token), então o endereço
+            // precisa ser impossível de adivinhar: 128 bits aleatórios em vez de "milissegundo + 5 dígitos".
+            suffix = java.util.UUID.randomUUID().toString().replace("-", "");
         }
 
         // 2.1 先拼接 suffix 后缀

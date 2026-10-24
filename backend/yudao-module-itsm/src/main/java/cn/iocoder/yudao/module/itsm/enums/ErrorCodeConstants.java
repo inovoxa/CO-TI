@@ -62,4 +62,23 @@ public interface ErrorCodeConstants {
     ErrorCode EXECUCAO_ESTADO_INVALIDO = new ErrorCode(1_101_003_031, "Esta execução não pode ser alterada na situação atual");
     ErrorCode EXECUCAO_SENHA_INDISPONIVEL = new ErrorCode(1_101_003_032, "Não há senha provisória para ver (ela é mostrada uma única vez)");
 
+
+    // base de conhecimento 1-101-004-xxx
+    ErrorCode KB_CATEGORIA_NAO_EXISTE = new ErrorCode(1_101_004_000, "Categoria da base não encontrada");
+    ErrorCode KB_CATEGORIA_PAI_INVALIDA = new ErrorCode(1_101_004_001, "A categoria superior não pode ser ela mesma nem uma descendente");
+    ErrorCode KB_CATEGORIA_EM_USO = new ErrorCode(1_101_004_002, "A categoria tem subcategorias ou artigos");
+    ErrorCode KB_ARTIGO_NAO_EXISTE = new ErrorCode(1_101_004_010, "Artigo não encontrado");
+    ErrorCode KB_ARTIGO_DATAS = new ErrorCode(1_101_004_011, "O fim da publicação precisa ser depois do início");
+    ErrorCode KB_REVISAO_NAO_EXISTE = new ErrorCode(1_101_004_012, "Revisão não encontrada");
+    ErrorCode KB_CHAMADO_SEM_SOLUCAO = new ErrorCode(1_101_004_013, "O chamado ainda não tem solução para virar artigo");
+
+
+    // e-mail 1-101-005-xxx
+    ErrorCode EMAIL_CONFIG_INCOMPLETA = new ErrorCode(1_101_005_000, "Para ligar o envio, informe o servidor SMTP e o remetente");
+    ErrorCode EMAIL_EVENTO_NAO_EXISTE = new ErrorCode(1_101_005_001, "Evento de notificação não encontrado");
+    ErrorCode EMAIL_CAIXA_NAO_EXISTE = new ErrorCode(1_101_005_002, "Caixa de entrada não encontrada");
+    ErrorCode EMAIL_SEM_CHAVE_MESTRA = new ErrorCode(1_101_005_003, "Defina CO_TI_CHAVE_MESTRA no servidor: sem ela a senha não pode ser guardada");
+
+    ErrorCode PAINEL_PERIODO_INVALIDO = new ErrorCode(1_101_006_000, "Período inválido (até 366 dias, com o fim depois do início)");
+
 }

@@ -159,6 +159,7 @@ export const corPrioridade = (p: number) =>
 /** 3h 25min, 2 dias e 4h... */
 export const duracao = (seg?: number | null) => {
   if (seg === undefined || seg === null) return '—'
+  seg = Math.round(seg) // médias chegam com casas decimais
   if (seg < 60) return `${seg} s`
   const min = Math.floor(seg / 60)
   if (min < 60) return `${min} min`
@@ -544,3 +545,181 @@ export const repetirExecucao = (id: number) =>
   request.post({ url: '/itsm/execucao/repetir', params: { id } })
 export const cancelarExecucao = (id: number, motivo?: string) =>
   request.post({ url: '/itsm/execucao/cancelar', data: { id, motivo } })
+
+// ========== base de conhecimento ==========
+
+export interface KbCategoria {
+  id: number
+  parentId: number
+  nome: string
+  nomeCompleto: string
+  descricao?: string
+  ordem: number
+}
+
+export interface KbResumo {
+  id: number
+  titulo: string
+  resumo?: string
+  categoriaId?: number
+  categoria?: string
+  faq: boolean
+  publicado: boolean
+  fixado: boolean
+  visualizacoes: number
+  util: number
+  naoUtil: number
+  updateTime: number
+  trecho?: string // HTML escapado no servidor, com <mark>
+}
+
+export interface KbArtigo {
+  id?: number
+  titulo: string
+  resumo?: string
+  conteudo: string
+  categoriaId?: number
+  categoria?: string
+  faq: boolean
+  publicado: boolean
+  fixado: boolean
+  inicioPublicacao?: number | string
+  fimPublicacao?: number | string
+  autor?: string
+  revisao?: number
+  visualizacoes?: number
+  util?: number
+  naoUtil?: number
+  updateTime?: number
+  meuVoto?: boolean | null
+  podeEditar?: boolean
+  chamados?: number[]
+}
+
+export interface KbRevisao {
+  id: number
+  revisao: number
+  titulo: string
+  conteudo: string
+  autor?: string
+  criadoEm: number
+}
+
+export const getKbCategorias = (): Promise<KbCategoria[]> =>
+  request.get({ url: '/itsm/kb/categorias' })
+export const salvarKbCategoria = (data: Partial<KbCategoria>): Promise<number> =>
+  request.post({ url: '/itsm/kb/categoria/save', data })
+export const excluirKbCategoria = (id: number) =>
+  request.delete({ url: '/itsm/kb/categoria/delete', params: { id } })
+export const buscarKb = (
+  params: any,
+  gestao = false
+): Promise<{ list: KbResumo[]; total: number }> =>
+  request.get({ url: '/itsm/kb/buscar', params: { ...params, gestao } })
+export const sugestoesKb = (texto: string): Promise<KbResumo[]> =>
+  request.get({ url: '/itsm/kb/sugestoes', params: { texto } })
+export const lerKb = (id: number, contar = true): Promise<KbArtigo> =>
+  request.get({ url: '/itsm/kb/get', params: { id, contar } })
+export const votarKb = (artigoId: number, util: boolean) =>
+  request.post({ url: '/itsm/kb/votar', data: { artigoId, util } })
+export const salvarKb = (data: KbArtigo): Promise<number> =>
+  request.post({ url: '/itsm/kb/save', data })
+export const excluirKb = (id: number) => request.delete({ url: '/itsm/kb/delete', params: { id } })
+export const revisoesKb = (id: number): Promise<KbRevisao[]> =>
+  request.get({ url: '/itsm/kb/revisoes', params: { id } })
+export const restaurarKb = (revisaoId: number) =>
+  request.post({ url: '/itsm/kb/restaurar', params: { revisaoId } })
+export const usarKbNoChamado = (data: {
+  artigoId: number
+  chamadoId: number
+  comoSolucao: boolean
+}) => request.post({ url: '/itsm/kb/usar-no-chamado', data })
+export const criarKbDoChamado = (chamadoId: number): Promise<number> =>
+  request.post({ url: '/itsm/kb/criar-do-chamado', params: { chamadoId } })
+export const kbDoChamado = (id: number): Promise<KbResumo[]> =>
+  request.get({ url: '/itsm/kb/do-chamado', params: { id } })
+
+// ========== e-mail ==========
+
+export interface EmailConfig {
+  ativo: boolean
+  smtpHost?: string
+  smtpPorta: number
+  smtpSeguranca: 'nenhuma' | 'starttls' | 'ssl'
+  smtpUsuario?: string
+  smtpSenha?: string
+  smtpSenhaDefinida?: boolean
+  remetenteEmail?: string
+  remetenteNome?: string
+  responderPara?: string
+  urlPortal?: string
+  assinatura?: string
+}
+
+export interface EmailEvento {
+  evento: string
+  nome: string
+  ativo: boolean
+  paraSolicitante: boolean
+  paraObservador: boolean
+  paraTecnico: boolean
+  paraAprovador: boolean
+  assunto: string
+  corpo: string
+  ordem: number
+}
+
+export interface EmailCaixa {
+  id?: number
+  nome: string
+  ativo: boolean
+  host: string
+  porta: number
+  seguranca: 'nenhuma' | 'starttls' | 'ssl'
+  usuario: string
+  senha?: string
+  senhaDefinida?: boolean
+  pasta: string
+  pastaProcessados?: string
+  pastaRecusados?: string
+  aceitarDesconhecidos: boolean
+  exigirAutenticacao: boolean
+  categoriaId?: number
+  anexoMaxMb: number
+  ultimaColeta?: number
+  ultimoErro?: string
+}
+
+export const getEmailConfig = (): Promise<EmailConfig> => request.get({ url: '/itsm/email/config' })
+export const salvarEmailConfig = (data: EmailConfig) =>
+  request.put({ url: '/itsm/email/config', data })
+export const testarEnvioEmail = (para: string): Promise<{ ok: boolean; erro?: string }> =>
+  request.post({ url: '/itsm/email/testar-envio', data: { para } })
+export const getEmailEventos = (): Promise<EmailEvento[]> =>
+  request.get({ url: '/itsm/email/eventos' })
+export const salvarEmailEvento = (data: EmailEvento) =>
+  request.put({ url: '/itsm/email/evento', data })
+export const getEmailFila = (params: any) => request.get({ url: '/itsm/email/fila', params })
+export const reenviarEmail = (id: number) =>
+  request.post({ url: '/itsm/email/reenviar', params: { id } })
+export const getEmailCaixas = (): Promise<EmailCaixa[]> =>
+  request.get({ url: '/itsm/email/caixas' })
+export const salvarEmailCaixa = (data: EmailCaixa): Promise<number> =>
+  request.post({ url: '/itsm/email/caixa', data })
+export const excluirEmailCaixa = (id: number) =>
+  request.delete({ url: '/itsm/email/caixa', params: { id } })
+export const testarEmailCaixa = (id: number): Promise<{ ok: boolean; erro?: string }> =>
+  request.post({ url: '/itsm/email/caixa/testar', params: { id } })
+export const coletarEmailCaixa = (id: number): Promise<number> =>
+  request.post({ url: '/itsm/email/caixa/coletar', params: { id } })
+export const getEmailRecebidos = (params: any) =>
+  request.get({ url: '/itsm/email/recebidos', params })
+
+// ========== painel ==========
+
+export const getPainel = (params: {
+  de: string
+  ate: string
+  deptId?: number
+  categoriaId?: number
+}): Promise<any> => request.get({ url: '/itsm/painel', params })

@@ -58,6 +58,26 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - A fila fica em *Service Desk → Execuções no AD*: erro de negócio não se repete sozinho; falha de rede tenta de novo
   em 1, 5 e 15 minutos.
 
+## Base de conhecimento, e-mail e painel
+
+- **Base de conhecimento** (menu próprio, todos os perfis): artigos com revisões, FAQ para todos e artigos internos para
+  a equipe técnica, busca em português sem acento. Na abertura de chamado o portal sugere artigos; no chamado o técnico
+  usa um artigo como solução ou transforma a solução em rascunho de artigo.
+- **E-mail** (*Service Desk → Configuração → E-mail*):
+  - *Envio:* conta SMTP (senha cifrada com a chave-mestra) e o endereço do portal para os links.
+  - *Notificações:* evento por evento, quem recebe e o modelo. Quem fez a ação não recebe o aviso dela, e
+    acompanhamento privado só vai para os técnicos.
+  - *Caixas de entrada:* coleta por IMAP. E-mail novo vira chamado; resposta com `[CO-TI #123]` no assunto vira
+    acompanhamento. Respostas automáticas e listas são ignoradas. Opcionalmente, só aceita remetente com DMARC/DKIM
+    aprovado.
+  - Para testar sem servidor de e-mail: `docker compose -f docker-compose.yml -f docker-compose.teste.yml up -d greenmail`
+    (SMTP `greenmail:3025`, IMAP `greenmail:3143`, segurança "Nenhuma").
+- **Painel** (*Service Desk → Painel*): abertos, vencidos, cumprimento de SLA, tempos médios, satisfação, série diária,
+  categorias, prioridades, canais, técnicos e equipes. Respeita o escopo de unidade do perfil.
+- **Arquivos** (anexos e imagens) ficam no volume `arquivos` do backend (`/app/arquivos`). O endereço de cada arquivo
+  tem uma parte aleatória de 128 bits: o download não pede login (as imagens do editor precisam abrir), então o
+  endereço é o que protege o arquivo.
+
 ## Segurança
 
 - **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.

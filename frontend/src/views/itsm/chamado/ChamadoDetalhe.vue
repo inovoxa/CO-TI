@@ -52,6 +52,12 @@
           >
             <Icon class="mr-4px" icon="ep:refresh-left" />Reabrir
           </el-button>
+          <el-button v-if="podeAtender && chamado.status !== 6" @click="abrirKb">
+            <Icon class="mr-4px" icon="ep:reading" />Base de conhecimento
+          </el-button>
+          <el-button v-if="escreveKb && [5, 6].includes(chamado.status)" @click="salvarNaBase">
+            <Icon class="mr-4px" icon="ep:document-add" />Salvar solução na base
+          </el-button>
           <el-button v-if="pode('pedir-aprovacao')" @click="abrirPedidoAprovacao">
             <Icon class="mr-4px" icon="ep:select" />Pedir aprovação
           </el-button>
@@ -347,6 +353,34 @@
       </div>
     </div>
 
+    <!-- base de conhecimento -->
+    <Dialog v-model="kb.visivel" title="Base de conhecimento" width="760px">
+      <el-input v-model="kb.q" clearable placeholder="Buscar" @input="buscarKbDepois">
+        <template #prefix><Icon icon="ep:search" /></template>
+      </el-input>
+      <div v-if="kb.usados.length" class="mt-8px text-12px text-[var(--el-text-color-secondary)]">
+        Já usados neste chamado: {{ kb.usados.map((a) => a.titulo).join(', ') }}
+      </div>
+      <el-empty v-if="!kb.lista.length" :image-size="60" description="Nada encontrado" />
+      <div v-for="a in kb.lista" :key="a.id" class="kb-item">
+        <div class="font-bold"
+          >{{ a.titulo }}
+          <el-tag v-if="!a.faq" disable-transitions size="small">interno</el-tag></div
+        >
+        <!-- trecho escapado no servidor -->
+        <div class="text-13px" v-html="a.trecho"></div>
+        <div class="mt-6px flex gap-8px">
+          <el-button v-if="pode('solucionar')" size="small" type="success" @click="usarKb(a, true)"
+            >Usar como solução</el-button
+          >
+          <el-button size="small" @click="usarKb(a, false)">Enviar como acompanhamento</el-button>
+          <el-link :href="`/base-conhecimento?artigo=${a.id}`" target="_blank" type="primary"
+            >abrir</el-link
+          >
+        </div>
+      </div>
+    </Dialog>
+
     <!-- pedir aprovação -->
     <Dialog v-model="pedido.visivel" title="Pedir aprovação" width="460px">
       <el-form label-position="top">
@@ -427,6 +461,7 @@ import {
   duracao
 } from '@/api/itsm'
 import * as UserApi from '@/api/system/user'
+import { checkPermi } from '@/utils/permission'
 import LinhaDoTempo from '../components/LinhaDoTempo.vue'
 import PainelAprovacoes from '../components/PainelAprovacoes.vue'
 
@@ -668,6 +703,42 @@ const incluirAtor = async () => {
   await recarregar()
 }
 
+const escreveKb = checkPermi(['itsm:kb:update'])
+const podeAtender = checkPermi(['itsm:chamado:atender'])
+const kb = reactive({
+  visivel: false,
+  q: '',
+  lista: [] as ItsmApi.KbResumo[],
+  usados: [] as ItsmApi.KbResumo[]
+})
+const buscarKbAgora = async () => {
+  kb.lista = (await ItsmApi.buscarKb({ q: kb.q, pageNo: 1, pageSize: 10 })).list
+}
+let esperaKb: ReturnType<typeof setTimeout> | undefined
+const buscarKbDepois = () => {
+  clearTimeout(esperaKb)
+  esperaKb = setTimeout(buscarKbAgora, 300)
+}
+const abrirKb = async () => {
+  kb.q = chamado.value!.titulo
+  kb.visivel = true
+  ;[kb.usados] = await Promise.all([ItsmApi.kbDoChamado(chamado.value!.id), buscarKbAgora()])
+  if (!kb.lista.length) {
+    kb.lista = await ItsmApi.sugestoesKb(chamado.value!.titulo)
+  }
+}
+const usarKb = async (a: ItsmApi.KbResumo, comoSolucao: boolean) => {
+  await ItsmApi.usarKbNoChamado({ artigoId: a.id, chamadoId: chamado.value!.id, comoSolucao })
+  kb.visivel = false
+  message.success(comoSolucao ? 'Solução registrada' : 'Acompanhamento enviado')
+  await recarregar()
+}
+const salvarNaBase = async () => {
+  const id = await ItsmApi.criarKbDoChamado(chamado.value!.id)
+  message.success('Rascunho criado na base de conhecimento')
+  window.open(`/base-conhecimento?artigo=${id}`, '_blank')
+}
+
 const pedido = reactive({ visivel: false, aprovadorIds: [] as number[], comentario: '' })
 const abrirPedidoAprovacao = () =>
   Object.assign(pedido, { visivel: true, aprovadorIds: [], comentario: '' })
@@ -688,3 +759,14 @@ const removerAtor = async (a: ItsmApi.Ator) => {
   await recarregar()
 }
 </script>
+
+<style scoped>
+.kb-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.kb-item :deep(mark) {
+  color: inherit;
+  background: var(--el-color-warning-light-7);
+}
+</style>

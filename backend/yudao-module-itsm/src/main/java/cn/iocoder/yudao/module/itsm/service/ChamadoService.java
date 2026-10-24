@@ -212,7 +212,28 @@ public class ChamadoService {
      */
     @Transactional(rollbackFor = Exception.class)
     public Long criar(ChamadoVOs.CriarReq req, Long userId, Long formularioId) {
-        List<Long> solicitantes = req.getSolicitanteIds().isEmpty() ? List.of(userId) : req.getSolicitanteIds();
+        return criar(req, userId, formularioId, null);
+    }
+
+    /**
+     * Abertura por e-mail (GLPI: MailCollector): remetente com conta no portal vira o solicitante; sem conta
+     * (caixa que aceita desconhecidos), o endereço entra como solicitante.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public Long criarDeEmail(String titulo, String descricaoHtml, Long userId, String email, Long categoriaId) {
+        ChamadoVOs.CriarReq req = new ChamadoVOs.CriarReq();
+        req.setTitulo(titulo);
+        req.setDescricao(descricaoHtml);
+        req.setTipo(ChamadoTipo.INCIDENTE.getCodigo());
+        req.setCategoriaId(categoriaId);
+        req.setOrigemId(cadastros.origemPadrao(true));
+        return criar(req, userId, null, userId == null ? email : null);
+    }
+
+    private Long criar(ChamadoVOs.CriarReq req, Long userId, Long formularioId, String emailSolicitante) {
+        List<Long> solicitantes = !req.getSolicitanteIds().isEmpty() ? req.getSolicitanteIds()
+                : userId != null ? List.of(userId) : List.of();
         validarPessoas(solicitantes, req.getObservadorIds(), req.getTecnicoIds());
         req.getEquipeIds().forEach(cadastros::obterEquipe);
         if (req.getCategoriaId() != null) {
@@ -232,13 +253,14 @@ public class ChamadoService {
                 .prioridade(req.getPrioridade() != null ? req.getPrioridade() : prioridade(req.getUrgencia(), req.getImpacto()))
                 .categoriaId(req.getCategoriaId())
                 .origemId(req.getOrigemId() != null ? req.getOrigemId() : cadastros.origemPadrao(false))
-                .deptId(req.getDeptId() != null ? req.getDeptId() : deptDe(solicitantes.get(0)))
+                .deptId(req.getDeptId() != null ? req.getDeptId() : solicitantes.isEmpty() ? null : deptDe(solicitantes.get(0)))
                 .registradoPor(userId)
                 .build();
         List<Long> tecnicos = new ArrayList<>(req.getTecnicoIds());
         List<Long> equipes = new ArrayList<>(req.getEquipeIds());
         List<Long> observadores = new ArrayList<>(req.getObservadorIds());
-        ResultadoRegras regras = aplicarRegras(c, solicitantes.get(0), formularioId, req.getPrioridade() != null,
+        Long primeiro = solicitantes.isEmpty() ? null : solicitantes.get(0);
+        ResultadoRegras regras = aplicarRegras(c, primeiro, formularioId, req.getPrioridade() != null,
                 tecnicos, equipes, observadores);
 
         CategoriaDO categoria = c.getCategoriaId() == null ? null : cadastros.obterCategoria(c.getCategoriaId());
@@ -252,12 +274,16 @@ public class ChamadoService {
         chamadoMapper.insert(c);
 
         solicitantes.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.SOLICITANTE, u, null));
+        if (emailSolicitante != null) {
+            atorMapper.insert(ChamadoAtorDO.builder().chamadoId(c.getId()).tipo(AtorTipo.SOLICITANTE.getCodigo())
+                    .email(emailSolicitante).notificar(true).build());
+        }
         observadores.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.OBSERVADOR, u, null));
         tecnicos.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.TECNICO, u, null));
         equipes.stream().distinct().forEach(e -> inserirAtor(c.getId(), AtorTipo.TECNICO, null, e));
         registrar(c.getId(), userId, "criado", null, ChamadoStatus.de(c.getStatus()).getRotulo());
         regras.nomes().forEach(n -> registrar(c.getId(), null, "regra", null, n));
-        pedirAprovacoesDasRegras(c.getId(), solicitantes.get(0), regras);
+        pedirAprovacoesDasRegras(c.getId(), primeiro, regras);
         publicar(c.getId(), "criado", userId);
         return c.getId();
     }
@@ -324,7 +350,7 @@ public class ChamadoService {
     private void pedirAprovacoesDasRegras(Long chamadoId, Long solicitante, ResultadoRegras r) {
         Set<Long> aprovadores = new LinkedHashSet<>(r.aprovadores());
         if (r.gestor()) {
-            Optional<Long> g = aprovacaoService.gestorDe(solicitante);
+            Optional<Long> g = solicitante == null ? Optional.empty() : aprovacaoService.gestorDe(solicitante);
             if (g.isPresent()) {
                 aprovadores.add(g.get());
             } else {
@@ -452,13 +478,13 @@ public class ChamadoService {
         if (existe) {
             throw exception(CHAMADO_ATOR_DUPLICADO);
         }
-        inserirAtor(c.getId(), tipo, req.getUserId(), req.getEquipeId());
+        Long atorId = inserirAtor(c.getId(), tipo, req.getUserId(), req.getEquipeId());
         if (tipo == AtorTipo.TECNICO) {
             mudarStatus(c, userId, () -> CicloChamado.tecnicoAtribuido(c, LocalDateTime.now()));
         }
         registrar(c.getId(), userId, tipo.name().toLowerCase() + "+",
                 null, req.getUserId() != null ? nomePessoa(req.getUserId()) : cadastros.obterEquipe(req.getEquipeId()).getNome());
-        publicar(c.getId(), "ator", userId);
+        publicar(c.getId(), "ator", userId, atorId);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -563,7 +589,7 @@ public class ChamadoService {
                 }
             }
         }
-        publicar(c.getId(), req.getTipo(), userId);
+        publicar(c.getId(), req.getTipo(), userId, i.getId());
         return i.getId();
     }
 
@@ -768,6 +794,52 @@ public class ChamadoService {
         return execucaoAdService.revelarSenha(chamadoId, userId);
     }
 
+    /**
+     * Resposta por e-mail a um chamado. Só entra se o remetente participa (pessoa ou endereço) ou é técnico
+     * atribuído (pessoa ou membro de equipe). Num chamado solucionado, a resposta do solicitante recusa a solução.
+     *
+     * @return false quando o remetente não participa ou o chamado está fechado (o coletor trata como novo pedido)
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public boolean acompanhamentoDeEmail(Long chamadoId, Long userId, String email, String conteudoHtml) {
+        ChamadoDO c = chamadoMapper.selectById(chamadoId);
+        if (c == null || ChamadoStatus.de(c.getStatus()) == ChamadoStatus.FECHADO) {
+            return false;
+        }
+        List<ChamadoAtorDO> atores = atorMapper.selectList(ChamadoAtorDO::getChamadoId, chamadoId);
+        boolean participa = atores.stream().anyMatch(a -> a.getTipo() != AtorTipo.TECNICO.getCodigo()
+                && ((userId != null && userId.equals(a.getUserId())) || (a.getEmail() != null && a.getEmail().equalsIgnoreCase(email))));
+        Set<Long> equipesDoRemetente = userId == null ? Set.of() : new HashSet<>(cadastros.equipesDoUsuario(userId));
+        boolean tecnico = userId != null && tem(userId, P_ATENDER) && atores.stream().anyMatch(a -> a.getTipo() == AtorTipo.TECNICO.getCodigo()
+                && (userId.equals(a.getUserId()) || (a.getEquipeId() != null && equipesDoRemetente.contains(a.getEquipeId()))));
+        if (!participa && !tecnico) {
+            return false;
+        }
+        Long origem = cadastros.origemPadrao(true);
+        if (userId != null) {
+            ChamadoVOs.InteracaoReq r = new ChamadoVOs.InteracaoReq();
+            r.setChamadoId(chamadoId);
+            r.setTipo(InteracaoDO.ACOMPANHAMENTO);
+            r.setConteudo(conteudoHtml);
+            r.setPrivado(false);
+            r.setOrigemId(origem);
+            adicionarInteracao(r, userId, tecnico);
+            return true;
+        }
+        // só o endereço (solicitante sem conta)
+        ChamadoDO ch = travar(chamadoId);
+        InteracaoDO i = InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.ACOMPANHAMENTO)
+                .conteudo("<p><i>Por e-mail: " + HtmlUtils.htmlEscape(email) + "</i></p>" + HtmlSeguro.limpar(conteudoHtml))
+                .privado(false).origemId(origem).build();
+        interacaoMapper.insert(i);
+        if (ChamadoStatus.de(ch.getStatus()) == ChamadoStatus.SOLUCIONADO) {
+            recusarSolucaoPendente(ch, null);
+        }
+        publicar(chamadoId, InteracaoDO.ACOMPANHAMENTO, null, i.getId());
+        return true;
+    }
+
     /** Histórico gravado por outro serviço do ITSM (aprovações, automações). userId vazio = "Sistema". */
     public void registrarSistema(Long chamadoId, Long userId, String campo, String de, String para) {
         registrar(chamadoId, userId, campo, de, para);
@@ -781,9 +853,10 @@ public class ChamadoService {
     /** Acompanhamento em texto puro (escapado) escrito por um serviço; userId vazio = sistema. */
     @DataPermission(enable = false)
     public void acompanhamentoSistema(Long chamadoId, Long userId, String texto, boolean privado) {
-        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.ACOMPANHAMENTO).userId(userId)
-                .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(privado).build());
-        publicar(chamadoId, InteracaoDO.ACOMPANHAMENTO, userId);
+        InteracaoDO i = InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.ACOMPANHAMENTO).userId(userId)
+                .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(privado).build();
+        interacaoMapper.insert(i);
+        publicar(chamadoId, InteracaoDO.ACOMPANHAMENTO, userId, i.getId());
     }
 
     /** Solução registrada pela automação (ex.: operação no AD concluída); o solicitante aprova ou recusa. */
@@ -795,11 +868,12 @@ public class ChamadoService {
             acompanhamentoSistema(chamadoId, null, texto, false);
             return;
         }
-        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.SOLUCAO)
+        InteracaoDO i = InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.SOLUCAO)
                 .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(false)
-                .statusSolucao(InteracaoDO.SOLUCAO_AGUARDANDO).build());
+                .statusSolucao(InteracaoDO.SOLUCAO_AGUARDANDO).build();
+        interacaoMapper.insert(i);
         mudarStatus(c, null, () -> CicloChamado.solucionar(c, LocalDateTime.now()));
-        publicar(chamadoId, "solucionado", null);
+        publicar(chamadoId, "solucionado", null, i.getId());
     }
 
     /** Pedido recusado na aprovação: registra a decisão como solução e fecha (não há o que executar). */
@@ -819,7 +893,7 @@ public class ChamadoService {
                 .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(false)
                 .statusSolucao(InteracaoDO.SOLUCAO_APROVADA).avaliadoEm(LocalDateTime.now()).build());
         mudarStatus(c, null, () -> CicloChamado.fechar(c, LocalDateTime.now()));
-        publicar(chamadoId, "fechado", null);
+        publicar(chamadoId, "fechado-recusa", null);
     }
 
     private void criarPesquisa(ChamadoDO c, LocalDateTime agora) {
@@ -971,9 +1045,11 @@ public class ChamadoService {
         return permissionApi.hasAnyPermissions(userId, permissao);
     }
 
-    private void inserirAtor(Long chamadoId, AtorTipo tipo, Long userId, Long equipeId) {
-        atorMapper.insert(ChamadoAtorDO.builder().chamadoId(chamadoId).tipo(tipo.getCodigo())
-                .userId(userId).equipeId(equipeId).notificar(true).build());
+    private Long inserirAtor(Long chamadoId, AtorTipo tipo, Long userId, Long equipeId) {
+        ChamadoAtorDO a = ChamadoAtorDO.builder().chamadoId(chamadoId).tipo(tipo.getCodigo())
+                .userId(userId).equipeId(equipeId).notificar(true).build();
+        atorMapper.insert(a);
+        return a.getId();
     }
 
     private void validarPessoas(List<Long>... listas) {
@@ -1008,7 +1084,11 @@ public class ChamadoService {
     }
 
     private void publicar(Long chamadoId, String acao, Long userId) {
-        eventos.publishEvent(new ChamadoEvento(chamadoId, acao, userId));
+        publicar(chamadoId, acao, userId, null);
+    }
+
+    private void publicar(Long chamadoId, String acao, Long userId, Long refId) {
+        eventos.publishEvent(new ChamadoEvento(chamadoId, acao, userId, refId));
     }
 
     private static String limitar(String s) {

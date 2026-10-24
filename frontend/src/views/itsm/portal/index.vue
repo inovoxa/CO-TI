@@ -102,8 +102,15 @@
           v-model="novo.titulo"
           maxlength="255"
           placeholder="Ex.: impressora do 2º andar não imprime"
+          @input="sugerirDepois"
         />
       </el-form-item>
+      <el-alert v-if="sugestoes.length" :closable="false" class="mb-12px" type="info">
+        <template #title>Talvez isto resolva agora:</template>
+        <div v-for="a in sugestoes" :key="a.id">
+          <el-link type="primary" @click="lerSugestao(a.id)">{{ a.titulo }}</el-link>
+        </div>
+      </el-alert>
       <el-form-item label="Detalhes">
         <Editor v-model="novo.descricao" directory="chamados" height="220px" />
       </el-form-item>
@@ -311,9 +318,21 @@ const getList = async () => {
 
 const abrirNovo = async () => {
   novo.value = vazio()
+  sugestoes.value = []
   novoVisivel.value = true
   arvoreCategorias.value = handleTree(await ItsmApi.getCategoriasPortal(), 'id', 'parentId')
 }
+
+const sugestoes = ref<ItsmApi.KbResumo[]>([])
+let esperaSugestao: ReturnType<typeof setTimeout> | undefined
+const sugerirDepois = () => {
+  clearTimeout(esperaSugestao)
+  esperaSugestao = setTimeout(async () => {
+    sugestoes.value =
+      novo.value.titulo.trim().length >= 4 ? await ItsmApi.sugestoesKb(novo.value.titulo) : []
+  }, 400)
+}
+const lerSugestao = (id: number) => window.open(`/base-conhecimento?artigo=${id}`, '_blank')
 
 const enviarNovo = async () => {
   if (!(await novoRef.value.validate().catch(() => false))) return
@@ -377,7 +396,13 @@ const avaliar = async (aprovar: boolean) => {
   await getList()
 }
 
-onMounted(getList)
+const route = useRoute()
+onMounted(async () => {
+  await getList()
+  // link dos e-mails: /meus-chamados?chamado=123
+  const id = Number(route.query.chamado)
+  if (id) await abrirDetalhe(id)
+})
 </script>
 
 <style scoped>

@@ -6,7 +6,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests -pl 
 
 FROM eclipse-temurin:21-jre
 RUN groupadd --system coti && useradd --system --gid coti --home /app coti \
-    && mkdir -p /app/logs && chown -R coti:coti /app
+    && mkdir -p /app/logs /app/arquivos && chown -R coti:coti /app
 WORKDIR /app
 COPY --from=build /src/yudao-server/target/yudao-server.jar app.jar
 USER coti

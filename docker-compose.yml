@@ -67,6 +67,7 @@ services:
       CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
     volumes:
       - backendlogs:/app/logs
+      - arquivos:/app/arquivos
       - ./segredos:/run/segredos:ro
     depends_on:
       postgres: { condition: service_healthy }
@@ -82,6 +83,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  arquivos:
   pgdata:
   redisdata:
   backendlogs:
