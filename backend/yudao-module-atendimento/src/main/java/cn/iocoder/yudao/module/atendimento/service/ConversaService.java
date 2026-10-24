@@ -92,6 +92,10 @@ public class ConversaService {
     private ChamadoAtorMapper chamadoAtorMapper;
     @Resource
     private AvisoLeitura avisoLeitura;
+    @Resource
+    private HorarioService horarioService;
+    @Resource
+    private AutomacaoService automacaoService;
 
     // =====================================================================================================
     // Entrada (o canal recebeu uma mensagem do contato)
@@ -135,6 +139,7 @@ public class ConversaService {
         ConversaDO c = conversaMapper.selectOne(new LambdaQueryWrapperX<ConversaDO>().eq(ConversaDO::getContatoCanalId, cc.getId())
                 .orderByDesc(ConversaDO::getId).last("LIMIT 1"));
         boolean nova = false;
+        boolean reaberta = false;
         if (c != null) {
             c = conversaMapper.selectByIdParaAtualizar(c.getId());
         }
@@ -168,6 +173,7 @@ public class ConversaService {
                 }
                 gravar(c);
                 atividade(c, "Conversa " + antes + " reaberta: o contato escreveu de novo");
+                reaberta = true;
             }
         }
         if (!r.eco() && Boolean.TRUE.equals(contato.getBloqueado())) {
@@ -212,6 +218,16 @@ public class ConversaService {
                     && Boolean.TRUE.equals(caixa.getAtribuicaoAutomatica())) {
                 atribuicaoService.distribuir(alvo, caixa).ifPresent(a -> atividade(alvo, "Atribuída automaticamente a " + nome(a)));
             }
+            // fora do expediente da caixa: aviso automático quando a conversa abre ou reabre
+            if ((nova || reaberta) && vazio(caixa.getMensagemForaHorario()) != null && !horarioService.emExpediente(caixa)) {
+                saida(alvo, caixa.getMensagemForaHorario(), "sistema", null, List.of());
+            }
+            if (nova) {
+                automacaoService.disparar("conversa_criada", c.getId(), m.getConteudo());
+            } else if (reaberta) {
+                automacaoService.disparar("conversa_reaberta", c.getId(), m.getConteudo());
+            }
+            automacaoService.disparar("mensagem_recebida", c.getId(), m.getConteudo());
         }
         if (!r.historico()) {
             publicar("mensagem", c.getId(), m.getId());
@@ -483,35 +499,73 @@ public class ConversaService {
         acesso.exigir(c, userId);
         c = conversaMapper.selectByIdParaAtualizar(c.getId());
         ConversaStatus novo = ConversaStatus.de(req.getStatus());
-        if (c.getStatus() == novo.getCodigo() && novo != ConversaStatus.ADIADA) {
-            return;
+        if (novo == ConversaStatus.ADIADA && (req.getAdiadaAte() == null || !req.getAdiadaAte().isAfter(LocalDateTime.now()))) {
+            throw exception(CONVERSA_ADIAR_DATA);
         }
-        LocalDateTime agora = LocalDateTime.now();
-        String texto;
+        String texto = switch (novo) {
+            case RESOLVIDA -> nome(userId) + " resolveu a conversa";
+            case ADIADA -> nome(userId) + " adiou até " + HORA.format(req.getAdiadaAte());
+            case ABERTA -> nome(userId) + " reabriu a conversa";
+            default -> nome(userId) + " passou a conversa para pendente";
+        };
+        aplicarStatus(c, novo, req.getAdiadaAte(), texto);
+    }
+
+    /**
+     * Muda a situação (pela pessoa, por macro ou por automação), registra e dispara as automações de conversa
+     * resolvida ou reaberta.
+     *
+     * @return false se já estava assim
+     */
+    boolean aplicarStatus(ConversaDO c, ConversaStatus novo, LocalDateTime adiadaAte, String registro) {
+        if (c.getStatus() == novo.getCodigo() && novo != ConversaStatus.ADIADA) {
+            return false;
+        }
+        boolean estavaFechada = c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo() || c.getStatus() == ConversaStatus.ADIADA.getCodigo();
         switch (novo) {
             case RESOLVIDA -> {
-                c.setResolvidaEm(agora);
+                c.setResolvidaEm(LocalDateTime.now());
                 c.setAdiadaAte(null);
-                texto = nome(userId) + " resolveu a conversa";
             }
-            case ADIADA -> {
-                if (req.getAdiadaAte() == null || !req.getAdiadaAte().isAfter(agora)) {
-                    throw exception(CONVERSA_ADIAR_DATA);
-                }
-                c.setAdiadaAte(req.getAdiadaAte());
-                texto = nome(userId) + " adiou até " + HORA.format(req.getAdiadaAte());
-            }
+            case ADIADA -> c.setAdiadaAte(adiadaAte);
             case ABERTA -> {
                 c.setResolvidaEm(null);
                 c.setAdiadaAte(null);
-                texto = nome(userId) + " reabriu a conversa";
             }
-            default -> texto = nome(userId) + " passou a conversa para pendente";
+            default -> { }
         }
         c.setStatus(novo.getCodigo());
         gravar(c);
-        atividade(c, texto);
+        if (registro != null) {
+            atividade(c, registro);
+        }
         publicar("conversa", c.getId(), null);
+        if (novo == ConversaStatus.RESOLVIDA) {
+            automacaoService.disparar("conversa_resolvida", c.getId(), null);
+        } else if (novo == ConversaStatus.ABERTA && estavaFechada) {
+            automacaoService.disparar("conversa_reaberta", c.getId(), null);
+        }
+        return true;
+    }
+
+    /** Troca o atendente (macro, automação). */
+    void definirAgente(ConversaDO c, Long agenteId, String registro) {
+        c.setAgenteId(agenteId);
+        gravar(c);
+        if (registro != null) {
+            atividade(c, registro);
+        }
+        publicar("conversa", c.getId(), null);
+    }
+
+    /** Nota interna escrita por macro (com autor) ou automação (sistema). */
+    Long nota(ConversaDO c, String texto, Long userId) {
+        MensagemDO m = MensagemDO.builder().conversaId(c.getId()).tipo(MensagemTipo.SAIDA).privada(true)
+                .remetenteTipo(userId == null ? "sistema" : "agente").remetenteId(userId).conteudo(texto).formato("texto")
+                .anexos("[]").status("enviada").build();
+        mensagemMapper.insert(m);
+        publicar("mensagem", c.getId(), m.getId());
+        return m.getId();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -687,7 +741,7 @@ public class ConversaService {
         return c;
     }
 
-    private String nome(Long userId) {
+    String nome(Long userId) {
         AdminUserRespDTO u = userId == null ? null : adminUserApi.getUser(userId);
         return u == null ? "Alguém" : u.getNickname();
     }

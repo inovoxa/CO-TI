@@ -125,6 +125,21 @@ Menu *Atendimento* (perfil novo **Atendente**; Service Desk e NOC também atende
   caixa, assinadas (`X-CO-TI-Assinatura: sha256=<HMAC do corpo>`). Token e segredo aparecem uma vez só, ao gerar.
   Defina `CO_TI_URL_PUBLICA` para os links dos anexos saírem completos.
 
+### Horário, macros e automações (F2c)
+
+Regras completas em `docs/specs/atendimento-automacoes.md`.
+
+- **Horário de atendimento:** a caixa usa um calendário do Service Desk (o mesmo do SLA, com expediente e
+  feriados). Fora do expediente, a conversa que abre ou reabre recebe a *mensagem fora do horário*.
+- **Macros** (*Atendimento → Macros*): sequência de ações executada numa conversa pelo botão de varinha.
+  - As ações possíveis: atribuir, distribuir, etiquetas, mensagem, nota, situação e prioridade.
+  - A macro pode ser pessoal ou para todos; a "para todos" exige *Macros para todos*.
+- **Automações** (*Atendimento → Configuração → Automações*): quando um evento acontece (conversa criada, mensagem
+  recebida, conversa reaberta, conversa resolvida) e todas as condições valem, as ações rodam.
+  - Condições: caixa, canal, texto da mensagem, situação, prioridade, etiqueta, atendente, contato e horário.
+  - O que uma automação faz não dispara outras, e cada execução fica registrada na conversa e na contagem da regra.
+  - Os textos aceitam `{{contato.nome}}`, `{{conversa.id}}` e `{{atendente.nome}}`.
+
 ### WhatsApp oficial, Instagram e Telegram (F2b)
 
 Crie a caixa com o canal e clique na engrenagem para configurar as credenciais. "Testar conexão" confere o token e

@@ -38,5 +38,9 @@ public class CaixaDO extends BaseDO {
     /** 0 = sem limite */
     private Integer limitePorAgente;
     private Integer reabrirHoras;
+    /** Calendário do Service Desk (expediente e feriados); null = sempre em horário */
+    private Long calendarioId;
+    /** Mandada quando a conversa abre ou reabre fora do expediente */
+    private String mensagemForaHorario;
 
 }

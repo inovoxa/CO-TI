@@ -56,6 +56,8 @@ public class CaixaService {
     private AuditoriaService auditoria;
     @Resource
     private AtendimentoProperties props;
+    @Resource
+    private cn.iocoder.yudao.module.itsm.service.SlaService slaService;
 
     public List<AtendimentoVOs.Caixa> listar() {
         return converter(caixaMapper.selectList(new LambdaQueryWrapperX<CaixaDO>().orderByAsc(CaixaDO::getNome)));
@@ -100,7 +102,11 @@ public class CaixaService {
                 .ativo(!Boolean.FALSE.equals(req.getAtivo())).webhookUrl(url).saudacao(vazio(req.getSaudacao()))
                 .equipeId(req.getEquipeId()).atribuicaoAutomatica(!Boolean.FALSE.equals(req.getAtribuicaoAutomatica()))
                 .limitePorAgente(req.getLimitePorAgente() == null ? 0 : req.getLimitePorAgente())
-                .reabrirHoras(req.getReabrirHoras() == null ? 24 : req.getReabrirHoras()).build();
+                .reabrirHoras(req.getReabrirHoras() == null ? 24 : req.getReabrirHoras())
+                .calendarioId(req.getCalendarioId()).mensagemForaHorario(vazio(req.getMensagemForaHorario())).build();
+        if (c.getCalendarioId() != null && slaService.calendario(c.getCalendarioId()) == null) {
+            throw exception(CAIXA_CALENDARIO_INVALIDO);
+        }
         if (atual == null) {
             c.setConfig("{}");
             caixaMapper.insert(c);
@@ -108,7 +114,8 @@ public class CaixaService {
             caixaMapper.updateById(c);
             caixaMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<CaixaDO>()
                     .eq(CaixaDO::getId, c.getId()).set(CaixaDO::getWebhookUrl, url).set(CaixaDO::getSaudacao, c.getSaudacao())
-                    .set(CaixaDO::getEquipeId, c.getEquipeId()));
+                    .set(CaixaDO::getEquipeId, c.getEquipeId())
+                    .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario()));
         }
         // membros: troca pela lista enviada
         List<CaixaAgenteDO> existentes = caixaAgenteMapper.selectList(CaixaAgenteDO::getCaixaId, c.getId());
@@ -187,6 +194,8 @@ public class CaixaService {
             v.setAtribuicaoAutomatica(c.getAtribuicaoAutomatica());
             v.setLimitePorAgente(c.getLimitePorAgente());
             v.setReabrirHoras(c.getReabrirHoras());
+            v.setCalendarioId(c.getCalendarioId());
+            v.setMensagemForaHorario(c.getMensagemForaHorario());
             v.setTokenDefinido(c.getTokenHash() != null);
             v.setSegredoDefinido(c.getWebhookSegredo() != null);
             v.setAbertas(abertas.getOrDefault(c.getId(), 0L));

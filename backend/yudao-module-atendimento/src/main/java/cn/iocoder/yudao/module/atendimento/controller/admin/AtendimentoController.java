@@ -44,6 +44,12 @@ public class AtendimentoController {
     private CanalConfigService canalConfigService;
     @Resource
     private ModeloService modeloService;
+    @Resource
+    private MacroService macroService;
+    @Resource
+    private cn.iocoder.yudao.module.itsm.service.SlaService slaService;
+    @Resource
+    private AutomacaoService automacaoService;
 
     // ================= conversas =================
 
@@ -155,6 +161,56 @@ public class AtendimentoController {
         return success(true);
     }
 
+    // ================= macros =================
+
+    @GetMapping("/macro/list")
+    @Operation(summary = "Minhas macros e as para todos")
+    @PreAuthorize(Q)
+    public CommonResult<List<AtendimentoVOs.Macro>> macros() {
+        return success(macroService.listar(getLoginUserId()));
+    }
+
+    @PostMapping("/macro/save")
+    @PreAuthorize(Q)
+    public CommonResult<Long> salvarMacro(@Valid @RequestBody AtendimentoVOs.Macro req) {
+        return success(macroService.salvar(req, getLoginUserId()));
+    }
+
+    @DeleteMapping("/macro/delete")
+    @PreAuthorize(Q)
+    public CommonResult<Boolean> excluirMacro(@RequestParam("id") Long id) {
+        macroService.excluir(id, getLoginUserId());
+        return success(true);
+    }
+
+    @PostMapping("/macro/executar")
+    @Operation(summary = "Executar a macro na conversa")
+    @PreAuthorize(Q)
+    public CommonResult<List<String>> executarMacro(@Valid @RequestBody AtendimentoVOs.MacroExecReq req) {
+        return success(macroService.executar(req.getMacroId(), req.getConversaId(), getLoginUserId()));
+    }
+
+    // ================= automações =================
+
+    @GetMapping("/automacao/list")
+    @PreAuthorize("@ss.hasPermission('atendimento:automacao:update')")
+    public CommonResult<List<AtendimentoVOs.Automacao>> automacoes() {
+        return success(automacaoService.listar());
+    }
+
+    @PostMapping("/automacao/save")
+    @PreAuthorize("@ss.hasPermission('atendimento:automacao:update')")
+    public CommonResult<Long> salvarAutomacao(@Valid @RequestBody AtendimentoVOs.Automacao req) {
+        return success(automacaoService.salvar(req, getLoginUserId()));
+    }
+
+    @DeleteMapping("/automacao/delete")
+    @PreAuthorize("@ss.hasPermission('atendimento:automacao:update')")
+    public CommonResult<Boolean> excluirAutomacao(@RequestParam("id") Long id) {
+        automacaoService.excluir(id, getLoginUserId());
+        return success(true);
+    }
+
     // ================= atendente =================
 
     @PostMapping("/agente/disponibilidade")
@@ -198,6 +254,13 @@ public class AtendimentoController {
     @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
     public CommonResult<AtendimentoVOs.Credenciais> credenciais(@RequestParam("id") Long id) {
         return success(caixaService.gerarCredenciais(id, getLoginUserId()));
+    }
+
+    @GetMapping("/caixa/calendarios")
+    @Operation(summary = "Calendários do Service Desk para o horário da caixa")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<List<Map<String, Object>>> calendarios() {
+        return success(slaService.listarCalendarios().stream().map(c -> Map.<String, Object>of("id", c.getId(), "nome", c.getNome())).toList());
     }
 
     @GetMapping("/caixa/canal")

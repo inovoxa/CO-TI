@@ -45,6 +45,16 @@
         <el-button v-else size="small" @click="status(0)"
           ><Icon class="mr-4px" icon="ep:refresh-left" />Reabrir</el-button
         >
+        <el-dropdown v-if="macros.length" trigger="click" @command="executarMacro">
+          <el-button size="small" title="Macros"><Icon icon="ep:magic-stick" /></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="m in macros" :key="m.id" :command="m">{{
+                m.nome
+              }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-dropdown trigger="click" @command="acao">
           <el-button size="small"><Icon icon="ep:more-filled" /></el-button>
           <template #dropdown>
@@ -309,6 +319,7 @@ const modo = ref<'responder' | 'nota'>('responder')
 const anexos = ref<Atd.Anexo[]>([])
 const enviando = ref(false)
 const respostas = ref<Atd.RespostaPronta[]>([])
+const macros = ref<Atd.Macro[]>([])
 const sugestaoAtiva = ref(0)
 const rolagem = ref<HTMLElement>()
 const campo = ref()
@@ -503,8 +514,14 @@ const tentarDeNovo = async (m: Atd.Mensagem) => {
   m.status = 'pendente'
 }
 
+const executarMacro = async (m: Atd.Macro) => {
+  const feito = await Atd.executarMacro(m.id!, conversa.value!.id)
+  message.success(feito.length ? `${m.nome}: ${feito.join(', ')}` : `${m.nome}: nada a mudar`)
+  emit('alterado')
+}
+
 onMounted(async () => {
-  respostas.value = await Atd.getRespostas()
+  ;[respostas.value, macros.value] = await Promise.all([Atd.getRespostas(), Atd.getMacros()])
 })
 </script>
 

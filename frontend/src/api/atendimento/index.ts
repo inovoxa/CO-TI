@@ -100,6 +100,8 @@ export interface Caixa {
   atribuicaoAutomatica: boolean
   limitePorAgente: number
   reabrirHoras: number
+  calendarioId?: number
+  mensagemForaHorario?: string
   agenteIds: number[]
   tokenDefinido?: boolean
   segredoDefinido?: boolean
@@ -144,6 +146,38 @@ export interface Modelo {
   corpo: string
   variaveis: number
   nomesVariaveis: string[]
+}
+
+export interface Acao {
+  tipo: string
+  valor?: any
+}
+
+export interface Condicao {
+  campo: string
+  operador: string
+  valor?: any
+}
+
+export interface Automacao {
+  id?: number
+  nome: string
+  descricao?: string
+  evento: string
+  condicoes: Condicao[]
+  acoes: Acao[]
+  ativa: boolean
+  ordem: number
+  execucoes?: number
+  ultimaExecucao?: number
+}
+
+export interface Macro {
+  id?: number
+  nome: string
+  visibilidade: 'pessoal' | 'todos'
+  acoes: Acao[]
+  minha?: boolean
 }
 
 export interface RespostaPronta {
@@ -195,6 +229,98 @@ export function formatarTexto(texto: string): string {
       (u) => `<a href="${u}" rel="noopener noreferrer" target="_blank">${u}</a>`
     )
     .replace(/\n/g, '<br>')
+}
+
+// ========== automações e macros (ver docs/specs/atendimento-automacoes.md) ==========
+
+export const EVENTOS: Record<string, string> = {
+  conversa_criada: 'Conversa criada',
+  mensagem_recebida: 'Mensagem recebida do contato',
+  conversa_reaberta: 'Conversa reaberta',
+  conversa_resolvida: 'Conversa resolvida'
+}
+/** Campo da condição: rótulo, operadores e tipo do valor */
+export const CAMPOS: Record<
+  string,
+  {
+    rotulo: string
+    operadores: string[]
+    valor:
+      | 'caixas'
+      | 'canais'
+      | 'status'
+      | 'prioridades'
+      | 'etiquetas'
+      | 'agentes'
+      | 'texto'
+      | 'nenhum'
+  }
+> = {
+  caixa: { rotulo: 'Caixa', operadores: ['em', 'fora_de'], valor: 'caixas' },
+  canal: { rotulo: 'Canal', operadores: ['em', 'fora_de'], valor: 'canais' },
+  conteudo: {
+    rotulo: 'Texto da mensagem',
+    operadores: ['contem', 'nao_contem', 'comeca_com'],
+    valor: 'texto'
+  },
+  status: { rotulo: 'Situação', operadores: ['em', 'fora_de'], valor: 'status' },
+  prioridade: {
+    rotulo: 'Prioridade',
+    operadores: ['em', 'fora_de', 'vazio', 'nao_vazio'],
+    valor: 'prioridades'
+  },
+  etiqueta: { rotulo: 'Etiqueta', operadores: ['tem', 'nao_tem'], valor: 'etiquetas' },
+  atendente: {
+    rotulo: 'Atendente',
+    operadores: ['em', 'fora_de', 'vazio', 'nao_vazio'],
+    valor: 'agentes'
+  },
+  contato_email: {
+    rotulo: 'E-mail do contato',
+    operadores: ['contem', 'nao_contem', 'vazio', 'nao_vazio'],
+    valor: 'texto'
+  },
+  contato_telefone: {
+    rotulo: 'Telefone do contato',
+    operadores: ['comeca_com', 'vazio', 'nao_vazio'],
+    valor: 'texto'
+  },
+  contato_portal: {
+    rotulo: 'Contato é pessoa do portal',
+    operadores: ['sim', 'nao'],
+    valor: 'nenhum'
+  },
+  horario: { rotulo: 'Horário de atendimento', operadores: ['dentro', 'fora'], valor: 'nenhum' }
+}
+export const OPERADORES: Record<string, string> = {
+  em: 'é um destes',
+  fora_de: 'não é nenhum destes',
+  contem: 'contém',
+  nao_contem: 'não contém',
+  comeca_com: 'começa com',
+  vazio: 'está vazio',
+  nao_vazio: 'está preenchido',
+  tem: 'tem uma destas',
+  nao_tem: 'não tem nenhuma destas',
+  sim: 'sim',
+  nao: 'não',
+  dentro: 'dentro do horário',
+  fora: 'fora do horário'
+}
+export const SEM_VALOR = ['vazio', 'nao_vazio', 'sim', 'nao', 'dentro', 'fora']
+export const ACOES: Record<
+  string,
+  { rotulo: string; valor: 'agente' | 'etiquetas' | 'texto' | 'status' | 'prioridade' | 'nenhum' }
+> = {
+  atribuir_agente: { rotulo: 'Atribuir a', valor: 'agente' },
+  atribuir_automatico: { rotulo: 'Distribuir automaticamente', valor: 'nenhum' },
+  remover_agente: { rotulo: 'Tirar o atendente', valor: 'nenhum' },
+  adicionar_etiquetas: { rotulo: 'Adicionar etiquetas', valor: 'etiquetas' },
+  remover_etiquetas: { rotulo: 'Tirar etiquetas', valor: 'etiquetas' },
+  enviar_mensagem: { rotulo: 'Mandar mensagem ao contato', valor: 'texto' },
+  nota: { rotulo: 'Escrever nota interna', valor: 'texto' },
+  status: { rotulo: 'Mudar a situação', valor: 'status' },
+  prioridade: { rotulo: 'Definir prioridade', valor: 'prioridade' }
 }
 
 // ========== chamadas ==========
@@ -269,6 +395,24 @@ export const enviarModelo = (data: {
 }): Promise<number> => request.post({ url: '/atendimento/conversa/modelo', data })
 export const excluirCaixa = (id: number) =>
   request.delete({ url: '/atendimento/caixa/delete', params: { id } })
+
+export const getCalendariosCaixa = (): Promise<{ id: number; nome: string }[]> =>
+  request.get({ url: '/atendimento/caixa/calendarios' })
+
+export const getMacros = (): Promise<Macro[]> => request.get({ url: '/atendimento/macro/list' })
+export const salvarMacro = (data: Macro): Promise<number> =>
+  request.post({ url: '/atendimento/macro/save', data })
+export const excluirMacro = (id: number) =>
+  request.delete({ url: '/atendimento/macro/delete', params: { id } })
+export const executarMacro = (macroId: number, conversaId: number): Promise<string[]> =>
+  request.post({ url: '/atendimento/macro/executar', data: { macroId, conversaId } })
+
+export const getAutomacoes = (): Promise<Automacao[]> =>
+  request.get({ url: '/atendimento/automacao/list' })
+export const salvarAutomacao = (data: Automacao): Promise<number> =>
+  request.post({ url: '/atendimento/automacao/save', data })
+export const excluirAutomacao = (id: number) =>
+  request.delete({ url: '/atendimento/automacao/delete', params: { id } })
 
 export const getContatos = (params: any) =>
   request.get({ url: '/atendimento/contato/page', params })

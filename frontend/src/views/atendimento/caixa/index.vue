@@ -128,6 +128,27 @@
           type="textarea"
         />
       </el-form-item>
+      <el-form-item label="Horário">
+        <el-select
+          v-model="form.dados.calendarioId"
+          clearable
+          placeholder="Sempre (sem calendário)"
+        >
+          <el-option v-for="c in calendarios" :key="c.id" :label="c.nome" :value="c.id" />
+        </el-select>
+        <div class="dica"
+          >Calendário do Service Desk (expediente e feriados, os mesmos do SLA).</div
+        >
+      </el-form-item>
+      <el-form-item v-if="form.dados.calendarioId" label="Fora do horário">
+        <el-input
+          v-model="form.dados.mensagemForaHorario"
+          :rows="2"
+          maxlength="2000"
+          placeholder="Mandada quando a conversa abre fora do expediente (opcional)"
+          type="textarea"
+        />
+      </el-form-item>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativo" /></el-form-item>
     </el-form>
     <template #footer>
@@ -175,6 +196,7 @@ const lista = ref<Atd.Caixa[]>([])
 const usuarios = ref<UserApi.UserVO[]>([])
 const formRef = ref()
 const canalRef = ref()
+const calendarios = ref<{ id: number; nome: string }[]>([])
 const CANAIS_EXTERNOS = ['whatsapp_cloud', 'instagram', 'telegram']
 const form = reactive({ visivel: false, dados: {} as Atd.Caixa })
 const cred = reactive({ visivel: false, dados: undefined as Atd.Credenciais | undefined })
@@ -202,6 +224,7 @@ const abrir = async (c?: Atd.Caixa) => {
       }
   form.visivel = true
   if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
+  if (!calendarios.value.length) calendarios.value = await Atd.getCalendariosCaixa()
 }
 
 const salvar = async () => {

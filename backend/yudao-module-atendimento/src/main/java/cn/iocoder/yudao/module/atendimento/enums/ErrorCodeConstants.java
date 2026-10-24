@@ -39,6 +39,11 @@ public interface ErrorCodeConstants {
     ErrorCode CANAL_SEM_URL_PUBLICA = new ErrorCode(1_102_004_003, "Defina CO_TI_URL_PUBLICA (endereço público do CO-TI): o provedor precisa dele para mandar as mensagens");
     ErrorCode CANAL_TESTE_FALHOU = new ErrorCode(1_102_004_004, "{}");
     ErrorCode MODELO_NAO_EXISTE = new ErrorCode(1_102_004_010, "Modelo não encontrado ou não aprovado");
+    ErrorCode ACAO_INVALIDA = new ErrorCode(1_102_005_000, "{}");
+    ErrorCode AUTOMACAO_NAO_EXISTE = new ErrorCode(1_102_005_001, "Automação não encontrada");
+    ErrorCode MACRO_NAO_EXISTE = new ErrorCode(1_102_005_010, "Macro não encontrada");
+    ErrorCode MACRO_SEM_PERMISSAO = new ErrorCode(1_102_005_011, "Sem permissão para macros de todos");
+    ErrorCode CAIXA_CALENDARIO_INVALIDO = new ErrorCode(1_102_000_005, "Calendário não encontrado");
     ErrorCode MODELO_PARAMETROS = new ErrorCode(1_102_004_011, "O modelo pede {} variáveis; preencha todas");
 
 }

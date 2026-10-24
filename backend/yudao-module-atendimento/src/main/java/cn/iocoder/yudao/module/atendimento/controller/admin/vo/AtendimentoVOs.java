@@ -42,6 +42,10 @@ public final class AtendimentoVOs {
         private Integer limitePorAgente = 0;
         @Min(0) @Max(720)
         private Integer reabrirHoras = 24;
+        /** Calendário do Service Desk com o expediente da caixa (vazio = sempre em horário) */
+        private Long calendarioId;
+        @Size(max = 2000)
+        private String mensagemForaHorario;
         private List<Long> agenteIds = new ArrayList<>();
         // só na resposta
         private Boolean tokenDefinido;
@@ -338,6 +342,74 @@ public final class AtendimentoVOs {
         private Boolean duplicada;
     }
 
+
+    // ================= macros e automações =================
+
+    @Data
+    public static class AcaoVO {
+        @NotBlank
+        @Size(max = 30)
+        private String tipo;
+        /** id, lista de ids, texto ou código, conforme o tipo */
+        private Object valor;
+    }
+
+    @Data
+    public static class Condicao {
+        @NotBlank
+        @Size(max = 30)
+        private String campo;
+        @NotBlank
+        @Size(max = 20)
+        private String operador;
+        private Object valor;
+    }
+
+    @Data
+    public static class Automacao {
+        private Long id;
+        @NotBlank(message = "Informe o nome")
+        @Size(max = 100)
+        private String nome;
+        @Size(max = 500)
+        private String descricao;
+        @NotBlank
+        private String evento;
+        @Valid
+        @Size(max = 20)
+        private List<Condicao> condicoes = new ArrayList<>();
+        @Valid
+        @Size(max = 20)
+        private List<AcaoVO> acoes = new ArrayList<>();
+        private Boolean ativa = true;
+        private Integer ordem = 0;
+        // só na resposta
+        private Long execucoes;
+        private LocalDateTime ultimaExecucao;
+    }
+
+    @Data
+    public static class Macro {
+        private Long id;
+        @NotBlank(message = "Informe o nome")
+        @Size(max = 100)
+        private String nome;
+        @Pattern(regexp = "pessoal|todos")
+        private String visibilidade = "pessoal";
+        @Valid
+        @Size(max = 20)
+        private List<AcaoVO> acoes = new ArrayList<>();
+        // só na resposta
+        private Boolean minha;
+    }
+
+    @Data
+    public static class MacroExecReq {
+        @NotNull
+        private Long macroId;
+        @NotNull
+        private Long conversaId;
+    }
 
     // ================= canais (WhatsApp oficial, Instagram, Telegram) =================
 
