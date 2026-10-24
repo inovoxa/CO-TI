@@ -139,6 +139,19 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
   - Condições: caixa, canal, texto da mensagem, situação, prioridade, etiqueta, atendente, contato e horário.
   - O que uma automação faz não dispara outras, e cada execução fica registrada na conversa e na contagem da regra.
   - Os textos aceitam `{{contato.nome}}`, `{{conversa.id}}` e `{{atendente.nome}}`.
+- **Pesquisa de satisfação:** com a opção ligada na caixa, ao resolver o CO-TI pergunta ao contato uma nota de 1 a 5
+  pelo próprio canal.
+  - Vale como nota uma resposta como "5", "nota 4", "3 estrelas" ou ⭐⭐⭐⭐, por até 3 dias. Ela fica na conversa
+    resolvida, sem reabrir, e o contato recebe um agradecimento.
+  - Qualquer outro texto é uma mensagem comum e reabre a conversa.
+- **Relatórios** (*Atendimento → Relatórios*; perfis Gestão de TI, Service Desk e NOC):
+  - abertas agora, conversas novas e resolvidas;
+  - mediana e média da primeira resposta e da resolução, no total ou só em horário de atendimento;
+  - mensagens trocadas e um mapa de quando os contatos escrevem (dia da semana × hora);
+  - satisfação (média, % de notas 4 e 5, distribuição e últimas avaliações);
+  - linhas por atendente e por caixa.
+
+  Os tempos são gravados quando acontecem, então valem a partir desta versão.
 
 ### WhatsApp oficial, Instagram e Telegram (F2b)
 

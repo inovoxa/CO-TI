@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.atendimento.controller.admin.vo.AtendimentoVOs;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.*;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.*;
+import cn.iocoder.yudao.module.atendimento.dominio.Csat;
 import cn.iocoder.yudao.module.atendimento.dominio.Telefone;
 import cn.iocoder.yudao.module.atendimento.enums.ConversaStatus;
 import cn.iocoder.yudao.module.atendimento.enums.MensagemTipo;
@@ -96,6 +97,10 @@ public class ConversaService {
     private HorarioService horarioService;
     @Resource
     private AutomacaoService automacaoService;
+    @Resource
+    private CsatService csatService;
+    @Resource
+    private RelatorioService relatorioService;
 
     // =====================================================================================================
     // Entrada (o canal recebeu uma mensagem do contato)
@@ -140,6 +145,7 @@ public class ConversaService {
                 .orderByDesc(ConversaDO::getId).last("LIMIT 1"));
         boolean nova = false;
         boolean reaberta = false;
+        Integer notaCsat = null;
         if (c != null) {
             c = conversaMapper.selectByIdParaAtualizar(c.getId());
         }
@@ -152,11 +158,19 @@ public class ConversaService {
                 nova = true;
             }
         } else {
-            if (c != null && c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo()
+            // resposta à pesquisa de satisfação: fica na conversa resolvida, sem reabrir
+            if (!r.eco() && c != null && c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo()) {
+                notaCsat = csatService.responder(c, r.conteudo());
+            }
+            if (notaCsat != null) {
+                log.debug("[receber][conversa {}: nota {} na pesquisa]", c.getId(), notaCsat);
+            } else if (c != null && c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo()
                     && (c.getResolvidaEm() == null || c.getResolvidaEm().isBefore(agora.minusHours(caixa.getReabrirHoras())))) {
                 c = null;   // resolvida há muito tempo: conversa nova
             }
-            if (c == null) {
+            if (notaCsat != null) {
+                // já tratado acima
+            } else if (c == null) {
                 c = ConversaDO.builder().caixaId(caixa.getId()).contatoId(contato.getId()).contatoCanalId(cc.getId())
                         .status(ConversaStatus.ABERTA.getCodigo()).ultimaAtividadeEm(agora).atributos("{}").build();
                 conversaMapper.insert(c);
@@ -184,7 +198,7 @@ public class ConversaService {
                 .remetenteTipo(r.eco() ? "agente" : "contato").remetenteId(r.eco() ? null : contato.getId())
                 .conteudo(r.conteudo() == null ? "" : r.conteudo()).formato(r.formato() == null ? "texto" : r.formato())
                 .anexos(JsonUtils.toJsonString(r.anexos() == null ? List.of() : r.anexos()))
-                .dados(JsonUtils.toJsonString(r.dados() == null ? Map.of() : r.dados()))
+                .dados(JsonUtils.toJsonString(comNota(r.dados(), notaCsat)))
                 .idExterno(r.idExterno()).status("enviada").build();
         m.setCreateTime(quando);
         m.setUpdateTime(quando);
@@ -203,12 +217,15 @@ public class ConversaService {
         }
         if (r.eco() && !r.historico() && c.getPrimeiraRespostaEm() == null) {
             u.setPrimeiraRespostaEm(quando);
+            relatorioService.primeiraResposta(c, quando);
             mudou = true;
         }
         if (mudou) {
             conversaMapper.updateById(u);
         }
-        if (!r.historico() && !r.eco()) {
+        if (notaCsat != null) {
+            saida(c, Csat.AGRADECIMENTO, "sistema", null, List.of());
+        } else if (!r.historico() && !r.eco()) {
             ConversaDO alvo = c;
             if (nova && vazio(caixa.getSaudacao()) != null) {
                 saida(alvo, caixa.getSaudacao(), "sistema", null, List.of());
@@ -234,6 +251,15 @@ public class ConversaService {
             publicar("conversa", c.getId(), null);
         }
         return new Entrada(c.getId(), m.getId(), false, nova);
+    }
+
+    private static Map<String, Object> comNota(Map<String, Object> dados, Integer nota) {
+        if (nota == null) {
+            return dados == null ? Map.of() : dados;
+        }
+        Map<String, Object> d = new LinkedHashMap<>(dados == null ? Map.of() : dados);
+        d.put("csat", Map.of("nota", nota));
+        return d;
     }
 
     /**
@@ -426,6 +452,9 @@ public class ConversaService {
                 u.setStatus(ConversaStatus.ABERTA.getCodigo());
             }
             conversaMapper.updateById(u);
+            if (u.getPrimeiraRespostaEm() != null) {
+                relatorioService.primeiraResposta(c, agora);
+            }
         }
         conversaLeituraMapper.marcar(c.getId(), userId, id);
         publicar("conversa", c.getId(), null);
@@ -444,13 +473,14 @@ public class ConversaService {
         Long id = saida(c, texto, "agente", userId, List.of(), dados);
         LocalDateTime agora = LocalDateTime.now();
         ConversaDO u = ConversaDO.builder().id(c.getId()).ultimaAtividadeEm(agora).build();
-        if (c.getPrimeiraRespostaEm() == null) {
-            u.setPrimeiraRespostaEm(agora);
-        }
         if (c.getAgenteId() == null) {
             u.setAgenteId(userId);
             c.setAgenteId(userId);
             atividade(c, nome(userId) + " assumiu a conversa");
+        }
+        if (c.getPrimeiraRespostaEm() == null) {
+            u.setPrimeiraRespostaEm(agora);
+            relatorioService.primeiraResposta(c, agora);
         }
         if (c.getStatus() != ConversaStatus.ABERTA.getCodigo()) {
             boolean resolvida = c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo();
@@ -541,6 +571,8 @@ public class ConversaService {
         }
         publicar("conversa", c.getId(), null);
         if (novo == ConversaStatus.RESOLVIDA) {
+            relatorioService.resolucao(c);
+            csatService.aoResolver(c, caixaMapper.selectById(c.getCaixaId()));
             automacaoService.disparar("conversa_resolvida", c.getId(), null);
         } else if (novo == ConversaStatus.ABERTA && estavaFechada) {
             automacaoService.disparar("conversa_reaberta", c.getId(), null);

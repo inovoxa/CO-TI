@@ -47,6 +47,8 @@ public class AtendimentoController {
     @Resource
     private MacroService macroService;
     @Resource
+    private RelatorioService relatorioService;
+    @Resource
     private cn.iocoder.yudao.module.itsm.service.SlaService slaService;
     @Resource
     private AutomacaoService automacaoService;
@@ -159,6 +161,36 @@ public class AtendimentoController {
         acesso.exigir(conversaService.existente(conversaId), getLoginUserId());
         envioService.reenviar(mensagemId);
         return success(true);
+    }
+
+    // ================= relatórios =================
+
+    @GetMapping("/relatorio/resumo")
+    @Operation(summary = "Relatório do atendimento no período (tempos, volume, satisfação, por atendente e caixa)")
+    @PreAuthorize("@ss.hasPermission('atendimento:relatorio:query')")
+    public CommonResult<AtendimentoVOs.Relatorio> relatorio(@RequestParam("de") @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate de,
+                                                           @RequestParam("ate") @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate ate,
+                                                           @RequestParam(value = "caixaId", required = false) Long caixaId,
+                                                           @RequestParam(value = "agenteId", required = false) Long agenteId,
+                                                           @RequestParam(value = "horarioUtil", defaultValue = "false") boolean util) {
+        if (ate.isBefore(de) || de.plusDays(366).isBefore(ate)) {
+            throw cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception(
+                    cn.iocoder.yudao.module.atendimento.enums.ErrorCodeConstants.ACAO_INVALIDA, "Período inválido (até um ano)");
+        }
+        return success(relatorioService.resumo(de, ate, caixaId, agenteId, util));
+    }
+
+    @GetMapping("/relatorio/filtros")
+    @Operation(summary = "Caixas e atendentes para filtrar o relatório")
+    @PreAuthorize("@ss.hasPermission('atendimento:relatorio:query')")
+    public CommonResult<Map<String, Object>> filtrosRelatorio() {
+        List<AtendimentoVOs.Caixa> lista = caixaService.listar();
+        Map<Long, String> agentes = new java.util.TreeMap<>();
+        lista.forEach(c -> c.getAgentes().forEach(a -> agentes.put(a.getUserId(), a.getNome())));
+        return success(Map.of(
+                "caixas", lista.stream().map(c -> Map.<String, Object>of("id", c.getId(), "nome", c.getNome())).toList(),
+                "atendentes", agentes.entrySet().stream().map(e -> Map.<String, Object>of("id", e.getKey(), "nome", e.getValue()))
+                        .sorted(java.util.Comparator.comparing(m -> m.get("nome").toString())).toList()));
     }
 
     // ================= macros =================

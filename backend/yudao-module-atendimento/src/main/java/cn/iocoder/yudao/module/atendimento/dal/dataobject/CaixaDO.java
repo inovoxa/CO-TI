@@ -42,5 +42,8 @@ public class CaixaDO extends BaseDO {
     private Long calendarioId;
     /** Mandada quando a conversa abre ou reabre fora do expediente */
     private String mensagemForaHorario;
+    /** Pesquisa de satisfação ao resolver */
+    private Boolean csatAtivo;
+    private String csatMensagem;
 
 }

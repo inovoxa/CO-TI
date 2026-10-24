@@ -46,6 +46,10 @@ public final class AtendimentoVOs {
         private Long calendarioId;
         @Size(max = 2000)
         private String mensagemForaHorario;
+        /** Pesquisa de satisfação (nota de 1 a 5) ao resolver */
+        private Boolean csatAtivo = false;
+        @Size(max = 1000)
+        private String csatMensagem;
         private List<Long> agenteIds = new ArrayList<>();
         // só na resposta
         private Boolean tokenDefinido;
@@ -409,6 +413,70 @@ public final class AtendimentoVOs {
         private Long macroId;
         @NotNull
         private Long conversaId;
+    }
+
+    // ================= relatórios =================
+
+    @Data
+    public static class Relatorio {
+        // agora
+        private long abertas;
+        private long semAtendente;
+        private long pendentes;
+        // no período
+        private long novas;
+        private long resolvidas;
+        private Long primeiraRespostaMediaSeg;
+        private Long primeiraRespostaMedianaSeg;
+        private Long resolucaoMediaSeg;
+        private Long resolucaoMedianaSeg;
+        private long mensagensRecebidas;
+        private long mensagensEnviadas;
+        private List<RelatorioDia> serie = new ArrayList<>();
+        /** Mensagens dos contatos: [dia da semana 0 = segunda][hora 0..23] */
+        private List<List<Long>> porHora = new ArrayList<>();
+        private RelatorioCsat satisfacao = new RelatorioCsat();
+        private List<RelatorioLinha> porAtendente = new ArrayList<>();
+        private List<RelatorioLinha> porCaixa = new ArrayList<>();
+    }
+
+    @Data
+    public static class RelatorioDia {
+        private String dia;
+        private long novas;
+        private long resolvidas;
+    }
+
+    @Data
+    public static class RelatorioCsat {
+        private long enviadas;
+        private long respondidas;
+        private Double media;
+        /** Notas 4 e 5 entre as respostas */
+        private Double percentualSatisfeitos;
+        /** Quantas respostas de cada nota, de 1 a 5 */
+        private List<Long> distribuicao = new ArrayList<>();
+        private List<RelatorioAvaliacao> ultimas = new ArrayList<>();
+    }
+
+    @Data
+    public static class RelatorioAvaliacao {
+        private Long conversaId;
+        private String contato;
+        private String atendente;
+        private Integer nota;
+        private LocalDateTime respondidaEm;
+    }
+
+    @Data
+    public static class RelatorioLinha {
+        private Long id;
+        private String nome;
+        private long resolvidas;
+        private Long primeiraRespostaMediaSeg;
+        private Long resolucaoMediaSeg;
+        private long avaliacoes;
+        private Double csatMedia;
     }
 
     // ================= canais (WhatsApp oficial, Instagram, Telegram) =================

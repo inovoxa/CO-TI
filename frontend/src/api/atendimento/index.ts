@@ -102,6 +102,8 @@ export interface Caixa {
   reabrirHoras: number
   calendarioId?: number
   mensagemForaHorario?: string
+  csatAtivo?: boolean
+  csatMensagem?: string
   agenteIds: number[]
   tokenDefinido?: boolean
   segredoDefinido?: boolean
@@ -178,6 +180,49 @@ export interface Macro {
   visibilidade: 'pessoal' | 'todos'
   acoes: Acao[]
   minha?: boolean
+}
+
+export interface RelatorioLinha {
+  id?: number
+  nome: string
+  resolvidas: number
+  primeiraRespostaMediaSeg?: number
+  resolucaoMediaSeg?: number
+  avaliacoes: number
+  csatMedia?: number
+}
+
+export interface Relatorio {
+  abertas: number
+  semAtendente: number
+  pendentes: number
+  novas: number
+  resolvidas: number
+  primeiraRespostaMediaSeg?: number
+  primeiraRespostaMedianaSeg?: number
+  resolucaoMediaSeg?: number
+  resolucaoMedianaSeg?: number
+  mensagensRecebidas: number
+  mensagensEnviadas: number
+  serie: { dia: string; novas: number; resolvidas: number }[]
+  /** [dia da semana 0 = segunda][hora] */
+  porHora: number[][]
+  satisfacao: {
+    enviadas: number
+    respondidas: number
+    media?: number
+    percentualSatisfeitos?: number
+    distribuicao: number[]
+    ultimas: {
+      conversaId: number
+      contato: string
+      atendente?: string
+      nota: number
+      respondidaEm: number
+    }[]
+  }
+  porAtendente: RelatorioLinha[]
+  porCaixa: RelatorioLinha[]
 }
 
 export interface RespostaPronta {
@@ -413,6 +458,18 @@ export const salvarAutomacao = (data: Automacao): Promise<number> =>
   request.post({ url: '/atendimento/automacao/save', data })
 export const excluirAutomacao = (id: number) =>
   request.delete({ url: '/atendimento/automacao/delete', params: { id } })
+
+export const getRelatorio = (params: {
+  de: string
+  ate: string
+  caixaId?: number
+  agenteId?: number
+  horarioUtil: boolean
+}): Promise<Relatorio> => request.get({ url: '/atendimento/relatorio/resumo', params })
+export const getFiltrosRelatorio = (): Promise<{
+  caixas: { id: number; nome: string }[]
+  atendentes: { id: number; nome: string }[]
+}> => request.get({ url: '/atendimento/relatorio/filtros' })
 
 export const getContatos = (params: any) =>
   request.get({ url: '/atendimento/contato/page', params })

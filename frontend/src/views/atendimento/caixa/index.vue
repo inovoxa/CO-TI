@@ -149,6 +149,17 @@
           type="textarea"
         />
       </el-form-item>
+      <el-form-item label="Pesquisa">
+        <el-switch v-model="form.dados.csatAtivo" />
+        <span class="dica ml-8px">ao resolver, pede ao contato uma nota de 1 a 5</span>
+      </el-form-item>
+      <el-form-item v-if="form.dados.csatAtivo" label="Pergunta">
+        <el-input
+          v-model="form.dados.csatMensagem"
+          maxlength="1000"
+          placeholder="Como você avalia este atendimento? Responda com uma nota de 1 (ruim) a 5 (ótimo)."
+        />
+      </el-form-item>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativo" /></el-form-item>
     </el-form>
     <template #footer>

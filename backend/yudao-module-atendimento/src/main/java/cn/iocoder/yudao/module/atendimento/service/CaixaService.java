@@ -103,7 +103,8 @@ public class CaixaService {
                 .equipeId(req.getEquipeId()).atribuicaoAutomatica(!Boolean.FALSE.equals(req.getAtribuicaoAutomatica()))
                 .limitePorAgente(req.getLimitePorAgente() == null ? 0 : req.getLimitePorAgente())
                 .reabrirHoras(req.getReabrirHoras() == null ? 24 : req.getReabrirHoras())
-                .calendarioId(req.getCalendarioId()).mensagemForaHorario(vazio(req.getMensagemForaHorario())).build();
+                .calendarioId(req.getCalendarioId()).mensagemForaHorario(vazio(req.getMensagemForaHorario()))
+                .csatAtivo(Boolean.TRUE.equals(req.getCsatAtivo())).csatMensagem(vazio(req.getCsatMensagem())).build();
         if (c.getCalendarioId() != null && slaService.calendario(c.getCalendarioId()) == null) {
             throw exception(CAIXA_CALENDARIO_INVALIDO);
         }
@@ -115,7 +116,8 @@ public class CaixaService {
             caixaMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<CaixaDO>()
                     .eq(CaixaDO::getId, c.getId()).set(CaixaDO::getWebhookUrl, url).set(CaixaDO::getSaudacao, c.getSaudacao())
                     .set(CaixaDO::getEquipeId, c.getEquipeId())
-                    .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario()));
+                    .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario())
+                    .set(CaixaDO::getCsatMensagem, c.getCsatMensagem()));
         }
         // membros: troca pela lista enviada
         List<CaixaAgenteDO> existentes = caixaAgenteMapper.selectList(CaixaAgenteDO::getCaixaId, c.getId());
@@ -196,6 +198,8 @@ public class CaixaService {
             v.setReabrirHoras(c.getReabrirHoras());
             v.setCalendarioId(c.getCalendarioId());
             v.setMensagemForaHorario(c.getMensagemForaHorario());
+            v.setCsatAtivo(c.getCsatAtivo());
+            v.setCsatMensagem(c.getCsatMensagem());
             v.setTokenDefinido(c.getTokenHash() != null);
             v.setSegredoDefinido(c.getWebhookSegredo() != null);
             v.setAbertas(abertas.getOrDefault(c.getId(), 0L));
