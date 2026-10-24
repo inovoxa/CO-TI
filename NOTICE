@@ -37,7 +37,10 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
       src/NotificationTargetTicket.php, src/QueuedNotification.php);
     * coletor de e-mail: chamado novo ou acompanhamento pelo número no assunto, recusa de respostas automáticas
       (src/MailCollector.php);
-    * indicadores do Service Desk (src/Stat.php, src/Glpi/Dashboard/).
+    * indicadores do Service Desk (src/Stat.php, src/Glpi/Dashboard/);
+    * problemas e mudanças: situações, campos de análise e de planejamento, tarefas, soluções, vínculos com
+      chamados e aprovação de mudança (src/Problem.php, src/Change.php, src/Problem_Ticket.php,
+      src/Change_Ticket.php, src/Change_Problem.php, src/ChangeValidation.php).
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.

@@ -15,23 +15,38 @@
           <el-tag v-if="i.tipo === 'tarefa'" disable-transitions size="small" type="warning">
             Tarefa · {{ ESTADOS[i.estadoTarefa ?? 1] }}
           </el-tag>
-          <el-tag v-if="i.tipo === 'solucao'" :type="corSolucao(i)" disable-transitions size="small">
-            Solução · {{ rotuloSolucao(i) }}
+          <el-tag
+            v-if="i.tipo === 'solucao'"
+            :type="corSolucao(i)"
+            disable-transitions
+            size="small"
+          >
+            Solução<template v-if="i.statusSolucao"> · {{ rotuloSolucao(i) }}</template>
           </el-tag>
           <el-tag v-if="i.privado" disable-transitions effect="plain" size="small" type="info">
             <Icon class="mr-2px" icon="ep:lock" />privado
           </el-tag>
-          <span v-if="i.tipo === 'tarefa' && i.tempoGastoSeg" class="text-[var(--el-text-color-secondary)]">
+          <span
+            v-if="i.tipo === 'tarefa' && i.tempoGastoSeg"
+            class="text-[var(--el-text-color-secondary)]"
+          >
             {{ duracao(i.tempoGastoSeg) }} gastos
             <template v-if="i.tecnico"> · {{ i.tecnico }}</template>
           </span>
-          <span v-if="i.tipo === 'tarefa' && i.inicio" class="text-[var(--el-text-color-secondary)]">
-            · planejada {{ formatDate(i.inicio) }}<template v-if="i.fim"> até {{ formatDate(i.fim) }}</template>
+          <span
+            v-if="i.tipo === 'tarefa' && i.inicio"
+            class="text-[var(--el-text-color-secondary)]"
+          >
+            · planejada {{ formatDate(i.inicio)
+            }}<template v-if="i.fim"> até {{ formatDate(i.fim) }}</template>
           </span>
         </div>
         <!-- conteúdo já saneado no servidor (sem script, eventos ou estilos) -->
         <div class="conteudo" v-html="i.conteudo"></div>
-        <div v-if="i.avaliadoPorNome" class="mt-6px text-12px text-[var(--el-text-color-secondary)]">
+        <div
+          v-if="i.avaliadoPorNome"
+          class="mt-6px text-12px text-[var(--el-text-color-secondary)]"
+        >
           {{ i.statusSolucao === 3 ? 'Aprovada' : 'Recusada' }} por {{ i.avaliadoPorNome }} em
           {{ formatDate(i.avaliadoEm!) }}
         </div>
@@ -50,7 +65,13 @@ defineProps<{ itens: Interacao[] }>()
 const ESTADOS = ['informativa', 'a fazer', 'feita']
 const rotuloSolucao = (i: Interacao) =>
   i.statusSolucao === 3 ? 'aprovada' : i.statusSolucao === 4 ? 'recusada' : 'aguardando aprovação'
-const corSolucao = (i: Interacao) => (i.statusSolucao === 3 ? 'success' : i.statusSolucao === 4 ? 'danger' : 'primary')
+// problemas e mudanças não têm aprovação da solução (statusSolucao vazio)
+const corSolucao = (i: Interacao) =>
+  !i.statusSolucao || i.statusSolucao === 3
+    ? 'success'
+    : i.statusSolucao === 4
+      ? 'danger'
+      : 'primary'
 const cor = (i: Interacao) =>
   i.tipo === 'solucao'
     ? 'var(--el-color-success)'

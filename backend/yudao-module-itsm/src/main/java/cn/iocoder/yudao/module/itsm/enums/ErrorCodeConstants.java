@@ -81,4 +81,22 @@ public interface ErrorCodeConstants {
 
     ErrorCode PAINEL_PERIODO_INVALIDO = new ErrorCode(1_101_006_000, "Período inválido (até 366 dias, com o fim depois do início)");
 
+    // problemas e mudanças 1-101-007-xxx
+    ErrorCode ITIL_TRANSICAO_INVALIDA = new ErrorCode(1_101_007_000, "Não foi possível: {}");
+    ErrorCode PROBLEMA_NAO_EXISTE = new ErrorCode(1_101_007_001, "Problema não encontrado");
+    ErrorCode MUDANCA_NAO_EXISTE = new ErrorCode(1_101_007_002, "Mudança não encontrada");
+    ErrorCode ITIL_ATOR_INVALIDO = new ErrorCode(1_101_007_003, "Informe uma pessoa ou uma equipe (equipe só como técnico)");
+    ErrorCode ITIL_ATOR_DUPLICADO = new ErrorCode(1_101_007_004, "Já participa com esse papel");
+    ErrorCode ITIL_ATOR_NAO_EXISTE = new ErrorCode(1_101_007_005, "Participante não encontrado");
+    ErrorCode ITIL_ENCERRADO = new ErrorCode(1_101_007_006, "Está encerrado; reabra antes de alterar");
+    ErrorCode ITIL_VINCULO_INVALIDO = new ErrorCode(1_101_007_007, "Não é possível vincular esses itens");
+    ErrorCode ITIL_VINCULO_DUPLICADO = new ErrorCode(1_101_007_008, "Já estão vinculados");
+    ErrorCode ITIL_VINCULO_NAO_EXISTE = new ErrorCode(1_101_007_009, "Vínculo não encontrado");
+    ErrorCode ITIL_TAREFA_DATAS = new ErrorCode(1_101_007_010, "O fim da tarefa precisa ser depois do início");
+    ErrorCode MUDANCA_JANELA_INVALIDA = new ErrorCode(1_101_007_011, "O fim da janela precisa ser depois do início");
+    ErrorCode MUDANCA_APROVACAO_NAO_EXISTE = new ErrorCode(1_101_007_012, "Aprovação não encontrada");
+    ErrorCode MUDANCA_APROVACAO_JA_RESPONDIDA = new ErrorCode(1_101_007_013, "Esta aprovação já foi respondida");
+    ErrorCode MUDANCA_APROVACAO_DE_OUTRO = new ErrorCode(1_101_007_014, "Só a pessoa indicada pode responder esta aprovação");
+    ErrorCode ITIL_SEM_SOLUCAO_CHAMADOS = new ErrorCode(1_101_007_015, "Só a solução pode solucionar os chamados vinculados");
+
 }

@@ -350,6 +350,44 @@
             >
           </div>
         </div>
+
+        <div v-if="veItil" class="mt-14px">
+          <div class="mb-6px flex items-center justify-between text-13px font-bold">
+            Problemas e mudanças
+            <el-dropdown v-if="criaProblema || criaMudanca" trigger="click" @command="acaoItil">
+              <el-button link size="small" type="primary"><Icon icon="ep:plus" /></el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="criaProblema" command="novo:problema"
+                    >Criar problema a partir deste chamado</el-dropdown-item
+                  >
+                  <el-dropdown-item v-if="criaMudanca" command="novo:mudanca"
+                    >Criar mudança a partir deste chamado</el-dropdown-item
+                  >
+                  <el-dropdown-item v-if="criaProblema" command="vincular:problema" divided
+                    >Vincular a um problema existente</el-dropdown-item
+                  >
+                  <el-dropdown-item v-if="criaMudanca" command="vincular:mudanca"
+                    >Vincular a uma mudança existente</el-dropdown-item
+                  >
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <div v-for="v in itil" :key="v.id" class="mb-4px text-13px">
+            <el-link
+              :href="`/servicedesk/${v.objeto === 'problema' ? 'problemas' : 'mudancas'}?id=${v.objetoId}`"
+              target="_blank"
+              type="primary"
+              >{{ v.objeto === 'problema' ? 'Problema' : 'Mudança' }} #{{ v.objetoId }}</el-link
+            >
+            {{ v.titulo }}
+            <span class="text-[var(--el-text-color-secondary)]">· {{ v.statusRotulo }}</span>
+          </div>
+          <span v-if="!itil.length" class="text-12px text-[var(--el-text-color-placeholder)]"
+            >nenhum</span
+          >
+        </div>
       </div>
     </div>
 
@@ -497,6 +535,8 @@ const CAMPOS: Record<string, string> = {
   satisfacao: 'Satisfação',
   regra: 'Regra aplicada',
   'aprovacao+': '+ Aprovador',
+  'problema+': '+ Problema',
+  'mudanca+': '+ Mudança',
   aprovacao: 'Aprovação'
 }
 const rotuloCampo = (c: string) => CAMPOS[c] || c
@@ -574,6 +614,7 @@ const carregar = async (id: number) => {
       descricao: c.descricao
     }
     if (aba.value === 'historico') historico.value = await ItsmApi.getHistorico(id)
+    itil.value = veItil ? await ItsmApi.getItilDoChamado(id) : []
   } finally {
     carregando.value = false
   }
@@ -700,6 +741,42 @@ const incluirAtor = async () => {
     equipeId: atorDialogo.modo === 'equipe' ? atorDialogo.equipeId : undefined
   })
   atorDialogo.visivel = false
+  await recarregar()
+}
+
+const veItil = checkPermi(['itsm:problema:query', 'itsm:mudanca:query'])
+const criaProblema = checkPermi(['itsm:problema:update'])
+const criaMudanca = checkPermi(['itsm:mudanca:update'])
+const itil = ref<ItsmApi.VinculoItil[]>([])
+const acaoItil = async (comando: string) => {
+  const [acaoItem, objeto] = comando.split(':') as [string, ItsmApi.ObjetoItil]
+  const nome = objeto === 'problema' ? 'problema' : 'mudança'
+  if (acaoItem === 'novo') {
+    const id = await ItsmApi.criarItilDoChamado(objeto, chamado.value!.id)
+    message.success(
+      `${objeto === 'problema' ? 'Problema' : 'Mudança'} #${id} registrado e vinculado`
+    )
+    window.open(
+      `/servicedesk/${objeto === 'problema' ? 'problemas' : 'mudancas'}?id=${id}`,
+      '_blank'
+    )
+  } else {
+    const { value } = await ElMessageBox.prompt(
+      `Número do ${nome}`,
+      `Vincular a ${nome} existente`,
+      {
+        inputPattern: /^#?\d+$/,
+        inputErrorMessage: 'Informe o número',
+        confirmButtonText: 'Vincular',
+        cancelButtonText: 'Cancelar'
+      }
+    )
+    await ItsmApi.vincularItil(objeto, {
+      objetoId: Number(value.replace('#', '')),
+      alvo: 'chamado',
+      alvoId: chamado.value!.id
+    })
+  }
   await recarregar()
 }
 

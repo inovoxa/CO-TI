@@ -78,6 +78,18 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
   tem uma parte aleatória de 128 bits: o download não pede login (as imagens do editor precisam abrir), então o
   endereço é o que protege o arquivo.
 
+## Problemas e mudanças
+
+- **Problemas** (*Service Desk → Problemas*): a causa comum de vários chamados. Sintomas, causas e impactos; tarefas e
+  solução. A solução pode solucionar de uma vez os chamados vinculados que ainda estão abertos.
+- **Mudanças** (*Service Desk → Mudanças*): tipo padrão (pré-aprovada), normal (precisa de aprovação antes de ser
+  aceita, testada ou aplicada) ou emergencial (aplicada já, aprovação depois). Janela de execução com aviso de
+  conflito com outras mudanças, análise de impacto e planos de implantação, retorno e controle.
+  - Aprovação: todos os aprovadores precisam aprovar; uma recusa recusa. O aprovador responde em *Minhas aprovações*
+    sem precisar acessar mudanças. Reabrir uma mudança recusada pede uma nova rodada.
+- No chamado, o técnico cria um problema ou uma mudança a partir dele, ou vincula a um existente.
+- Os dois seguem o escopo de unidade do perfil, como os chamados.
+
 ## Segurança
 
 - **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.

@@ -723,3 +723,183 @@ export const getPainel = (params: {
   deptId?: number
   categoriaId?: number
 }): Promise<any> => request.get({ url: '/itsm/painel', params })
+
+// ========== problemas e mudanças ==========
+
+export type ObjetoItil = 'problema' | 'mudanca'
+
+export interface ItemItil {
+  objeto: ObjetoItil
+  id: number
+  titulo: string
+  descricao?: string
+  status: number
+  statusRotulo: string
+  urgencia: number
+  impacto: number
+  prioridade: number
+  prioridadeRotulo: string
+  categoriaId?: number
+  categoria?: string
+  deptId?: number
+  dept?: string
+  abertoEm: number
+  prazo?: number
+  atrasado?: boolean
+  solucionadoEm?: number
+  fechadoEm?: number
+  tempoGastoSeg?: number
+  registradoPorNome?: string
+  solicitantes: Ator[]
+  tecnicos: Ator[]
+  observadores: Ator[]
+  totalChamados: number
+  // problema
+  impactos?: string
+  causas?: string
+  sintomas?: string
+  // mudança
+  tipo?: number
+  tipoRotulo?: string
+  inicioPrevisto?: number
+  fimPrevisto?: number
+  analiseImpacto?: string
+  planoControle?: string
+  planoImplantacao?: string
+  planoRetorno?: string
+  checklist?: string
+  validacao?: number
+  validacaoRotulo?: string
+  conflitos?: VinculoItil[]
+  acoes: string[]
+}
+
+export interface VinculoItil {
+  id: number
+  objeto: 'chamado' | ObjetoItil
+  objetoId: number
+  titulo?: string
+  status?: number
+  statusRotulo?: string
+  inicioPrevisto?: number
+  fimPrevisto?: number
+}
+
+export interface AprovacaoMudanca {
+  id: number
+  mudancaId: number
+  mudancaTitulo?: string
+  aprovadorId: number
+  aprovador: string
+  solicitadoPorNome?: string
+  status: number // 2 aguardando, 3 aprovada, 4 recusada
+  comentarioPedido?: string
+  comentarioResposta?: string
+  pedidoEm: number
+  respondidoEm?: number
+  tipo?: number
+  tipoRotulo?: string
+  inicioPrevisto?: number
+  fimPrevisto?: number
+  analiseImpacto?: string
+  planoRetorno?: string
+}
+
+// códigos do GLPI, na ordem do ciclo; "manual" = o técnico escolhe na tela (as outras vêm de ações)
+export const STATUS_PROBLEMA = [
+  { valor: 1, rotulo: 'Novo', cor: 'primary', manual: true },
+  { valor: 7, rotulo: 'Aceito', cor: 'primary', manual: true },
+  { valor: 2, rotulo: 'Em análise', cor: 'success', manual: true },
+  { valor: 3, rotulo: 'Em análise (planejado)', cor: 'success', manual: true },
+  { valor: 4, rotulo: 'Pendente', cor: 'warning', manual: true },
+  { valor: 5, rotulo: 'Solucionado', cor: 'info', manual: false },
+  { valor: 8, rotulo: 'Em observação', cor: 'info', manual: true },
+  { valor: 6, rotulo: 'Fechado', cor: 'info', manual: false }
+]
+
+export const STATUS_MUDANCA = [
+  { valor: 1, rotulo: 'Nova', cor: 'primary', manual: true },
+  { valor: 9, rotulo: 'Em avaliação', cor: 'primary', manual: true },
+  { valor: 10, rotulo: 'Em aprovação', cor: 'warning', manual: false },
+  { valor: 7, rotulo: 'Aceita', cor: 'success', manual: true },
+  { valor: 4, rotulo: 'Pendente', cor: 'warning', manual: true },
+  { valor: 11, rotulo: 'Em teste', cor: 'success', manual: true },
+  { valor: 12, rotulo: 'Em qualificação', cor: 'success', manual: true },
+  { valor: 5, rotulo: 'Aplicada', cor: 'info', manual: false },
+  { valor: 8, rotulo: 'Em revisão', cor: 'info', manual: true },
+  { valor: 6, rotulo: 'Fechada', cor: 'info', manual: false },
+  { valor: 13, rotulo: 'Recusada', cor: 'danger', manual: false },
+  { valor: 14, rotulo: 'Cancelada', cor: 'info', manual: false }
+]
+
+export const TIPOS_MUDANCA = [
+  { valor: 1, rotulo: 'Padrão', dica: 'Rotineira, pré-aprovada' },
+  { valor: 2, rotulo: 'Normal', dica: 'Precisa de aprovação antes de testar ou aplicar' },
+  { valor: 3, rotulo: 'Emergencial', dica: 'Feita já; a aprovação pode vir depois' }
+]
+
+export const statusItil = (objeto: ObjetoItil) =>
+  objeto === 'problema' ? STATUS_PROBLEMA : STATUS_MUDANCA
+export const corStatusItil = (objeto: ObjetoItil, s: number) =>
+  statusItil(objeto).find((x) => x.valor === s)?.cor || 'info'
+
+const u = (objeto: ObjetoItil, acao: string) => `/itsm/${objeto}/${acao}`
+
+export const getItilPage = (objeto: ObjetoItil, params: any) =>
+  request.get({ url: u(objeto, 'page'), params })
+export const getItil = (objeto: ObjetoItil, id: number): Promise<ItemItil> =>
+  request.get({ url: u(objeto, 'get'), params: { id } })
+export const getItilLinha = (objeto: ObjetoItil, id: number): Promise<Interacao[]> =>
+  request.get({ url: u(objeto, 'linha-do-tempo'), params: { id } })
+export const getItilHistorico = (objeto: ObjetoItil, id: number): Promise<Historico[]> =>
+  request.get({ url: u(objeto, 'historico'), params: { id } })
+export const getItilVinculos = (objeto: ObjetoItil, id: number): Promise<VinculoItil[]> =>
+  request.get({ url: u(objeto, 'vinculos'), params: { id } })
+export const criarItil = (objeto: ObjetoItil, data: any): Promise<number> =>
+  request.post({ url: u(objeto, 'create'), data })
+export const criarItilDoChamado = (objeto: ObjetoItil, chamadoId: number): Promise<number> =>
+  request.post({ url: u(objeto, 'do-chamado'), params: { chamadoId } })
+export const atualizarItil = (objeto: ObjetoItil, data: any) =>
+  request.put({ url: u(objeto, 'update'), data })
+export const excluirItil = (objeto: ObjetoItil, id: number) =>
+  request.delete({ url: u(objeto, 'delete'), params: { id } })
+export const adicionarAtorItil = (
+  objeto: ObjetoItil,
+  data: { objetoId: number; tipo: number; userId?: number; equipeId?: number }
+) => request.post({ url: u(objeto, 'ator'), data })
+export const removerAtorItil = (objeto: ObjetoItil, id: number) =>
+  request.delete({ url: u(objeto, 'ator'), params: { id } })
+export const assumirItil = (objeto: ObjetoItil, id: number) =>
+  request.post({ url: u(objeto, 'assumir'), params: { id } })
+export const interacaoItil = (objeto: ObjetoItil, data: any) =>
+  request.post({ url: u(objeto, 'interacao'), data })
+export const statusItilMudar = (objeto: ObjetoItil, id: number, status: number) =>
+  request.post({ url: u(objeto, 'status'), data: { id, status } })
+export const fecharItil = (objeto: ObjetoItil, id: number) =>
+  request.post({ url: u(objeto, 'fechar'), params: { id } })
+export const reabrirItil = (objeto: ObjetoItil, id: number) =>
+  request.post({ url: u(objeto, 'reabrir'), params: { id } })
+export const vincularItil = (
+  objeto: ObjetoItil,
+  data: { objetoId: number; alvo: 'chamado' | 'problema'; alvoId: number }
+) => request.post({ url: u(objeto, 'vinculo'), data })
+export const desvincularItil = (objeto: ObjetoItil, id: number) =>
+  request.delete({ url: u(objeto, 'vinculo'), params: { id } })
+export const cancelarMudanca = (id: number, motivo?: string) =>
+  request.post({ url: '/itsm/mudanca/cancelar', params: { id, motivo } })
+export const pedirAprovacaoMudanca = (data: {
+  mudancaId: number
+  aprovadorIds: number[]
+  comentario?: string
+}) => request.post({ url: '/itsm/mudanca/pedir-aprovacao', data })
+export const getAprovacoesMudanca = (id: number): Promise<AprovacaoMudanca[]> =>
+  request.get({ url: '/itsm/mudanca/aprovacoes', params: { id } })
+export const getMinhasAprovacoesMudanca = (pendentes: boolean): Promise<AprovacaoMudanca[]> =>
+  request.get({ url: '/itsm/mudanca/minhas-aprovacoes', params: { pendentes } })
+export const responderAprovacaoMudanca = (data: {
+  aprovacaoId: number
+  aprovar: boolean
+  comentario?: string
+}) => request.post({ url: '/itsm/mudanca/responder-aprovacao', data })
+export const getItilDoChamado = (chamadoId: number): Promise<VinculoItil[]> =>
+  request.get({ url: '/itsm/itil/do-chamado', params: { chamadoId } })
