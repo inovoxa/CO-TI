@@ -62,6 +62,10 @@ public final class AtendimentoVOs {
         private Boolean fluxoAtivo = false;
         @Size(max = 1000)
         private String fluxoBoasVindas;
+        /** Avisar o contato do andamento do chamado e o aprovador do pedido */
+        private Boolean avisosAtivo = true;
+        /** Modelo aprovado (uma variável) para avisar depois de 24 h — WhatsApp oficial */
+        private Long avisoModeloId;
         private List<Long> agenteIds = new ArrayList<>();
         // só na resposta
         private Boolean tokenDefinido;
@@ -461,6 +465,9 @@ public final class AtendimentoVOs {
         @NotBlank(message = "Informe o modelo")
         @Size(max = 150)
         private String modelo;
+        /** Modelo de transcrição de áudio (ex.: whisper-1); vazio = não transcreve */
+        @Size(max = 150)
+        private String modeloAudio;
         @DecimalMin("0") @DecimalMax("2")
         private java.math.BigDecimal temperatura;
         @Min(50) @Max(8000)

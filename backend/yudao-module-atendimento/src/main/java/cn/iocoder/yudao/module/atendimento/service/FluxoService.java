@@ -143,7 +143,8 @@ public class FluxoService {
                 }
             }
             if (texto.isEmpty()) {
-                e.saidas.add("Por enquanto eu só entendo mensagens de texto. Escreva a sua resposta, por favor.");
+                e.saidas.add("audio".equals(m.getFormato()) ? "Não consegui entender o áudio. Pode escrever a sua resposta, por favor?"
+                        : "Por enquanto eu só entendo mensagens de texto. Escreva a sua resposta, por favor.");
                 continue;
             }
             tratar(e, ctx, m.getId(), texto);

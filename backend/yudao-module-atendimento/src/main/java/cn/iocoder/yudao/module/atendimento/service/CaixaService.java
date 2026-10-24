@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.atendimento.controller.admin.vo.AtendimentoVOs;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.CaixaAgenteDO;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.CaixaDO;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.ConversaDO;
+import cn.iocoder.yudao.module.atendimento.dal.dataobject.ModeloDO;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.AgenteStatusMapper;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.CaixaAgenteMapper;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.CaixaMapper;
@@ -58,6 +59,8 @@ public class CaixaService {
     private AtendimentoProperties props;
     @Resource
     private cn.iocoder.yudao.module.itsm.service.SlaService slaService;
+    @Resource
+    private cn.iocoder.yudao.module.atendimento.dal.mysql.ModeloMapper modeloMapper;
 
     public List<AtendimentoVOs.Caixa> listar() {
         return converter(caixaMapper.selectList(new LambdaQueryWrapperX<CaixaDO>().orderByAsc(CaixaDO::getNome)));
@@ -107,7 +110,14 @@ public class CaixaService {
                 .csatAtivo(Boolean.TRUE.equals(req.getCsatAtivo())).csatMensagem(vazio(req.getCsatMensagem()))
                 .roboAtivo(Boolean.TRUE.equals(req.getRoboAtivo())).roboNome(vazio(req.getRoboNome()))
                 .roboInstrucoes(vazio(req.getRoboInstrucoes())).roboMaxRespostas(req.getRoboMaxRespostas() == null ? 10 : req.getRoboMaxRespostas())
-                .fluxoAtivo(Boolean.TRUE.equals(req.getFluxoAtivo())).fluxoBoasVindas(vazio(req.getFluxoBoasVindas())).build();
+                .fluxoAtivo(Boolean.TRUE.equals(req.getFluxoAtivo())).fluxoBoasVindas(vazio(req.getFluxoBoasVindas()))
+                .avisosAtivo(!Boolean.FALSE.equals(req.getAvisosAtivo())).avisoModeloId(req.getAvisoModeloId()).build();
+        if (c.getAvisoModeloId() != null) {
+            ModeloDO m = modeloMapper.selectById(c.getAvisoModeloId());
+            if (m == null || atual == null || !m.getCaixaId().equals(atual.getId())) {
+                throw exception(MODELO_NAO_EXISTE);
+            }
+        }
         if (c.getCalendarioId() != null && slaService.calendario(c.getCalendarioId()) == null) {
             throw exception(CAIXA_CALENDARIO_INVALIDO);
         }
@@ -122,7 +132,8 @@ public class CaixaService {
                     .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario())
                     .set(CaixaDO::getCsatMensagem, c.getCsatMensagem())
                     .set(CaixaDO::getRoboNome, c.getRoboNome()).set(CaixaDO::getRoboInstrucoes, c.getRoboInstrucoes())
-                    .set(CaixaDO::getFluxoBoasVindas, c.getFluxoBoasVindas()));
+                    .set(CaixaDO::getFluxoBoasVindas, c.getFluxoBoasVindas())
+                    .set(CaixaDO::getAvisoModeloId, c.getAvisoModeloId()));
         }
         // membros: troca pela lista enviada
         List<CaixaAgenteDO> existentes = caixaAgenteMapper.selectList(CaixaAgenteDO::getCaixaId, c.getId());
@@ -211,6 +222,8 @@ public class CaixaService {
             v.setRoboMaxRespostas(c.getRoboMaxRespostas());
             v.setFluxoAtivo(c.getFluxoAtivo());
             v.setFluxoBoasVindas(c.getFluxoBoasVindas());
+            v.setAvisosAtivo(c.getAvisosAtivo());
+            v.setAvisoModeloId(c.getAvisoModeloId());
             v.setTokenDefinido(c.getTokenHash() != null);
             v.setSegredoDefinido(c.getWebhookSegredo() != null);
             v.setAbertas(abertas.getOrDefault(c.getId(), 0L));

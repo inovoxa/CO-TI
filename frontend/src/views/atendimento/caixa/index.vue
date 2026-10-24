@@ -199,6 +199,35 @@
           <span class="dica ml-8px">depois disso, passa para uma pessoa</span>
         </el-form-item>
       </template>
+      <el-form-item label="Avisos do chamado">
+        <el-switch v-model="form.dados.avisosAtivo" />
+        <span class="dica ml-8px"
+          >andamento, solução e aprovação do chamado aberto pela conversa; o aprovador é avisado
+          pelo celular do cadastro</span
+        >
+      </el-form-item>
+      <el-form-item
+        v-if="form.dados.avisosAtivo && form.dados.canal === 'whatsapp_cloud' && form.dados.id"
+        label="Modelo de aviso"
+      >
+        <el-select
+          v-model="form.dados.avisoModeloId"
+          class="!w-320px"
+          clearable
+          placeholder="Sem modelo: depois de 24 h o aviso não sai"
+        >
+          <el-option
+            v-for="m in modelosAviso"
+            :key="m.id"
+            :label="`${m.nome} (${m.idioma})`"
+            :value="m.id"
+          />
+        </el-select>
+        <div class="dica"
+          >Modelo aprovado com uma variável (o texto do aviso), usado quando já passaram 24 h desde
+          a última mensagem do contato.</div
+        >
+      </el-form-item>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativo" /></el-form-item>
     </el-form>
     <template #footer>
@@ -247,6 +276,7 @@ const usuarios = ref<UserApi.UserVO[]>([])
 const formRef = ref()
 const canalRef = ref()
 const calendarios = ref<{ id: number; nome: string }[]>([])
+const modelosAviso = ref<Atd.Modelo[]>([])
 const CANAIS_EXTERNOS = ['whatsapp_cloud', 'instagram', 'telegram']
 const form = reactive({ visivel: false, dados: {} as Atd.Caixa })
 const cred = reactive({ visivel: false, dados: undefined as Atd.Credenciais | undefined })
@@ -270,11 +300,18 @@ const abrir = async (c?: Atd.Caixa) => {
         atribuicaoAutomatica: true,
         limitePorAgente: 0,
         reabrirHoras: 24,
+        avisosAtivo: true,
         agenteIds: []
       }
   form.visivel = true
   if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
   if (!calendarios.value.length) calendarios.value = await Atd.getCalendariosCaixa()
+  modelosAviso.value =
+    c?.id && c.canal === 'whatsapp_cloud'
+      ? (await Atd.getModelosDaCaixa(c.id)).filter(
+          (m) => m.status === 'APPROVED' && m.variaveis === 1
+        )
+      : []
 }
 
 const salvar = async () => {

@@ -112,6 +112,8 @@ export interface Caixa {
   roboMaxRespostas?: number
   fluxoAtivo?: boolean
   fluxoBoasVindas?: string
+  avisosAtivo?: boolean
+  avisoModeloId?: number
   agenteIds: number[]
   tokenDefinido?: boolean
   segredoDefinido?: boolean
@@ -198,6 +200,8 @@ export interface IaProvedor {
   /** só na gravação; em branco mantém a atual */
   chave?: string
   modelo: string
+  /** modelo de transcrição de áudio (ex.: whisper-1) */
+  modeloAudio?: string
   temperatura?: number
   maxTokens?: number
   ativo: boolean

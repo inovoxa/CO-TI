@@ -29,6 +29,8 @@ public class IaProvedorDO extends BaseDO {
     private String baseUrl;
     private String chave;
     private String modelo;
+    /** Modelo de transcrição (/audio/transcriptions); null = não transcreve */
+    private String modeloAudio;
     private BigDecimal temperatura;
     private Integer maxTokens;
     private Boolean ativo;

@@ -80,7 +80,7 @@ Depois de 30 minutos sem resposta, o pedido em andamento expira.
   serviço**. A sugestão sempre pede confirmação ao contato. Sem IA, a sugestão vem da busca no catálogo.
 - A IA **nunca coleta campos de formulário**: isso é sempre do fluxo, com validação em código.
 
-## Segunda parte (F2e-2)
+## Segunda parte (F2e-2, feita)
 
 Avisos de volta pelo canal, no lugar de WF13, WF14 e WF20:
 - andamento, solução e resultado da operação no AD, para o contato;

@@ -173,6 +173,14 @@ Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *F
   - a consulta mostra apenas os chamados da própria pessoa;
   - os dados pessoais ficam cifrados durante o preenchimento e aparecem mascarados no resumo; depois do envio,
     também na conversa.
+- **Avisos de volta** (no lugar dos workflows 13, 14 e 20 do n8n), ligados por caixa:
+  - o contato recebe o andamento (acompanhamentos públicos), a solução (inclusive a da operação no AD, sem senha
+    no texto) e a decisão da aprovação do chamado que abriu;
+  - o aprovador recebe o pedido de aprovação pelo celular do cadastro, com o link do portal;
+  - no WhatsApp oficial, depois de 24 h sem mensagem do contato, o aviso vai pelo modelo aprovado escolhido na
+    caixa (com uma variável). Sem modelo, o aviso não sai e fica registrado na conversa.
+- **Áudio:** com um provedor de IA que tenha *modelo de áudio* (ex.: `whisper-1` na OpenAI ou na Groq), os áudios
+  recebidos viram texto. O fluxo e o assistente entendem a mensagem falada, e quem atende lê a transcrição.
 
 ### Inteligência artificial (F2d)
 

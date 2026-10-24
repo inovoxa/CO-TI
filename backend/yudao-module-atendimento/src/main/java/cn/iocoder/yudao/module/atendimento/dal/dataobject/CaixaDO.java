@@ -53,5 +53,9 @@ public class CaixaDO extends BaseDO {
     /** Fluxo do catálogo pelo canal (docs/specs/atendimento-fluxo-whatsapp.md) */
     private Boolean fluxoAtivo;
     private String fluxoBoasVindas;
+    /** Avisos do chamado aberto pela conversa (andamento, solução, aprovação) */
+    private Boolean avisosAtivo;
+    /** Modelo aprovado para avisar fora da janela de 24 h (WhatsApp oficial) */
+    private Long avisoModeloId;
 
 }

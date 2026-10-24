@@ -105,6 +105,10 @@
                 <span v-if="m.dados?.modelo" class="marca">modelo {{ m.dados.modelo.nome }}</span>
               </div>
               <div v-if="m.dados?.historico" class="marca mb-2px">histórico do WhatsApp</div>
+              <div v-if="m.dados?.transcricao" class="marca mb-2px">🎤 transcrição do áudio</div>
+              <div v-if="m.dados?.aviso" class="marca mb-2px"
+                >aviso do chamado #{{ m.dados.aviso }}</div
+              >
               <div v-if="m.dados?.csat?.nota" class="marca mb-2px"
                 >avaliação: {{ m.dados.csat.nota }} de 5</div
               >

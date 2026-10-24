@@ -58,6 +58,8 @@ public class AssistenteService {
     @Resource
     private FluxoService fluxoService;
     @Resource
+    private TranscricaoService transcricaoService;
+    @Resource
     private TransactionTemplate transactionTemplate;
 
     /** A caixa tem o fluxo do catálogo, ou assistente com a IA ligada: a conversa nova fica com o robô. */
@@ -98,6 +100,8 @@ public class AssistenteService {
         if (c == null || !Boolean.TRUE.equals(c.getRobo()) || c.getAgenteId() != null || c.getStatus() != ConversaStatus.PENDENTE.getCodigo()) {
             return;
         }
+        // áudio do contato vira texto antes de o robô ler (provedor de IA com modelo de transcrição)
+        transcricaoService.transcreverPendentes(conversaId);
         CaixaDO caixa = caixaMapper.selectById(c.getCaixaId());
         if (caixa != null && Boolean.TRUE.equals(caixa.getFluxoAtivo())) {
             fluxoService.processar(conversaId);   // o fluxo do catálogo atende primeiro

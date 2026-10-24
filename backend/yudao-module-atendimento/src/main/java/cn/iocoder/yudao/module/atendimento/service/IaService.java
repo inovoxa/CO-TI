@@ -175,6 +175,58 @@ public class IaService {
     }
 
     // =====================================================================================================
+    // Transcrição de áudio
+    // =====================================================================================================
+
+    /** Há provedor ativo com modelo de transcrição (e a IA está ligada)? */
+    public boolean transcreve() {
+        return ativo() && iaProvedorMapper.emOrdem().stream().anyMatch(p -> utilizavel(p) && p.getModeloAudio() != null);
+    }
+
+    /**
+     * Transcreve o áudio ({@code POST {base}/audio/transcriptions}, padrão Whisper), tentando os provedores com modelo
+     * de áudio na ordem do assistente.
+     *
+     * @return o texto, ou null se nenhum conseguiu
+     */
+    public String transcrever(byte[] audio, String nome, String tipo, Long conversaId) {
+        if (!ativo()) {
+            return null;
+        }
+        for (IaProvedorDO p : ordem("assistente")) {
+            if (p.getModeloAudio() == null) {
+                continue;
+            }
+            long ini = System.currentTimeMillis();
+            IaUsoDO uso = IaUsoDO.builder().finalidade("transcricao").provedorId(p.getId()).conversaId(conversaId)
+                    .modelo(p.getModeloAudio()).criadoEm(LocalDateTime.now()).build();
+            try {
+                Map<String, String> campos = new LinkedHashMap<>();
+                campos.put("model", p.getModeloAudio());
+                campos.put("language", "pt");
+                campos.put("response_format", "json");
+                ProvedorHttp.Resposta r = http.postArquivo(p.getBaseUrl().replaceAll("/+$", "") + "/audio/transcriptions",
+                        p.getChave() == null ? null : segredos.decifrar(p.getChave()), campos, "file", audio, nome, tipo);
+                if (r.ok() && r.json().get("text") != null) {
+                    return r.json().get("text").toString().strip();
+                }
+                Object erro = r.json().get("error") instanceof Map<?, ?> e ? e.get("message") : r.corpo();
+                uso.setErro(cortar(p.getNome() + " respondeu HTTP " + r.status() + ": " + erro, 500));
+            } catch (Exception e) {
+                uso.setErro(cortar(e.getClass().getSimpleName() + ": " + e.getMessage(), 500));
+            } finally {
+                uso.setDuracaoMs((int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - ini));
+                try {
+                    iaUsoMapper.insert(uso);
+                } catch (Exception e) {
+                    log.warn("[transcrever][uso não registrado: {}]", e.getMessage());
+                }
+            }
+        }
+        return null;
+    }
+
+    // =====================================================================================================
     // Configuração
     // =====================================================================================================
 
@@ -194,6 +246,7 @@ public class IaService {
             x.setBaseUrl(p.getBaseUrl());
             x.setChaveDefinida(p.getChave() != null);
             x.setModelo(p.getModelo());
+            x.setModeloAudio(p.getModeloAudio());
             x.setTemperatura(p.getTemperatura());
             x.setMaxTokens(p.getMaxTokens());
             x.setAtivo(p.getAtivo());
@@ -267,13 +320,15 @@ public class IaService {
         boolean mudouConexao = atual == null || !Objects.equals(url, atual.getBaseUrl()) || !Objects.equals(chave, atual.getChave())
                 || !Objects.equals(req.getModelo().strip(), atual.getModelo());
         IaProvedorDO p = IaProvedorDO.builder().id(req.getId()).nome(req.getNome().strip()).tipo(tipo.codigo()).baseUrl(url).chave(chave)
-                .modelo(req.getModelo().strip()).temperatura(req.getTemperatura() == null ? BigDecimal.valueOf(0.3) : req.getTemperatura())
+                .modelo(req.getModelo().strip()).modeloAudio(ContatoService.vazio(req.getModeloAudio())).temperatura(req.getTemperatura() == null ? BigDecimal.valueOf(0.3) : req.getTemperatura())
                 .maxTokens(req.getMaxTokens() == null ? 800 : req.getMaxTokens()).ativo(!Boolean.FALSE.equals(req.getAtivo()))
                 .prioridade(req.getPrioridade() == null ? 0 : req.getPrioridade()).build();
         if (atual == null) {
             iaProvedorMapper.insert(p);
         } else {
             iaProvedorMapper.updateById(p);
+            iaProvedorMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<IaProvedorDO>()
+                    .eq(IaProvedorDO::getId, p.getId()).set(IaProvedorDO::getModeloAudio, p.getModeloAudio()));
             if (mudouConexao) {
                 iaProvedorMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<IaProvedorDO>()
                         .eq(IaProvedorDO::getId, p.getId()).set(IaProvedorDO::getTestadoEm, null).set(IaProvedorDO::getErroTeste, null));

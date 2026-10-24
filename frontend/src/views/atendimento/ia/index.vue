@@ -141,6 +141,17 @@
           maxlength="150"
         />
       </el-form-item>
+      <el-form-item label="Modelo de áudio">
+        <el-input
+          v-model="form.dados.modeloAudio"
+          maxlength="150"
+          placeholder="ex.: whisper-1 (opcional)"
+        />
+        <div class="dica"
+          >Transcreve os áudios recebidos (/audio/transcriptions). OpenAI, Groq e servidores
+          compatíveis oferecem; em branco, este provedor não transcreve.</div
+        >
+      </el-form-item>
       <el-form-item label="Temperatura">
         <el-input-number
           v-model="form.dados.temperatura"

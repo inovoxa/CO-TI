@@ -102,6 +102,8 @@ public class ConversaService {
     @Resource
     private AssistenteService assistenteService;
     @Resource
+    private TranscricaoService transcricaoService;
+    @Resource
     private RelatorioService relatorioService;
 
     // =====================================================================================================
@@ -257,7 +259,9 @@ public class ConversaService {
             automacaoService.disparar("mensagem_recebida", c.getId(), m.getConteudo());
             ConversaDO atual = conversaMapper.selectById(c.getId());
             if (Boolean.TRUE.equals(atual.getRobo()) && atual.getAgenteId() == null && atual.getStatus() == ConversaStatus.PENDENTE.getCodigo()) {
-                assistenteService.agendarAposGravar(c.getId());
+                assistenteService.agendarAposGravar(c.getId());   // o robô transcreve o áudio antes de ler
+            } else if ("audio".equals(m.getFormato()) && m.getConteudo().isEmpty()) {
+                transcricaoService.agendarAposGravar(m.getId());
             }
         }
         if (!r.historico()) {
