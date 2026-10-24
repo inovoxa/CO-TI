@@ -56,11 +56,13 @@ public class AssistenteService {
     @Resource
     private FerramentasAssistente ferramentas;
     @Resource
+    private FluxoService fluxoService;
+    @Resource
     private TransactionTemplate transactionTemplate;
 
-    /** A caixa tem assistente e a IA está ligada. */
+    /** A caixa tem o fluxo do catálogo, ou assistente com a IA ligada: a conversa nova fica com o robô. */
     public boolean ativoPara(CaixaDO caixa) {
-        return caixa != null && Boolean.TRUE.equals(caixa.getRoboAtivo()) && iaService.ativo();
+        return caixa != null && (Boolean.TRUE.equals(caixa.getFluxoAtivo()) || (Boolean.TRUE.equals(caixa.getRoboAtivo()) && iaService.ativo()));
     }
 
     /** Chamado na transação que gravou a mensagem do contato: responde depois que ela for confirmada. */
@@ -97,6 +99,10 @@ public class AssistenteService {
             return;
         }
         CaixaDO caixa = caixaMapper.selectById(c.getCaixaId());
+        if (caixa != null && Boolean.TRUE.equals(caixa.getFluxoAtivo())) {
+            fluxoService.processar(conversaId);   // o fluxo do catálogo atende primeiro
+            return;
+        }
         if (!ativoPara(caixa)) {
             transferir(conversaId, "o assistente foi desligado");
             return;

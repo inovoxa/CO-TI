@@ -106,7 +106,8 @@ public class CaixaService {
                 .calendarioId(req.getCalendarioId()).mensagemForaHorario(vazio(req.getMensagemForaHorario()))
                 .csatAtivo(Boolean.TRUE.equals(req.getCsatAtivo())).csatMensagem(vazio(req.getCsatMensagem()))
                 .roboAtivo(Boolean.TRUE.equals(req.getRoboAtivo())).roboNome(vazio(req.getRoboNome()))
-                .roboInstrucoes(vazio(req.getRoboInstrucoes())).roboMaxRespostas(req.getRoboMaxRespostas() == null ? 10 : req.getRoboMaxRespostas()).build();
+                .roboInstrucoes(vazio(req.getRoboInstrucoes())).roboMaxRespostas(req.getRoboMaxRespostas() == null ? 10 : req.getRoboMaxRespostas())
+                .fluxoAtivo(Boolean.TRUE.equals(req.getFluxoAtivo())).fluxoBoasVindas(vazio(req.getFluxoBoasVindas())).build();
         if (c.getCalendarioId() != null && slaService.calendario(c.getCalendarioId()) == null) {
             throw exception(CAIXA_CALENDARIO_INVALIDO);
         }
@@ -120,7 +121,8 @@ public class CaixaService {
                     .set(CaixaDO::getEquipeId, c.getEquipeId())
                     .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario())
                     .set(CaixaDO::getCsatMensagem, c.getCsatMensagem())
-                    .set(CaixaDO::getRoboNome, c.getRoboNome()).set(CaixaDO::getRoboInstrucoes, c.getRoboInstrucoes()));
+                    .set(CaixaDO::getRoboNome, c.getRoboNome()).set(CaixaDO::getRoboInstrucoes, c.getRoboInstrucoes())
+                    .set(CaixaDO::getFluxoBoasVindas, c.getFluxoBoasVindas()));
         }
         // membros: troca pela lista enviada
         List<CaixaAgenteDO> existentes = caixaAgenteMapper.selectList(CaixaAgenteDO::getCaixaId, c.getId());
@@ -207,6 +209,8 @@ public class CaixaService {
             v.setRoboNome(c.getRoboNome());
             v.setRoboInstrucoes(c.getRoboInstrucoes());
             v.setRoboMaxRespostas(c.getRoboMaxRespostas());
+            v.setFluxoAtivo(c.getFluxoAtivo());
+            v.setFluxoBoasVindas(c.getFluxoBoasVindas());
             v.setTokenDefinido(c.getTokenHash() != null);
             v.setSegredoDefinido(c.getWebhookSegredo() != null);
             v.setAbertas(abertas.getOrDefault(c.getId(), 0L));

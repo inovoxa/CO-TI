@@ -283,6 +283,7 @@ coti:
     meta-graph-url: ${CO_TI_META_GRAPH_URL:https://graph.facebook.com/v23.0}
     instagram-url: ${CO_TI_INSTAGRAM_URL:https://graph.instagram.com/v23.0}
     telegram-url: ${CO_TI_TELEGRAM_URL:https://api.telegram.org}
+    viacep-url: ${CO_TI_VIACEP_URL:https://viacep.com.br/ws}   # vazio = o fluxo do WhatsApp não consulta CEP
   itsm:
     fechamento-automatico-dias: ${CO_TI_ITSM_FECHAMENTO_DIAS:7}   # negativo = nunca fecha sozinho
     pesquisa-satisfacao: ${CO_TI_ITSM_PESQUISA:true}

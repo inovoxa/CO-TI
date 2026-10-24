@@ -160,14 +160,28 @@
           placeholder="Como você avalia este atendimento? Responda com uma nota de 1 (ruim) a 5 (ótimo)."
         />
       </el-form-item>
-      <el-form-item label="Assistente de IA">
+      <el-form-item label="Fluxo do catálogo">
+        <el-switch v-model="form.dados.fluxoAtivo" />
+        <span class="dica ml-8px"
+          >menu, abertura de pedidos do catálogo, consulta e dúvidas pelo canal (substitui o fluxo
+          do n8n)</span
+        >
+      </el-form-item>
+      <el-form-item v-if="form.dados.fluxoAtivo" label="Boas-vindas">
+        <el-input
+          v-model="form.dados.fluxoBoasVindas"
+          maxlength="1000"
+          placeholder="Olá! Sou o assistente virtual da equipe de TI 👋"
+        />
+      </el-form-item>
+      <el-form-item v-if="!form.dados.fluxoAtivo" label="Assistente de IA">
         <el-switch v-model="form.dados.roboAtivo" />
         <span class="dica ml-8px"
           >responde as conversas novas e passa para uma pessoa quando precisa (exige a IA
           ligada)</span
         >
       </el-form-item>
-      <template v-if="form.dados.roboAtivo">
+      <template v-if="form.dados.roboAtivo && !form.dados.fluxoAtivo">
         <el-form-item label="Nome do assistente">
           <el-input v-model="form.dados.roboNome" maxlength="60" placeholder="Assistente da TI" />
         </el-form-item>

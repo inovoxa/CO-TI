@@ -50,5 +50,8 @@ public class CaixaDO extends BaseDO {
     private String roboNome;
     private String roboInstrucoes;
     private Integer roboMaxRespostas;
+    /** Fluxo do catálogo pelo canal (docs/specs/atendimento-fluxo-whatsapp.md) */
+    private Boolean fluxoAtivo;
+    private String fluxoBoasVindas;
 
 }

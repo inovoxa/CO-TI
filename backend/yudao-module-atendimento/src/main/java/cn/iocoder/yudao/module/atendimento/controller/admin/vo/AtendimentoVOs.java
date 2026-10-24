@@ -58,6 +58,10 @@ public final class AtendimentoVOs {
         private String roboInstrucoes;
         @Min(1) @Max(100)
         private Integer roboMaxRespostas = 10;
+        /** Fluxo do catálogo: menu, abertura de pedidos, consulta e FAQ pelo canal */
+        private Boolean fluxoAtivo = false;
+        @Size(max = 1000)
+        private String fluxoBoasVindas;
         private List<Long> agenteIds = new ArrayList<>();
         // só na resposta
         private Boolean tokenDefinido;

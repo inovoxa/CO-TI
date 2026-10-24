@@ -35,9 +35,14 @@ public final class Relevancia {
     }
 
     public static <T> List<T> ordenar(String pergunta, List<Candidato<T>> candidatos, int limite) {
+        return pontuar(pergunta, candidatos).stream().limit(limite).map(Map.Entry::getKey).toList();
+    }
+
+    /** Todos os candidatos com a nota, do mais relevante para o menos (sem termos na pergunta: nota zero). */
+    public static <T> List<Map.Entry<T, Double>> pontuar(String pergunta, List<Candidato<T>> candidatos) {
         List<String> termos = termos(pergunta);
         if (termos.isEmpty() || candidatos.isEmpty()) {
-            return candidatos.stream().limit(limite).map(Candidato::item).toList();
+            return candidatos.stream().map(c -> Map.entry(c.item(), 0.0)).toList();
         }
         int n = candidatos.size();
         List<String[]> textos = candidatos.stream().map(c -> new String[]{simples(c.titulo()), simples(c.texto())}).toList();
@@ -60,7 +65,7 @@ public final class Relevancia {
         }
         // empate: mantém a ordem da busca (fixados e ts_rank)
         ordem.sort((a, b) -> Double.compare(nota[b], nota[a]) != 0 ? Double.compare(nota[b], nota[a]) : Integer.compare(a, b));
-        return ordem.stream().limit(limite).map(i -> candidatos.get(i).item()).toList();
+        return ordem.stream().map(i -> Map.entry(candidatos.get(i).item(), nota[i])).toList();
     }
 
     /** O termo aparece como início de palavra. */

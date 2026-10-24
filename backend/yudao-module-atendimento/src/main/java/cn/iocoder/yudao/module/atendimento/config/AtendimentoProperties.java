@@ -28,6 +28,9 @@ public class AtendimentoProperties {
     /** Bot API do Telegram. */
     private String telegramUrl = "https://api.telegram.org";
 
+    /** Consulta de CEP do fluxo do catálogo (ViaCEP: {url}/{cep}/json/). Vazio = não consulta. */
+    private String viacepUrl = "https://viacep.com.br/ws";
+
     /** Tamanho máximo de mídia baixada dos canais (bytes). */
     private long midiaMaxima = 25L * 1024 * 1024;
 

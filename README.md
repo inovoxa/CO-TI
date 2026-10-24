@@ -153,6 +153,27 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 
   Os tempos são gravados quando acontecem, então valem a partir desta versão.
 
+### Fluxo do catálogo pelo WhatsApp (F2e) — substitui o agente do n8n
+
+Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *Fluxo do catálogo* na caixa.
+
+- **Menu:**
+  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.4);
+  2. consultar meus chamados;
+  3. tirar uma dúvida (FAQ);
+  4. falar com um atendente.
+- **Formulários do catálogo:** são os mesmos do portal. As perguntas vêm uma por vez, com a validação do formulário
+  (CPF, datas, e-mail, opções). Antes do envio, o contato confere um resumo e pode corrigir campos. Aprovação do
+  superior e operação no AD funcionam exatamente como no portal.
+- **Comandos** a qualquer momento: `menu`, `voltar`, `cancelar` e `atendente`.
+- **Ajudas no preenchimento:** o texto livre sugere o serviço (pela IA, se estiver ligada; senão, pela busca no
+  catálogo), e o CEP completa o endereço (ViaCEP; `CO_TI_VIACEP_URL` vazio desliga).
+- **Segurança:**
+  - só abre ou consulta pedidos quem tem o celular no cadastro (portal ou AD); os outros têm a FAQ e o atendente;
+  - a consulta mostra apenas os chamados da própria pessoa;
+  - os dados pessoais ficam cifrados durante o preenchimento e aparecem mascarados no resumo; depois do envio,
+    também na conversa.
+
 ### Inteligência artificial (F2d)
 
 Regras completas em `docs/specs/atendimento-ia.md` (reimplementação própria; nada da pasta `enterprise/` do Chatwoot).

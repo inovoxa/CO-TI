@@ -70,6 +70,7 @@ services:
       CO_TI_META_GRAPH_URL: ${CO_TI_META_GRAPH_URL:-https://graph.facebook.com/v23.0}
       CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
       CO_TI_TELEGRAM_URL: ${CO_TI_TELEGRAM_URL:-https://api.telegram.org}
+      CO_TI_VIACEP_URL: ${CO_TI_VIACEP_URL-https://viacep.com.br/ws}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
       CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
     volumes:

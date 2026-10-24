@@ -110,6 +110,8 @@ export interface Caixa {
   roboNome?: string
   roboInstrucoes?: string
   roboMaxRespostas?: number
+  fluxoAtivo?: boolean
+  fluxoBoasVindas?: string
   agenteIds: number[]
   tokenDefinido?: boolean
   segredoDefinido?: boolean
