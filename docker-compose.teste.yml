@@ -1,5 +1,5 @@
 # Serviços só para testes e demonstração (não use em produção):
-#   docker compose -f docker-compose.yml -f docker-compose.teste.yml up -d greenmail
+#   docker compose -f docker-compose.yml -f docker-compose.teste.yml up -d greenmail glpi-db
 # GreenMail: servidor de e-mail falso. SMTP 3025 e IMAP 3143 sem TLS; aceita qualquer usuário e senha.
 services:
   greenmail:
@@ -11,4 +11,15 @@ services:
     ports:
       - "127.0.0.1:3025:3025"
       - "127.0.0.1:3143:3143"
+    restart: unless-stopped
+
+  # Banco de um GLPI de exemplo, para testar o importador (Service Desk → Configuração → Importar do GLPI).
+  # Carregue o esquema do GLPI e os dados de teste com o mariadb do contêiner; senha só de teste.
+  glpi-db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: raiz-somente-teste
+      MARIADB_DATABASE: glpi
+    ports:
+      - "127.0.0.1:3307:3306"
     restart: unless-stopped

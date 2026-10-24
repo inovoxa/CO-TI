@@ -131,4 +131,10 @@ public interface ErrorCodeConstants {
     ErrorCode PROJETO_VINCULO_NAO_EXISTE = new ErrorCode(1_101_008_057, "Vínculo não encontrado");
     ErrorCode PROJETO_ENCERRADO = new ErrorCode(1_101_008_058, "O projeto está concluído ou cancelado; reabra mudando a situação");
 
+    // importação 1-101-009-xxx
+    ErrorCode IMPORTACAO_CONEXAO = new ErrorCode(1_101_009_000, "Não foi possível ler o banco do GLPI: {}");
+    ErrorCode IMPORTACAO_EM_ANDAMENTO = new ErrorCode(1_101_009_001, "Já há uma importação em andamento; espere terminar ou cancele");
+    ErrorCode IMPORTACAO_NAO_EXECUTANDO = new ErrorCode(1_101_009_002, "Esta importação não está em andamento");
+    ErrorCode IMPORTACAO_NAO_EXISTE = new ErrorCode(1_101_009_003, "Importação não encontrada");
+
 }

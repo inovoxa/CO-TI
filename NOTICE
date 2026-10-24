@@ -44,7 +44,9 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
     * governança: fornecedores, contratos (vigência, aviso prévio, renovação tácita/expressa e aviso de
       vencimento), custos, orçamentos, licenças de software e projetos com tarefas (src/Supplier.php,
       src/Contract.php, src/ContractCost.php, src/Infocom.php, src/Budget.php, src/SoftwareLicense.php,
-      src/Project.php, src/ProjectTask.php, src/ProjectTeam.php, src/Itil_Project.php).
+      src/Project.php, src/ProjectTask.php, src/ProjectTeam.php, src/Itil_Project.php);
+    * importador: lê as tabelas de um GLPI 10/11 (estrutura em install/mysql/glpi-empty.sql) — nenhum código
+      do GLPI é executado ou copiado; só os nomes de tabelas e colunas e o significado dos códigos.
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.

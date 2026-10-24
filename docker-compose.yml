@@ -65,10 +65,13 @@ services:
       CO_TI_AD_SSH_USUARIO: ${CO_TI_AD_SSH_USUARIO:-}
       CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
       CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
+      # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
+      CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
     volumes:
       - backendlogs:/app/logs
       - arquivos:/app/arquivos
       - ./segredos:/run/segredos:ro
+      - ./importacao:/importacao:ro
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

@@ -28,6 +28,12 @@ public class ItsmProperties {
     /** Envia a pesquisa de satisfação ao fechar. */
     private boolean pesquisaSatisfacao = true;
 
+    /**
+     * Pasta onde está montada uma cópia de {@code files/} do GLPI (os anexos). Vazia = a importação não copia
+     * arquivos. Só caminhos dentro dela são lidos.
+     */
+    private String importacaoPastaArquivos = "";
+
     /** Execução de operações no AD pedidas pelos formulários. */
     private Ad ad = new Ad();
 

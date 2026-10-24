@@ -109,6 +109,30 @@ projetos e atualizam as tarefas pelas quais respondem.
 - Contratos, licenças, orçamentos e projetos seguem o escopo de unidade do perfil.
 - O pedido de aprovação de mudança agora também vai por e-mail para quem precisa aprovar.
 
+## Importar do GLPI 10/11
+
+*Service Desk → Configuração → Importar do GLPI* (só o administrador). Lê o banco MySQL/MariaDB do GLPI e traz:
+pessoas, grupos técnicos, categorias, origens, chamados (com acompanhamentos, tarefas, soluções, aprovações,
+satisfação e anexos), base de conhecimento, problemas, mudanças, fornecedores, orçamentos, contratos, licenças e
+projetos.
+
+1. No servidor do GLPI, crie um usuário só de leitura:
+   `CREATE USER 'coti'@'%' IDENTIFIED BY '...'; GRANT SELECT ON glpi.* TO 'coti'@'%';`
+2. Para trazer os anexos, copie a pasta `files/` do GLPI para `importacao/glpi-files` ao lado do
+   `docker-compose.yml` (montada só leitura no contêiner).
+3. *Verificar* mostra o que há lá, quem já existe aqui e como as entidades viram unidades (pelo nome). Nada é gravado.
+4. *Importar* roda em segundo plano. Dá para rodar de novo: o que já veio é pulado.
+
+Como fica:
+- Chamados, problemas e mudanças mantêm o número do GLPI (se o número estiver livre aqui).
+- Pessoas que não existem aqui (pelo login ou pelo e-mail) entram **desativadas**; ativam quando entrarem pelo AD ou
+  quando o administrador ativar. Solicitante sem conta fica pelo e-mail.
+- Nenhuma notificação é enviada.
+- A senha do banco do GLPI não é gravada. As chaves das licenças entram cifradas.
+- Não vêm: políticas de SLA (os prazos de cada chamado vêm), regras, modelos, respostas de formulários do GLPI 11,
+  inventário (computadores entram na F3), plugins.
+- As datas do GLPI são lidas no fuso do servidor do CO-TI.
+
 ## Segurança
 
 - **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.

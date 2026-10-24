@@ -9,3 +9,6 @@ ferramentas/traducao/__pycache__/
 
 # chaves SSH e outros segredos montados no contêiner
 segredos/
+
+# cópia dos anexos do GLPI para a importação (dados da empresa, fora do repositório)
+/importacao/

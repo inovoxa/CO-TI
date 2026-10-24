@@ -279,6 +279,8 @@ coti:
   itsm:
     fechamento-automatico-dias: ${CO_TI_ITSM_FECHAMENTO_DIAS:7}   # negativo = nunca fecha sozinho
     pesquisa-satisfacao: ${CO_TI_ITSM_PESQUISA:true}
+    # Cópia da pasta files/ do GLPI montada no contêiner, para a importação trazer os anexos (vazio = não traz)
+    importacao-pasta-arquivos: ${CO_TI_IMPORTACAO_ARQUIVOS:}
     # Operações no AD pedidas pelos formulários (criar usuário, resetar senha...). Executa o
     # Executar_AD_Automatico.ps1 (pasta deploy/ad) num servidor Windows por SSH.
     ad:
