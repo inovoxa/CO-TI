@@ -29,7 +29,7 @@ public final class AtendimentoVOs {
         @Size(max = 100)
         private String nome;
         @NotBlank
-        @Pattern(regexp = "api|whatsapp_cloud|whatsapp_evolution|telegram|widget")
+        @Pattern(regexp = "api|whatsapp_cloud|instagram|telegram")
         private String canal;
         private Boolean ativo = true;
         @Size(max = 500)
@@ -138,6 +138,10 @@ public final class AtendimentoVOs {
         private Integer ultimaMensagemTipo;
         private Integer naoLidas;
         private List<Etiqueta> etiquetas = new ArrayList<>();
+        /** Canal com janela de 24 h (WhatsApp oficial, Instagram) */
+        private Boolean janela = false;
+        /** Até quando dá para mandar texto livre; depois, só modelo aprovado */
+        private LocalDateTime janelaAte;
     }
 
     @Data
@@ -155,6 +159,8 @@ public final class AtendimentoVOs {
         private String status;
         private String erro;
         private LocalDateTime criadaEm;
+        /** modelo usado, localização, resposta de botão, reação, origem (celular, histórico) */
+        private Map<String, Object> dados;
     }
 
     @Data
@@ -330,6 +336,77 @@ public final class AtendimentoVOs {
         private Long conversaId;
         private Long mensagemId;
         private Boolean duplicada;
+    }
+
+
+    // ================= canais (WhatsApp oficial, Instagram, Telegram) =================
+
+    /** Configuração do canal da caixa. Segredo em branco = mantém o que está gravado. */
+    @Data
+    public static class CanalConfig {
+        @NotNull
+        private Long caixaId;
+        // WhatsApp Cloud API
+        @Size(max = 40) @Pattern(regexp = "\\d*", message = "O identificador do número tem só dígitos")
+        private String phoneNumberId;
+        @Size(max = 40) @Pattern(regexp = "\\d*", message = "O identificador da conta (WABA) tem só dígitos")
+        private String wabaId;
+        /** Número também usado no aplicativo WhatsApp Business (coexistência): traz ecos, histórico e contatos */
+        private Boolean coexistencia = false;
+        // Instagram
+        @Size(max = 40) @Pattern(regexp = "\\d*", message = "O identificador da conta do Instagram tem só dígitos")
+        private String igUserId;
+        // segredos (Meta: token de acesso e chave secreta do app; Telegram: token do robô)
+        @Size(max = 1000)
+        private String token;
+        @Size(max = 200)
+        private String appSecret;
+        @Size(max = 200)
+        private String botToken;
+    }
+
+    @Data
+    public static class CanalConfigResp {
+        private Long caixaId;
+        private String canal;
+        private String phoneNumberId;
+        private String wabaId;
+        private Boolean coexistencia;
+        private String igUserId;
+        private Boolean tokenDefinido;
+        private Boolean appSecretDefinido;
+        private Boolean botTokenDefinido;
+        /** Meta: palavra de verificação para cadastrar o webhook no app */
+        private String verifyToken;
+        /** Endereço a cadastrar no provedor (Meta) ou já cadastrado (Telegram) */
+        private String enderecoWebhook;
+        /** O que o provedor informou no último teste: número exibido, nome verificado, qualidade, usuário... */
+        private Map<String, Object> info;
+        private LocalDateTime testadoEm;
+        private String erroTeste;
+    }
+
+    @Data
+    public static class Modelo {
+        private Long id;
+        private String nome;
+        private String idioma;
+        private String categoria;
+        private String status;
+        private String corpo;
+        private Integer variaveis;
+        /** Nomes das variáveis quando o modelo usa variáveis com nome ({{nome}}) */
+        private List<String> nomesVariaveis = new ArrayList<>();
+    }
+
+    @Data
+    public static class ModeloReq {
+        @NotNull
+        private Long conversaId;
+        @NotNull
+        private Long modeloId;
+        @Size(max = 20)
+        private List<@Size(max = 1000) String> parametros = new ArrayList<>();
     }
 
 }

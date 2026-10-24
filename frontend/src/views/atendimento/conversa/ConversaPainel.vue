@@ -78,12 +78,22 @@
               :class="{ nota: m.privada, saida: m.tipo !== 0, falhou: m.status === 'falhou' }"
             >
               <div v-if="m.tipo !== 0 || m.privada" class="autor">
-                <Icon v-if="m.privada" class="mr-2px" icon="ep:lock" :size="11" />{{
-                  m.privada ? 'Nota interna de ' : ''
-                }}{{ m.remetente }}
+                <Icon v-if="m.privada" class="mr-2px" icon="ep:lock" :size="11" /><Icon
+                  v-if="m.dados?.origem === 'celular'"
+                  class="mr-2px"
+                  icon="ep:iphone"
+                  :size="11"
+                />{{ m.privada ? 'Nota interna de ' : '' }}{{ m.remetente }}
+                <span v-if="m.dados?.modelo" class="marca">modelo {{ m.dados.modelo.nome }}</span>
               </div>
+              <div v-if="m.dados?.historico" class="marca mb-2px">histórico do WhatsApp</div>
               <!-- texto escapado em formatarTexto: nenhuma marcação de fora passa -->
-              <div v-if="m.conteudo" class="texto" v-html="formatarTexto(m.conteudo)"></div>
+              <div
+                v-if="m.conteudo"
+                class="texto"
+                :class="{ reacao: m.formato === 'reacao' }"
+                v-html="formatarTexto(m.conteudo)"
+              ></div>
               <div v-for="(a, i) in m.anexos" :key="i" class="anexo">
                 <a
                   v-if="(a.tipo || '').startsWith('image/')"
@@ -98,6 +108,12 @@
                   controls
                   preload="none"
                 ></audio>
+                <video
+                  v-else-if="(a.tipo || '').startsWith('video/')"
+                  :src="a.url"
+                  controls
+                  preload="none"
+                ></video>
                 <a v-else :href="a.url" rel="noopener" target="_blank"
                   ><Icon class="mr-4px" icon="ep:paperclip" />{{ a.nome || 'anexo' }}</a
                 >
@@ -143,6 +159,23 @@
             >Enter envia · Shift+Enter quebra linha · "/" respostas prontas</span
           >
         </div>
+        <el-alert
+          v-if="janelaFechada && modo === 'responder'"
+          :closable="false"
+          class="mb-6px"
+          show-icon
+          type="warning"
+        >
+          <template v-if="conversa.canal === 'whatsapp_cloud'"
+            >Passaram 24 horas desde a última mensagem do contato: o WhatsApp só aceita um
+            <el-button link type="primary" @click="abrirModelo">modelo aprovado</el-button
+            >.</template
+          >
+          <template v-else
+            >Passaram 24 horas desde a última mensagem do contato: o Instagram pode recusar a
+            resposta.</template
+          >
+        </el-alert>
         <div v-if="sugestoes.length" class="sugestoes">
           <button
             v-for="(r, i) in sugestoes"
@@ -192,6 +225,13 @@
             >
           </el-upload>
           <el-button
+            v-if="conversa.canal === 'whatsapp_cloud' && modo === 'responder'"
+            link
+            size="small"
+            @click="abrirModelo"
+            ><Icon class="mr-2px" icon="ep:document" />Modelo</el-button
+          >
+          <el-button
             :loading="enviando"
             class="ml-auto"
             size="small"
@@ -204,6 +244,46 @@
       </div>
     </template>
     <el-empty v-else class="m-auto" description="Escolha uma conversa" />
+
+    <Dialog v-model="modelo.visivel" title="Mandar modelo aprovado" width="560px">
+      <el-empty
+        v-if="!modelo.lista.length"
+        description="Nenhum modelo aprovado. Peça para sincronizar os modelos na configuração da caixa."
+        :image-size="60"
+      />
+      <el-form v-else label-position="top">
+        <el-form-item label="Modelo">
+          <el-select v-model="modelo.id" class="w-full" filterable @change="escolherModelo">
+            <el-option
+              v-for="t in modelo.lista"
+              :key="t.id"
+              :label="`${t.nome} (${t.idioma})`"
+              :value="t.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-for="(n, i) in modeloEscolhido?.nomesVariaveis || []"
+          :key="n"
+          :label="'Variável {{' + n + '}}'"
+        >
+          <el-input v-model="modelo.parametros[i]" maxlength="1000" />
+        </el-form-item>
+        <el-form-item v-if="modeloEscolhido" label="Como o contato vai ver">
+          <div class="previa" v-html="formatarTexto(previaModelo)"></div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button
+          :disabled="!modeloEscolhido || modelo.parametros.some((p) => !p?.trim())"
+          :loading="modelo.enviando"
+          type="primary"
+          @click="enviarModelo"
+          >Enviar</el-button
+        >
+        <el-button @click="modelo.visivel = false">Cancelar</el-button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -237,10 +317,24 @@ let colado = true
 const agentes = computed(() => (conversa.value ? props.agentesDaCaixa(conversa.value.caixaId) : []))
 const janelaFechada = computed(
   () =>
-    conversa.value?.canal?.startsWith('whatsapp') &&
-    conversa.value.ultimaEntradaEm &&
-    Date.now() - conversa.value.ultimaEntradaEm > 24 * 3600_000
+    !!conversa.value?.janela && (!conversa.value.janelaAte || conversa.value.janelaAte < Date.now())
 )
+const modelo = reactive({
+  visivel: false,
+  lista: [] as Atd.Modelo[],
+  id: undefined as number | undefined,
+  parametros: [] as string[],
+  enviando: false
+})
+const modeloEscolhido = computed(() => modelo.lista.find((t) => t.id === modelo.id))
+const previaModelo = computed(() => {
+  const t = modeloEscolhido.value
+  if (!t) return ''
+  return t.corpo.replace(/\{\{\s*([A-Za-z0-9_]+)\s*}}/g, (x, n) => {
+    const i = t.nomesVariaveis.indexOf(n)
+    return i >= 0 && modelo.parametros[i]?.trim() ? modelo.parametros[i] : x
+  })
+})
 const sugestoes = computed(() => {
   const m = /^\/([a-z0-9_-]*)$/.exec(texto.value)
   return m ? respostas.value.filter((r) => r.atalho.startsWith(m[1])).slice(0, 6) : []
@@ -380,6 +474,30 @@ const acao = async (cmd: string) => {
     emit('alterado')
   }
 }
+const abrirModelo = async () => {
+  modelo.lista = await Atd.getModelos(conversa.value!.caixaId)
+  modelo.id = undefined
+  modelo.parametros = []
+  modelo.visivel = true
+}
+const escolherModelo = () => {
+  modelo.parametros = (modeloEscolhido.value?.nomesVariaveis || []).map(() => '')
+}
+const enviarModelo = async () => {
+  modelo.enviando = true
+  try {
+    await Atd.enviarModelo({
+      conversaId: conversa.value!.id,
+      modeloId: modelo.id!,
+      parametros: modelo.parametros
+    })
+    modelo.visivel = false
+    colado = true
+    emit('alterado')
+  } finally {
+    modelo.enviando = false
+  }
+}
 const tentarDeNovo = async (m: Atd.Mensagem) => {
   await Atd.reenviar(m.conversaId, m.id)
   m.status = 'pendente'
@@ -466,6 +584,32 @@ onMounted(async () => {
   font-family: monospace;
   background: var(--el-fill-color);
   border-radius: 3px;
+}
+.texto.reacao {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.marca {
+  display: inline-block;
+  padding: 0 5px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color);
+  border-radius: 3px;
+}
+.previa {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 8px;
+}
+.anexo video {
+  max-width: 300px;
+  max-height: 240px;
+  margin-top: 4px;
+  border-radius: 6px;
 }
 .anexo img {
   max-width: 260px;

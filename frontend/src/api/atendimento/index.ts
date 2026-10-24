@@ -30,6 +30,10 @@ export interface ConversaResumo {
   ultimaMensagemTipo?: number
   naoLidas: number
   etiquetas: Etiqueta[]
+  /** canal com janela de 24 h (WhatsApp oficial, Instagram) */
+  janela?: boolean
+  /** até quando dá para mandar texto livre */
+  janelaAte?: number
 }
 
 export interface Anexo {
@@ -53,6 +57,8 @@ export interface Mensagem {
   status: 'pendente' | 'enviada' | 'entregue' | 'lida' | 'falhou'
   erro?: string
   criadaEm: number
+  /** modelo usado, localização, resposta de botão, reação, origem ("celular") e histórico */
+  dados?: Record<string, any>
 }
 
 export interface Contato {
@@ -107,6 +113,39 @@ export interface Credenciais {
   enderecoEntrada: string
 }
 
+export interface CanalConfig {
+  caixaId: number
+  canal?: string
+  phoneNumberId?: string
+  wabaId?: string
+  coexistencia?: boolean
+  igUserId?: string
+  // segredos: só na gravação (em branco = mantém)
+  token?: string
+  appSecret?: string
+  botToken?: string
+  // resposta
+  tokenDefinido?: boolean
+  appSecretDefinido?: boolean
+  botTokenDefinido?: boolean
+  verifyToken?: string
+  enderecoWebhook?: string
+  info?: Record<string, any>
+  testadoEm?: number
+  erroTeste?: string
+}
+
+export interface Modelo {
+  id: number
+  nome: string
+  idioma: string
+  categoria?: string
+  status: string
+  corpo: string
+  variaveis: number
+  nomesVariaveis: string[]
+}
+
 export interface RespostaPronta {
   id?: number
   atalho: string
@@ -118,9 +157,8 @@ export interface RespostaPronta {
 export const CANAIS: Record<string, { rotulo: string; icone: string }> = {
   api: { rotulo: 'API', icone: 'ep:connection' },
   whatsapp_cloud: { rotulo: 'WhatsApp (oficial)', icone: 'ep:chat-dot-round' },
-  whatsapp_evolution: { rotulo: 'WhatsApp (Evolution)', icone: 'ep:chat-dot-round' },
-  telegram: { rotulo: 'Telegram', icone: 'ep:promotion' },
-  widget: { rotulo: 'Site', icone: 'ep:monitor' }
+  instagram: { rotulo: 'Instagram', icone: 'ep:camera' },
+  telegram: { rotulo: 'Telegram', icone: 'ep:promotion' }
 }
 export const STATUS_CONVERSA = [
   { valor: 0, rotulo: 'Abertas' },
@@ -212,6 +250,23 @@ export const salvarCaixa = (data: Caixa): Promise<number> =>
   request.post({ url: '/atendimento/caixa/save', data })
 export const gerarCredenciais = (id: number): Promise<Credenciais> =>
   request.post({ url: '/atendimento/caixa/credenciais', params: { id } })
+export const getCanal = (id: number): Promise<CanalConfig> =>
+  request.get({ url: '/atendimento/caixa/canal', params: { id } })
+export const salvarCanal = (data: CanalConfig): Promise<CanalConfig> =>
+  request.post({ url: '/atendimento/caixa/canal', data })
+export const testarCanal = (id: number): Promise<CanalConfig> =>
+  request.post({ url: '/atendimento/caixa/canal/testar', params: { id } })
+export const sincronizarModelos = (id: number): Promise<number> =>
+  request.post({ url: '/atendimento/caixa/modelos/sincronizar', params: { id } })
+export const getModelosDaCaixa = (id: number): Promise<Modelo[]> =>
+  request.get({ url: '/atendimento/caixa/modelos', params: { id } })
+export const getModelos = (caixaId: number): Promise<Modelo[]> =>
+  request.get({ url: '/atendimento/modelo/list', params: { caixaId } })
+export const enviarModelo = (data: {
+  conversaId: number
+  modeloId: number
+  parametros: string[]
+}): Promise<number> => request.post({ url: '/atendimento/conversa/modelo', data })
 export const excluirCaixa = (id: number) =>
   request.delete({ url: '/atendimento/caixa/delete', params: { id } })
 

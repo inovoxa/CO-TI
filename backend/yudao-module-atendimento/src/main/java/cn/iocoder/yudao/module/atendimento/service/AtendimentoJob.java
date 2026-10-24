@@ -6,7 +6,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Tarefas do atendimento: entregar a fila aos canais e reabrir as conversas adiadas cujo prazo chegou.
+ * Tarefas do atendimento: entregar a fila aos canais, processar os webhooks pendentes (novas tentativas) e reabrir
+ * as conversas adiadas cujo prazo chegou.
  */
 @Slf4j
 @Component
@@ -16,6 +17,8 @@ public class AtendimentoJob {
     private EnvioService envioService;
     @Resource
     private ConversaService conversaService;
+    @Resource
+    private WebhookEntradaService webhookEntradaService;
 
     @Scheduled(fixedDelayString = "${coti.atendimento.envio-intervalo-ms:2000}", initialDelay = 30_000)
     public void enviar() {
@@ -35,6 +38,27 @@ public class AtendimentoJob {
             }
         } catch (Exception e) {
             log.error("[adiadas][falha]", e);
+        }
+    }
+
+    @Scheduled(fixedDelay = 3_000, initialDelay = 30_000)
+    public void webhooks() {
+        try {
+            webhookEntradaService.agendar();
+        } catch (Exception e) {
+            log.error("[webhooks][falha]", e);
+        }
+    }
+
+    @Scheduled(cron = "0 17 3 * * *")
+    public void limparWebhooks() {
+        try {
+            int n = webhookEntradaService.limpar();
+            if (n > 0) {
+                log.info("[limparWebhooks][{} webhooks antigos apagados]", n);
+            }
+        } catch (Exception e) {
+            log.error("[limparWebhooks][falha]", e);
         }
     }
 

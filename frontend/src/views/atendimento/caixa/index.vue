@@ -41,8 +41,13 @@
         </template>
       </el-table-column>
       <el-table-column align="right" label="Abertas" prop="abertas" width="90" />
-      <el-table-column width="100">
+      <el-table-column width="130">
         <template #default="{ row }">
+          <el-tooltip v-if="CANAIS_EXTERNOS.includes(row.canal)" content="Configurar o canal">
+            <el-button link type="primary" @click="canalRef.abrir(row)"
+              ><Icon icon="ep:setting"
+            /></el-button>
+          </el-tooltip>
           <el-button link type="primary" @click="abrir(row)"><Icon icon="ep:edit" /></el-button>
           <el-button link type="danger" @click="excluir(row)"><Icon icon="ep:delete" /></el-button>
         </template>
@@ -61,14 +66,19 @@
       /></el-form-item>
       <el-form-item label="Canal">
         <el-select v-model="form.dados.canal" :disabled="!!form.dados.id">
-          <el-option
-            v-for="(c, k) in CANAIS"
-            :key="k"
-            :disabled="k !== 'api'"
-            :label="c.rotulo + (k !== 'api' ? ' (em breve)' : '')"
-            :value="k"
-          />
+          <el-option v-for="(c, k) in CANAIS" :key="k" :label="c.rotulo" :value="k" />
         </el-select>
+        <div v-if="!form.dados.id && CANAIS_EXTERNOS.includes(form.dados.canal)" class="dica"
+          >Depois de salvar, configure as credenciais do canal.</div
+        >
+      </el-form-item>
+      <el-form-item
+        v-if="form.dados.id && CANAIS_EXTERNOS.includes(form.dados.canal)"
+        label="Credenciais"
+      >
+        <el-button size="small" @click="canalRef.abrir(form.dados)"
+          >Configurar credenciais e webhook</el-button
+        >
       </el-form-item>
       <template v-if="form.dados.canal === 'api'">
         <el-form-item label="Webhook das respostas">
@@ -146,12 +156,15 @@
       /></el-form-item>
     </el-form>
   </Dialog>
+
+  <CanalConfig ref="canalRef" />
 </template>
 
 <script lang="ts" setup>
 import * as Atd from '@/api/atendimento'
 import { CANAIS } from '@/api/atendimento'
 import * as UserApi from '@/api/system/user'
+import CanalConfig from './CanalConfig.vue'
 
 defineOptions({ name: 'AtendimentoCaixa' })
 const message = useMessage()
@@ -161,6 +174,8 @@ const loading = ref(true)
 const lista = ref<Atd.Caixa[]>([])
 const usuarios = ref<UserApi.UserVO[]>([])
 const formRef = ref()
+const canalRef = ref()
+const CANAIS_EXTERNOS = ['whatsapp_cloud', 'instagram', 'telegram']
 const form = reactive({ visivel: false, dados: {} as Atd.Caixa })
 const cred = reactive({ visivel: false, dados: undefined as Atd.Credenciais | undefined })
 
@@ -196,6 +211,10 @@ const salvar = async () => {
   await carregar()
   if (!form.dados.id) {
     form.dados = { ...lista.value.find((c) => c.id === id)! }
+    if (CANAIS_EXTERNOS.includes(form.dados.canal)) {
+      form.visivel = false
+      canalRef.value.abrir(form.dados)
+    }
   } else {
     form.visivel = false
   }

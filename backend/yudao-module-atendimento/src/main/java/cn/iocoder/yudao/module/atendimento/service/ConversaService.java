@@ -51,6 +51,8 @@ public class ConversaService {
     private static final long ORIGEM_WHATSAPP = 4L;
     private static final long ORIGEM_OUTRO = 7L;
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+    /** Canais em que o provedor só aceita texto livre até 24 h depois da última mensagem do contato */
+    public static final Set<String> JANELA_24H = Set.of("whatsapp_cloud", "instagram");
 
     /** Resultado de uma mensagem recebida pelo canal. */
     public record Entrada(Long conversaId, Long mensagemId, boolean duplicada, boolean nova) {
@@ -88,75 +90,155 @@ public class ConversaService {
     private ChamadoMapper chamadoMapper;
     @Resource
     private ChamadoAtorMapper chamadoAtorMapper;
+    @Resource
+    private AvisoLeitura avisoLeitura;
 
     // =====================================================================================================
     // Entrada (o canal recebeu uma mensagem do contato)
     // =====================================================================================================
 
     /**
-     * Mensagem do contato. Acha a conversa em andamento (ou a resolvida há pouco, que reabre) ou abre uma nova;
-     * a mesma mensagem recebida duas vezes ({@code idExterno} repetido) não duplica.
+     * O que um canal recebeu. {@code eco}: mensagem que a própria empresa mandou por fora do CO-TI (o atendente
+     * respondeu pelo aplicativo no celular — coexistência do WhatsApp — ou pelo app do Instagram): entra como saída,
+     * sem ir para a fila de envio. {@code historico}: conversa antiga trazida quando o número foi conectado, gravada
+     * com a data original numa conversa já resolvida, sem saudação, distribuição nem aviso às telas.
      */
+    public record Recebida(String origemId, ContatoService.Origem contato, String conteudo, String formato,
+                           List<AtendimentoVOs.Anexo> anexos, String idExterno, Map<String, Object> dados,
+                           boolean eco, LocalDateTime quando, boolean historico) {
+
+        public static Recebida simples(String origemId, ContatoService.Origem contato, String conteudo, String formato,
+                                       List<AtendimentoVOs.Anexo> anexos, String idExterno) {
+            return new Recebida(origemId, contato, conteudo, formato, anexos, idExterno, Map.of(), false, null, false);
+        }
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public Entrada receber(CaixaDO caixa, String origemId, ContatoService.Origem origem, String conteudo, String formato,
                            List<AtendimentoVOs.Anexo> anexos, String idExterno) {
-        if (idExterno != null && mensagemMapper.contarExterno(caixa.getId(), idExterno) > 0) {
+        return receber(caixa, Recebida.simples(origemId, origem, conteudo, formato, anexos, idExterno));
+    }
+
+    /**
+     * Mensagem que chegou pelo canal. Acha a conversa em andamento (ou a resolvida há pouco, que reabre) ou abre uma
+     * nova; a mesma mensagem recebida duas vezes ({@code idExterno} repetido) não duplica.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Entrada receber(CaixaDO caixa, Recebida r) {
+        if (r.idExterno() != null && mensagemMapper.contarExterno(caixa.getId(), r.idExterno()) > 0) {
             return new Entrada(null, null, true, false);
         }
-        ContatoCanalDO cc = contatoService.encontrarOuCriar(caixa.getId(), origemId, origem);
+        ContatoCanalDO cc = contatoService.encontrarOuCriar(caixa.getId(), r.origemId(), r.contato());
         ContatoDO contato = contatoMapper.selectById(cc.getContatoId());
         LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime quando = r.quando() != null && r.quando().isBefore(agora) ? r.quando() : agora;
         ConversaDO c = conversaMapper.selectOne(new LambdaQueryWrapperX<ConversaDO>().eq(ConversaDO::getContatoCanalId, cc.getId())
                 .orderByDesc(ConversaDO::getId).last("LIMIT 1"));
         boolean nova = false;
         if (c != null) {
             c = conversaMapper.selectByIdParaAtualizar(c.getId());
         }
-        if (c != null && c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo()
-                && (c.getResolvidaEm() == null || c.getResolvidaEm().isBefore(agora.minusHours(caixa.getReabrirHoras())))) {
-            c = null;   // resolvida há muito tempo: conversa nova
-        }
-        if (c == null) {
-            c = ConversaDO.builder().caixaId(caixa.getId()).contatoId(contato.getId()).contatoCanalId(cc.getId())
-                    .status(ConversaStatus.ABERTA.getCodigo()).ultimaAtividadeEm(agora).ultimaEntradaEm(agora).atributos("{}").build();
-            conversaMapper.insert(c);
-            nova = true;
-        } else if (c.getStatus() != ConversaStatus.ABERTA.getCodigo() && c.getStatus() != ConversaStatus.PENDENTE.getCodigo()) {
-            String antes = ConversaStatus.de(c.getStatus()).getRotulo().toLowerCase(Locale.ROOT);
-            c.setStatus(ConversaStatus.ABERTA.getCodigo());
-            c.setAdiadaAte(null);
-            c.setResolvidaEm(null);
-            // o atendente de antes continua, se ainda atende a caixa
-            if (c.getAgenteId() != null && !acesso.membro(caixa.getId(), c.getAgenteId())) {
-                c.setAgenteId(null);
+        if (r.historico()) {
+            // histórico da conexão: entra na conversa que já existe ou numa resolvida, com a data original
+            if (c == null) {
+                c = ConversaDO.builder().caixaId(caixa.getId()).contatoId(contato.getId()).contatoCanalId(cc.getId())
+                        .status(ConversaStatus.RESOLVIDA.getCodigo()).resolvidaEm(agora).ultimaAtividadeEm(quando).atributos("{}").build();
+                conversaMapper.insert(c);
+                nova = true;
             }
-            gravar(c);
-            atividade(c, "Conversa " + antes + " reaberta: o contato escreveu de novo");
+        } else {
+            if (c != null && c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo()
+                    && (c.getResolvidaEm() == null || c.getResolvidaEm().isBefore(agora.minusHours(caixa.getReabrirHoras())))) {
+                c = null;   // resolvida há muito tempo: conversa nova
+            }
+            if (c == null) {
+                c = ConversaDO.builder().caixaId(caixa.getId()).contatoId(contato.getId()).contatoCanalId(cc.getId())
+                        .status(ConversaStatus.ABERTA.getCodigo()).ultimaAtividadeEm(agora).atributos("{}").build();
+                conversaMapper.insert(c);
+                nova = true;
+            } else if (!r.eco() && c.getStatus() != ConversaStatus.ABERTA.getCodigo() && c.getStatus() != ConversaStatus.PENDENTE.getCodigo()) {
+                // só o contato reabre: a resposta dada pelo celular numa conversa resolvida fica registrada nela
+                String antes = ConversaStatus.de(c.getStatus()).getRotulo().toLowerCase(Locale.ROOT);
+                c.setStatus(ConversaStatus.ABERTA.getCodigo());
+                c.setAdiadaAte(null);
+                c.setResolvidaEm(null);
+                // o atendente de antes continua, se ainda atende a caixa
+                if (c.getAgenteId() != null && !acesso.membro(caixa.getId(), c.getAgenteId())) {
+                    c.setAgenteId(null);
+                }
+                gravar(c);
+                atividade(c, "Conversa " + antes + " reaberta: o contato escreveu de novo");
+            }
         }
-        if (Boolean.TRUE.equals(contato.getBloqueado())) {
+        if (!r.eco() && Boolean.TRUE.equals(contato.getBloqueado())) {
             log.info("[receber][contato {} bloqueado: mensagem ignorada]", contato.getId());
             return new Entrada(c.getId(), null, false, nova);
         }
-        MensagemDO m = MensagemDO.builder().conversaId(c.getId()).tipo(MensagemTipo.ENTRADA).privada(false).remetenteTipo("contato")
-                .remetenteId(contato.getId()).conteudo(conteudo == null ? "" : conteudo).formato(formato == null ? "texto" : formato)
-                .anexos(JsonUtils.toJsonString(anexos == null ? List.of() : anexos)).idExterno(idExterno).status("enviada").build();
+        MensagemDO m = MensagemDO.builder().conversaId(c.getId()).tipo(r.eco() ? MensagemTipo.SAIDA : MensagemTipo.ENTRADA).privada(false)
+                .remetenteTipo(r.eco() ? "agente" : "contato").remetenteId(r.eco() ? null : contato.getId())
+                .conteudo(r.conteudo() == null ? "" : r.conteudo()).formato(r.formato() == null ? "texto" : r.formato())
+                .anexos(JsonUtils.toJsonString(r.anexos() == null ? List.of() : r.anexos()))
+                .dados(JsonUtils.toJsonString(r.dados() == null ? Map.of() : r.dados()))
+                .idExterno(r.idExterno()).status("enviada").build();
+        m.setCreateTime(quando);
+        m.setUpdateTime(quando);
         mensagemMapper.insert(m);
-        c.setUltimaEntradaEm(agora);
-        c.setUltimaAtividadeEm(agora);
-        conversaMapper.updateById(ConversaDO.builder().id(c.getId()).ultimaEntradaEm(agora).ultimaAtividadeEm(agora).build());
-        ConversaDO alvo = c;
-        if (nova && vazio(caixa.getSaudacao()) != null) {
-            saida(alvo, caixa.getSaudacao(), "sistema", null, List.of());
+        // datas da conversa só avançam (o histórico chega fora de ordem)
+        ConversaDO u = ConversaDO.builder().id(c.getId()).build();
+        boolean mudou = false;
+        if (c.getUltimaAtividadeEm() == null || quando.isAfter(c.getUltimaAtividadeEm())) {
+            u.setUltimaAtividadeEm(quando);
+            mudou = true;
         }
-        // conversa nova, ou reaberta sem atendente: distribui
-        if (alvo.getAgenteId() == null && alvo.getStatus() == ConversaStatus.ABERTA.getCodigo()
-                && Boolean.TRUE.equals(caixa.getAtribuicaoAutomatica())) {
-            atribuicaoService.distribuir(alvo, caixa).ifPresent(a -> atividade(alvo, "Atribuída automaticamente a " + nome(a)));
+        if (!r.eco() && (c.getUltimaEntradaEm() == null || quando.isAfter(c.getUltimaEntradaEm()))) {
+            u.setUltimaEntradaEm(quando);
+            c.setUltimaEntradaEm(quando);
+            mudou = true;
         }
-        publicar("mensagem", c.getId(), m.getId());
-        publicar("conversa", c.getId(), null);
+        if (r.eco() && !r.historico() && c.getPrimeiraRespostaEm() == null) {
+            u.setPrimeiraRespostaEm(quando);
+            mudou = true;
+        }
+        if (mudou) {
+            conversaMapper.updateById(u);
+        }
+        if (!r.historico() && !r.eco()) {
+            ConversaDO alvo = c;
+            if (nova && vazio(caixa.getSaudacao()) != null) {
+                saida(alvo, caixa.getSaudacao(), "sistema", null, List.of());
+            }
+            // conversa nova, ou reaberta sem atendente: distribui
+            if (alvo.getAgenteId() == null && alvo.getStatus() == ConversaStatus.ABERTA.getCodigo()
+                    && Boolean.TRUE.equals(caixa.getAtribuicaoAutomatica())) {
+                atribuicaoService.distribuir(alvo, caixa).ifPresent(a -> atividade(alvo, "Atribuída automaticamente a " + nome(a)));
+            }
+        }
+        if (!r.historico()) {
+            publicar("mensagem", c.getId(), m.getId());
+            publicar("conversa", c.getId(), null);
+        }
         return new Entrada(c.getId(), m.getId(), false, nova);
     }
+
+    /**
+     * Aviso do provedor sobre uma mensagem que a central mandou (enviada, entregue, lida, falhou), pelo id que ele deu.
+     *
+     * @return false se a mensagem não é desta caixa (ou ainda não teve o id gravado)
+     */
+    public boolean entregaPeloExterno(Long caixaId, String idExterno, String status, String erro) {
+        if (idExterno == null) {
+            return false;
+        }
+        for (MensagemDO m : mensagemMapper.selectList(new LambdaQueryWrapperX<MensagemDO>().eq(MensagemDO::getIdExterno, idExterno))) {
+            ConversaDO c = conversaMapper.selectById(m.getConversaId());
+            if (c != null && c.getCaixaId().equals(caixaId)) {
+                atualizarEntrega(m.getId(), status, erro, null);
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     // =====================================================================================================
     // Consulta
@@ -334,6 +416,42 @@ public class ConversaService {
         return id;
     }
 
+    /**
+     * Modelo aprovado (WhatsApp): é a forma de falar com o contato depois de 24 h. Numa conversa resolvida, reabre —
+     * a ideia é justamente retomar o contato.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long responderModelo(Long conversaId, String texto, Map<String, Object> dados, Long userId) {
+        ConversaDO c = existente(conversaId);
+        acesso.exigir(c, userId);
+        c = conversaMapper.selectByIdParaAtualizar(c.getId());
+        Long id = saida(c, texto, "agente", userId, List.of(), dados);
+        LocalDateTime agora = LocalDateTime.now();
+        ConversaDO u = ConversaDO.builder().id(c.getId()).ultimaAtividadeEm(agora).build();
+        if (c.getPrimeiraRespostaEm() == null) {
+            u.setPrimeiraRespostaEm(agora);
+        }
+        if (c.getAgenteId() == null) {
+            u.setAgenteId(userId);
+            c.setAgenteId(userId);
+            atividade(c, nome(userId) + " assumiu a conversa");
+        }
+        if (c.getStatus() != ConversaStatus.ABERTA.getCodigo()) {
+            boolean resolvida = c.getStatus() == ConversaStatus.RESOLVIDA.getCodigo();
+            c.setStatus(ConversaStatus.ABERTA.getCodigo());
+            c.setResolvidaEm(null);
+            c.setAdiadaAte(null);
+            gravar(c);
+            if (resolvida) {
+                atividade(c, nome(userId) + " reabriu a conversa com um modelo");
+            }
+        }
+        conversaMapper.updateById(u);
+        conversaLeituraMapper.marcar(c.getId(), userId, id);
+        publicar("conversa", c.getId(), null);
+        return id;
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void atribuir(AtendimentoVOs.AtribuirReq req, Long userId) {
         ConversaDO c = existente(req.getConversaId());
@@ -427,6 +545,12 @@ public class ConversaService {
                 .orderByDesc(MensagemDO::getId).last("LIMIT 1"));
         if (ultima != null) {
             conversaLeituraMapper.marcar(conversaId, userId, ultima.getId());
+        }
+        // o contato vê que foi lido (WhatsApp oficial, Instagram): uma vez por mensagem dele
+        MensagemDO entrada = mensagemMapper.selectOne(new LambdaQueryWrapperX<MensagemDO>().eq(MensagemDO::getConversaId, conversaId)
+                .eq(MensagemDO::getTipo, MensagemTipo.ENTRADA).orderByDesc(MensagemDO::getId).last("LIMIT 1"));
+        if (entrada != null && entrada.getIdExterno() != null && (entrada.getDados() == null || !entrada.getDados().contains("\"lidaAvisada\""))) {
+            avisoLeitura.avisar(c, entrada);
         }
     }
 
@@ -522,9 +646,14 @@ public class ConversaService {
 
     /** Mensagem para o contato: grava e coloca na fila do canal. */
     Long saida(ConversaDO c, String conteudo, String remetenteTipo, Long remetenteId, List<AtendimentoVOs.Anexo> anexos) {
+        return saida(c, conteudo, remetenteTipo, remetenteId, anexos, null);
+    }
+
+    Long saida(ConversaDO c, String conteudo, String remetenteTipo, Long remetenteId, List<AtendimentoVOs.Anexo> anexos,
+               Map<String, Object> dados) {
         MensagemDO m = MensagemDO.builder().conversaId(c.getId()).tipo(MensagemTipo.SAIDA).privada(false).remetenteTipo(remetenteTipo)
-                .remetenteId(remetenteId).conteudo(conteudo).formato(anexos.isEmpty() ? "texto" : "arquivo")
-                .anexos(JsonUtils.toJsonString(anexos)).status("pendente").build();
+                .remetenteId(remetenteId).conteudo(conteudo).formato(dados != null && dados.containsKey("modelo") ? "modelo" : anexos.isEmpty() ? "texto" : "arquivo")
+                .anexos(JsonUtils.toJsonString(anexos)).dados(dados == null ? null : JsonUtils.toJsonString(dados)).status("pendente").build();
         mensagemMapper.insert(m);
         envioMapper.insert(EnvioDO.builder().mensagemId(m.getId()).status("pendente").tentativas(0).criadoEm(LocalDateTime.now()).build());
         publicar("mensagem", c.getId(), m.getId());
@@ -603,6 +732,11 @@ public class ConversaService {
             r.setAdiadaAte(c.getAdiadaAte());
             r.setUltimaAtividadeEm(c.getUltimaAtividadeEm());
             r.setUltimaEntradaEm(c.getUltimaEntradaEm());
+            // WhatsApp oficial e Instagram: texto livre só até 24 h depois da última mensagem do contato
+            if (cx != null && JANELA_24H.contains(cx.getCanal())) {
+                r.setJanelaAte(c.getUltimaEntradaEm() == null ? null : c.getUltimaEntradaEm().plusHours(24));
+                r.setJanela(true);
+            }
             MensagemDO u = ultimas.get(c.getId());
             if (u != null) {
                 r.setUltimaMensagem(cortar(u.getConteudo().isEmpty() && !"[]".equals(u.getAnexos()) ? "📎 anexo" : u.getConteudo(), 120));
@@ -636,8 +770,12 @@ public class ConversaService {
             v.setPrivada(m.getPrivada());
             v.setRemetenteTipo(m.getRemetenteTipo());
             v.setRemetenteId(m.getRemetenteId());
+            Map<String, Object> dados = m.getDados() == null ? Map.of() : JsonUtils.parseObject(m.getDados(), new TypeReference<Map<String, Object>>() {
+            });
+            v.setDados(dados);
             v.setRemetente(switch (m.getRemetenteTipo()) {
-                case "agente" -> Optional.ofNullable(nomesAgentes.get(m.getRemetenteId())).map(AdminUserRespDTO::getNickname).orElse("Atendente");
+                case "agente" -> m.getRemetenteId() == null && "celular".equals(dados.get("origem")) ? "Pelo celular"
+                        : Optional.ofNullable(nomesAgentes.get(m.getRemetenteId())).map(AdminUserRespDTO::getNickname).orElse("Atendente");
                 case "contato" -> nomesContatos.getOrDefault(m.getRemetenteId(), "Contato");
                 case "robo" -> "Assistente";
                 default -> "Sistema";

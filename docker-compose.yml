@@ -66,6 +66,10 @@ services:
       CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
       CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
       CO_TI_URL_PUBLICA: ${CO_TI_URL_PUBLICA:-}
+      # só em teste: apontam os canais para simuladores (padrão = APIs oficiais)
+      CO_TI_META_GRAPH_URL: ${CO_TI_META_GRAPH_URL:-https://graph.facebook.com/v23.0}
+      CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
+      CO_TI_TELEGRAM_URL: ${CO_TI_TELEGRAM_URL:-https://api.telegram.org}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
       CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
     volumes:

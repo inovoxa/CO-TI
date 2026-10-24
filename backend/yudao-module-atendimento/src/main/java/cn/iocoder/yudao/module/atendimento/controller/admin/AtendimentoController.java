@@ -40,6 +40,10 @@ public class AtendimentoController {
     private EnvioService envioService;
     @Resource
     private Acesso acesso;
+    @Resource
+    private CanalConfigService canalConfigService;
+    @Resource
+    private ModeloService modeloService;
 
     // ================= conversas =================
 
@@ -128,6 +132,20 @@ public class AtendimentoController {
         return success(conversaService.abrirChamado(req, avisar, getLoginUserId()));
     }
 
+    @PostMapping("/conversa/modelo")
+    @Operation(summary = "Mandar um modelo aprovado (WhatsApp, depois das 24 h)")
+    @PreAuthorize(Q)
+    public CommonResult<Long> modelo(@Valid @RequestBody AtendimentoVOs.ModeloReq req) {
+        return success(modeloService.enviar(req, getLoginUserId()));
+    }
+
+    @GetMapping("/modelo/list")
+    @Operation(summary = "Modelos aprovados da caixa")
+    @PreAuthorize(Q)
+    public CommonResult<List<AtendimentoVOs.Modelo>> modelos(@RequestParam("caixaId") Long caixaId) {
+        return success(modeloService.listar(caixaId, getLoginUserId(), false));
+    }
+
     @PostMapping("/mensagem/reenviar")
     @Operation(summary = "Tentar de novo uma mensagem que falhou")
     @PreAuthorize(Q)
@@ -180,6 +198,41 @@ public class AtendimentoController {
     @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
     public CommonResult<AtendimentoVOs.Credenciais> credenciais(@RequestParam("id") Long id) {
         return success(caixaService.gerarCredenciais(id, getLoginUserId()));
+    }
+
+    @GetMapping("/caixa/canal")
+    @Operation(summary = "Configuração do canal (WhatsApp oficial, Instagram, Telegram), sem os segredos")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<AtendimentoVOs.CanalConfigResp> canal(@RequestParam("id") Long id) {
+        return success(canalConfigService.obter(id));
+    }
+
+    @PostMapping("/caixa/canal")
+    @Operation(summary = "Gravar a configuração do canal (segredo em branco mantém o atual)")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<AtendimentoVOs.CanalConfigResp> salvarCanal(@Valid @RequestBody AtendimentoVOs.CanalConfig req) {
+        return success(canalConfigService.salvar(req, getLoginUserId()));
+    }
+
+    @PostMapping("/caixa/canal/testar")
+    @Operation(summary = "Testar a conexão e ligar o recebimento (assinatura do app / webhook do Telegram)")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<AtendimentoVOs.CanalConfigResp> testarCanal(@RequestParam("id") Long id) {
+        return success(canalConfigService.testar(id, getLoginUserId()));
+    }
+
+    @PostMapping("/caixa/modelos/sincronizar")
+    @Operation(summary = "Buscar os modelos de mensagem da conta do WhatsApp")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<Integer> sincronizarModelos(@RequestParam("id") Long id) {
+        return success(modeloService.sincronizar(id));
+    }
+
+    @GetMapping("/caixa/modelos")
+    @Operation(summary = "Todos os modelos da caixa, com a situação na Meta")
+    @PreAuthorize("@ss.hasPermission('atendimento:caixa:update')")
+    public CommonResult<List<AtendimentoVOs.Modelo>> modelosDaCaixa(@RequestParam("id") Long id) {
+        return success(modeloService.listar(id, getLoginUserId(), true));
     }
 
     @DeleteMapping("/caixa/delete")

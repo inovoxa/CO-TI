@@ -33,4 +33,12 @@ public interface ErrorCodeConstants {
     ErrorCode RESPOSTA_NAO_EXISTE = new ErrorCode(1_102_003_010, "Resposta pronta não encontrada");
     ErrorCode RESPOSTA_DUPLICADA = new ErrorCode(1_102_003_011, "Já existe uma resposta com esse atalho");
 
+    ErrorCode CANAL_TIPO_ERRADO = new ErrorCode(1_102_004_000, "Esta caixa não é do canal {}");
+    ErrorCode CANAL_CAMPO_OBRIGATORIO = new ErrorCode(1_102_004_001, "Informe {}");
+    ErrorCode CANAL_DUPLICADO = new ErrorCode(1_102_004_002, "{} já está na caixa \"{}\"");
+    ErrorCode CANAL_SEM_URL_PUBLICA = new ErrorCode(1_102_004_003, "Defina CO_TI_URL_PUBLICA (endereço público do CO-TI): o provedor precisa dele para mandar as mensagens");
+    ErrorCode CANAL_TESTE_FALHOU = new ErrorCode(1_102_004_004, "{}");
+    ErrorCode MODELO_NAO_EXISTE = new ErrorCode(1_102_004_010, "Modelo não encontrado ou não aprovado");
+    ErrorCode MODELO_PARAMETROS = new ErrorCode(1_102_004_011, "O modelo pede {} variáveis; preencha todas");
+
 }

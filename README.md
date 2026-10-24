@@ -124,7 +124,40 @@ Menu *Atendimento* (perfil novo **Atendente**; Service Desk e NOC também atende
   `POST /admin-api/atendimento/canal/api/mensagem` (cabeçalho `X-CO-TI-Token`) e recebe as respostas no webhook da
   caixa, assinadas (`X-CO-TI-Assinatura: sha256=<HMAC do corpo>`). Token e segredo aparecem uma vez só, ao gerar.
   Defina `CO_TI_URL_PUBLICA` para os links dos anexos saírem completos.
-- WhatsApp, Telegram e o widget do site vêm na F2b.
+
+### WhatsApp oficial, Instagram e Telegram (F2b)
+
+Crie a caixa com o canal e clique na engrenagem para configurar as credenciais. "Testar conexão" confere o token e
+liga o recebimento. Defina `CO_TI_URL_PUBLICA` (endereço público, com HTTPS): é para lá que os provedores mandam os
+webhooks. Tokens e chaves ficam cifrados com a chave-mestra e nunca voltam para a tela. Os webhooks são gravados assim
+que a assinatura confere e processados em seguida, numa fila. Falha passageira (como baixar uma mídia) é tentada de
+novo, e mensagem repetida não duplica. O corpo bruto é apagado depois de 7 dias.
+
+- **WhatsApp oficial (Cloud API):**
+  - No app da Meta, informe o *Phone number ID*, o *WABA ID*, um token permanente de usuário do sistema
+    (`whatsapp_business_messaging` e `whatsapp_business_management`) e a chave secreta do app.
+  - Cadastre o webhook `https://<CO_TI_URL_PUBLICA>/admin-api/atendimento/canal/meta/webhook`, com o token de
+    verificação mostrado na tela, e assine o campo `messages`.
+  - Recebe texto, imagem, áudio, vídeo, documento, figurinha, localização, contatos, respostas de botão e reações.
+    Manda texto e anexos (enviados antes à Meta) e mostra *enviada / entregue / lida*.
+  - Abrir a conversa avisa a leitura ao contato.
+  - **Janela de 24 h:** depois de 24 h sem mensagem do contato, a tela avisa e o envio passa a ser por **modelo
+    aprovado**. Para isso, sincronize os modelos na configuração da caixa e use o botão *Modelo* na conversa.
+    Mandar um modelo numa conversa resolvida a reabre.
+- **Coexistência:** o mesmo número continua no aplicativo WhatsApp Business do celular. Ligue a opção e assine também
+  os campos `smb_message_echoes`, `history` e `smb_app_state_sync`. Com isso:
+  - o que o atendente responde pelo celular entra na conversa como *Pelo celular*;
+  - o histórico compartilhado na conexão vira conversas resolvidas, com as datas originais;
+  - os contatos da agenda do aplicativo viram contatos.
+- **Instagram (Direct):**
+  - Informe o token da conta profissional (API com login do Instagram) e a chave secreta do app. O teste preenche a
+    conta.
+  - Use o mesmo webhook da Meta, com os campos `messages` e `messaging_seen`.
+  - O contato novo vem com nome e @usuário. O que a empresa manda pelo app do Instagram também entra como
+    *Pelo celular*.
+  - Anexos vão como link do CO-TI, por isso exigem `CO_TI_URL_PUBLICA`.
+- **Telegram:** cole o token do @BotFather. "Testar e conectar" cadastra o webhook do robô, com um segredo que o CO-TI
+  confere em cada chamada. Só conversas privadas com o robô.
 
 ## Importar do GLPI 10/11
 

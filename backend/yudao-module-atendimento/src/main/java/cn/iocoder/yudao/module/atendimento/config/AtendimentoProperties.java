@@ -19,4 +19,16 @@ public class AtendimentoProperties {
     /** Intervalo da fila de envio aos canais (ms). */
     private long envioIntervaloMs = 2000;
 
+    /** API Graph da Meta (WhatsApp Cloud API), com a versão. Trocado só em teste (simulador). */
+    private String metaGraphUrl = "https://graph.facebook.com/v23.0";
+
+    /** API do Instagram (Instagram API com login do Instagram), com a versão. */
+    private String instagramUrl = "https://graph.instagram.com/v23.0";
+
+    /** Bot API do Telegram. */
+    private String telegramUrl = "https://api.telegram.org";
+
+    /** Tamanho máximo de mídia baixada dos canais (bytes). */
+    private long midiaMaxima = 25L * 1024 * 1024;
+
 }

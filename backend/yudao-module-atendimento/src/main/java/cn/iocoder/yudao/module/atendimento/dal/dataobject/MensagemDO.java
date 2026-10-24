@@ -39,5 +39,7 @@ public class MensagemDO extends BaseDO {
     private String status;
     private String erro;
     private Long respondeA;
+    /** JSON com o que é próprio do tipo: modelo usado, localização, resposta de botão, origem (celular, histórico) */
+    private String dados;
 
 }
