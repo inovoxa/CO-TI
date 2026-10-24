@@ -109,6 +109,23 @@ projetos e atualizam as tarefas pelas quais respondem.
 - Contratos, licenças, orçamentos e projetos seguem o escopo de unidade do perfil.
 - O pedido de aprovação de mudança agora também vai por e-mail para quem precisa aprovar.
 
+## Atendimento (F2a)
+
+Menu *Atendimento* (perfil novo **Atendente**; Service Desk e NOC também atendem).
+
+- **Conversas** em três colunas e em tempo real: fila (minhas, sem atendente, todas; abertas, pendentes, adiadas,
+  resolvidas), a conversa com notas internas, respostas prontas (digite `/` no campo) e anexos, e o painel do
+  contato com os chamados dele e as conversas anteriores.
+- **Atribuição automática** para quem está disponível, com limite de conversas por pessoa
+  (`docs/specs/atendimento-atribuicao.md`). Quem responde uma conversa sem atendente fica com ela.
+- **Abrir chamado** a partir da conversa: o solicitante é a pessoa do portal ligada ao contato (pelo e-mail ou
+  pelo celular, com ou sem o nono dígito) ou, sem conta, o e-mail do contato.
+- **Canal API** para integrar qualquer sistema: o sistema manda as mensagens para
+  `POST /admin-api/atendimento/canal/api/mensagem` (cabeçalho `X-CO-TI-Token`) e recebe as respostas no webhook da
+  caixa, assinadas (`X-CO-TI-Assinatura: sha256=<HMAC do corpo>`). Token e segredo aparecem uma vez só, ao gerar.
+  Defina `CO_TI_URL_PUBLICA` para os links dos anexos saírem completos.
+- WhatsApp, Telegram e o widget do site vêm na F2b.
+
 ## Importar do GLPI 10/11
 
 *Service Desk → Configuração → Importar do GLPI* (só o administrador). Lê o banco MySQL/MariaDB do GLPI e traz:

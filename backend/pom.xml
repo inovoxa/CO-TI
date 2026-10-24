@@ -18,6 +18,7 @@
         <!-- CO-TI -->
         <module>yudao-module-identidade</module>
         <module>yudao-module-itsm</module>
+        <module>yudao-module-atendimento</module>
 <!--        <module>yudao-module-member</module>-->
 <!--        <module>yudao-module-bpm</module>-->
 <!--        <module>yudao-module-report</module>-->

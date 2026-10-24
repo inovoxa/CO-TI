@@ -231,9 +231,20 @@ public class ChamadoService {
         return criar(req, userId, null, userId == null ? email : null);
     }
 
+    /**
+     * Chamado aberto por um atendente a partir de uma conversa do atendimento. O solicitante é a pessoa do portal
+     * ligada ao contato ({@code req.solicitanteIds}) ou, sem conta, o e-mail do contato; o atendente fica como quem
+     * registrou. Sem nenhum dos dois, o atendente é o solicitante.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long criarDeConversa(ChamadoVOs.CriarReq req, Long atendenteId, String emailContato) {
+        return criar(req, atendenteId, null, req.getSolicitanteIds().isEmpty() ? emailContato : null);
+    }
+
     private Long criar(ChamadoVOs.CriarReq req, Long userId, Long formularioId, String emailSolicitante) {
+        // sem solicitante informado, quem abre é o solicitante; a não ser que ele venha por e-mail
         List<Long> solicitantes = !req.getSolicitanteIds().isEmpty() ? req.getSolicitanteIds()
-                : userId != null ? List.of(userId) : List.of();
+                : userId != null && emailSolicitante == null ? List.of(userId) : List.of();
         validarPessoas(solicitantes, req.getObservadorIds(), req.getTecnicoIds());
         req.getEquipeIds().forEach(cadastros::obterEquipe);
         if (req.getCategoriaId() != null) {

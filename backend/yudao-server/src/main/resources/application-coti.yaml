@@ -276,6 +276,9 @@ monitor:
     nivel-minimo: critico
 
 coti:
+  atendimento:
+    # Endereço público do CO-TI: monta os links dos anexos mandados aos canais e o endereço dos webhooks de entrada
+    url-publica: ${CO_TI_URL_PUBLICA:}
   itsm:
     fechamento-automatico-dias: ${CO_TI_ITSM_FECHAMENTO_DIAS:7}   # negativo = nunca fecha sozinho
     pesquisa-satisfacao: ${CO_TI_ITSM_PESQUISA:true}
