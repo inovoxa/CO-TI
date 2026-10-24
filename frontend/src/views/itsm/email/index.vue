@@ -218,7 +218,10 @@
   <!-- modelo -->
   <Dialog v-model="ev.visivel" :title="ev.form?.nome" width="860px">
     <el-form v-if="ev.form" label-width="110px">
-      <el-form-item label="Para">
+      <el-form-item v-if="ev.form.destinatariosFixos" label="Para">
+        {{ ev.form.destinatariosFixos }}
+      </el-form-item>
+      <el-form-item v-else label="Para">
         <el-checkbox v-model="ev.form.paraSolicitante">Solicitantes</el-checkbox>
         <el-checkbox v-model="ev.form.paraObservador">Observadores</el-checkbox>
         <el-checkbox v-model="ev.form.paraTecnico">Técnicos e equipes</el-checkbox>
@@ -229,7 +232,10 @@
       /></el-form-item>
       <el-form-item label="Texto (HTML)">
         <el-input v-model="ev.form.corpo" :rows="10" class="font-mono" type="textarea" />
-        <div class="dica">
+        <div v-if="ev.form.variaveis" class="dica">
+          Variáveis: <code>{{ ev.form.variaveis }}</code> — escapadas.
+        </div>
+        <div v-else class="dica">
           Variáveis:
           <code v-pre
             >{{ chamado.id }} {{ chamado.titulo }} {{ chamado.status }} {{ chamado.prioridade }}
@@ -336,6 +342,7 @@ const caixas = ref<ItsmApi.EmailCaixa[]>([])
 const categorias = ref<ItsmApi.Categoria[]>([])
 
 const destinatarios = (e: ItsmApi.EmailEvento) =>
+  e.destinatariosFixos ||
   [
     e.paraSolicitante && 'solicitantes',
     e.paraObservador && 'observadores',
@@ -343,7 +350,8 @@ const destinatarios = (e: ItsmApi.EmailEvento) =>
     e.paraAprovador && 'aprovadores'
   ]
     .filter(Boolean)
-    .join(', ') || '—'
+    .join(', ') ||
+  '—'
 const corResultado = (r: string) =>
   r === 'recusado' ? 'danger' : r === 'ignorado' ? 'info' : 'success'
 

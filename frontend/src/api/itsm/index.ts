@@ -667,6 +667,8 @@ export interface EmailEvento {
   assunto: string
   corpo: string
   ordem: number
+  destinatariosFixos?: string
+  variaveis?: string
 }
 
 export interface EmailCaixa {

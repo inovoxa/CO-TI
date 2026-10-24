@@ -26,5 +26,9 @@ public class EmailEventoDO {
     private String assunto;
     private String corpo;
     private Integer ordem;
+    /** Avisos com destinatários decididos pelo sistema (ex.: aprovadores da mudança); a tela não mostra os papéis */
+    private String destinatariosFixos;
+    /** Variáveis aceitas no modelo, para a tela */
+    private String variaveis;
 
 }

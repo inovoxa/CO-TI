@@ -90,6 +90,25 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - No chamado, o técnico cria um problema ou uma mudança a partir dele, ou vincula a um existente.
 - Os dois seguem o escopo de unidade do perfil, como os chamados.
 
+## Governança
+
+Menu próprio, com o novo perfil **Gestão de TI**. NOC e Service Desk consultam fornecedores, contratos, licenças e
+projetos e atualizam as tarefas pelas quais respondem.
+
+- **Fornecedores:** CNPJ (inclusive o alfanumérico, em vigor desde julho de 2026) ou CPF validados.
+- **Contratos:** vigência, aviso prévio e renovação (não renova, tácita ou expressa). A situação é calculada:
+  vigente, perto do prazo, vencido, encerrado. O responsável recebe e-mail antes do prazo, uma vez por prazo; a
+  tarefa diária roda às 7h (`coti.itsm.governanca.alerta-cron`).
+- **Custos e orçamentos:** custos lançados em contratos, projetos e licenças; o orçamento mostra quanto já foi
+  usado e o saldo.
+- **Licenças:** quantidade comprada, quem usa (pessoa ou equipamento), aviso de expiração e bloqueio de uso além
+  do comprado (a não ser que seja permitido). A chave fica cifrada com a chave-mestra; só quem tem *Ver a chave da
+  licença* a vê, e isso vai para a trilha de auditoria.
+- **Projetos:** tarefas e subtarefas com cronograma (Gantt), marcos, horas, equipe, custos e vínculos com chamados,
+  problemas e mudanças. O andamento é calculado pelas tarefas, ponderado pelas horas previstas.
+- Contratos, licenças, orçamentos e projetos seguem o escopo de unidade do perfil.
+- O pedido de aprovação de mudança agora também vai por e-mail para quem precisa aprovar.
+
 ## Segurança
 
 - **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.

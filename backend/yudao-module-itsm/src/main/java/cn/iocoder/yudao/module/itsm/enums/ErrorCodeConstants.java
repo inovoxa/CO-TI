@@ -99,4 +99,36 @@ public interface ErrorCodeConstants {
     ErrorCode MUDANCA_APROVACAO_DE_OUTRO = new ErrorCode(1_101_007_014, "Só a pessoa indicada pode responder esta aprovação");
     ErrorCode ITIL_SEM_SOLUCAO_CHAMADOS = new ErrorCode(1_101_007_015, "Só a solução pode solucionar os chamados vinculados");
 
+    // governança 1-101-008-xxx
+    ErrorCode FORNECEDOR_NAO_EXISTE = new ErrorCode(1_101_008_000, "Fornecedor não encontrado");
+    ErrorCode FORNECEDOR_DOCUMENTO_INVALIDO = new ErrorCode(1_101_008_001, "CNPJ ou CPF inválido");
+    ErrorCode FORNECEDOR_DOCUMENTO_DUPLICADO = new ErrorCode(1_101_008_002, "Já existe um fornecedor com esse CNPJ/CPF");
+    ErrorCode FORNECEDOR_EM_USO = new ErrorCode(1_101_008_003, "O fornecedor tem contratos ou licenças; desative em vez de excluir");
+    ErrorCode CONTRATO_NAO_EXISTE = new ErrorCode(1_101_008_010, "Contrato não encontrado");
+    ErrorCode CONTRATO_DADOS_INVALIDOS = new ErrorCode(1_101_008_011, "{}");
+    ErrorCode CONTRATO_RENOVACAO_INVALIDA = new ErrorCode(1_101_008_012, "Só contrato com renovação expressa e não encerrado pode ser renovado");
+    ErrorCode CUSTO_NAO_EXISTE = new ErrorCode(1_101_008_020, "Custo não encontrado");
+    ErrorCode CUSTO_SEM_PERMISSAO = new ErrorCode(1_101_008_021, "Sem permissão para lançar custos aqui");
+    ErrorCode CUSTO_PERIODO = new ErrorCode(1_101_008_022, "O fim do custo precisa ser depois do início");
+    ErrorCode LICENCA_NAO_EXISTE = new ErrorCode(1_101_008_030, "Licença não encontrada");
+    ErrorCode LICENCA_ESGOTADA = new ErrorCode(1_101_008_031, "Todas as {} licenças estão em uso; aumente a quantidade ou permita excesso");
+    ErrorCode LICENCA_USO_DUPLICADO = new ErrorCode(1_101_008_032, "Já usa esta licença");
+    ErrorCode LICENCA_USO_INVALIDO = new ErrorCode(1_101_008_033, "Informe uma pessoa ou um equipamento");
+    ErrorCode LICENCA_SEM_CHAVE = new ErrorCode(1_101_008_034, "Esta licença não tem chave guardada");
+    ErrorCode GOVERNANCA_SEM_CHAVE_MESTRA = new ErrorCode(1_101_008_035, "Defina CO_TI_CHAVE_MESTRA no servidor: sem ela a chave não pode ser guardada");
+    ErrorCode LICENCA_QUANTIDADE_MENOR = new ErrorCode(1_101_008_036, "Há {} em uso: libere antes de diminuir a quantidade (ou permita excesso)");
+    ErrorCode LICENCA_USO_NAO_EXISTE = new ErrorCode(1_101_008_037, "Uso de licença não encontrado");
+    ErrorCode ORCAMENTO_NAO_EXISTE = new ErrorCode(1_101_008_040, "Orçamento não encontrado");
+    ErrorCode ORCAMENTO_EM_USO = new ErrorCode(1_101_008_041, "O orçamento tem custos lançados ou projetos ligados");
+    ErrorCode ORCAMENTO_PERIODO = new ErrorCode(1_101_008_042, "O fim do orçamento precisa ser depois do início");
+    ErrorCode PROJETO_NAO_EXISTE = new ErrorCode(1_101_008_050, "Projeto não encontrado");
+    ErrorCode PROJETO_CODIGO_DUPLICADO = new ErrorCode(1_101_008_051, "Já existe um projeto com esse código");
+    ErrorCode PROJETO_DATAS = new ErrorCode(1_101_008_052, "O fim previsto precisa ser depois do início");
+    ErrorCode PROJETO_TAREFA_NAO_EXISTE = new ErrorCode(1_101_008_053, "Tarefa não encontrada");
+    ErrorCode PROJETO_TAREFA_PAI_INVALIDA = new ErrorCode(1_101_008_054, "A tarefa superior precisa ser do mesmo projeto e não pode ser ela mesma nem uma subtarefa dela");
+    ErrorCode PROJETO_TAREFA_SEM_PERMISSAO = new ErrorCode(1_101_008_055, "Só o responsável pela tarefa ou quem gerencia o projeto pode alterá-la");
+    ErrorCode PROJETO_VINCULO_DUPLICADO = new ErrorCode(1_101_008_056, "Já está ligado ao projeto");
+    ErrorCode PROJETO_VINCULO_NAO_EXISTE = new ErrorCode(1_101_008_057, "Vínculo não encontrado");
+    ErrorCode PROJETO_ENCERRADO = new ErrorCode(1_101_008_058, "O projeto está concluído ou cancelado; reabra mudando a situação");
+
 }

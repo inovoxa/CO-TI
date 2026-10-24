@@ -212,6 +212,49 @@ public class NotificacaoEmailService {
         return v;
     }
 
+    /**
+     * Aviso fora do ciclo do chamado (aprovação de mudança, contrato ou licença perto do prazo). Quem chama decide os
+     * destinatários; o modelo vem de itsm.email_evento. Grava na fila dentro da transação de quem chama: se ela
+     * desfizer, o aviso some junto.
+     *
+     * @param valores variáveis do modelo, em texto puro (o modelo escapa)
+     * @param linkRelativo caminho no portal, ex.: "/aprovacoes"
+     * @return quantas mensagens entraram na fila
+     */
+    @DataPermission(enable = false)
+    public int avisar(String evento, Collection<Long> pessoas, Map<String, String> valores, String linkRelativo) {
+        EmailConfigDO cfg = emailConfigMapper.selectById(EmailConfigDO.UNICA);
+        if (cfg == null || !Boolean.TRUE.equals(cfg.getAtivo()) || cfg.getRemetenteEmail() == null || pessoas.isEmpty()) {
+            return 0;
+        }
+        EmailEventoDO modelo = emailEventoMapper.selectById(evento);
+        if (modelo == null || !Boolean.TRUE.equals(modelo.getAtivo())) {
+            return 0;
+        }
+        Map<String, String> para = new LinkedHashMap<>();
+        adminUserMapper.selectBatchIds(new HashSet<>(pessoas)).stream().filter(u -> CommonStatusEnum.isEnable(u.getStatus()))
+                .forEach(u -> adicionar(para, u, "tecnico"));
+        if (para.isEmpty()) {
+            return 0;
+        }
+        String portal = cfg.getUrlPortal() == null ? "" : cfg.getUrlPortal().replaceAll("/+$", "");
+        Map<String, String> v = new HashMap<>(valores);
+        v.put("portal", portal);
+        v.put("link", portal + linkRelativo);
+        String corpo = absolutos("<div style=\"font-family:Arial,sans-serif;font-size:14px\">" + Email.preencher(modelo.getCorpo(), v)
+                + (cfg.getAssinatura() == null ? "" : "<div style=\"margin-top:16px;color:#666\">" + cfg.getAssinatura() + "</div>")
+                + "<p style=\"margin-top:20px;color:#9a9a9a;font-size:11px\">Aviso automático do CO-TI. Não responda este e-mail.</p></div>", portal);
+        String assunto = Email.preencherAssunto(modelo.getAssunto(), v);
+        String dominio = dominio(cfg.getRemetenteEmail());
+        LocalDateTime agora = LocalDateTime.now();
+        for (String endereco : para.keySet()) {
+            emailSaidaMapper.insert(EmailSaidaDO.builder().evento(evento).para(endereco).assunto(assunto).corpo(corpo)
+                    .messageId("<coti.aviso." + UUID.randomUUID().toString().replace("-", "") + "@" + dominio + ">")
+                    .status("pendente").tentativas(0).criadoEm(agora).build());
+        }
+        return para.size();
+    }
+
     /** Marca de resposta no topo, o corpo do modelo, a assinatura e o rodapé. */
     static String envelope(String corpo, EmailConfigDO cfg, Long chamadoId) {
         return "<div style=\"color:#9a9a9a;font-size:11px\">" + Email.MARCA_RESPOSTA + "</div>"

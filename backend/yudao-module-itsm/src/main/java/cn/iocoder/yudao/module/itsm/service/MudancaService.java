@@ -71,6 +71,8 @@ public class MudancaService {
     private AdminUserApi adminUserApi;
     @Resource
     private ItsmProperties props;
+    @Resource
+    private cn.iocoder.yudao.module.itsm.service.email.NotificacaoEmailService notificacaoEmailService;
 
     // ------------------------------------------------------------------ consulta
 
@@ -343,6 +345,7 @@ public class MudancaService {
                 .stream().map(MudancaAprovacaoDO::getAprovadorId).collect(Collectors.toSet());
         LocalDateTime agora = LocalDateTime.now();
         List<String> nomes = new ArrayList<>();
+        List<Long> novos = new ArrayList<>();
         for (Long a : aprovadores) {
             if (jaPendentes.contains(a)) {
                 continue;
@@ -352,12 +355,22 @@ public class MudancaService {
                     .comentarioPedido(req.getComentario() == null || req.getComentario().isBlank() ? null : req.getComentario().trim())
                     .pedidoEm(agora).build());
             nomes.add(apoio.nomePessoa(a));
+            novos.add(a);
         }
         if (nomes.isEmpty()) {
             return;
         }
         mudarStatus(m, userId, () -> CicloItil.aguardarAprovacao(m));
         apoio.registrar(OBJ, m.getId(), userId, "aprovacao+", null, String.join(", ", nomes));
+        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        notificacaoEmailService.avisar("mudanca-aprovacao", novos, Map.of(
+                "mudanca.id", String.valueOf(m.getId()),
+                "mudanca.titulo", m.getTitulo(),
+                "mudanca.tipo", MudancaTipo.de(m.getTipo()).getRotulo(),
+                "mudanca.janela", m.getInicioPrevisto() == null ? "não marcada"
+                        : f.format(m.getInicioPrevisto()) + " até " + f.format(m.getFimPrevisto()),
+                "comentario", req.getComentario() == null ? "" : req.getComentario().trim(),
+                "autor", apoio.nomePessoa(userId)), "/aprovacoes");
     }
 
     /** O aprovador responde; a situação global da rodada decide se a mudança foi aceita ou recusada. */

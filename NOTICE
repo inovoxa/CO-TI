@@ -40,7 +40,11 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
     * indicadores do Service Desk (src/Stat.php, src/Glpi/Dashboard/);
     * problemas e mudanças: situações, campos de análise e de planejamento, tarefas, soluções, vínculos com
       chamados e aprovação de mudança (src/Problem.php, src/Change.php, src/Problem_Ticket.php,
-      src/Change_Ticket.php, src/Change_Problem.php, src/ChangeValidation.php).
+      src/Change_Ticket.php, src/Change_Problem.php, src/ChangeValidation.php);
+    * governança: fornecedores, contratos (vigência, aviso prévio, renovação tácita/expressa e aviso de
+      vencimento), custos, orçamentos, licenças de software e projetos com tarefas (src/Supplier.php,
+      src/Contract.php, src/ContractCost.php, src/Infocom.php, src/Budget.php, src/SoftwareLicense.php,
+      src/Project.php, src/ProjectTask.php, src/ProjectTeam.php, src/Itil_Project.php).
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.
