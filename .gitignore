@@ -6,3 +6,6 @@ frontend/dist*/
 .logs/
 ferramentas/traducao/pendentes.*
 ferramentas/traducao/__pycache__/
+
+# chaves SSH e outros segredos montados no contêiner
+segredos/

@@ -2,9 +2,12 @@ package cn.iocoder.yudao.module.itsm.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.HistoricoDO;
+import cn.iocoder.yudao.module.itsm.service.AprovacaoService;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
+import cn.iocoder.yudao.module.itsm.service.FormularioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -27,6 +30,10 @@ public class ChamadoController {
 
     @Resource
     private ChamadoService chamadoService;
+    @Resource
+    private AprovacaoService aprovacaoService;
+    @Resource
+    private FormularioService formularioService;
 
     @GetMapping("/page")
     @Operation(summary = "Fila de chamados")
@@ -155,6 +162,31 @@ public class ChamadoController {
     public CommonResult<Boolean> reabrir(@RequestParam("id") Long id) {
         chamadoService.reabrir(id, getLoginUserId());
         return success(true);
+    }
+
+    // -------- aprovações e catálogo --------
+
+    @PostMapping("/pedir-aprovacao")
+    @Operation(summary = "Pedir aprovação a uma ou mais pessoas")
+    @PreAuthorize("@ss.hasPermission('itsm:chamado:pedir-aprovacao')")
+    public CommonResult<Boolean> pedirAprovacao(@Valid @RequestBody CatalogoVOs.PedirAprovacaoReq req) {
+        chamadoService.pedirAprovacao(req.getChamadoId(), req.getAprovadorIds(), req.getComentario(), getLoginUserId());
+        return success(true);
+    }
+
+    @GetMapping("/aprovacoes")
+    @Operation(summary = "Aprovações do chamado")
+    @PreAuthorize("@ss.hasPermission('itsm:chamado:query')")
+    public CommonResult<List<CatalogoVOs.AprovacaoResp>> aprovacoes(@RequestParam("id") Long id) {
+        return success(aprovacaoService.converter(chamadoService.aprovacoes(id, getLoginUserId()), false));
+    }
+
+    @GetMapping("/respostas-formulario")
+    @Operation(summary = "Respostas do formulário que abriu o chamado")
+    @PreAuthorize("@ss.hasPermission('itsm:chamado:query')")
+    public CommonResult<Map<String, String>> respostasFormulario(@RequestParam("id") Long id) {
+        chamadoService.obter(id, getLoginUserId()); // confere o escopo
+        return success(formularioService.respostasDoChamado(id));
     }
 
 }

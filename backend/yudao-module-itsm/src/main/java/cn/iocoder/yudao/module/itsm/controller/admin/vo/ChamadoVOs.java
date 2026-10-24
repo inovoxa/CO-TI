@@ -95,6 +95,14 @@ public final class ChamadoVOs {
         private Boolean satisfacaoPendente;
         private Integer satisfacaoNota;
         private String satisfacaoComentario;
+        @Schema(description = "Aprovação: 1 sem, 2 aguardando, 3 aprovado, 4 recusado")
+        private Integer validacao;
+        private String validacaoRotulo;
+        @Schema(description = "Operação no AD pedida pelo formulário: situação e ação")
+        private String execucaoAdStatus;
+        private String execucaoAdAcao;
+        @Schema(description = "Há senha provisória para o solicitante ver (uma vez)")
+        private Boolean senhaDisponivel;
         /** Ações que o usuário logado pode fazer agora (a tela mostra só esses botões) */
         private List<String> acoes = new ArrayList<>();
     }

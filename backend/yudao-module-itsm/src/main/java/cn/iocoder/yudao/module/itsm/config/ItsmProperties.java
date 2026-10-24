@@ -28,4 +28,30 @@ public class ItsmProperties {
     /** Envia a pesquisa de satisfação ao fechar. */
     private boolean pesquisaSatisfacao = true;
 
+    /** Execução de operações no AD pedidas pelos formulários. */
+    private Ad ad = new Ad();
+
+    @Data
+    public static class Ad {
+        /** desligado (fica aguardando um técnico) | simulado (demonstração/testes) | ssh */
+        private String modo = "desligado";
+        /** Tentativas em falha de infraestrutura (rede, SSH) antes de marcar erro */
+        private int tentativas = 3;
+        private Ssh ssh = new Ssh();
+    }
+
+    @Data
+    public static class Ssh {
+        private String host;
+        private int porta = 22;
+        private String usuario;
+        /** Caminho do arquivo da chave privada (preferido) */
+        private String chavePrivada;
+        private String senha;
+        /** Impressão digital da chave do servidor, ex.: SHA256:abc... (obrigatória) */
+        private String impressaoDigital;
+        private String script = "C:\\Scripts\\Executar_AD_Automatico.ps1";
+        private int tempoLimiteSeg = 120;
+    }
+
 }

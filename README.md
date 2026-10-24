@@ -44,6 +44,20 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Sincronização completa:** a cada 30 min (`CO_TI_AD_CRON`). Quem sumiu do AD ou foi desativado lá é desativado no portal. Se mais de 20% das contas sumirem de uma vez, a sincronização não desativa ninguém e registra um erro, porque o mais provável é um filtro mal configurado.
 - O certificado do DC precisa ser confiável. Use `CO_TI_AD_TRUSTSTORE` com a CA do AD; `ldap://` sem StartTLS é recusado.
 
+## Catálogo de serviços e automação no AD
+
+- **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (25 formulários:
+  usuários e acessos, informática, saúde e telefonia). O usuário pede em *Catálogo de serviços*; o pedido vira chamado
+  e passa pelas *Regras* (atribuição, categoria, urgência, pedido de aprovação).
+- **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
+  O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
+- **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,
+  transferência, criar e-mail) rodam o `deploy/ad/Executar_AD_Automatico.ps1` por SSH **depois** da aprovação.
+  Configuração e instalação em [deploy/ad/README.md](deploy/ad/README.md). `CO_TI_AD_EXECUCAO=simulado` serve para
+  demonstração. A senha provisória fica cifrada e o solicitante a vê uma única vez.
+- A fila fica em *Service Desk → Execuções no AD*: erro de negócio não se repete sozinho; falha de rede tenta de novo
+  em 1, 5 e 15 minutos.
+
 ## Segurança
 
 - **Verificação em duas etapas (TOTP):** cada usuário ativa em *Meu perfil → Verificação em duas etapas*.

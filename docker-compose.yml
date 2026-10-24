@@ -59,8 +59,15 @@ services:
       CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}
       CO_TI_AD_BIND_SENHA: ${CO_TI_AD_BIND_SENHA:-}
       CO_TI_AD_BASE_USUARIOS: ${CO_TI_AD_BASE_USUARIOS:-}
+      CO_TI_AD_EXECUCAO: ${CO_TI_AD_EXECUCAO:-desligado}
+      CO_TI_AD_SSH_HOST: ${CO_TI_AD_SSH_HOST:-}
+      CO_TI_AD_SSH_PORTA: ${CO_TI_AD_SSH_PORTA:-22}
+      CO_TI_AD_SSH_USUARIO: ${CO_TI_AD_SSH_USUARIO:-}
+      CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
+      CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
     volumes:
       - backendlogs:/app/logs
+      - ./segredos:/run/segredos:ro
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

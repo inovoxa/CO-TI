@@ -4,12 +4,23 @@
       <div v-if="chamado" class="min-w-0">
         <div class="truncate text-17px font-bold">#{{ chamado.id }} · {{ chamado.titulo }}</div>
         <div class="mt-6px flex flex-wrap items-center gap-6px">
-          <el-tag :type="corStatus(chamado.status)" disable-transitions>{{ chamado.statusRotulo }}</el-tag>
+          <el-tag :type="corStatus(chamado.status)" disable-transitions>{{
+            chamado.statusRotulo
+          }}</el-tag>
           <el-tag :type="corPrioridade(chamado.prioridade)" disable-transitions effect="plain">
             Prioridade {{ chamado.prioridadeRotulo.toLowerCase() }}
           </el-tag>
           <el-tag disable-transitions effect="plain" type="info">{{ chamado.tipoRotulo }}</el-tag>
-          <el-tag v-if="chamado.slaVencido" disable-transitions effect="dark" type="danger">Prazo vencido</el-tag>
+          <el-tag v-if="chamado.slaVencido" disable-transitions effect="dark" type="danger"
+            >Prazo vencido</el-tag
+          >
+          <el-tag
+            v-if="chamado.validacao && chamado.validacao > 1"
+            :type="corAprovacao(chamado.validacao)"
+            disable-transitions
+          >
+            {{ chamado.validacaoRotulo }}
+          </el-tag>
         </div>
       </div>
     </template>
@@ -19,7 +30,11 @@
       <div class="min-w-0 flex-1">
         <!-- ações -->
         <div class="mb-12px flex flex-wrap gap-8px">
-          <el-button v-if="pode('assumir')" type="primary" @click="acao(() => ItsmApi.assumir(chamado!.id))">
+          <el-button
+            v-if="pode('assumir')"
+            type="primary"
+            @click="acao(() => ItsmApi.assumir(chamado!.id))"
+          >
             <Icon class="mr-4px" icon="ep:pointer" />Assumir
           </el-button>
           <el-button v-if="pode('pendente')" @click="pendente">
@@ -28,9 +43,17 @@
           <el-button v-if="pode('retomar')" @click="acao(() => ItsmApi.retomar(chamado!.id))">
             <Icon class="mr-4px" icon="ep:video-play" />Retomar
           </el-button>
-          <el-button v-if="pode('fechar')" @click="fechar"><Icon class="mr-4px" icon="ep:circle-check" />Fechar</el-button>
-          <el-button v-if="pode('reabrir')" @click="acao(() => ItsmApi.reabrir(chamado!.id), 'Reabrir o chamado?')">
+          <el-button v-if="pode('fechar')" @click="fechar"
+            ><Icon class="mr-4px" icon="ep:circle-check" />Fechar</el-button
+          >
+          <el-button
+            v-if="pode('reabrir')"
+            @click="acao(() => ItsmApi.reabrir(chamado!.id), 'Reabrir o chamado?')"
+          >
             <Icon class="mr-4px" icon="ep:refresh-left" />Reabrir
+          </el-button>
+          <el-button v-if="pode('pedir-aprovacao')" @click="abrirPedidoAprovacao">
+            <Icon class="mr-4px" icon="ep:select" />Pedir aprovação
           </el-button>
           <el-button v-if="pode('excluir')" plain type="danger" @click="excluir">
             <Icon class="mr-4px" icon="ep:delete" />Excluir
@@ -46,10 +69,33 @@
           type="success"
         >
           <template #default>
-            <el-button size="small" type="success" @click="avaliar(true)">Aprovar em nome dele (fecha)</el-button>
+            <el-button size="small" type="success" @click="avaliar(true)"
+              >Aprovar em nome dele (fecha)</el-button
+            >
             <el-button size="small" @click="avaliar(false)">Recusar (reabre)</el-button>
           </template>
         </el-alert>
+
+        <el-alert
+          v-if="chamado.execucaoAdStatus"
+          :closable="false"
+          :type="corExecucao"
+          class="mb-12px"
+          show-icon
+        >
+          <template #title>
+            Automação no AD ({{ rotuloAcaoAd }}):
+            {{ STATUS_EXECUCAO[chamado.execucaoAdStatus]?.rotulo || chamado.execucaoAdStatus }}
+          </template>
+          <span v-if="chamado.execucaoAdStatus === 'erro'"
+            >Veja o motivo e repita ou cancele em Service Desk → Execuções no AD.</span
+          >
+        </el-alert>
+        <PainelAprovacoes
+          :itens="aprovacoes"
+          :rotulo="chamado.validacaoRotulo"
+          :validacao="chamado.validacao"
+        />
 
         <el-tabs v-model="aba">
           <el-tab-pane label="Linha do tempo" name="tempo">
@@ -60,13 +106,28 @@
             <!-- nova interação -->
             <el-card v-if="tiposPermitidos.length" class="mt-12px" shadow="never">
               <el-radio-group v-model="nova.tipo" class="mb-10px" size="small">
-                <el-radio-button v-for="t in tiposPermitidos" :key="t.valor" :value="t.valor">{{ t.rotulo }}</el-radio-button>
+                <el-radio-button v-for="t in tiposPermitidos" :key="t.valor" :value="t.valor">{{
+                  t.rotulo
+                }}</el-radio-button>
               </el-radio-group>
-              <Editor :key="editorKey" v-model="nova.conteudo" directory="chamados" height="180px" />
+              <Editor
+                :key="editorKey"
+                v-model="nova.conteudo"
+                directory="chamados"
+                height="180px"
+              />
               <div class="mt-10px flex flex-wrap items-center gap-12px">
-                <el-checkbox v-if="nova.tipo !== 'solucao'" v-model="nova.privado">Privado (só a equipe técnica vê)</el-checkbox>
+                <el-checkbox v-if="nova.tipo !== 'solucao'" v-model="nova.privado"
+                  >Privado (só a equipe técnica vê)</el-checkbox
+                >
                 <template v-if="nova.tipo === 'tarefa'">
-                  <el-input-number v-model="nova.tempoGastoMin" :max="100000" :min="0" controls-position="right" size="small" />
+                  <el-input-number
+                    v-model="nova.tempoGastoMin"
+                    :max="100000"
+                    :min="0"
+                    controls-position="right"
+                    size="small"
+                  />
                   <span class="text-13px">min gastos</span>
                   <el-select v-model="nova.estadoTarefa" class="!w-140px" size="small">
                     <el-option :value="1" label="A fazer" />
@@ -91,7 +152,9 @@
 
           <el-tab-pane v-if="pode('editar')" label="Dados" name="dados">
             <el-form :model="edicao" label-width="100px">
-              <el-form-item label="Título"><el-input v-model="edicao.titulo" maxlength="255" /></el-form-item>
+              <el-form-item label="Título"
+                ><el-input v-model="edicao.titulo" maxlength="255"
+              /></el-form-item>
               <el-form-item label="Tipo">
                 <el-radio-group v-model="edicao.tipo">
                   <el-radio-button :value="1">Incidente</el-radio-button>
@@ -100,22 +163,46 @@
               </el-form-item>
               <el-form-item label="Categoria">
                 <el-select v-model="edicao.categoriaId" class="w-full" clearable filterable>
-                  <el-option v-for="c in categorias" :key="c.id" :label="c.nomeCompleto" :value="c.id" />
+                  <el-option
+                    v-for="c in categorias"
+                    :key="c.id"
+                    :label="c.nomeCompleto"
+                    :value="c.id"
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item label="Urgência">
                 <el-select v-model="edicao.urgencia">
-                  <el-option v-for="e in ESCALA" :key="e.valor" :label="e.rotulo" :value="e.valor" />
+                  <el-option
+                    v-for="e in ESCALA"
+                    :key="e.valor"
+                    :label="e.rotulo"
+                    :value="e.valor"
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item label="Impacto">
                 <el-select v-model="edicao.impacto">
-                  <el-option v-for="e in ESCALA" :key="e.valor" :label="e.rotulo" :value="e.valor" />
+                  <el-option
+                    v-for="e in ESCALA"
+                    :key="e.valor"
+                    :label="e.rotulo"
+                    :value="e.valor"
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item label="Prioridade">
-                <el-select v-model="edicao.prioridade" clearable placeholder="Recalcular pela matriz">
-                  <el-option v-for="p in PRIORIDADES" :key="p.valor" :label="p.rotulo" :value="p.valor" />
+                <el-select
+                  v-model="edicao.prioridade"
+                  clearable
+                  placeholder="Recalcular pela matriz"
+                >
+                  <el-option
+                    v-for="p in PRIORIDADES"
+                    :key="p.valor"
+                    :label="p.rotulo"
+                    :value="p.valor"
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item label="Descrição">
@@ -129,7 +216,12 @@
 
           <el-tab-pane label="Histórico" lazy name="historico">
             <el-table :data="historico" size="small">
-              <el-table-column :formatter="dateFormatter" label="Quando" prop="momento" width="160" />
+              <el-table-column
+                :formatter="dateFormatter"
+                label="Quando"
+                prop="momento"
+                width="160"
+              />
               <el-table-column label="Quem" prop="usuario" width="150" />
               <el-table-column label="O quê" width="140">
                 <template #default="{ row }">{{ rotuloCampo(row.campo) }}</template>
@@ -144,22 +236,35 @@
       <!-- coluna lateral -->
       <div class="w-300px shrink-0">
         <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="Categoria">{{ chamado.categoria || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="Categoria">{{
+            chamado.categoria || '—'
+          }}</el-descriptions-item>
           <el-descriptions-item label="Unidade">{{ chamado.dept || '—' }}</el-descriptions-item>
           <el-descriptions-item label="Origem">
-            {{ chamado.origem || '—' }}<span v-if="chamado.origemAutomatica"> ({{ chamado.origemAutomatica }})</span>
+            {{ chamado.origem || '—'
+            }}<span v-if="chamado.origemAutomatica"> ({{ chamado.origemAutomatica }})</span>
           </el-descriptions-item>
-          <el-descriptions-item label="Aberto em">{{ formatDate(chamado.abertoEm) }}</el-descriptions-item>
+          <el-descriptions-item label="Aberto em">{{
+            formatDate(chamado.abertoEm)
+          }}</el-descriptions-item>
           <el-descriptions-item label="Assumido">
-            <template v-if="chamado.assumidoEm">{{ formatDate(chamado.assumidoEm) }} ({{ duracao(chamado.tempoAssumirSeg) }})</template>
+            <template v-if="chamado.assumidoEm"
+              >{{ formatDate(chamado.assumidoEm) }} ({{
+                duracao(chamado.tempoAssumirSeg)
+              }})</template
+            >
             <template v-else>—</template>
           </el-descriptions-item>
           <el-descriptions-item label="Assumir até">
             <template v-if="chamado.prazoAtendimento">
-              <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.atendimentoVencido }">
+              <span
+                :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.atendimentoVencido }"
+              >
                 {{ formatDate(chamado.prazoAtendimento) }}
               </span>
-              <div class="text-12px text-[var(--el-text-color-secondary)]">{{ chamado.slaAtendimento }}</div>
+              <div class="text-12px text-[var(--el-text-color-secondary)]">{{
+                chamado.slaAtendimento
+              }}</div>
             </template>
             <template v-else>sem SLA</template>
           </el-descriptions-item>
@@ -168,21 +273,41 @@
               <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.slaVencido }">
                 {{ formatDate(chamado.prazoSolucao) }}
               </span>
-              <el-tag v-if="chamado.status === 4" class="ml-4px" disable-transitions size="small" type="warning">pausado</el-tag>
-              <div class="text-12px text-[var(--el-text-color-secondary)]">{{ chamado.slaSolucao }}</div>
+              <el-tag
+                v-if="chamado.status === 4"
+                class="ml-4px"
+                disable-transitions
+                size="small"
+                type="warning"
+                >pausado</el-tag
+              >
+              <div class="text-12px text-[var(--el-text-color-secondary)]">{{
+                chamado.slaSolucao
+              }}</div>
             </template>
             <template v-else>sem SLA</template>
           </el-descriptions-item>
           <el-descriptions-item v-if="chamado.solucionadoEm" label="Solucionado">
             {{ formatDate(chamado.solucionadoEm) }} ({{ duracao(chamado.tempoSolucaoSeg) }})
           </el-descriptions-item>
-          <el-descriptions-item v-if="chamado.fechadoEm" label="Fechado">{{ formatDate(chamado.fechadoEm) }}</el-descriptions-item>
-          <el-descriptions-item label="Pendente">{{ duracao(chamado.esperaSeg) }}</el-descriptions-item>
-          <el-descriptions-item label="Tempo gasto">{{ duracao(chamado.tempoGastoSeg) }}</el-descriptions-item>
-          <el-descriptions-item v-if="chamado.satisfacaoNota || chamado.satisfacaoPendente" label="Satisfação">
+          <el-descriptions-item v-if="chamado.fechadoEm" label="Fechado">{{
+            formatDate(chamado.fechadoEm)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="Pendente">{{
+            duracao(chamado.esperaSeg)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="Tempo gasto">{{
+            duracao(chamado.tempoGastoSeg)
+          }}</el-descriptions-item>
+          <el-descriptions-item
+            v-if="chamado.satisfacaoNota || chamado.satisfacaoPendente"
+            label="Satisfação"
+          >
             <template v-if="chamado.satisfacaoNota">
               <el-rate :model-value="chamado.satisfacaoNota" disabled />
-              <div v-if="chamado.satisfacaoComentario" class="text-12px">“{{ chamado.satisfacaoComentario }}”</div>
+              <div v-if="chamado.satisfacaoComentario" class="text-12px"
+                >“{{ chamado.satisfacaoComentario }}”</div
+              >
             </template>
             <template v-else>aguardando resposta</template>
           </el-descriptions-item>
@@ -191,7 +316,13 @@
         <div v-for="g in GRUPOS" :key="g.tipo" class="mt-14px">
           <div class="mb-6px flex items-center justify-between text-13px font-bold">
             {{ g.rotulo }}
-            <el-button v-if="pode('atribuir')" link size="small" type="primary" @click="abrirAtor(g.tipo)">
+            <el-button
+              v-if="pode('atribuir')"
+              link
+              size="small"
+              type="primary"
+              @click="abrirAtor(g.tipo)"
+            >
               <Icon icon="ep:plus" />
             </el-button>
           </div>
@@ -206,22 +337,71 @@
             >
               <Icon :icon="a.equipeId ? 'ep:user-filled' : 'ep:user'" class="mr-2px" />{{ a.nome }}
             </el-tag>
-            <span v-if="!(chamado as any)[g.campo].length" class="text-12px text-[var(--el-text-color-placeholder)]">ninguém</span>
+            <span
+              v-if="!(chamado as any)[g.campo].length"
+              class="text-12px text-[var(--el-text-color-placeholder)]"
+              >ninguém</span
+            >
           </div>
         </div>
       </div>
     </div>
 
+    <!-- pedir aprovação -->
+    <Dialog v-model="pedido.visivel" title="Pedir aprovação" width="460px">
+      <el-form label-position="top">
+        <el-form-item label="Quem aprova (todos precisam aprovar)">
+          <el-select
+            v-model="pedido.aprovadorIds"
+            class="w-full"
+            filterable
+            multiple
+            placeholder="Pessoas"
+          >
+            <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="O que precisa ser aprovado">
+          <el-input v-model="pedido.comentario" maxlength="2000" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button
+          :disabled="!pedido.aprovadorIds.length"
+          type="primary"
+          @click="enviarPedidoAprovacao"
+          >Pedir</el-button
+        >
+        <el-button @click="pedido.visivel = false">Cancelar</el-button>
+      </template>
+    </Dialog>
+
     <!-- incluir participante -->
-    <Dialog v-model="atorDialogo.visivel" :title="`Incluir ${atorDialogo.rotulo.toLowerCase()}`" width="420px">
+    <Dialog
+      v-model="atorDialogo.visivel"
+      :title="`Incluir ${atorDialogo.rotulo.toLowerCase()}`"
+      width="420px"
+    >
       <el-radio-group v-if="atorDialogo.tipo === 2" v-model="atorDialogo.modo" class="mb-10px">
         <el-radio-button value="pessoa">Pessoa</el-radio-button>
         <el-radio-button value="equipe">Equipe</el-radio-button>
       </el-radio-group>
-      <el-select v-if="atorDialogo.modo === 'pessoa'" v-model="atorDialogo.userId" class="w-full" filterable placeholder="Pessoa">
+      <el-select
+        v-if="atorDialogo.modo === 'pessoa'"
+        v-model="atorDialogo.userId"
+        class="w-full"
+        filterable
+        placeholder="Pessoa"
+      >
         <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
       </el-select>
-      <el-select v-else v-model="atorDialogo.equipeId" class="w-full" filterable placeholder="Equipe">
+      <el-select
+        v-else
+        v-model="atorDialogo.equipeId"
+        class="w-full"
+        filterable
+        placeholder="Equipe"
+      >
         <el-option v-for="e in equipes" :key="e.id" :label="e.nome" :value="e.id!" />
       </el-select>
       <template #footer>
@@ -236,9 +416,19 @@
 import { ElMessageBox } from 'element-plus'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as ItsmApi from '@/api/itsm'
-import { ESCALA, PRIORIDADES, corPrioridade, corStatus, duracao } from '@/api/itsm'
+import {
+  ACOES_AD,
+  ESCALA,
+  PRIORIDADES,
+  STATUS_EXECUCAO,
+  corAprovacao,
+  corPrioridade,
+  corStatus,
+  duracao
+} from '@/api/itsm'
 import * as UserApi from '@/api/system/user'
 import LinhaDoTempo from '../components/LinhaDoTempo.vue'
+import PainelAprovacoes from '../components/PainelAprovacoes.vue'
 
 defineOptions({ name: 'ChamadoDetalhe' })
 const emit = defineEmits(['alterado'])
@@ -266,7 +456,13 @@ const CAMPOS: Record<string, string> = {
   'tecnico-': '− Técnico',
   'observador+': '+ Observador',
   'observador-': '− Observador',
-  excluido: 'Exclusão'
+  excluido: 'Exclusão',
+  sla: 'SLA',
+  escalonamento: 'Escalonamento',
+  satisfacao: 'Satisfação',
+  regra: 'Regra aplicada',
+  'aprovacao+': '+ Aprovador',
+  aprovacao: 'Aprovação'
 }
 const rotuloCampo = (c: string) => CAMPOS[c] || c
 
@@ -276,6 +472,7 @@ const enviando = ref(false)
 const aba = ref('tempo')
 const chamado = ref<ItsmApi.Chamado>()
 const linha = ref<ItsmApi.Interacao[]>([])
+const aprovacoes = ref<ItsmApi.Aprovacao[]>([])
 const historico = ref<ItsmApi.Historico[]>([])
 const categorias = ref<ItsmApi.Categoria[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
@@ -284,11 +481,34 @@ const edicao = ref<any>({})
 const editorKey = ref(0)
 const largura = computed(() => (window.innerWidth < 1200 ? '100%' : '75%'))
 
-const novaVazia = () => ({ tipo: 'acompanhamento', conteudo: '', privado: false, tempoGastoMin: 0, estadoTarefa: 2, periodo: [] as string[] })
+const novaVazia = () => ({
+  tipo: 'acompanhamento',
+  conteudo: '',
+  privado: false,
+  tempoGastoMin: 0,
+  estadoTarefa: 2,
+  periodo: [] as string[]
+})
 const nova = ref(novaVazia())
-const atorDialogo = reactive({ visivel: false, tipo: 1, rotulo: '', modo: 'pessoa', userId: undefined as number | undefined, equipeId: undefined as number | undefined })
+const atorDialogo = reactive({
+  visivel: false,
+  tipo: 1,
+  rotulo: '',
+  modo: 'pessoa',
+  userId: undefined as number | undefined,
+  equipeId: undefined as number | undefined
+})
 
 const pode = (a: string) => !!chamado.value?.acoes.includes(a)
+const rotuloAcaoAd = computed(
+  () =>
+    ACOES_AD.find((x) => x.valor === chamado.value?.execucaoAdAcao)?.rotulo ||
+    chamado.value?.execucaoAdAcao
+)
+const corExecucao = computed(() => {
+  const c = STATUS_EXECUCAO[chamado.value?.execucaoAdStatus || '']?.cor
+  return (c === 'danger' ? 'error' : c === 'primary' ? 'info' : c || 'info') as any
+})
 const tiposPermitidos = computed(() =>
   [
     { valor: 'acompanhamento', rotulo: 'Acompanhamento', acao: 'acompanhar' },
@@ -300,9 +520,14 @@ const tiposPermitidos = computed(() =>
 const carregar = async (id: number) => {
   carregando.value = true
   try {
-    const [c, l] = await Promise.all([ItsmApi.getChamado(id), ItsmApi.getLinhaDoTempo(id)])
+    const [c, l, a] = await Promise.all([
+      ItsmApi.getChamado(id),
+      ItsmApi.getLinhaDoTempo(id),
+      ItsmApi.getAprovacoesDoChamado(id)
+    ])
     chamado.value = c
     linha.value = l
+    aprovacoes.value = a
     edicao.value = {
       id: c.id,
       titulo: c.titulo,
@@ -333,7 +558,8 @@ const open = async (id: number) => {
 defineExpose({ open })
 
 watch(aba, async (a) => {
-  if (a === 'historico' && chamado.value) historico.value = await ItsmApi.getHistorico(chamado.value.id)
+  if (a === 'historico' && chamado.value)
+    historico.value = await ItsmApi.getHistorico(chamado.value.id)
 })
 
 const recarregar = async () => {
@@ -348,17 +574,24 @@ const acao = async (fn: () => Promise<any>, confirmar?: string) => {
 }
 
 const pendente = async () => {
-  const { value } = await ElMessageBox.prompt('Motivo (vai para a linha do tempo, visível ao solicitante)', 'Colocar em pendente', {
-    inputPlaceholder: 'Ex.: aguardando o fornecedor',
-    confirmButtonText: 'Colocar pendente',
-    cancelButtonText: 'Cancelar'
-  })
+  const { value } = await ElMessageBox.prompt(
+    'Motivo (vai para a linha do tempo, visível ao solicitante)',
+    'Colocar em pendente',
+    {
+      inputPlaceholder: 'Ex.: aguardando o fornecedor',
+      confirmButtonText: 'Colocar pendente',
+      cancelButtonText: 'Cancelar'
+    }
+  )
   await ItsmApi.colocarPendente(chamado.value!.id, value)
   await recarregar()
 }
 
 const fechar = () =>
-  acao(() => ItsmApi.fechar(chamado.value!.id), 'Fechar o chamado sem esperar a aprovação do solicitante?')
+  acao(
+    () => ItsmApi.fechar(chamado.value!.id),
+    'Fechar o chamado sem esperar a aprovação do solicitante?'
+  )
 
 const excluir = async () => {
   await message.delConfirm('Excluir o chamado #' + chamado.value!.id + '?')
@@ -432,6 +665,20 @@ const incluirAtor = async () => {
     equipeId: atorDialogo.modo === 'equipe' ? atorDialogo.equipeId : undefined
   })
   atorDialogo.visivel = false
+  await recarregar()
+}
+
+const pedido = reactive({ visivel: false, aprovadorIds: [] as number[], comentario: '' })
+const abrirPedidoAprovacao = () =>
+  Object.assign(pedido, { visivel: true, aprovadorIds: [], comentario: '' })
+const enviarPedidoAprovacao = async () => {
+  await ItsmApi.pedirAprovacao({
+    chamadoId: chamado.value!.id,
+    aprovadorIds: pedido.aprovadorIds,
+    comentario: pedido.comentario || undefined
+  })
+  pedido.visivel = false
+  message.success('Aprovação pedida')
   await recarregar()
 }
 

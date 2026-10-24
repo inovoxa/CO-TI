@@ -3,12 +3,15 @@ package cn.iocoder.yudao.module.itsm.service;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
+import cn.iocoder.yudao.framework.datapermission.core.util.DataPermissionUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.itsm.config.ItsmProperties;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.*;
 import cn.iocoder.yudao.module.itsm.dal.mysql.*;
+import cn.iocoder.yudao.module.itsm.dominio.Aprovacoes;
 import cn.iocoder.yudao.module.itsm.dominio.CicloChamado;
+import cn.iocoder.yudao.module.itsm.dominio.MotorRegras;
 import cn.iocoder.yudao.module.itsm.dominio.HtmlSeguro;
 import cn.iocoder.yudao.module.itsm.dominio.Prioridade;
 import cn.iocoder.yudao.module.itsm.enums.AtorTipo;
@@ -22,6 +25,8 @@ import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +62,7 @@ public class ChamadoService {
     public static final String P_FECHAR = "itsm:chamado:fechar";
     public static final String P_REABRIR = "itsm:chamado:reabrir";
     public static final String P_DELETE = "itsm:chamado:delete";
+    public static final String P_PEDIR_APROVACAO = "itsm:chamado:pedir-aprovacao";
 
     @Resource
     private ChamadoMapper chamadoMapper;
@@ -88,6 +94,16 @@ public class ChamadoService {
     private ItsmProperties props;
     @Resource
     private ApplicationEventPublisher eventos;
+    @Resource
+    private RegraService regraService;
+    @Resource
+    private ExecucaoAdMapper execucaoAdMapper;
+    @Resource
+    @Lazy
+    private AprovacaoService aprovacaoService;
+    @Resource
+    @Lazy
+    private ExecucaoAdService execucaoAdService;
 
     // =====================================================================================================
     // Consulta
@@ -184,20 +200,26 @@ public class ChamadoService {
 
     @Transactional(rollbackFor = Exception.class)
     public Long criar(ChamadoVOs.CriarReq req, Long userId) {
+        return criar(req, userId, null);
+    }
+
+    /**
+     * Abre o chamado. Antes de gravar, as regras ativas são avaliadas sobre os dados do pedido (GLPI: RuleTicket
+     * na criação) e podem mudar categoria, escala, tipo e participantes; os pedidos de aprovação das regras são
+     * feitos logo depois de gravar.
+     *
+     * @param formularioId formulário do catálogo que originou o pedido (fato "formulario_id" das regras)
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long criar(ChamadoVOs.CriarReq req, Long userId, Long formularioId) {
         List<Long> solicitantes = req.getSolicitanteIds().isEmpty() ? List.of(userId) : req.getSolicitanteIds();
         validarPessoas(solicitantes, req.getObservadorIds(), req.getTecnicoIds());
         req.getEquipeIds().forEach(cadastros::obterEquipe);
-        CategoriaDO categoria = req.getCategoriaId() == null ? null : cadastros.obterCategoria(req.getCategoriaId());
+        if (req.getCategoriaId() != null) {
+            cadastros.obterCategoria(req.getCategoriaId());
+        }
         if (req.getOrigemId() != null) {
             cadastros.obterOrigem(req.getOrigemId());
-        }
-
-        List<Long> tecnicos = new ArrayList<>(req.getTecnicoIds());
-        List<Long> equipes = new ArrayList<>(req.getEquipeIds());
-        // atribuição pela categoria (GLPI: técnico/grupo responsável da categoria) quando ninguém foi escolhido
-        if (categoria != null && tecnicos.isEmpty() && equipes.isEmpty()) {
-            Optional.ofNullable(categoria.getTecnicoId()).ifPresent(tecnicos::add);
-            Optional.ofNullable(categoria.getEquipeId()).ifPresent(equipes::add);
         }
 
         LocalDateTime agora = LocalDateTime.now();
@@ -213,17 +235,121 @@ public class ChamadoService {
                 .deptId(req.getDeptId() != null ? req.getDeptId() : deptDe(solicitantes.get(0)))
                 .registradoPor(userId)
                 .build();
+        List<Long> tecnicos = new ArrayList<>(req.getTecnicoIds());
+        List<Long> equipes = new ArrayList<>(req.getEquipeIds());
+        List<Long> observadores = new ArrayList<>(req.getObservadorIds());
+        ResultadoRegras regras = aplicarRegras(c, solicitantes.get(0), formularioId, req.getPrioridade() != null,
+                tecnicos, equipes, observadores);
+
+        CategoriaDO categoria = c.getCategoriaId() == null ? null : cadastros.obterCategoria(c.getCategoriaId());
+        // atribuição pela categoria (GLPI: técnico/grupo responsável da categoria) quando ninguém foi escolhido
+        if (categoria != null && tecnicos.isEmpty() && equipes.isEmpty()) {
+            Optional.ofNullable(categoria.getTecnicoId()).ifPresent(tecnicos::add);
+            Optional.ofNullable(categoria.getEquipeId()).ifPresent(equipes::add);
+        }
         CicloChamado.abrir(c, agora, !tecnicos.isEmpty() || !equipes.isEmpty());
         slaService.aplicarNaAbertura(c);
         chamadoMapper.insert(c);
 
         solicitantes.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.SOLICITANTE, u, null));
-        req.getObservadorIds().stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.OBSERVADOR, u, null));
+        observadores.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.OBSERVADOR, u, null));
         tecnicos.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.TECNICO, u, null));
         equipes.stream().distinct().forEach(e -> inserirAtor(c.getId(), AtorTipo.TECNICO, null, e));
         registrar(c.getId(), userId, "criado", null, ChamadoStatus.de(c.getStatus()).getRotulo());
+        regras.nomes().forEach(n -> registrar(c.getId(), null, "regra", null, n));
+        pedirAprovacoesDasRegras(c.getId(), solicitantes.get(0), regras);
         publicar(c.getId(), "criado", userId);
         return c.getId();
+    }
+
+    private record ResultadoRegras(Set<String> nomes, boolean gestor, Set<Long> aprovadores) {
+    }
+
+    /** Avalia as regras sobre o chamado ainda não gravado e aplica as ações nos campos e nas listas. */
+    private ResultadoRegras aplicarRegras(ChamadoDO c, Long solicitante, Long formularioId, boolean prioridadeFixa,
+                                          List<Long> tecnicos, List<Long> equipes, List<Long> observadores) {
+        Map<String, Object> fatos = new HashMap<>();
+        fatos.put("titulo", c.getTitulo());
+        fatos.put("descricao", HtmlSeguro.texto(c.getDescricao()));
+        fatos.put("categoria_id", c.getCategoriaId());
+        fatos.put("tipo", c.getTipo());
+        fatos.put("urgencia", c.getUrgencia());
+        fatos.put("impacto", c.getImpacto());
+        fatos.put("prioridade", c.getPrioridade());
+        fatos.put("origem_id", c.getOrigemId());
+        fatos.put("dept_id", c.getDeptId());
+        fatos.put("solicitante_id", solicitante);
+        fatos.put("formulario_id", formularioId);
+        Set<String> nomes = new LinkedHashSet<>();
+        Set<Long> aprovadores = new LinkedHashSet<>();
+        boolean gestor = false;
+        boolean escalaMudou = false;
+        for (MotorRegras.Disparo d : regraService.avaliar(fatos)) {
+            String v = d.acao().valor() == null ? "" : d.acao().valor().trim();
+            try {
+                switch (d.acao().acao()) {
+                    case "atribuir_equipe" -> equipes.add(cadastros.obterEquipe(Long.valueOf(v)).getId());
+                    case "atribuir_tecnico" -> tecnicos.add(pessoaAtiva(Long.valueOf(v)));
+                    case "adicionar_observador" -> observadores.add(pessoaAtiva(Long.valueOf(v)));
+                    case "definir_categoria" -> c.setCategoriaId(cadastros.obterCategoria(Long.valueOf(v)).getId());
+                    case "definir_urgencia" -> {
+                        c.setUrgencia(escala(v));
+                        escalaMudou = true;
+                    }
+                    case "definir_impacto" -> {
+                        c.setImpacto(escala(v));
+                        escalaMudou = true;
+                    }
+                    case "definir_prioridade" -> {
+                        c.setPrioridade(escala(v));
+                        prioridadeFixa = true;
+                    }
+                    case "definir_tipo" -> c.setTipo(ChamadoTipo.de(Integer.parseInt(v)).getCodigo());
+                    case "pedir_aprovacao_gestor" -> gestor = true;
+                    case "pedir_aprovacao_usuario" -> aprovadores.add(pessoaAtiva(Long.valueOf(v)));
+                    default -> throw new IllegalArgumentException("ação desconhecida");
+                }
+                nomes.add(d.regraNome());
+            } catch (Exception e) {
+                // valor que deixou de existir (equipe excluída, pessoa desativada): ignora a ação, não impede a abertura
+                log.warn("[aplicarRegras][regra {} ação {}={} ignorada: {}]", d.regraId(), d.acao().acao(), v, e.getMessage());
+            }
+        }
+        if (escalaMudou && !prioridadeFixa) {
+            c.setPrioridade(prioridade(c.getUrgencia(), c.getImpacto()));
+        }
+        return new ResultadoRegras(nomes, gestor, aprovadores);
+    }
+
+    private void pedirAprovacoesDasRegras(Long chamadoId, Long solicitante, ResultadoRegras r) {
+        Set<Long> aprovadores = new LinkedHashSet<>(r.aprovadores());
+        if (r.gestor()) {
+            Optional<Long> g = aprovacaoService.gestorDe(solicitante);
+            if (g.isPresent()) {
+                aprovadores.add(g.get());
+            } else {
+                acompanhamentoSistema(chamadoId, null, "Uma regra pediu a aprovação do gestor, mas o solicitante não tem "
+                        + "gestor (atributo manager) no AD. Peça a aprovação manualmente.", true);
+            }
+        }
+        aprovadores.remove(solicitante);
+        if (!aprovadores.isEmpty()) {
+            aprovacaoService.solicitar(chamadoId, aprovadores, "Pedido por regra: " + String.join(", ", r.nomes()), null);
+        }
+    }
+
+    /** Pessoa citada numa regra: a regra roda no contexto de quem abriu, então o escopo de unidade não vale aqui. */
+    private Long pessoaAtiva(Long id) {
+        DataPermissionUtils.executeIgnore(() -> adminUserApi.validateUser(id));
+        return id;
+    }
+
+    private static int escala(String v) {
+        int n = Integer.parseInt(v);
+        if (n < 1 || n > 6) {
+            throw new IllegalArgumentException("fora da escala");
+        }
+        return n;
     }
 
     /** Abertura pelo próprio usuário (portal, WhatsApp): ele é o solicitante; impacto médio. */
@@ -614,6 +740,88 @@ public class ChamadoService {
         publicar(chamadoId, "satisfacao", userId);
     }
 
+    // =====================================================================================================
+    // Aprovações, automação no AD e ações do sistema
+    // =====================================================================================================
+
+    /** Técnico pede aprovação a uma ou mais pessoas. */
+    @Transactional(rollbackFor = Exception.class)
+    public void pedirAprovacao(Long chamadoId, List<Long> aprovadores, String comentario, Long userId) {
+        ChamadoDO c = chamadoVisivel(chamadoId);
+        exigirNaoFechado(c);
+        aprovacaoService.solicitar(chamadoId, aprovadores, comentario == null ? null : comentario.trim(), userId);
+    }
+
+    /** Aprovações do chamado, para quem pode vê-lo (técnico no escopo ou participante). */
+    @DataPermission(enable = false)
+    public List<AprovacaoDO> aprovacoes(Long chamadoId, Long userId) {
+        exigirParticipanteOuTecnico(chamadoExistente(chamadoId), userId);
+        return aprovacaoService.doChamado(chamadoId);
+    }
+
+    /** Senha provisória da operação no AD: só o solicitante, uma única vez. */
+    @DataPermission(enable = false)
+    public String revelarSenha(Long chamadoId, Long userId) {
+        if (!ehSolicitante(chamadoExistente(chamadoId), userId)) {
+            throw exception(CHAMADO_SEM_ACESSO);
+        }
+        return execucaoAdService.revelarSenha(chamadoId, userId);
+    }
+
+    /** Histórico gravado por outro serviço do ITSM (aprovações, automações). userId vazio = "Sistema". */
+    public void registrarSistema(Long chamadoId, Long userId, String campo, String de, String para) {
+        registrar(chamadoId, userId, campo, de, para);
+    }
+
+    /** Avisa a tela e as notificações (evento de domínio). */
+    public void notificar(Long chamadoId, String acao, Long userId) {
+        publicar(chamadoId, acao, userId);
+    }
+
+    /** Acompanhamento em texto puro (escapado) escrito por um serviço; userId vazio = sistema. */
+    @DataPermission(enable = false)
+    public void acompanhamentoSistema(Long chamadoId, Long userId, String texto, boolean privado) {
+        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.ACOMPANHAMENTO).userId(userId)
+                .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(privado).build());
+        publicar(chamadoId, InteracaoDO.ACOMPANHAMENTO, userId);
+    }
+
+    /** Solução registrada pela automação (ex.: operação no AD concluída); o solicitante aprova ou recusa. */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public void solucionarSistema(Long chamadoId, String texto) {
+        ChamadoDO c = travar(chamadoId);
+        if (!ChamadoStatus.de(c.getStatus()).aberto()) {
+            acompanhamentoSistema(chamadoId, null, texto, false);
+            return;
+        }
+        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.SOLUCAO)
+                .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(false)
+                .statusSolucao(InteracaoDO.SOLUCAO_AGUARDANDO).build());
+        mudarStatus(c, null, () -> CicloChamado.solucionar(c, LocalDateTime.now()));
+        publicar(chamadoId, "solucionado", null);
+    }
+
+    /** Pedido recusado na aprovação: registra a decisão como solução e fecha (não há o que executar). */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public void encerrarPorRecusa(Long chamadoId, String comentario) {
+        ChamadoDO c = travar(chamadoId);
+        if (ChamadoStatus.de(c.getStatus()) == ChamadoStatus.FECHADO) {
+            return;
+        }
+        InteracaoDO pendente = solucaoPendente(chamadoId);
+        if (pendente != null) {
+            marcarSolucao(pendente, InteracaoDO.SOLUCAO_RECUSADA, null);
+        }
+        String texto = "Pedido recusado na aprovação" + (comentario == null || comentario.isBlank() ? "." : ": " + comentario.trim());
+        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.SOLUCAO)
+                .conteudo("<p>" + HtmlUtils.htmlEscape(texto) + "</p>").privado(false)
+                .statusSolucao(InteracaoDO.SOLUCAO_APROVADA).avaliadoEm(LocalDateTime.now()).build());
+        mudarStatus(c, null, () -> CicloChamado.fechar(c, LocalDateTime.now()));
+        publicar(chamadoId, "fechado", null);
+    }
+
     private void criarPesquisa(ChamadoDO c, LocalDateTime agora) {
         if (!props.isPesquisaSatisfacao() || satisfacaoMapper.selectCount(SatisfacaoDO::getChamadoId, c.getId()) > 0) {
             return;
@@ -873,6 +1081,8 @@ public class ChamadoService {
         Map<Long, String> slas = slaMapper.selectList().stream().collect(Collectors.toMap(SlaDO::getId, SlaDO::getNome));
         Map<Long, SatisfacaoDO> pesquisas = satisfacaoMapper.selectList(SatisfacaoDO::getChamadoId, ids).stream()
                 .collect(Collectors.toMap(SatisfacaoDO::getChamadoId, x -> x, (a, b) -> a));
+        Map<Long, ExecucaoAdDO> execucoes = execucaoAdMapper.selectList(ExecucaoAdDO::getChamadoId, ids).stream()
+                .collect(Collectors.toMap(ExecucaoAdDO::getChamadoId, x -> x, (a, b) -> a));
         LocalDateTime agora = LocalDateTime.now();
 
         return chamados.stream().map(c -> {
@@ -922,6 +1132,15 @@ public class ChamadoService {
             r.setTempoSolucaoSeg(c.getTempoSolucaoSeg());
             r.setTempoGastoSeg(c.getTempoGastoSeg());
             r.setOrigemAutomatica(c.getOrigemAutomatica());
+            int validacao = c.getValidacao() == null ? Aprovacoes.NENHUMA : c.getValidacao();
+            r.setValidacao(validacao);
+            r.setValidacaoRotulo(Aprovacoes.rotulo(validacao));
+            ExecucaoAdDO exec = execucoes.get(c.getId());
+            if (exec != null) {
+                r.setExecucaoAdStatus(exec.getStatus());
+                r.setExecucaoAdAcao(exec.getAcao());
+                r.setSenhaDisponivel(exec.getSenhaCifrada() != null);
+            }
             Function<ChamadoAtorDO, ChamadoVOs.Ator> conv = a -> {
                 ChamadoVOs.Ator x = new ChamadoVOs.Ator();
                 x.setId(a.getId());
@@ -942,6 +1161,10 @@ public class ChamadoService {
             }
             if (comAcoes) {
                 r.setAcoes(acoes(c, st, porChamado.getOrDefault(c.getId(), List.of()), userId));
+                if (Boolean.TRUE.equals(r.getSenhaDisponivel()) && r.getSolicitantes().stream()
+                        .anyMatch(x -> userId.equals(x.getUserId()))) {
+                    r.getAcoes().add("ver-senha");
+                }
             }
             return r;
         }).toList();
@@ -978,6 +1201,7 @@ public class ChamadoService {
                 .isNull(SatisfacaoDO::getRespondidaEm)) > 0) {
             a.add("avaliar-atendimento");
         }
+        if (tecnico && st != ChamadoStatus.FECHADO && tem(userId, P_PEDIR_APROVACAO)) a.add("pedir-aprovacao");
         if (tecnico && tem(userId, P_DELETE)) a.add("excluir");
         return a;
     }

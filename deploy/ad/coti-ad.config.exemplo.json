@@ -1,0 +1,15 @@
+{
+  "Dominio": "empresa.local",
+  "DominioNetbios": "EMPRESA",
+  "SufixoEmail": "empresa.gov.br",
+  "OuDesativados": "OU=Desativados,OU=Empresa,DC=empresa,DC=local",
+  "Cidade": "Cidade",
+  "Estado": "UF",
+  "Pais": "BR",
+  "ExchangeUri": "http://exchange01.empresa.local/PowerShell/",
+  "ExchangeBanco": "Small Database",
+  "PastasPermitidas": [
+    "D:\\Setores",
+    "\\\\fs01\\Departamentos"
+  ]
+}

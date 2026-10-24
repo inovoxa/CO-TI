@@ -1,7 +1,12 @@
 <template>
   <ContentWrap>
     <div class="flex flex-wrap items-center gap-12px">
-      <el-button type="primary" @click="abrirNovo"><Icon class="mr-5px" icon="ep:plus" /> Abrir chamado</el-button>
+      <el-button type="primary" @click="abrirNovo"
+        ><Icon class="mr-5px" icon="ep:plus" /> Abrir chamado</el-button
+      >
+      <el-button @click="router.push('/catalogo')"
+        ><Icon class="mr-5px" icon="ep:grid" /> Catálogo de serviços</el-button
+      >
       <el-radio-group v-model="somenteAbertos" @change="getList">
         <el-radio-button :value="true">Em andamento</el-radio-button>
         <el-radio-button :value="false">Todos</el-radio-button>
@@ -11,24 +16,56 @@
 
   <ContentWrap>
     <el-empty v-if="!loading && !list.length" description="Você não tem chamados aqui" />
-    <el-table v-else v-loading="loading" :data="list" class="cursor-pointer" @row-click="(r) => abrirDetalhe(r.id)">
-      <el-table-column label="Nº" width="80"><template #default="{ row }">#{{ row.id }}</template></el-table-column>
+    <el-table
+      v-else
+      v-loading="loading"
+      :data="list"
+      class="cursor-pointer"
+      @row-click="(r) => abrirDetalhe(r.id)"
+    >
+      <el-table-column label="Nº" width="80"
+        ><template #default="{ row }">#{{ row.id }}</template></el-table-column
+      >
       <el-table-column label="Assunto" min-width="260" prop="titulo" show-overflow-tooltip />
       <el-table-column label="Situação" width="200">
         <template #default="{ row }">
           <el-tag :type="corStatus(row.status)" disable-transitions>{{ row.statusRotulo }}</el-tag>
-          <el-tag v-if="row.status === 5" class="ml-4px" disable-transitions effect="dark" size="small" type="success">
+          <el-tag
+            v-if="row.status === 5"
+            class="ml-4px"
+            disable-transitions
+            effect="dark"
+            size="small"
+            type="success"
+          >
             sua resposta
+          </el-tag>
+          <el-tag
+            v-if="row.validacao === 2"
+            class="ml-4px"
+            disable-transitions
+            effect="plain"
+            size="small"
+            type="warning"
+          >
+            em aprovação
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="Categoria" min-width="180" prop="categoria" show-overflow-tooltip />
       <el-table-column label="Quem atende" min-width="150">
-        <template #default="{ row }">{{ row.tecnicos.map((t) => t.nome).join(', ') || 'aguardando' }}</template>
+        <template #default="{ row }">{{
+          row.tecnicos.map((t) => t.nome).join(', ') || 'aguardando'
+        }}</template>
       </el-table-column>
       <el-table-column :formatter="dateFormatter" label="Aberto em" prop="abertoEm" width="160" />
     </el-table>
-    <Pagination v-model:limit="query.pageSize" v-model:page="query.pageNo" :total="total" @pagination="getList" />
+    <Pagination
+      v-model:limit="query.pageSize"
+      v-model:page="query.pageNo"
+      :total="total"
+      @pagination="getList"
+    />
   </ContentWrap>
 
   <!-- abrir chamado -->
@@ -61,7 +98,11 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item label="Resumo" prop="titulo">
-        <el-input v-model="novo.titulo" maxlength="255" placeholder="Ex.: impressora do 2º andar não imprime" />
+        <el-input
+          v-model="novo.titulo"
+          maxlength="255"
+          placeholder="Ex.: impressora do 2º andar não imprime"
+        />
       </el-form-item>
       <el-form-item label="Detalhes">
         <Editor v-model="novo.descricao" directory="chamados" height="220px" />
@@ -78,20 +119,61 @@
     <template #header>
       <div v-if="chamado" class="min-w-0">
         <div class="truncate text-17px font-bold">#{{ chamado.id }} · {{ chamado.titulo }}</div>
-        <el-tag :type="corStatus(chamado.status)" class="mt-6px" disable-transitions>{{ chamado.statusRotulo }}</el-tag>
+        <el-tag :type="corStatus(chamado.status)" class="mt-6px" disable-transitions>{{
+          chamado.statusRotulo
+        }}</el-tag>
       </div>
     </template>
     <div v-if="chamado" v-loading="carregando">
-      <el-alert v-if="chamado.status === 5" :closable="false" class="mb-12px" show-icon type="success">
+      <el-alert
+        v-if="chamado.acoes.includes('ver-senha')"
+        :closable="false"
+        class="mb-12px"
+        show-icon
+        type="warning"
+      >
+        <template #title>A senha provisória está pronta. Ela é mostrada uma única vez.</template>
+        <el-button class="mt-6px" size="small" type="warning" @click="verSenha"
+          >Ver senha provisória</el-button
+        >
+      </el-alert>
+      <PainelAprovacoes
+        :itens="aprovacoes"
+        :rotulo="chamado.validacaoRotulo"
+        :validacao="chamado.validacao"
+      />
+      <el-alert
+        v-if="chamado.status === 5"
+        :closable="false"
+        class="mb-12px"
+        show-icon
+        type="success"
+      >
         <template #title>A equipe registrou uma solução. Ela resolveu o seu problema?</template>
-        <el-button class="mt-6px" size="small" type="success" @click="avaliar(true)">Sim, pode fechar</el-button>
-        <el-button class="mt-6px" size="small" @click="avaliar(false)">Não, continua com problema</el-button>
+        <el-button class="mt-6px" size="small" type="success" @click="avaliar(true)"
+          >Sim, pode fechar</el-button
+        >
+        <el-button class="mt-6px" size="small" @click="avaliar(false)"
+          >Não, continua com problema</el-button
+        >
       </el-alert>
       <el-card v-if="chamado.acoes.includes('avaliar-atendimento')" class="mb-12px" shadow="never">
         <div class="mb-6px font-bold">Como foi o atendimento?</div>
-        <el-rate v-model="pesquisa.nota" :texts="['Péssimo', 'Ruim', 'Regular', 'Bom', 'Ótimo']" show-text />
-        <el-input v-model="pesquisa.comentario" class="mt-8px" maxlength="2000" placeholder="Comentário (opcional)" type="textarea" />
-        <el-button :disabled="!pesquisa.nota" class="mt-8px" type="primary" @click="enviarPesquisa">Enviar avaliação</el-button>
+        <el-rate
+          v-model="pesquisa.nota"
+          :texts="['Péssimo', 'Ruim', 'Regular', 'Bom', 'Ótimo']"
+          show-text
+        />
+        <el-input
+          v-model="pesquisa.comentario"
+          class="mt-8px"
+          maxlength="2000"
+          placeholder="Comentário (opcional)"
+          type="textarea"
+        />
+        <el-button :disabled="!pesquisa.nota" class="mt-8px" type="primary" @click="enviarPesquisa"
+          >Enviar avaliação</el-button
+        >
       </el-card>
       <el-alert
         v-else-if="chamado.satisfacaoNota"
@@ -101,12 +183,18 @@
         type="info"
       />
       <el-descriptions :column="2" border class="mb-12px" size="small">
-        <el-descriptions-item label="Categoria">{{ chamado.categoria || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="Aberto em">{{ formatDate(chamado.abertoEm) }}</el-descriptions-item>
+        <el-descriptions-item label="Categoria">{{
+          chamado.categoria || '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item label="Aberto em">{{
+          formatDate(chamado.abertoEm)
+        }}</el-descriptions-item>
         <el-descriptions-item label="Quem atende">
           {{ chamado.tecnicos.map((t) => t.nome).join(', ') || 'aguardando' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Previsão">{{ chamado.prazoSolucao ? formatDate(chamado.prazoSolucao) : '—' }}</el-descriptions-item>
+        <el-descriptions-item label="Previsão">{{
+          chamado.prazoSolucao ? formatDate(chamado.prazoSolucao) : '—'
+        }}</el-descriptions-item>
       </el-descriptions>
       <div class="mb-12px" v-html="chamado.descricao || ''"></div>
       <el-divider class="!my-12px" />
@@ -119,6 +207,23 @@
       </el-card>
     </div>
   </el-drawer>
+
+  <Dialog v-model="senha.visivel" title="Senha provisória" width="420px" @closed="senha.valor = ''">
+    <el-alert
+      :closable="false"
+      class="mb-12px"
+      show-icon
+      type="warning"
+      title="Anote agora: esta senha não será mostrada de novo. No primeiro acesso será pedida a troca."
+    />
+    <div class="senha">{{ senha.valor }}</div>
+    <template #footer>
+      <el-button type="primary" @click="copiarSenha"
+        ><Icon class="mr-4px" icon="ep:copy-document" />Copiar</el-button
+      >
+      <el-button @click="senha.visivel = false">Fechar</el-button>
+    </template>
+  </Dialog>
 </template>
 
 <script lang="ts" setup>
@@ -128,9 +233,29 @@ import { handleTree } from '@/utils/tree'
 import * as ItsmApi from '@/api/itsm'
 import { corStatus } from '@/api/itsm'
 import LinhaDoTempo from '../components/LinhaDoTempo.vue'
+import PainelAprovacoes from '../components/PainelAprovacoes.vue'
 
 defineOptions({ name: 'ItsmPortal' })
 const message = useMessage()
+const router = useRouter()
+const aprovacoes = ref<ItsmApi.Aprovacao[]>([])
+const senha = reactive({ visivel: false, valor: '' })
+
+const verSenha = async () => {
+  await message.confirm('A senha será mostrada uma única vez e depois apagada. Mostrar agora?')
+  senha.valor = await ItsmApi.revelarSenha(chamado.value!.id)
+  senha.visivel = true
+  await carregarDetalhe(chamado.value!.id)
+}
+
+const copiarSenha = async () => {
+  try {
+    await navigator.clipboard.writeText(senha.valor)
+    message.success('Copiada')
+  } catch {
+    message.warning('Não foi possível copiar; anote a senha')
+  }
+}
 
 const loading = ref(true)
 const list = ref<ItsmApi.Chamado[]>([])
@@ -143,7 +268,13 @@ const novoVisivel = ref(false)
 const novoRef = ref()
 const enviando = ref(false)
 const arvoreCategorias = ref<any[]>([])
-const vazio = () => ({ titulo: '', descricao: '', tipo: 1, urgencia: 3, categoriaId: undefined as number | undefined })
+const vazio = () => ({
+  titulo: '',
+  descricao: '',
+  tipo: 1,
+  urgencia: 3,
+  categoriaId: undefined as number | undefined
+})
 const novo = ref(vazio())
 const regras = { titulo: [{ required: true, message: 'Escreva um resumo', trigger: 'blur' }] }
 
@@ -156,7 +287,11 @@ const editorKey = ref(0)
 const pesquisa = reactive({ nota: 0, comentario: '' })
 
 const enviarPesquisa = async () => {
-  await ItsmApi.responderSatisfacao({ chamadoId: chamado.value!.id, nota: pesquisa.nota, comentario: pesquisa.comentario })
+  await ItsmApi.responderSatisfacao({
+    chamadoId: chamado.value!.id,
+    nota: pesquisa.nota,
+    comentario: pesquisa.comentario
+  })
   message.success('Obrigado pela avaliação!')
   pesquisa.nota = 0
   pesquisa.comentario = ''
@@ -196,7 +331,11 @@ const enviarNovo = async () => {
 const carregarDetalhe = async (id: number) => {
   carregando.value = true
   try {
-    ;[chamado.value, linha.value] = await Promise.all([ItsmApi.getMeu(id), ItsmApi.getMinhaLinhaDoTempo(id)])
+    ;[chamado.value, linha.value, aprovacoes.value] = await Promise.all([
+      ItsmApi.getMeu(id),
+      ItsmApi.getMinhaLinhaDoTempo(id),
+      ItsmApi.getAprovacoesDoMeuChamado(id)
+    ])
   } finally {
     carregando.value = false
   }
@@ -240,3 +379,16 @@ const avaliar = async (aprovar: boolean) => {
 
 onMounted(getList)
 </script>
+
+<style scoped>
+.senha {
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 22px;
+  text-align: center;
+  letter-spacing: 1px;
+  user-select: all;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+}
+</style>

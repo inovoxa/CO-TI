@@ -37,6 +37,8 @@ public class ChamadoDO extends BaseDO {
     private Long origemId;
     /** Unidade/departamento a que o chamado pertence (escopo de dados) */
     private Long deptId;
+    /** Situação das aprovações: 1 nenhuma, 2 aguardando, 3 aprovada, 4 recusada (GLPI: global_validation) */
+    private Integer validacao;
 
     // ---------- datas (GLPI: date, takeintoaccountdate, solvedate, closedate) ----------
     private LocalDateTime abertoEm;

@@ -26,6 +26,11 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
     * SLA de atendimento/solução, conversão de unidades e desconto da pendência no expediente
       (src/LevelAgreement.php, src/SLA.php, src/CommonITILObject.php);
     * níveis de escalonamento e fechamento automático de solucionados (src/SlaLevel.php, src/Ticket.php).
+    * aprovações de chamado e situação global com exigência de 100% (src/CommonITILValidation.php,
+      src/TicketValidation.php);
+    * motor de regras de chamado: critérios E/OU, ações em ordem e "parar na primeira" (src/Rule.php,
+      src/RuleCollection.php, src/RuleTicket.php);
+    * catálogo de formulários: seções, perguntas, validação e destino "chamado" (src/Glpi/Form/).
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.

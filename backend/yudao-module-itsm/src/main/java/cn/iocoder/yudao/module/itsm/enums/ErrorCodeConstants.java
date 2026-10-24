@@ -45,4 +45,21 @@ public interface ErrorCodeConstants {
     ErrorCode FERIADO_DATAS_INVALIDAS = new ErrorCode(1_101_002_021, "A data final do feriado é anterior à inicial");
     ErrorCode SATISFACAO_NAO_DISPONIVEL = new ErrorCode(1_101_002_030, "Não há pesquisa de satisfação pendente para este chamado");
 
+    // aprovações, regras, formulários e execução no AD 1-101-003-xxx
+    ErrorCode APROVACAO_SEM_APROVADOR = new ErrorCode(1_101_003_000, "Não foi possível definir quem aprova: o solicitante não tem gestor no AD ou o aprovador não foi encontrado");
+    ErrorCode APROVACAO_APROVADOR_INVALIDO = new ErrorCode(1_101_003_001, "O aprovador não existe ou está desativado");
+    ErrorCode APROVACAO_NAO_EXISTE = new ErrorCode(1_101_003_002, "Aprovação não encontrada");
+    ErrorCode APROVACAO_JA_RESPONDIDA = new ErrorCode(1_101_003_003, "Esta aprovação já foi respondida");
+    ErrorCode APROVACAO_PROPRIO_SOLICITANTE = new ErrorCode(1_101_003_004, "O aprovador não pode ser o próprio solicitante");
+    ErrorCode REGRA_NAO_EXISTE = new ErrorCode(1_101_003_010, "Regra não encontrada");
+    ErrorCode REGRA_INVALIDA = new ErrorCode(1_101_003_011, "{}");
+    ErrorCode FORMULARIO_NAO_EXISTE = new ErrorCode(1_101_003_020, "Formulário não encontrado");
+    ErrorCode FORMULARIO_INVALIDO = new ErrorCode(1_101_003_021, "{}");
+    ErrorCode FORMULARIO_RESPOSTAS_INVALIDAS = new ErrorCode(1_101_003_022, "Confira os campos destacados: {}");
+    ErrorCode FORMULARIO_CODIGO_DUPLICADO = new ErrorCode(1_101_003_023, "Já existe um formulário com esse código");
+    ErrorCode FORMULARIO_EM_USO = new ErrorCode(1_101_003_024, "O formulário já tem pedidos; desative em vez de excluir");
+    ErrorCode EXECUCAO_NAO_EXISTE = new ErrorCode(1_101_003_030, "Execução não encontrada");
+    ErrorCode EXECUCAO_ESTADO_INVALIDO = new ErrorCode(1_101_003_031, "Esta execução não pode ser alterada na situação atual");
+    ErrorCode EXECUCAO_SENHA_INDISPONIVEL = new ErrorCode(1_101_003_032, "Não há senha provisória para ver (ela é mostrada uma única vez)");
+
 }

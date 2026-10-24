@@ -3,10 +3,12 @@ package cn.iocoder.yudao.module.itsm.controller.admin;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.SlaVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.CategoriaDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.InteracaoDO;
+import cn.iocoder.yudao.module.itsm.service.AprovacaoService;
 import cn.iocoder.yudao.module.itsm.service.CadastroService;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +38,8 @@ public class PortalChamadoController {
     private ChamadoService chamadoService;
     @Resource
     private CadastroService cadastroService;
+    @Resource
+    private AprovacaoService aprovacaoService;
 
     @Data
     public static class CategoriaPortal {
@@ -109,6 +113,20 @@ public class PortalChamadoController {
     public CommonResult<Boolean> satisfacao(@Valid @RequestBody SlaVOs.SatisfacaoReq req) {
         chamadoService.responderPesquisa(req.getChamadoId(), req.getNota(), req.getComentario(), getLoginUserId());
         return success(true);
+    }
+
+    // -------- aprovações e senha provisória --------
+
+    @GetMapping("/aprovacoes-do-chamado")
+    @Operation(summary = "Aprovações de um chamado meu")
+    public CommonResult<List<CatalogoVOs.AprovacaoResp>> aprovacoesDoChamado(@RequestParam("id") Long id) {
+        return success(aprovacaoService.converter(chamadoService.aprovacoes(id, getLoginUserId()), false));
+    }
+
+    @PostMapping("/revelar-senha")
+    @Operation(summary = "Ver a senha provisória da operação no AD (uma única vez; depois ela é apagada)")
+    public CommonResult<String> revelarSenha(@RequestParam("id") Long id) {
+        return success(chamadoService.revelarSenha(id, getLoginUserId()));
     }
 
 }

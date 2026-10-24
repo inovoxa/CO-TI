@@ -1,0 +1,2811 @@
+{
+  "_meta": {
+    "descricao": "Catálogo de serviços de exemplo do CO-TI (25 formulários), derivado do catálogo usado na LGTI. Importe em Service Desk > Formulários > Importar. Os formulários de \"Usuários e acessos\" pedem a aprovação do superior e executam a operação no AD depois de aprovados.",
+    "formato": "formularios_definicoes.json + extensões do CO-TI: codigo, grupo, titulo_modelo, aprovacao (nenhuma|gestor|campo|fixo), aprovador_campo, acao_ad, categoria"
+  },
+  "formularios": [
+    {
+      "codigo": "1.1",
+      "nome": "Criação de usuário",
+      "descricao": "Solicitacao de criacao de novo usuario no Active Directory. Apos aprovacao do superior, o sistema cria login, senha provisoria, copia perfil de referencia e replica grupos.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-user-plus",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo do colaborador",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos, somente numeros)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (ou 'Nao se aplica')",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Nome do local/unidade onde trabalhara",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "cbo",
+              "label": "CBO/Cargo",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal do colaborador",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Acessos solicitados",
+          "perguntas": [
+            {
+              "name": "usuario_estagiario",
+              "label": "O colaborador e estagiario?",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "nao",
+                "sim"
+              ]
+            },
+            {
+              "name": "qual_sistema",
+              "label": "Para qual sistema o acesso sera criado? (ex: Usuario de rede, FAA, PEC, Formsus)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "perfil_referencia",
+              "label": "Login de um colega que ja possua o perfil desejado (digite o usuario de rede)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "numero_processo",
+              "label": "Numero do processo 1Doc (opcional, ex: Proc. Administrativo 28.491/2026)",
+              "type": "text",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "acao_ad": "Criar",
+      "titulo_modelo": "Criação de usuário: {nome_completo}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "1.2",
+      "nome": "Reset de senha",
+      "descricao": "Solicitacao de reset de senha de usuario ja existente no AD. Apos aprovacao, nova senha provisoria sera gerada e enviada ao solicitante.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-key",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo do colaborador",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (opcional)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Local/unidade onde trabalha",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Dados do reset",
+          "perguntas": [
+            {
+              "name": "login_usuario_reset",
+              "label": "Login do usuario que tera a senha resetada",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "qual_sistema",
+              "label": "Para qual sistema?",
+              "type": "text",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "acao_ad": "Reset",
+      "titulo_modelo": "Reset de senha: {login_usuario_reset}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "1.3",
+      "nome": "Reativação de usuário",
+      "descricao": "Reativacao de conta de usuario que foi desativada. O sistema reativa, gera nova senha, reaplica grupos do perfil de referencia e move para OU correta.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-user-check",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (opcional)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Local/unidade",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Dados da reativacao",
+          "perguntas": [
+            {
+              "name": "login_usuario_reativar",
+              "label": "Login do usuario a reativar",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "qual_sistema",
+              "label": "Para qual sistema?",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "perfil_referencia",
+              "label": "Login de um colega que ja possua o perfil desejado (digite o usuario de rede)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "cbo",
+              "label": "CBO/Cargo atualizado",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "numero_processo",
+              "label": "Numero do processo administrativo (opcional)",
+              "type": "text",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "acao_ad": "Reativar",
+      "titulo_modelo": "Reativação de usuário: {login_usuario_reativar}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "1.4",
+      "nome": "Desativação de usuário",
+      "descricao": "Desligamento de colaborador. O sistema desabilita a conta, remove grupos, limpa perfil e move para OU Desativados. Use para exoneracao ou afastamento permanente.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-user-slash",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador desligado",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (opcional)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Local/unidade onde trabalhava",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Dados da desativacao",
+          "perguntas": [
+            {
+              "name": "login_usuario_desativar",
+              "label": "Login do usuario a desativar",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "motivo_desativacao",
+              "label": "Motivo da desativacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "name": "numero_processo",
+              "label": "Numero do processo administrativo (opcional)",
+              "type": "text",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "acao_ad": "Desativar",
+      "titulo_modelo": "Desativação de usuário: {login_usuario_desativar}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "1.5",
+      "nome": "Acesso a pasta de rede",
+      "descricao": "Solicitacao de acesso a pasta compartilhada na rede. Apos aprovacao, a ACL e ajustada concedendo o nivel de acesso pedido.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-folder-open",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (opcional)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Local/unidade",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Dados do acesso solicitado",
+          "perguntas": [
+            {
+              "name": "login_solicitante",
+              "label": "Login do usuario que precisa do acesso",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "caminho_pasta",
+              "label": "Nome ou caminho completo da pasta de rede (ex: \\\\srv01\\saude\\Atendimento)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "tipo_acesso",
+              "label": "Tipo de acesso solicitado",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "leitura",
+                "leitura-escrita"
+              ]
+            },
+            {
+              "name": "motivo_acesso",
+              "label": "Motivo/justificativa do acesso",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "acao_ad": "AcessoPasta",
+      "titulo_modelo": "Acesso à pasta {caminho_pasta} para {login_solicitante}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "1.6",
+      "nome": "Criação de e-mail institucional",
+      "descricao": "Solicitacao de criacao de mailbox no Exchange. Requer que o usuario ja exista no AD. Apos aprovacao, sera criado o e-mail usuario@dominio-da-empresa.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-envelope-open-text",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados para criacao do e-mail",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo do colaborador",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "nome_usuario",
+              "label": "Login/usuario de rede (SamAccountName no AD - ja deve existir)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "motivo_email",
+              "label": "Justificativa para criacao do e-mail institucional",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "acao_ad": "CriarEmail",
+      "titulo_modelo": "Criação de e-mail: {nome_usuario}",
+      "aprovacao": "gestor"
+    },
+    {
+      "codigo": "1.7",
+      "nome": "Transferência de setor ou local",
+      "descricao": "Transferencia de colaborador para novo setor/local. O sistema remove grupos antigos, copia perfil/grupos do novo setor, gera nova senha e move o usuario para a OU correta.",
+      "grupo": "Usuários e acessos",
+      "icon": "fas fa-exchange-alt",
+      "ticket": {
+        "type": 2,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "nome": "Dados do colaborador",
+          "perguntas": [
+            {
+              "name": "nome_completo",
+              "label": "Nome completo",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_nascimento",
+              "label": "Data de nascimento (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "cpf",
+              "label": "CPF (11 digitos)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{11}$/"
+            },
+            {
+              "name": "celular",
+              "label": "Celular com DDD",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            },
+            {
+              "name": "matricula",
+              "label": "Matricula funcional",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "data_admissao",
+              "label": "Data de admissao (dd/mm/aaaa)",
+              "type": "date",
+              "required": true
+            },
+            {
+              "name": "secretaria",
+              "label": "Secretaria (nova)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "coordenadoria",
+              "label": "Coordenadoria (nova)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "gerencia",
+              "label": "Gerencia (nova, opcional)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "unidade",
+              "label": "Nova unidade/local de trabalho",
+              "type": "location",
+              "required": true
+            },
+            {
+              "name": "cbo",
+              "label": "CBO/Cargo (no novo setor)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "email_pessoal",
+              "label": "E-mail pessoal",
+              "type": "email",
+              "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do novo superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
+            }
+          ]
+        },
+        {
+          "nome": "Dados da transferencia",
+          "perguntas": [
+            {
+              "name": "login_usuario_transferir",
+              "label": "Login do usuario a transferir",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "perfil_referencia",
+              "label": "Login de um colega do novo setor que ja possua o perfil desejado (digite o usuario de rede)",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "novo_setor",
+              "label": "Novo setor de destino",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "novo_local",
+              "label": "Novo local de trabalho",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "motivo_transferencia",
+              "label": "Motivo da transferencia",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "name": "numero_processo",
+              "label": "Numero do processo administrativo (opcional)",
+              "type": "text",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "acao_ad": "Transferir",
+      "titulo_modelo": "Transferência de setor: {login_usuario_transferir}",
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
+    },
+    {
+      "codigo": "2.1",
+      "nome": "Manutenção de impressoras",
+      "descricao": "Solicitacao de manutencao em impressoras. Inclua numero de serie e modelo do equipamento.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-print",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Numero de serie do equipamento",
+              "name": "numero_serie",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Marca/modelo da impressora",
+              "name": "impressora",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.2",
+      "nome": "Manutenção de computador",
+      "descricao": "Suporte para problemas em desktop ou notebook (hardware ou sistema operacional).",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.3",
+      "nome": "Instalação de software",
+      "descricao": "Solicitacao de instalacao de software licenciado ou de uso institucional.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.4",
+      "nome": "Atualização de software",
+      "descricao": "Atualizacao de software ja instalado (versao mais recente, patch de seguranca etc).",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.5",
+      "nome": "Reparação de software",
+      "descricao": "Software apresenta erro, trava ou comportamento incorreto.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.6",
+      "nome": "Internet lenta ou instável",
+      "descricao": "Internet lenta, com travamentos ou intermitencia.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.7",
+      "nome": "Sem conexão com a internet",
+      "descricao": "Sem conexao com a internet ou rede local.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.8",
+      "nome": "Acesso Wi-Fi",
+      "descricao": "Solicitacao de acesso a rede Wi-Fi institucional.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.9",
+      "nome": "VPN / acesso remoto",
+      "descricao": "Configuracao ou problema com VPN ou acesso remoto.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.10",
+      "nome": "Outros assuntos de rede",
+      "descricao": "Outros problemas relacionados a rede que nao se enquadram nos itens acima.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-laptop-medical",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "2.11",
+      "nome": "Cartucho ou toner",
+      "descricao": "Solicitacao de troca/reposicao de cartucho ou toner. Informe modelo da impressora.",
+      "grupo": "Suporte de informática",
+      "icon": "fas fa-print",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Numero de serie do equipamento",
+              "name": "numero_serie",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Marca/modelo da impressora",
+              "name": "impressora",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1",
+      "nome": "Saúde: problemas de acesso",
+      "descricao": "Problemas para acessar sistemas da Saude (login, autenticacao, sessao).",
+      "grupo": "Sistemas da saúde",
+      "icon": "fas fa-heartbeat",
+      "ticket": {
+        "type": 1,
+        "urgency": 3,
+        "impact": 3
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Qual sistema da saude com problema? (ex: PEC, FAA, Formsus)",
+              "name": "sistema_saude",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "alta",
+                "muito_alta",
+                "Critica"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "3.2",
+      "nome": "Saúde: novo acesso",
+      "descricao": "Solicitacao de novo acesso a sistemas da Saude para usuario que ainda nao possui.",
+      "grupo": "Sistemas da saúde",
+      "icon": "fas fa-heartbeat",
+      "ticket": {
+        "type": 1,
+        "urgency": 3,
+        "impact": 3
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Qual sistema da saude com problema? (ex: PEC, FAA, Formsus)",
+              "name": "sistema_saude",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "alta",
+                "muito_alta",
+                "Critica"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "3.3",
+      "nome": "Saúde: solicitações gerais",
+      "descricao": "Outras solicitacoes referentes a sistemas da Saude (orientacao, configuracao, etc).",
+      "grupo": "Sistemas da saúde",
+      "icon": "fas fa-heartbeat",
+      "ticket": {
+        "type": 1,
+        "urgency": 3,
+        "impact": 3
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Qual sistema da saude com problema? (ex: PEC, FAA, Formsus)",
+              "name": "sistema_saude",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "alta",
+                "muito_alta",
+                "Critica"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "IP da maquina (se aplicavel)",
+              "name": "ip_maquina",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "4.1",
+      "nome": "Telefonia: problemas com ramal",
+      "descricao": "Problemas com ramal/linha telefonica fixa (sem audio, ruido, sem chamada, etc).",
+      "grupo": "Telefonia",
+      "icon": "fas fa-phone-alt",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade (pode deixar vazio)",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Celular para contato (com DDD)",
+              "regex": "/^[0-9]{10,11}$/",
+              "name": "celular_contato",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Ramal com defeito",
+              "name": "ramal_defeito",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Em qual sala esta a linha/ramal?",
+              "name": "sala_linha_ramal",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "MAC do aparelho (se conhecido)",
+              "name": "mac_aparelho",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "4.2",
+      "nome": "Telefonia: aparelho telefônico",
+      "descricao": "Problemas com o aparelho telefonico (defeito fisico, troca, configuracao).",
+      "grupo": "Telefonia",
+      "icon": "fas fa-phone-alt",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade (pode deixar vazio)",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Celular para contato (com DDD)",
+              "regex": "/^[0-9]{10,11}$/",
+              "name": "celular_contato",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Ramal com defeito",
+              "name": "ramal_defeito",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Em qual sala esta a linha/ramal?",
+              "name": "sala_linha_ramal",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "MAC do aparelho (se conhecido)",
+              "name": "mac_aparelho",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "4.3",
+      "nome": "Telefonia: celular e chip",
+      "descricao": "Solicitacao relacionada a celular institucional, linha movel ou chip SIM.",
+      "grupo": "Telefonia",
+      "icon": "fas fa-phone-alt",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade (pode deixar vazio)",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Celular para contato (com DDD)",
+              "regex": "/^[0-9]{10,11}$/",
+              "name": "celular_contato",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Ramal com defeito",
+              "name": "ramal_defeito",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Em qual sala esta a linha/ramal?",
+              "name": "sala_linha_ramal",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "MAC do aparelho (se conhecido)",
+              "name": "mac_aparelho",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    },
+    {
+      "codigo": "4.4",
+      "nome": "Telefonia: outros",
+      "descricao": "Outros assuntos de telefonia que nao se enquadram nos itens anteriores.",
+      "grupo": "Telefonia",
+      "icon": "fas fa-phone-alt",
+      "ticket": {
+        "type": 1,
+        "urgency": 2,
+        "impact": 2
+      },
+      "secoes": [
+        {
+          "perguntas": [
+            {
+              "label": "Nome do solicitante",
+              "name": "nome_solicitante",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Nome do local/unidade",
+              "name": "local",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "CEP da unidade (8 digitos)",
+              "regex": "/^[0-9]{8}$/",
+              "name": "cep",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "Logradouro",
+              "name": "logradouro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Numero do endereco",
+              "name": "numero",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Bairro",
+              "name": "bairro",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Cidade",
+              "name": "cidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Telefone da unidade (pode deixar vazio)",
+              "name": "telefone",
+              "type": "text",
+              "required": false
+            },
+            {
+              "label": "Celular para contato (com DDD)",
+              "regex": "/^[0-9]{10,11}$/",
+              "name": "celular_contato",
+              "type": "regex",
+              "required": true
+            },
+            {
+              "label": "E-mail institucional para contato",
+              "name": "email_unidade",
+              "type": "email",
+              "required": true
+            },
+            {
+              "label": "Setor",
+              "name": "setor",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Ramal com defeito",
+              "name": "ramal_defeito",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Em qual sala esta a linha/ramal?",
+              "name": "sala_linha_ramal",
+              "type": "text",
+              "required": true
+            },
+            {
+              "label": "Descricao detalhada do problema/solicitacao",
+              "name": "descricao_solicitacao",
+              "type": "textarea",
+              "required": true
+            },
+            {
+              "label": "Prioridade",
+              "values": [
+                "baixa",
+                "media",
+                "alta",
+                "muito_alta"
+              ],
+              "name": "prioridade",
+              "type": "select",
+              "required": true
+            },
+            {
+              "label": "MAC do aparelho (se conhecido)",
+              "name": "mac_aparelho",
+              "type": "text",
+              "required": false
+            }
+          ],
+          "nome": "Dados do chamado"
+        }
+      ]
+    }
+  ]
+}

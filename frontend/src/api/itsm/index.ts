@@ -49,6 +49,11 @@ export interface Chamado {
   satisfacaoPendente?: boolean
   satisfacaoNota?: number
   satisfacaoComentario?: string
+  validacao?: number // 1 sem, 2 aguardando, 3 aprovado, 4 recusado
+  validacaoRotulo?: string
+  execucaoAdStatus?: string
+  execucaoAdAcao?: string
+  senhaDisponivel?: boolean
   solicitantes: Ator[]
   tecnicos: Ator[]
   observadores: Ator[]
@@ -166,55 +171,86 @@ export const duracao = (seg?: number | null) => {
 // ========== equipe técnica ==========
 
 export const getChamadoPage = (params: any) => request.get({ url: '/itsm/chamado/page', params })
-export const getContagens = (): Promise<Record<string, number>> => request.get({ url: '/itsm/chamado/contagens' })
-export const getChamado = (id: number): Promise<Chamado> => request.get({ url: '/itsm/chamado/get', params: { id } })
+export const getContagens = (): Promise<Record<string, number>> =>
+  request.get({ url: '/itsm/chamado/contagens' })
+export const getChamado = (id: number): Promise<Chamado> =>
+  request.get({ url: '/itsm/chamado/get', params: { id } })
 export const getLinhaDoTempo = (id: number): Promise<Interacao[]> =>
   request.get({ url: '/itsm/chamado/linha-do-tempo', params: { id } })
 export const getHistorico = (id: number): Promise<Historico[]> =>
   request.get({ url: '/itsm/chamado/historico', params: { id } })
-export const criarChamado = (data: any): Promise<number> => request.post({ url: '/itsm/chamado/create', data })
+export const criarChamado = (data: any): Promise<number> =>
+  request.post({ url: '/itsm/chamado/create', data })
 export const atualizarChamado = (data: any) => request.put({ url: '/itsm/chamado/update', data })
-export const excluirChamado = (id: number) => request.delete({ url: '/itsm/chamado/delete', params: { id } })
-export const adicionarAtor = (data: { chamadoId: number; tipo: number; userId?: number; equipeId?: number }) =>
-  request.post({ url: '/itsm/chamado/ator', data })
-export const removerAtor = (id: number) => request.delete({ url: '/itsm/chamado/ator', params: { id } })
-export const assumir = (id: number) => request.post({ url: '/itsm/chamado/assumir', params: { id } })
-export const adicionarInteracao = (data: any) => request.post({ url: '/itsm/chamado/interacao', data })
+export const excluirChamado = (id: number) =>
+  request.delete({ url: '/itsm/chamado/delete', params: { id } })
+export const adicionarAtor = (data: {
+  chamadoId: number
+  tipo: number
+  userId?: number
+  equipeId?: number
+}) => request.post({ url: '/itsm/chamado/ator', data })
+export const removerAtor = (id: number) =>
+  request.delete({ url: '/itsm/chamado/ator', params: { id } })
+export const assumir = (id: number) =>
+  request.post({ url: '/itsm/chamado/assumir', params: { id } })
+export const adicionarInteracao = (data: any) =>
+  request.post({ url: '/itsm/chamado/interacao', data })
 export const colocarPendente = (chamadoId: number, motivo?: string) =>
   request.post({ url: '/itsm/chamado/pendente', data: { chamadoId, motivo } })
-export const retomar = (id: number) => request.post({ url: '/itsm/chamado/retomar', params: { id } })
+export const retomar = (id: number) =>
+  request.post({ url: '/itsm/chamado/retomar', params: { id } })
 export const fechar = (id: number) => request.post({ url: '/itsm/chamado/fechar', params: { id } })
-export const reabrir = (id: number) => request.post({ url: '/itsm/chamado/reabrir', params: { id } })
-export const avaliarSolucaoTecnico = (data: { chamadoId: number; aprovar: boolean; comentario?: string }) =>
-  request.post({ url: '/itsm/chamado/avaliar-solucao', data })
+export const reabrir = (id: number) =>
+  request.post({ url: '/itsm/chamado/reabrir', params: { id } })
+export const avaliarSolucaoTecnico = (data: {
+  chamadoId: number
+  aprovar: boolean
+  comentario?: string
+}) => request.post({ url: '/itsm/chamado/avaliar-solucao', data })
 
 // ========== autoatendimento ==========
 
-export const getCategoriasPortal = (): Promise<Categoria[]> => request.get({ url: '/itsm/portal/categorias' })
-export const abrirPortal = (data: any): Promise<number> => request.post({ url: '/itsm/portal/abrir', data })
+export const getCategoriasPortal = (): Promise<Categoria[]> =>
+  request.get({ url: '/itsm/portal/categorias' })
+export const abrirPortal = (data: any): Promise<number> =>
+  request.post({ url: '/itsm/portal/abrir', data })
 export const getMeus = (params: any) => request.get({ url: '/itsm/portal/meus', params })
-export const getMeu = (id: number): Promise<Chamado> => request.get({ url: '/itsm/portal/get', params: { id } })
+export const getMeu = (id: number): Promise<Chamado> =>
+  request.get({ url: '/itsm/portal/get', params: { id } })
 export const getMinhaLinhaDoTempo = (id: number): Promise<Interacao[]> =>
   request.get({ url: '/itsm/portal/linha-do-tempo', params: { id } })
 export const responderPortal = (chamadoId: number, conteudo: string) =>
-  request.post({ url: '/itsm/portal/acompanhamento', data: { chamadoId, tipo: 'acompanhamento', conteudo } })
-export const avaliarSolucaoPortal = (data: { chamadoId: number; aprovar: boolean; comentario?: string }) =>
-  request.post({ url: '/itsm/portal/avaliar-solucao', data })
+  request.post({
+    url: '/itsm/portal/acompanhamento',
+    data: { chamadoId, tipo: 'acompanhamento', conteudo }
+  })
+export const avaliarSolucaoPortal = (data: {
+  chamadoId: number
+  aprovar: boolean
+  comentario?: string
+}) => request.post({ url: '/itsm/portal/avaliar-solucao', data })
 
 // ========== cadastros ==========
 
 export const getCategorias = (somenteAtivas = false): Promise<Categoria[]> =>
   request.get({ url: '/itsm/categoria/list', params: { somenteAtivas } })
-export const salvarCategoria = (data: any): Promise<number> => request.post({ url: '/itsm/categoria/save', data })
-export const excluirCategoria = (id: number) => request.delete({ url: '/itsm/categoria/delete', params: { id } })
+export const salvarCategoria = (data: any): Promise<number> =>
+  request.post({ url: '/itsm/categoria/save', data })
+export const excluirCategoria = (id: number) =>
+  request.delete({ url: '/itsm/categoria/delete', params: { id } })
 export const getEquipes = (somenteAtivas = false): Promise<Equipe[]> =>
   request.get({ url: '/itsm/equipe/list', params: { somenteAtivas } })
-export const salvarEquipe = (data: Equipe): Promise<number> => request.post({ url: '/itsm/equipe/save', data })
-export const excluirEquipe = (id: number) => request.delete({ url: '/itsm/equipe/delete', params: { id } })
+export const salvarEquipe = (data: Equipe): Promise<number> =>
+  request.post({ url: '/itsm/equipe/save', data })
+export const excluirEquipe = (id: number) =>
+  request.delete({ url: '/itsm/equipe/delete', params: { id } })
 export const getOrigens = (somenteAtivas = false): Promise<Origem[]> =>
   request.get({ url: '/itsm/origem/list', params: { somenteAtivas } })
-export const salvarOrigem = (data: Origem): Promise<number> => request.post({ url: '/itsm/origem/save', data })
-export const excluirOrigem = (id: number) => request.delete({ url: '/itsm/origem/delete', params: { id } })
+export const salvarOrigem = (data: Origem): Promise<number> =>
+  request.post({ url: '/itsm/origem/save', data })
+export const excluirOrigem = (id: number) =>
+  request.delete({ url: '/itsm/origem/delete', params: { id } })
 
 // ========== SLA, calendários e feriados ==========
 
@@ -278,17 +314,233 @@ export const UNIDADES = [
 export const DIAS = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
 
 export const getSlas = (): Promise<Sla[]> => request.get({ url: '/itsm/sla/list' })
-export const salvarSla = (data: Sla): Promise<number> => request.post({ url: '/itsm/sla/save', data })
-export const excluirSla = (id: number) => request.delete({ url: '/itsm/sla/delete', params: { id } })
-export const getSlaPorPrioridade = (): Promise<SlaPorPrioridade[]> => request.get({ url: '/itsm/sla/prioridade' })
-export const salvarSlaPorPrioridade = (data: SlaPorPrioridade[]) => request.put({ url: '/itsm/sla/prioridade', data })
+export const salvarSla = (data: Sla): Promise<number> =>
+  request.post({ url: '/itsm/sla/save', data })
+export const excluirSla = (id: number) =>
+  request.delete({ url: '/itsm/sla/delete', params: { id } })
+export const getSlaPorPrioridade = (): Promise<SlaPorPrioridade[]> =>
+  request.get({ url: '/itsm/sla/prioridade' })
+export const salvarSlaPorPrioridade = (data: SlaPorPrioridade[]) =>
+  request.put({ url: '/itsm/sla/prioridade', data })
 export const executarAutomacao = (): Promise<{ escalonamentos: number; fechados: number }> =>
   request.post({ url: '/itsm/sla/executar-automacao' })
-export const getCalendarios = (): Promise<Calendario[]> => request.get({ url: '/itsm/calendario/list' })
-export const salvarCalendario = (data: Calendario): Promise<number> => request.post({ url: '/itsm/calendario/save', data })
-export const excluirCalendario = (id: number) => request.delete({ url: '/itsm/calendario/delete', params: { id } })
+export const getCalendarios = (): Promise<Calendario[]> =>
+  request.get({ url: '/itsm/calendario/list' })
+export const salvarCalendario = (data: Calendario): Promise<number> =>
+  request.post({ url: '/itsm/calendario/save', data })
+export const excluirCalendario = (id: number) =>
+  request.delete({ url: '/itsm/calendario/delete', params: { id } })
 export const getFeriados = (): Promise<Feriado[]> => request.get({ url: '/itsm/feriado/list' })
-export const salvarFeriado = (data: Feriado): Promise<number> => request.post({ url: '/itsm/feriado/save', data })
-export const excluirFeriado = (id: number) => request.delete({ url: '/itsm/feriado/delete', params: { id } })
-export const responderSatisfacao = (data: { chamadoId: number; nota: number; comentario?: string }) =>
-  request.post({ url: '/itsm/portal/satisfacao', data })
+export const salvarFeriado = (data: Feriado): Promise<number> =>
+  request.post({ url: '/itsm/feriado/save', data })
+export const excluirFeriado = (id: number) =>
+  request.delete({ url: '/itsm/feriado/delete', params: { id } })
+export const responderSatisfacao = (data: {
+  chamadoId: number
+  nota: number
+  comentario?: string
+}) => request.post({ url: '/itsm/portal/satisfacao', data })
+
+// ========== catálogo de serviços, aprovações, regras e execuções no AD ==========
+
+export interface Pergunta {
+  name: string
+  label: string
+  type:
+    | 'text'
+    | 'textarea'
+    | 'email'
+    | 'number'
+    | 'date'
+    | 'select'
+    | 'radios'
+    | 'regex'
+    | 'location'
+  required: boolean
+  values?: string[]
+  regex?: string
+}
+
+export interface Secao {
+  nome: string
+  perguntas: Pergunta[]
+}
+
+export interface Definicao {
+  secoes: Secao[]
+}
+
+export interface FormularioCatalogo {
+  id: number
+  codigo?: string
+  nome: string
+  descricao?: string
+  grupo: string
+  icone?: string
+  definicao: Definicao
+  precisaAprovacao: boolean
+}
+
+export interface Formulario {
+  id?: number
+  codigo?: string
+  nome: string
+  descricao?: string
+  grupo: string
+  icone?: string
+  categoriaId?: number
+  categoria?: string
+  tipo: number
+  urgencia: number
+  impacto: number
+  tituloModelo?: string
+  definicao: Definicao
+  aprovacao: 'nenhuma' | 'gestor' | 'campo' | 'fixo'
+  aprovadorCampo?: string
+  aprovadorId?: number
+  aprovador?: string
+  acaoAd?: string
+  ativo: boolean
+  ordem: number
+}
+
+export interface Aprovacao {
+  id: number
+  chamadoId: number
+  chamadoTitulo: string
+  chamadoDescricao?: string
+  solicitante?: string
+  aprovadorId: number
+  aprovador: string
+  solicitadoPor?: string
+  status: number // 2 aguardando, 3 aprovada, 4 recusada
+  statusRotulo: string
+  comentarioPedido?: string
+  comentarioResposta?: string
+  pedidoEm: number
+  respondidoEm?: number
+}
+
+export interface Criterio {
+  campo: string
+  operador: string
+  valor: string
+}
+
+export interface AcaoRegra {
+  acao: string
+  valor: string
+}
+
+export interface Regra {
+  id?: number
+  nome: string
+  descricao?: string
+  ordem: number
+  ativo: boolean
+  combinacao: 'E' | 'OU'
+  parar: boolean
+  criterios: Criterio[]
+  acoes: AcaoRegra[]
+  updateTime?: number
+}
+
+export interface Execucao {
+  id: number
+  chamadoId: number
+  chamadoTitulo: string
+  acao: string
+  status: string
+  tentativas: number
+  proximaTentativa?: number
+  mensagem?: string
+  resultado?: string
+  dados?: string
+  senhaGuardada: boolean
+  senhaVistaEm?: number
+  criadoEm: number
+  executadoEm?: number
+}
+
+export const ACOES_AD = [
+  { valor: 'Criar', rotulo: 'Criar usuário' },
+  { valor: 'Reset', rotulo: 'Resetar senha' },
+  { valor: 'Reativar', rotulo: 'Reativar usuário' },
+  { valor: 'Desativar', rotulo: 'Desativar usuário' },
+  { valor: 'AcessoPasta', rotulo: 'Acesso a pasta' },
+  { valor: 'Transferir', rotulo: 'Transferir de setor' },
+  { valor: 'CriarEmail', rotulo: 'Criar e-mail' }
+]
+
+export const STATUS_EXECUCAO: Record<string, { rotulo: string; cor: string }> = {
+  aguardando_aprovacao: { rotulo: 'Aguardando aprovação', cor: 'warning' },
+  pronta: { rotulo: 'Na fila', cor: 'primary' },
+  executando: { rotulo: 'Executando', cor: 'primary' },
+  sucesso: { rotulo: 'Concluída', cor: 'success' },
+  erro: { rotulo: 'Erro', cor: 'danger' },
+  recusada: { rotulo: 'Recusada', cor: 'info' },
+  cancelada: { rotulo: 'Cancelada', cor: 'info' }
+}
+
+export const corAprovacao = (s?: number) =>
+  s === 3 ? 'success' : s === 4 ? 'danger' : s === 2 ? 'warning' : 'info'
+
+// portal
+export const getCatalogo = (): Promise<FormularioCatalogo[]> =>
+  request.get({ url: '/itsm/portal/catalogo' })
+export const enviarFormulario = (
+  formularioId: number,
+  respostas: Record<string, any>
+): Promise<number> =>
+  request.post({ url: '/itsm/portal/catalogo/enviar', data: { formularioId, respostas } })
+export const getMinhasAprovacoes = (pendentes: boolean): Promise<Aprovacao[]> =>
+  request.get({ url: '/itsm/portal/aprovacoes', params: { pendentes } })
+export const responderAprovacao = (data: { id: number; aprovar: boolean; comentario?: string }) =>
+  request.post({ url: '/itsm/portal/aprovacoes/responder', data })
+export const getAprovacoesDoMeuChamado = (id: number): Promise<Aprovacao[]> =>
+  request.get({ url: '/itsm/portal/aprovacoes-do-chamado', params: { id } })
+export const revelarSenha = (id: number): Promise<string> =>
+  request.post({ url: '/itsm/portal/revelar-senha', params: { id } })
+
+// equipe técnica
+export const getAprovacoesDoChamado = (id: number): Promise<Aprovacao[]> =>
+  request.get({ url: '/itsm/chamado/aprovacoes', params: { id } })
+export const pedirAprovacao = (data: {
+  chamadoId: number
+  aprovadorIds: number[]
+  comentario?: string
+}) => request.post({ url: '/itsm/chamado/pedir-aprovacao', data })
+
+// configuração
+export const getFormularios = (): Promise<Formulario[]> =>
+  request.get({ url: '/itsm/formulario/list' })
+export const salvarFormulario = (data: Formulario): Promise<number> =>
+  request.post({ url: '/itsm/formulario/save', data })
+export const excluirFormulario = (id: number) =>
+  request.delete({ url: '/itsm/formulario/delete', params: { id } })
+export const importarFormularios = (arquivo: File, criarCategorias: boolean) =>
+  request.upload({
+    url: '/itsm/formulario/importar',
+    params: { criarCategorias },
+    data: { arquivo }
+  })
+export const getRegras = (): Promise<Regra[]> => request.get({ url: '/itsm/regra/list' })
+export const getOpcoesRegra = (): Promise<{
+  campos: string[]
+  operadores: string[]
+  acoes: string[]
+}> => request.get({ url: '/itsm/regra/opcoes' })
+export const salvarRegra = (data: Regra): Promise<number> =>
+  request.post({ url: '/itsm/regra/save', data })
+export const excluirRegra = (id: number) =>
+  request.delete({ url: '/itsm/regra/delete', params: { id } })
+export const testarRegras = (
+  fatos: Record<string, any>
+): Promise<{ regraId: number; regraNome: string; acao: AcaoRegra }[]> =>
+  request.post({ url: '/itsm/regra/testar', data: { fatos } })
+export const getExecucoes = (params: any) => request.get({ url: '/itsm/execucao/page', params })
+export const getModoAd = (): Promise<string> => request.get({ url: '/itsm/execucao/modo' })
+export const repetirExecucao = (id: number) =>
+  request.post({ url: '/itsm/execucao/repetir', params: { id } })
+export const cancelarExecucao = (id: number, motivo?: string) =>
+  request.post({ url: '/itsm/execucao/cancelar', data: { id, motivo } })

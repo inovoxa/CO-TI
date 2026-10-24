@@ -279,6 +279,20 @@ coti:
   itsm:
     fechamento-automatico-dias: ${CO_TI_ITSM_FECHAMENTO_DIAS:7}   # negativo = nunca fecha sozinho
     pesquisa-satisfacao: ${CO_TI_ITSM_PESQUISA:true}
+    # Operações no AD pedidas pelos formulários (criar usuário, resetar senha...). Executa o
+    # Executar_AD_Automatico.ps1 (pasta deploy/ad) num servidor Windows por SSH.
+    ad:
+      modo: ${CO_TI_AD_EXECUCAO:desligado}        # desligado | simulado (demonstração) | ssh
+      tentativas: ${CO_TI_AD_TENTATIVAS:3}         # em falha de rede/SSH; erro do script não repete
+      ssh:
+        host: ${CO_TI_AD_SSH_HOST:}
+        porta: ${CO_TI_AD_SSH_PORTA:22}
+        usuario: ${CO_TI_AD_SSH_USUARIO:}
+        chave-privada: ${CO_TI_AD_SSH_CHAVE:}        # caminho do arquivo (preferido)
+        senha: ${CO_TI_AD_SSH_SENHA:}
+        impressao-digital: ${CO_TI_AD_SSH_IMPRESSAO:}  # obrigatória: ssh-keyscan -t ed25519 host | ssh-keygen -lf -
+        # script: padrão C:\Scripts\Executar_AD_Automatico.ps1 (troque pela variável COTI_ITSM_AD_SSH_SCRIPT)
+        tempo-limite-seg: ${CO_TI_AD_SSH_TEMPO_LIMITE:120}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}
