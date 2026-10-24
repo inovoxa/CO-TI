@@ -19,6 +19,9 @@
       <el-table-column label="Atribui para" min-width="180">
         <template #default="{ row }">{{ responsavel(row) }}</template>
       </el-table-column>
+      <el-table-column label="SLA de solução" min-width="160">
+        <template #default="{ row }">{{ slas.find((s) => s.id === row.slaSolucaoId)?.nome || '—' }}</template>
+      </el-table-column>
       <el-table-column label="Uso" width="200">
         <template #default="{ row }">
           <el-tag v-if="row.paraIncidente" class="mr-4px" disable-transitions size="small">Incidente</el-tag>
@@ -73,6 +76,16 @@
           <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
         </el-select>
       </el-form-item>
+      <el-form-item label="SLA de atendimento">
+        <el-select v-model="form.slaAtendimentoId" class="w-full" clearable placeholder="O da prioridade">
+          <el-option v-for="s in slas.filter((x) => x.tipo === 1)" :key="s.id" :label="s.nome" :value="s.id!" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="SLA de solução">
+        <el-select v-model="form.slaSolucaoId" class="w-full" clearable placeholder="O da prioridade">
+          <el-option v-for="s in slas.filter((x) => x.tipo === 0)" :key="s.id" :label="s.nome" :value="s.id!" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="Uso">
         <el-checkbox v-model="form.paraIncidente">Incidente</el-checkbox>
         <el-checkbox v-model="form.paraRequisicao">Requisição</el-checkbox>
@@ -101,6 +114,7 @@ const lista = ref<ItsmApi.Categoria[]>([])
 const arvore = ref<any[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
 const usuarios = ref<UserApi.UserVO[]>([])
+const slas = ref<ItsmApi.Sla[]>([])
 const expandir = ref(true)
 const mostrar = ref(true)
 const dialogo = ref(false)
@@ -113,6 +127,8 @@ const vazio = () => ({
   descricao: '',
   equipeId: undefined as number | undefined,
   tecnicoId: undefined as number | undefined,
+  slaAtendimentoId: undefined as number | undefined,
+  slaSolucaoId: undefined as number | undefined,
   paraIncidente: true,
   paraRequisicao: true,
   visivelPortal: true,
@@ -173,7 +189,11 @@ const excluir = async (c: ItsmApi.Categoria) => {
 }
 
 onMounted(async () => {
-  ;[equipes.value, usuarios.value] = await Promise.all([ItsmApi.getEquipes(), UserApi.getSimpleUserList()])
+  ;[equipes.value, usuarios.value, slas.value] = await Promise.all([
+    ItsmApi.getEquipes(),
+    UserApi.getSimpleUserList(),
+    ItsmApi.getSlas().catch(() => [])
+  ])
   await carregar()
 })
 </script>

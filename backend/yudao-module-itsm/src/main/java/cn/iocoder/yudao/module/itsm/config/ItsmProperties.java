@@ -19,4 +19,13 @@ public class ItsmProperties {
      */
     private Map<String, Map<String, Integer>> matrizPrioridade = new LinkedHashMap<>();
 
+    /**
+     * Dias até fechar sozinho um chamado solucionado sem resposta do solicitante (GLPI: autoclose_delay).
+     * 0 = fecha na próxima verificação; negativo = nunca.
+     */
+    private int fechamentoAutomaticoDias = 7;
+
+    /** Envia a pesquisa de satisfação ao fechar. */
+    private boolean pesquisaSatisfacao = true;
+
 }

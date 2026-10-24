@@ -21,6 +21,11 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
       acompanhamento do solicitante e "assumido em" (src/CommonITILObject.php, src/Ticket.php, src/ITILSolution.php);
     * modelo de dados de chamados, atores, acompanhamentos, tarefas, soluções, categorias e origens
       (install/mysql/glpi-empty.sql).
+    * cálculo de prazos com calendário de expediente e feriados, nos três modos (horas úteis, dias úteis e fim
+      do expediente), e tempo ativo entre datas (src/Calendar.php, src/CalendarSegment.php);
+    * SLA de atendimento/solução, conversão de unidades e desconto da pendência no expediente
+      (src/LevelAgreement.php, src/SLA.php, src/CommonITILObject.php);
+    * níveis de escalonamento e fechamento automático de solucionados (src/SlaLevel.php, src/Ticket.php).
 - OCS Inventory NG 2.12.6 (GPL-2.0-or-later), Copyright OCSInventory-NG contributors — ainda nenhuma parte portada.
 - Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — ainda nenhuma parte portada.

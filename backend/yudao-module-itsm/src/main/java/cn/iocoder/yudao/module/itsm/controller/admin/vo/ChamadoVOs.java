@@ -85,6 +85,16 @@ public final class ChamadoVOs {
         private List<Ator> solicitantes = new ArrayList<>();
         private List<Ator> tecnicos = new ArrayList<>();
         private List<Ator> observadores = new ArrayList<>();
+        private Long slaAtendimentoId;
+        private String slaAtendimento;
+        private Long slaSolucaoId;
+        private String slaSolucao;
+        /** Prazo de atendimento vencido sem ninguém assumir */
+        private Boolean atendimentoVencido;
+        /** Pesquisa de satisfação: aguardando resposta do solicitante */
+        private Boolean satisfacaoPendente;
+        private Integer satisfacaoNota;
+        private String satisfacaoComentario;
         /** Ações que o usuário logado pode fazer agora (a tela mostra só esses botões) */
         private List<String> acoes = new ArrayList<>();
     }

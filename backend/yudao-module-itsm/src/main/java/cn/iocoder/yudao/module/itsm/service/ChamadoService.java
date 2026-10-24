@@ -71,6 +71,14 @@ public class ChamadoService {
     @Resource
     private ChamadoEscopo escopo;
     @Resource
+    private SlaService slaService;
+    @Resource
+    private SatisfacaoMapper satisfacaoMapper;
+    @Resource
+    private SlaNivelExecucaoMapper nivelExecucaoMapper;
+    @Resource
+    private SlaMapper slaMapper;
+    @Resource
     private AdminUserApi adminUserApi;
     @Resource
     private DeptApi deptApi;
@@ -206,6 +214,7 @@ public class ChamadoService {
                 .registradoPor(userId)
                 .build();
         CicloChamado.abrir(c, agora, !tecnicos.isEmpty() || !equipes.isEmpty());
+        slaService.aplicarNaAbertura(c);
         chamadoMapper.insert(c);
 
         solicitantes.stream().distinct().forEach(u -> inserirAtor(c.getId(), AtorTipo.SOLICITANTE, u, null));
@@ -264,7 +273,12 @@ public class ChamadoService {
         c.setCategoriaId(req.getCategoriaId());
         Optional.ofNullable(req.getOrigemId()).ifPresent(c::setOrigemId);
         Optional.ofNullable(req.getDeptId()).ifPresent(c::setDeptId);
-        chamadoMapper.updateById(c);
+        String slaAntes = nomeSla(c.getSlaSolucaoId());
+        if (!Objects.equals(antes.getCategoriaId(), c.getCategoriaId()) || !Objects.equals(antes.getPrioridade(), c.getPrioridade())) {
+            slaService.recalcular(c);
+        }
+        gravar(c);
+        diferenca(c.getId(), userId, "sla", slaAntes, nomeSla(c.getSlaSolucaoId()));
 
         diferenca(c.getId(), userId, "titulo", antes.getTitulo(), c.getTitulo());
         diferenca(c.getId(), userId, "tipo", rotuloTipo(antes.getTipo()), rotuloTipo(c.getTipo()));
@@ -400,6 +414,7 @@ public class ChamadoService {
                 i.setTempoGastoSeg(req.getTempoGastoSeg() == null ? 0 : req.getTempoGastoSeg());
                 interacaoMapper.insert(i);
                 c.setTempoGastoSeg((c.getTempoGastoSeg() == null ? 0 : c.getTempoGastoSeg()) + i.getTempoGastoSeg());
+                gravar(c);
                 mudarStatus(c, userId, () -> {
                     CicloChamado.assumir(ch, agora);
                     if (i.getInicio() != null && i.getEstadoTarefa() == InteracaoDO.TAREFA_A_FAZER) {
@@ -506,6 +521,136 @@ public class ChamadoService {
     }
 
     // =====================================================================================================
+    // Ações do sistema (escalonamento e fechamento automático) e pesquisa de satisfação
+    // =====================================================================================================
+
+    /**
+     * Executa um nível de escalonamento num chamado. Idempotente: o registro de execução tem índice único,
+     * então duas instâncias do backend não escalonam o mesmo nível duas vezes.
+     *
+     * @return true se executou agora
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public boolean escalonar(Long chamadoId, SlaNivelDO nivel, String qualPrazo) {
+        ChamadoDO c = chamadoMapper.selectByIdParaAtualizar(chamadoId);
+        if (c == null || !ChamadoStatus.de(c.getStatus()).aberto() || c.getStatus() == ChamadoStatus.PENDENTE.getCodigo()) {
+            return false;
+        }
+        boolean jaFeito = nivelExecucaoMapper.selectCount(new LambdaQueryWrapperX<SlaNivelExecucaoDO>()
+                .eq(SlaNivelExecucaoDO::getChamadoId, chamadoId).eq(SlaNivelExecucaoDO::getNivelId, nivel.getId())) > 0;
+        if (jaFeito) {
+            return false;
+        }
+        LocalDateTime agora = LocalDateTime.now();
+        nivelExecucaoMapper.insert(SlaNivelExecucaoDO.builder().chamadoId(chamadoId).nivelId(nivel.getId()).executadoEm(agora).build());
+        List<ChamadoAtorDO> atores = atorMapper.selectList(ChamadoAtorDO::getChamadoId, chamadoId);
+        List<String> feito = new ArrayList<>();
+        if (nivel.getAtribuirEquipeId() != null && atores.stream().noneMatch(a -> a.getTipo() == AtorTipo.TECNICO.getCodigo()
+                && nivel.getAtribuirEquipeId().equals(a.getEquipeId()))) {
+            inserirAtor(chamadoId, AtorTipo.TECNICO, null, nivel.getAtribuirEquipeId());
+            String eq = cadastros.obterEquipe(nivel.getAtribuirEquipeId()).getNome();
+            registrar(chamadoId, null, "tecnico+", null, eq);
+            feito.add("equipe " + eq + " incluída");
+        }
+        if (nivel.getAtribuirTecnicoId() != null && atores.stream().noneMatch(a -> a.getTipo() == AtorTipo.TECNICO.getCodigo()
+                && nivel.getAtribuirTecnicoId().equals(a.getUserId()))) {
+            inserirAtor(chamadoId, AtorTipo.TECNICO, nivel.getAtribuirTecnicoId(), null);
+            String nome = nomePessoa(nivel.getAtribuirTecnicoId());
+            registrar(chamadoId, null, "tecnico+", null, nome);
+            feito.add(nome + " incluído");
+        }
+        if (!feito.isEmpty()) {
+            mudarStatus(c, null, () -> CicloChamado.tecnicoAtribuido(c, agora));
+        }
+        if (nivel.getNovaPrioridade() != null && !nivel.getNovaPrioridade().equals(c.getPrioridade())) {
+            registrar(chamadoId, null, "prioridade", Prioridade.rotulo(c.getPrioridade()), Prioridade.rotulo(nivel.getNovaPrioridade()));
+            c.setPrioridade(nivel.getNovaPrioridade());
+            gravar(c);
+            feito.add("prioridade " + Prioridade.rotulo(nivel.getNovaPrioridade()).toLowerCase());
+        }
+        interacaoMapper.insert(InteracaoDO.builder().chamadoId(chamadoId).tipo(InteracaoDO.ACOMPANHAMENTO).privado(true)
+                .conteudo(HtmlSeguro.limpar("<p><b>Escalonamento automático: " + HtmlSeguro.texto(nivel.getNome()) + "</b> (prazo de "
+                        + qualPrazo + ")" + (feito.isEmpty() ? "" : ": " + String.join(", ", feito)) + ".</p>")).build());
+        registrar(chamadoId, null, "escalonamento", null, nivel.getNome());
+        publicar(chamadoId, "escalonado", null);
+        return true;
+    }
+
+    /** Fecha um chamado solucionado sem resposta do solicitante (GLPI: autoclose). */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public boolean fecharAutomatico(Long chamadoId) {
+        ChamadoDO c = chamadoMapper.selectByIdParaAtualizar(chamadoId);
+        if (c == null || c.getStatus() != ChamadoStatus.SOLUCIONADO.getCodigo()) {
+            return false;
+        }
+        InteracaoDO pendente = solucaoPendente(chamadoId);
+        if (pendente != null) {
+            marcarSolucao(pendente, InteracaoDO.SOLUCAO_APROVADA, null);
+        }
+        mudarStatus(c, null, () -> CicloChamado.fechar(c, LocalDateTime.now()));
+        publicar(chamadoId, "fechado", null);
+        return true;
+    }
+
+    /** Resposta do solicitante à pesquisa de satisfação (uma vez só). */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public void responderPesquisa(Long chamadoId, int nota, String comentario, Long userId) {
+        ChamadoDO c = chamadoExistente(chamadoId);
+        if (!ehSolicitante(c, userId)) {
+            throw exception(CHAMADO_SEM_ACESSO);
+        }
+        SatisfacaoDO s = satisfacaoMapper.selectOne(SatisfacaoDO::getChamadoId, chamadoId);
+        if (s == null || s.getRespondidaEm() != null) {
+            throw exception(SATISFACAO_NAO_DISPONIVEL);
+        }
+        s.setNota(nota);
+        s.setComentario(comentario == null ? null : HtmlSeguro.texto(comentario));
+        s.setRespondidaEm(LocalDateTime.now());
+        satisfacaoMapper.updateById(s);
+        registrar(chamadoId, userId, "satisfacao", null, nota + "/5");
+        publicar(chamadoId, "satisfacao", userId);
+    }
+
+    private void criarPesquisa(ChamadoDO c, LocalDateTime agora) {
+        if (!props.isPesquisaSatisfacao() || satisfacaoMapper.selectCount(SatisfacaoDO::getChamadoId, c.getId()) > 0) {
+            return;
+        }
+        satisfacaoMapper.insert(SatisfacaoDO.builder().chamadoId(c.getId()).enviadaEm(agora).build());
+    }
+
+    /**
+     * Grava o chamado inteiro. Os campos que podem voltar a vazio (categoria, SLA, prazos, início da espera)
+     * vão explícitos: o updateById do MyBatis-Plus ignora nulos.
+     */
+    private void gravar(ChamadoDO c) {
+        // 1) campos preenchidos; 2) os que podem ter voltado a vazio (num UPDATE só, as colunas se repetiriam)
+        chamadoMapper.updateById(c);
+        chamadoMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<ChamadoDO>()
+                .eq(ChamadoDO::getId, c.getId())
+                .set(ChamadoDO::getCategoriaId, c.getCategoriaId())
+                .set(ChamadoDO::getSlaAtendimentoId, c.getSlaAtendimentoId())
+                .set(ChamadoDO::getSlaSolucaoId, c.getSlaSolucaoId())
+                .set(ChamadoDO::getPrazoAtendimento, c.getPrazoAtendimento())
+                .set(ChamadoDO::getPrazoSolucao, c.getPrazoSolucao())
+                .set(ChamadoDO::getInicioEspera, c.getInicioEspera())
+                .set(ChamadoDO::getSolucionadoEm, c.getSolucionadoEm())
+                .set(ChamadoDO::getFechadoEm, c.getFechadoEm())
+                .set(ChamadoDO::getTempoSolucaoSeg, c.getTempoSolucaoSeg())
+                .set(ChamadoDO::getTempoFechamentoSeg, c.getTempoFechamentoSeg()));
+    }
+
+    private String nomeSla(Long id) {
+        if (id == null) {
+            return null;
+        }
+        SlaDO s = slaMapper.selectById(id);
+        return s == null ? "#" + id : s.getNome();
+    }
+
+    // =====================================================================================================
     // Internos
     // =====================================================================================================
 
@@ -535,12 +680,20 @@ public class ChamadoService {
     /** Aplica a transição, grava o chamado e registra a mudança de situação no histórico. */
     private void mudarStatus(ChamadoDO c, Long userId, Runnable transicao) {
         Integer antes = c.getStatus();
+        LocalDateTime inicioEspera = c.getInicioEspera();
         try {
             transicao.run();
         } catch (CicloChamado.TransicaoInvalidaException e) {
             throw exception(CHAMADO_TRANSICAO_INVALIDA, e.getMessage());
         }
-        chamadoMapper.updateById(c);
+        LocalDateTime agora = LocalDateTime.now();
+        if (antes == ChamadoStatus.PENDENTE.getCodigo() && c.getStatus() != ChamadoStatus.PENDENTE.getCodigo()) {
+            slaService.aposPendencia(c, inicioEspera, agora);
+        }
+        gravar(c);
+        if (c.getStatus() == ChamadoStatus.FECHADO.getCodigo() && !Objects.equals(antes, c.getStatus())) {
+            criarPesquisa(c, agora);
+        }
         if (!Objects.equals(antes, c.getStatus())) {
             registrar(c.getId(), userId, "status", ChamadoStatus.de(antes).getRotulo(), ChamadoStatus.de(c.getStatus()).getRotulo());
         }
@@ -636,7 +789,7 @@ public class ChamadoService {
 
     private void registrar(Long chamadoId, Long userId, String campo, String de, String para) {
         historicoMapper.insert(HistoricoDO.builder().chamadoId(chamadoId).momento(LocalDateTime.now())
-                .userId(userId).usuario(nomePessoa(userId)).campo(campo)
+                .userId(userId).usuario(userId == null ? "Sistema" : nomePessoa(userId)).campo(campo)
                 .valorAntigo(limitar(de)).valorNovo(limitar(para)).build());
     }
 
@@ -717,6 +870,9 @@ public class ChamadoService {
         Map<Long, DeptRespDTO> depts = deptApi.getDeptMap(chamados.stream().map(ChamadoDO::getDeptId)
                 .filter(Objects::nonNull).collect(Collectors.toSet()));
         Map<Long, List<ChamadoAtorDO>> porChamado = atores.stream().collect(Collectors.groupingBy(ChamadoAtorDO::getChamadoId));
+        Map<Long, String> slas = slaMapper.selectList().stream().collect(Collectors.toMap(SlaDO::getId, SlaDO::getNome));
+        Map<Long, SatisfacaoDO> pesquisas = satisfacaoMapper.selectList(SatisfacaoDO::getChamadoId, ids).stream()
+                .collect(Collectors.toMap(SatisfacaoDO::getChamadoId, x -> x, (a, b) -> a));
         LocalDateTime agora = LocalDateTime.now();
 
         return chamados.stream().map(c -> {
@@ -746,7 +902,21 @@ public class ChamadoService {
             r.setFechadoEm(c.getFechadoEm());
             r.setPrazoAtendimento(c.getPrazoAtendimento());
             r.setPrazoSolucao(c.getPrazoSolucao());
-            r.setSlaVencido(st.aberto() && c.getPrazoSolucao() != null && c.getPrazoSolucao().isBefore(agora));
+            // pendente está com o relógio parado: não conta como vencido
+            r.setSlaVencido(st.aberto() && st != ChamadoStatus.PENDENTE && c.getPrazoSolucao() != null
+                    && c.getPrazoSolucao().isBefore(agora));
+            r.setAtendimentoVencido(c.getAssumidoEm() == null && st.aberto() && c.getPrazoAtendimento() != null
+                    && c.getPrazoAtendimento().isBefore(agora));
+            r.setSlaAtendimentoId(c.getSlaAtendimentoId());
+            r.setSlaAtendimento(slas.get(c.getSlaAtendimentoId()));
+            r.setSlaSolucaoId(c.getSlaSolucaoId());
+            r.setSlaSolucao(slas.get(c.getSlaSolucaoId()));
+            SatisfacaoDO pesq = pesquisas.get(c.getId());
+            if (pesq != null) {
+                r.setSatisfacaoPendente(pesq.getRespondidaEm() == null);
+                r.setSatisfacaoNota(pesq.getNota());
+                r.setSatisfacaoComentario(pesq.getComentario());
+            }
             r.setEsperaSeg(c.getEsperaSeg());
             r.setTempoAssumirSeg(c.getTempoAssumirSeg());
             r.setTempoSolucaoSeg(c.getTempoSolucaoSeg());
@@ -803,6 +973,11 @@ public class ChamadoService {
             a.add("avaliar-solucao");
         }
         if (tecnico && st == ChamadoStatus.FECHADO && tem(userId, P_REABRIR)) a.add("reabrir");
+        if (solicitante && st == ChamadoStatus.FECHADO
+                && satisfacaoMapper.selectCount(new LambdaQueryWrapperX<SatisfacaoDO>().eq(SatisfacaoDO::getChamadoId, c.getId())
+                .isNull(SatisfacaoDO::getRespondidaEm)) > 0) {
+            a.add("avaliar-atendimento");
+        }
         if (tecnico && tem(userId, P_DELETE)) a.add("excluir");
         return a;
     }

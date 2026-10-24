@@ -33,4 +33,16 @@ public interface ErrorCodeConstants {
     ErrorCode ORIGEM_NAO_EXISTE = new ErrorCode(1_101_001_020, "Origem não encontrada");
     ErrorCode ORIGEM_EM_USO = new ErrorCode(1_101_001_021, "A origem está em uso; desative em vez de excluir");
 
+    // SLA 1-101-002-xxx
+    ErrorCode SLA_NAO_EXISTE = new ErrorCode(1_101_002_000, "SLA não encontrado");
+    ErrorCode SLA_INVALIDO = new ErrorCode(1_101_002_001, "{}");
+    ErrorCode SLA_EM_USO = new ErrorCode(1_101_002_002, "O SLA está em uso (categoria, prioridade ou chamado aberto); desative em vez de excluir");
+    ErrorCode SLA_TIPO_ERRADO = new ErrorCode(1_101_002_003, "Use um SLA de atendimento no campo de atendimento e um de solução no de solução");
+    ErrorCode CALENDARIO_NAO_EXISTE = new ErrorCode(1_101_002_010, "Calendário não encontrado");
+    ErrorCode CALENDARIO_EM_USO = new ErrorCode(1_101_002_011, "O calendário é usado por um SLA");
+    ErrorCode CALENDARIO_PERIODO_INVALIDO = new ErrorCode(1_101_002_012, "Período inválido: o fim precisa ser depois do início e os períodos do mesmo dia não podem se sobrepor");
+    ErrorCode FERIADO_NAO_EXISTE = new ErrorCode(1_101_002_020, "Feriado não encontrado");
+    ErrorCode FERIADO_DATAS_INVALIDAS = new ErrorCode(1_101_002_021, "A data final do feriado é anterior à inicial");
+    ErrorCode SATISFACAO_NAO_DISPONIVEL = new ErrorCode(1_101_002_030, "Não há pesquisa de satisfação pendente para este chamado");
+
 }

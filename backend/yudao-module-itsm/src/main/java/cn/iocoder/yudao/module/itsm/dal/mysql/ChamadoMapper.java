@@ -74,7 +74,9 @@ public interface ChamadoMapper extends BaseMapperX<ChamadoDO> {
                 }
             }
             case "pendentes" -> q.eq(ChamadoDO::getStatus, ChamadoStatus.PENDENTE.getCodigo());
-            case "sla" -> q.lt(ChamadoDO::getStatus, solucionado).lt(ChamadoDO::getPrazoSolucao, LocalDateTime.now());
+            // pendente está com o relógio parado: não conta como vencido
+            case "sla" -> q.lt(ChamadoDO::getStatus, solucionado).ne(ChamadoDO::getStatus, ChamadoStatus.PENDENTE.getCodigo())
+                    .lt(ChamadoDO::getPrazoSolucao, LocalDateTime.now());
             case "solucionados" -> q.eq(ChamadoDO::getStatus, solucionado);
             case "fechados" -> q.eq(ChamadoDO::getStatus, ChamadoStatus.FECHADO.getCodigo());
             case "todos" -> {
@@ -102,7 +104,7 @@ public interface ChamadoMapper extends BaseMapperX<ChamadoDO> {
             + " count(*) FILTER (WHERE status < 5) AS abertos,"
             + " count(*) FILTER (WHERE status = 1) AS novos,"
             + " count(*) FILTER (WHERE status = 4) AS pendentes,"
-            + " count(*) FILTER (WHERE status < 5 AND prazo_solucao < now()) AS sla,"
+            + " count(*) FILTER (WHERE status < 5 AND status <> 4 AND prazo_solucao < now()) AS sla,"
             + " count(*) FILTER (WHERE status = 5) AS solucionados"
             + " FROM itsm.chamado WHERE deleted = 0")
     Map<String, Long> selectContagens();

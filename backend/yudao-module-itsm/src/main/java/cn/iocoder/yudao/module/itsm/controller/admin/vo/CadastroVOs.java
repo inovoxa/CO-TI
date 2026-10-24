@@ -30,6 +30,10 @@ public final class CadastroVOs {
         private String descricao;
         private Long tecnicoId;
         private Long equipeId;
+        @Schema(description = "SLA de atendimento da categoria; vazio = o da prioridade")
+        private Long slaAtendimentoId;
+        @Schema(description = "SLA de solução da categoria; vazio = o da prioridade")
+        private Long slaSolucaoId;
         private Boolean visivelPortal = true;
         private Boolean paraIncidente = true;
         private Boolean paraRequisicao = true;

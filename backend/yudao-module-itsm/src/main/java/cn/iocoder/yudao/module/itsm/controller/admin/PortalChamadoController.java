@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.SlaVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.CategoriaDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.InteracaoDO;
 import cn.iocoder.yudao.module.itsm.service.CadastroService;
@@ -100,6 +101,13 @@ public class PortalChamadoController {
     @Operation(summary = "Aprovar (fecha) ou recusar (reabre) a solução")
     public CommonResult<Boolean> avaliarSolucao(@Valid @RequestBody ChamadoVOs.AvaliarSolucaoReq req) {
         chamadoService.avaliarSolucao(req, getLoginUserId());
+        return success(true);
+    }
+
+    @PostMapping("/satisfacao")
+    @Operation(summary = "Responder a pesquisa de satisfação (nota de 1 a 5)")
+    public CommonResult<Boolean> satisfacao(@Valid @RequestBody SlaVOs.SatisfacaoReq req) {
+        chamadoService.responderPesquisa(req.getChamadoId(), req.getNota(), req.getComentario(), getLoginUserId());
         return success(true);
     }
 

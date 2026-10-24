@@ -5,7 +5,6 @@ import { i18nChangeLanguage, IDomEditor, IEditorConfig } from '@wangeditor-next/
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
 import { ElMessage } from 'element-plus'
-import { useLocaleStore } from '@/store/modules/locale'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import merge from 'lodash-es/merge'
 
@@ -13,11 +12,8 @@ defineOptions({ name: 'Editor' })
 
 type InsertFnType = (url: string, alt: string, href: string) => void
 
-const localeStore = useLocaleStore()
-
-const currentLocale = computed(() => localeStore.getCurrentLocale)
-
-i18nChangeLanguage(unref(currentLocale).lang)
+// CO-TI: o wangEditor só traz inglês e chinês; em português a barra usa os rótulos em inglês (senão mostra as chaves)
+i18nChangeLanguage('en')
 
 const props = defineProps({
   editorId: propTypes.string.def('wangEditor-1'),

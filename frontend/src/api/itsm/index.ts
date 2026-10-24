@@ -41,6 +41,14 @@ export interface Chamado {
   tempoSolucaoSeg?: number
   tempoGastoSeg?: number
   origemAutomatica?: string
+  slaAtendimentoId?: number
+  slaAtendimento?: string
+  slaSolucaoId?: number
+  slaSolucao?: string
+  atendimentoVencido?: boolean
+  satisfacaoPendente?: boolean
+  satisfacaoNota?: number
+  satisfacaoComentario?: string
   solicitantes: Ator[]
   tecnicos: Ator[]
   observadores: Ator[]
@@ -85,6 +93,8 @@ export interface Categoria {
   descricao?: string
   tecnicoId?: number
   equipeId?: number
+  slaAtendimentoId?: number
+  slaSolucaoId?: number
   visivelPortal: boolean
   paraIncidente: boolean
   paraRequisicao: boolean
@@ -205,3 +215,80 @@ export const getOrigens = (somenteAtivas = false): Promise<Origem[]> =>
   request.get({ url: '/itsm/origem/list', params: { somenteAtivas } })
 export const salvarOrigem = (data: Origem): Promise<number> => request.post({ url: '/itsm/origem/save', data })
 export const excluirOrigem = (id: number) => request.delete({ url: '/itsm/origem/delete', params: { id } })
+
+// ========== SLA, calendários e feriados ==========
+
+export interface Periodo {
+  diaSemana: number // 1 segunda ... 7 domingo
+  inicio: string // HH:mm
+  fim: string // HH:mm ou 24:00
+}
+
+export interface Calendario {
+  id?: number
+  nome: string
+  descricao?: string
+  periodos: Periodo[]
+  feriadoIds: number[]
+}
+
+export interface Feriado {
+  id?: number
+  nome: string
+  dataInicio: string
+  dataFim?: string
+  perpetuo: boolean
+}
+
+export interface NivelSla {
+  id?: number
+  nome: string
+  minutos: number // em relação ao prazo; negativo = antes de vencer
+  atribuirEquipeId?: number
+  atribuirTecnicoId?: number
+  novaPrioridade?: number
+  ativo: boolean
+}
+
+export interface Sla {
+  id?: number
+  nome: string
+  tipo: number // 1 atendimento, 0 solução
+  tempo: number
+  unidade: 'minuto' | 'hora' | 'dia' | 'mes'
+  calendarioId?: number
+  fimExpediente: boolean
+  descricao?: string
+  ativo: boolean
+  niveis: NivelSla[]
+}
+
+export interface SlaPorPrioridade {
+  prioridade: number
+  slaAtendimentoId?: number
+  slaSolucaoId?: number
+}
+
+export const UNIDADES = [
+  { valor: 'minuto', rotulo: 'minutos' },
+  { valor: 'hora', rotulo: 'horas' },
+  { valor: 'dia', rotulo: 'dias' },
+  { valor: 'mes', rotulo: 'meses' }
+]
+export const DIAS = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+
+export const getSlas = (): Promise<Sla[]> => request.get({ url: '/itsm/sla/list' })
+export const salvarSla = (data: Sla): Promise<number> => request.post({ url: '/itsm/sla/save', data })
+export const excluirSla = (id: number) => request.delete({ url: '/itsm/sla/delete', params: { id } })
+export const getSlaPorPrioridade = (): Promise<SlaPorPrioridade[]> => request.get({ url: '/itsm/sla/prioridade' })
+export const salvarSlaPorPrioridade = (data: SlaPorPrioridade[]) => request.put({ url: '/itsm/sla/prioridade', data })
+export const executarAutomacao = (): Promise<{ escalonamentos: number; fechados: number }> =>
+  request.post({ url: '/itsm/sla/executar-automacao' })
+export const getCalendarios = (): Promise<Calendario[]> => request.get({ url: '/itsm/calendario/list' })
+export const salvarCalendario = (data: Calendario): Promise<number> => request.post({ url: '/itsm/calendario/save', data })
+export const excluirCalendario = (id: number) => request.delete({ url: '/itsm/calendario/delete', params: { id } })
+export const getFeriados = (): Promise<Feriado[]> => request.get({ url: '/itsm/feriado/list' })
+export const salvarFeriado = (data: Feriado): Promise<number> => request.post({ url: '/itsm/feriado/save', data })
+export const excluirFeriado = (id: number) => request.delete({ url: '/itsm/feriado/delete', params: { id } })
+export const responderSatisfacao = (data: { chamadoId: number; nota: number; comentario?: string }) =>
+  request.post({ url: '/itsm/portal/satisfacao', data })

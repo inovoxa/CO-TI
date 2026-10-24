@@ -40,6 +40,8 @@ public class CadastroService {
     private InteracaoMapper interacaoMapper;
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private SlaService slaService;
 
     // ======================= categorias =======================
 
@@ -74,6 +76,8 @@ public class CadastroService {
         if (req.getEquipeId() != null) {
             obterEquipe(req.getEquipeId());
         }
+        slaService.validarTipo(req.getSlaAtendimentoId(), SlaService.TIPO_ATENDIMENTO);
+        slaService.validarTipo(req.getSlaSolucaoId(), SlaService.TIPO_SOLUCAO);
         CategoriaDO c = BeanUtils.toBean(req, CategoriaDO.class);
         c.setParentId(pai);
         c.setNome(req.getNome().trim());

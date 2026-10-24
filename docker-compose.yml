@@ -8,6 +8,8 @@ services:
     image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
     environment:
       POSTGRES_DB: coti
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      PGTZ: ${CO_TI_FUSO:-America/Sao_Paulo}
       POSTGRES_USER: coti
       POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD no .env}
       CO_TI_DB_APP_PASSWORD: ${CO_TI_DB_APP_PASSWORD:?defina CO_TI_DB_APP_PASSWORD no .env}
@@ -36,6 +38,9 @@ services:
   backend:
     build: ./backend
     environment:
+      # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=${CO_TI_FUSO:-America/Sao_Paulo}
       CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
       # a aplicação conecta como coti_app (só DML); o Flyway usa o dono (coti)
       CO_TI_DB_USER: coti_app

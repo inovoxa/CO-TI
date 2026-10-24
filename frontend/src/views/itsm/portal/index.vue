@@ -87,6 +87,19 @@
         <el-button class="mt-6px" size="small" type="success" @click="avaliar(true)">Sim, pode fechar</el-button>
         <el-button class="mt-6px" size="small" @click="avaliar(false)">Não, continua com problema</el-button>
       </el-alert>
+      <el-card v-if="chamado.acoes.includes('avaliar-atendimento')" class="mb-12px" shadow="never">
+        <div class="mb-6px font-bold">Como foi o atendimento?</div>
+        <el-rate v-model="pesquisa.nota" :texts="['Péssimo', 'Ruim', 'Regular', 'Bom', 'Ótimo']" show-text />
+        <el-input v-model="pesquisa.comentario" class="mt-8px" maxlength="2000" placeholder="Comentário (opcional)" type="textarea" />
+        <el-button :disabled="!pesquisa.nota" class="mt-8px" type="primary" @click="enviarPesquisa">Enviar avaliação</el-button>
+      </el-card>
+      <el-alert
+        v-else-if="chamado.satisfacaoNota"
+        :closable="false"
+        :title="`Você avaliou este atendimento com nota ${chamado.satisfacaoNota} de 5. Obrigado!`"
+        class="mb-12px"
+        type="info"
+      />
       <el-descriptions :column="2" border class="mb-12px" size="small">
         <el-descriptions-item label="Categoria">{{ chamado.categoria || '—' }}</el-descriptions-item>
         <el-descriptions-item label="Aberto em">{{ formatDate(chamado.abertoEm) }}</el-descriptions-item>
@@ -140,6 +153,15 @@ const chamado = ref<ItsmApi.Chamado>()
 const linha = ref<ItsmApi.Interacao[]>([])
 const resposta = ref('')
 const editorKey = ref(0)
+const pesquisa = reactive({ nota: 0, comentario: '' })
+
+const enviarPesquisa = async () => {
+  await ItsmApi.responderSatisfacao({ chamadoId: chamado.value!.id, nota: pesquisa.nota, comentario: pesquisa.comentario })
+  message.success('Obrigado pela avaliação!')
+  pesquisa.nota = 0
+  pesquisa.comentario = ''
+  await carregarDetalhe(chamado.value!.id)
+}
 
 const getList = async () => {
   loading.value = true

@@ -154,10 +154,24 @@
             <template v-if="chamado.assumidoEm">{{ formatDate(chamado.assumidoEm) }} ({{ duracao(chamado.tempoAssumirSeg) }})</template>
             <template v-else>—</template>
           </el-descriptions-item>
-          <el-descriptions-item label="Prazo">
-            <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.slaVencido }">
-              {{ chamado.prazoSolucao ? formatDate(chamado.prazoSolucao) : 'sem SLA' }}
-            </span>
+          <el-descriptions-item label="Assumir até">
+            <template v-if="chamado.prazoAtendimento">
+              <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.atendimentoVencido }">
+                {{ formatDate(chamado.prazoAtendimento) }}
+              </span>
+              <div class="text-12px text-[var(--el-text-color-secondary)]">{{ chamado.slaAtendimento }}</div>
+            </template>
+            <template v-else>sem SLA</template>
+          </el-descriptions-item>
+          <el-descriptions-item label="Solucionar até">
+            <template v-if="chamado.prazoSolucao">
+              <span :class="{ 'text-[var(--el-color-danger)] font-bold': chamado.slaVencido }">
+                {{ formatDate(chamado.prazoSolucao) }}
+              </span>
+              <el-tag v-if="chamado.status === 4" class="ml-4px" disable-transitions size="small" type="warning">pausado</el-tag>
+              <div class="text-12px text-[var(--el-text-color-secondary)]">{{ chamado.slaSolucao }}</div>
+            </template>
+            <template v-else>sem SLA</template>
           </el-descriptions-item>
           <el-descriptions-item v-if="chamado.solucionadoEm" label="Solucionado">
             {{ formatDate(chamado.solucionadoEm) }} ({{ duracao(chamado.tempoSolucaoSeg) }})
@@ -165,6 +179,13 @@
           <el-descriptions-item v-if="chamado.fechadoEm" label="Fechado">{{ formatDate(chamado.fechadoEm) }}</el-descriptions-item>
           <el-descriptions-item label="Pendente">{{ duracao(chamado.esperaSeg) }}</el-descriptions-item>
           <el-descriptions-item label="Tempo gasto">{{ duracao(chamado.tempoGastoSeg) }}</el-descriptions-item>
+          <el-descriptions-item v-if="chamado.satisfacaoNota || chamado.satisfacaoPendente" label="Satisfação">
+            <template v-if="chamado.satisfacaoNota">
+              <el-rate :model-value="chamado.satisfacaoNota" disabled />
+              <div v-if="chamado.satisfacaoComentario" class="text-12px">“{{ chamado.satisfacaoComentario }}”</div>
+            </template>
+            <template v-else>aguardando resposta</template>
+          </el-descriptions-item>
         </el-descriptions>
 
         <div v-for="g in GRUPOS" :key="g.tipo" class="mt-14px">
