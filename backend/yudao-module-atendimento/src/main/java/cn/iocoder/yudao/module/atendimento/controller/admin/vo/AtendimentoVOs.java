@@ -50,6 +50,14 @@ public final class AtendimentoVOs {
         private Boolean csatAtivo = false;
         @Size(max = 1000)
         private String csatMensagem;
+        /** Assistente de IA nesta caixa */
+        private Boolean roboAtivo = false;
+        @Size(max = 60)
+        private String roboNome;
+        @Size(max = 4000)
+        private String roboInstrucoes;
+        @Min(1) @Max(100)
+        private Integer roboMaxRespostas = 10;
         private List<Long> agenteIds = new ArrayList<>();
         // só na resposta
         private Boolean tokenDefinido;
@@ -148,6 +156,8 @@ public final class AtendimentoVOs {
         private List<Etiqueta> etiquetas = new ArrayList<>();
         /** Canal com janela de 24 h (WhatsApp oficial, Instagram) */
         private Boolean janela = false;
+        /** Com o assistente de IA */
+        private Boolean robo = false;
         /** Até quando dá para mandar texto livre; depois, só modelo aprovado */
         private LocalDateTime janelaAte;
     }
@@ -413,6 +423,71 @@ public final class AtendimentoVOs {
         private Long macroId;
         @NotNull
         private Long conversaId;
+    }
+
+    // ================= inteligência artificial =================
+
+    /** Chave geral, principais de cada uso e (na resposta) os provedores, os tipos e o uso. */
+    @Data
+    public static class IaConfig {
+        private Boolean ativo = false;
+        /** Vazio = o primeiro provedor ativo pela prioridade */
+        private Long provedorAssistenteId;
+        private Long provedorCopilotoId;
+        // só na resposta
+        private List<IaProvedor> provedores = new ArrayList<>();
+        private List<Map<String, Object>> tipos = new ArrayList<>();
+        private List<IaUso> uso = new ArrayList<>();
+    }
+
+    @Data
+    public static class IaProvedor {
+        private Long id;
+        @NotBlank(message = "Informe o nome")
+        @Size(max = 80)
+        private String nome;
+        @NotBlank
+        private String tipo;
+        /** Vazio = o endereço padrão do tipo */
+        @Size(max = 300)
+        private String baseUrl;
+        /** Só na gravação; em branco mantém a atual */
+        @Size(max = 500)
+        private String chave;
+        @NotBlank(message = "Informe o modelo")
+        @Size(max = 150)
+        private String modelo;
+        @DecimalMin("0") @DecimalMax("2")
+        private java.math.BigDecimal temperatura;
+        @Min(50) @Max(8000)
+        private Integer maxTokens;
+        private Boolean ativo = true;
+        @Min(0) @Max(999)
+        private Integer prioridade = 0;
+        // só na resposta
+        private Boolean chaveDefinida;
+        private LocalDateTime testadoEm;
+        private String erroTeste;
+    }
+
+    @Data
+    public static class IaUso {
+        private String provedor;
+        private String finalidade;
+        private long chamadas;
+        private long erros;
+        private long tokensEntrada;
+        private long tokensSaida;
+    }
+
+    @Data
+    public static class CopilotoReq {
+        @NotNull
+        private Long conversaId;
+        @Size(max = 4096)
+        private String texto;
+        @Pattern(regexp = "formal|cordial|corrigir|curto")
+        private String estilo = "corrigir";
     }
 
     // ================= relatórios =================

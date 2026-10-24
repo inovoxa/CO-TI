@@ -153,6 +153,26 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 
   Os tempos são gravados quando acontecem, então valem a partir desta versão.
 
+### Inteligência artificial (F2d)
+
+Regras completas em `docs/specs/atendimento-ia.md` (reimplementação própria; nada da pasta `enterprise/` do Chatwoot).
+
+- **Vários provedores** (*Atendimento → Configuração → Inteligência artificial*):
+  - OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, Mistral, Ollama local ou outro compatível com a
+    API da OpenAI.
+  - Cada um tem modelo, chave (cifrada), temperatura, limite e prioridade, e um botão de teste.
+  - O assistente e o copiloto têm cada um o seu provedor principal. Se ele falhar, os outros ativos respondem pela
+    ordem de prioridade.
+  - A tela mostra o uso (chamadas, erros e tokens) dos últimos 30 dias por provedor.
+- **Assistente na caixa:**
+  - A conversa nova fica com ele (pendente) e as respostas usam só os artigos FAQ da base de conhecimento.
+  - Ele pode consultar e abrir chamados do próprio contato.
+  - Passa para uma pessoa quando o contato pede, quando não sabe, ao atingir o limite de respostas ou quando os
+    provedores falham.
+  - Quando um atendente responde ou assume a conversa, o assistente sai dela.
+- **Copiloto** na conversa: *Sugerir* (rascunho no campo), *Reescrever* (corrigir, mais formal, mais cordial, mais
+  curto) e *Resumir* (vira nota interna). Nada é enviado sozinho.
+
 ### WhatsApp oficial, Instagram e Telegram (F2b)
 
 Crie a caixa com o canal e clique na engrenagem para configurar as credenciais. "Testar conexão" confere o token e

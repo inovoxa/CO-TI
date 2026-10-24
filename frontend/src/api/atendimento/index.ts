@@ -34,6 +34,8 @@ export interface ConversaResumo {
   janela?: boolean
   /** até quando dá para mandar texto livre */
   janelaAte?: number
+  /** com o assistente de IA */
+  robo?: boolean
 }
 
 export interface Anexo {
@@ -104,6 +106,10 @@ export interface Caixa {
   mensagemForaHorario?: string
   csatAtivo?: boolean
   csatMensagem?: string
+  roboAtivo?: boolean
+  roboNome?: string
+  roboInstrucoes?: string
+  roboMaxRespostas?: number
   agenteIds: number[]
   tokenDefinido?: boolean
   segredoDefinido?: boolean
@@ -180,6 +186,45 @@ export interface Macro {
   visibilidade: 'pessoal' | 'todos'
   acoes: Acao[]
   minha?: boolean
+}
+
+export interface IaProvedor {
+  id?: number
+  nome: string
+  tipo: string
+  baseUrl?: string
+  /** só na gravação; em branco mantém a atual */
+  chave?: string
+  modelo: string
+  temperatura?: number
+  maxTokens?: number
+  ativo: boolean
+  prioridade: number
+  chaveDefinida?: boolean
+  testadoEm?: number
+  erroTeste?: string
+}
+
+export interface IaConfig {
+  ativo: boolean
+  provedorAssistenteId?: number
+  provedorCopilotoId?: number
+  provedores: IaProvedor[]
+  tipos: {
+    codigo: string
+    rotulo: string
+    baseUrl: string
+    exigeChave: boolean
+    exemploModelo: string
+  }[]
+  uso: {
+    provedor: string
+    finalidade: string
+    chamadas: number
+    erros: number
+    tokensEntrada: number
+    tokensSaida: number
+  }[]
 }
 
 export interface RelatorioLinha {
@@ -470,6 +515,30 @@ export const getFiltrosRelatorio = (): Promise<{
   caixas: { id: number; nome: string }[]
   atendentes: { id: number; nome: string }[]
 }> => request.get({ url: '/atendimento/relatorio/filtros' })
+
+export const getIaConfig = (): Promise<IaConfig> => request.get({ url: '/atendimento/ia/config' })
+export const salvarIaConfig = (data: {
+  ativo: boolean
+  provedorAssistenteId?: number
+  provedorCopilotoId?: number
+}): Promise<IaConfig> => request.post({ url: '/atendimento/ia/config', data })
+export const salvarIaProvedor = (data: IaProvedor): Promise<number> =>
+  request.post({ url: '/atendimento/ia/provedor/save', data })
+export const excluirIaProvedor = (id: number) =>
+  request.delete({ url: '/atendimento/ia/provedor/delete', params: { id } })
+export const testarIaProvedor = (id: number): Promise<IaConfig> =>
+  request.post({ url: '/atendimento/ia/provedor/testar', params: { id } })
+export const getIaAtiva = (): Promise<boolean> => request.get({ url: '/atendimento/ia/ativa' })
+export const copilotoSugerir = (conversaId: number): Promise<string> =>
+  request.post({ url: '/atendimento/ia/sugerir', data: { conversaId } })
+export const copilotoResumir = (conversaId: number): Promise<string> =>
+  request.post({ url: '/atendimento/ia/resumir', data: { conversaId } })
+export const copilotoReescrever = (
+  conversaId: number,
+  texto: string,
+  estilo: string
+): Promise<string> =>
+  request.post({ url: '/atendimento/ia/reescrever', data: { conversaId, texto, estilo } })
 
 export const getContatos = (params: any) =>
   request.get({ url: '/atendimento/contato/page', params })

@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.atendimento.dal.dataobject.ConversaDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.Collection;
 import java.util.List;
@@ -22,5 +23,13 @@ public interface ConversaMapper extends BaseMapperX<ConversaDO> {
             " AND agente_id IN <foreach collection='ids' item='i' open='(' separator=',' close=')'>#{i}</foreach>",
             " GROUP BY agente_id</script>"})
     List<Map<String, Object>> abertasPorAgente(@Param("caixaId") Long caixaId, @Param("ids") Collection<Long> agentes);
+
+    /** O assistente respondeu: conta a resposta e zera as falhas seguidas. */
+    @Update("UPDATE atendimento.conversa SET robo_respostas = robo_respostas + 1, robo_falhas = 0 WHERE id = #{id}")
+    int contarRespostaRobo(@Param("id") Long id);
+
+    /** O provedor de IA falhou nesta conversa: soma e devolve quantas falhas seguidas. */
+    @Select("UPDATE atendimento.conversa SET robo_falhas = robo_falhas + 1 WHERE id = #{id} RETURNING robo_falhas")
+    int somarFalhaRobo(@Param("id") Long id);
 
 }

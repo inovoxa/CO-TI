@@ -45,5 +45,10 @@ public class CaixaDO extends BaseDO {
     /** Pesquisa de satisfação ao resolver */
     private Boolean csatAtivo;
     private String csatMensagem;
+    /** Assistente de IA (docs/specs/atendimento-ia.md) */
+    private Boolean roboAtivo;
+    private String roboNome;
+    private String roboInstrucoes;
+    private Integer roboMaxRespostas;
 
 }

@@ -49,8 +49,8 @@ import static cn.iocoder.yudao.module.atendimento.service.ContatoService.vazio;
 public class ConversaService {
 
     /** Origens do ITSM (V12) para o chamado aberto a partir da conversa */
-    private static final long ORIGEM_WHATSAPP = 4L;
-    private static final long ORIGEM_OUTRO = 7L;
+    static final long ORIGEM_WHATSAPP = 4L;
+    static final long ORIGEM_OUTRO = 7L;
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
     /** Canais em que o provedor só aceita texto livre até 24 h depois da última mensagem do contato */
     public static final Set<String> JANELA_24H = Set.of("whatsapp_cloud", "instagram");
@@ -99,6 +99,8 @@ public class ConversaService {
     private AutomacaoService automacaoService;
     @Resource
     private CsatService csatService;
+    @Resource
+    private AssistenteService assistenteService;
     @Resource
     private RelatorioService relatorioService;
 
@@ -171,8 +173,10 @@ public class ConversaService {
             if (notaCsat != null) {
                 // já tratado acima
             } else if (c == null) {
+                boolean comRobo = !r.eco() && assistenteService.ativoPara(caixa);
                 c = ConversaDO.builder().caixaId(caixa.getId()).contatoId(contato.getId()).contatoCanalId(cc.getId())
-                        .status(ConversaStatus.ABERTA.getCodigo()).ultimaAtividadeEm(agora).atributos("{}").build();
+                        .status(comRobo ? ConversaStatus.PENDENTE.getCodigo() : ConversaStatus.ABERTA.getCodigo()).robo(comRobo)
+                        .ultimaAtividadeEm(agora).atributos("{}").build();
                 conversaMapper.insert(c);
                 nova = true;
             } else if (!r.eco() && c.getStatus() != ConversaStatus.ABERTA.getCodigo() && c.getStatus() != ConversaStatus.PENDENTE.getCodigo()) {
@@ -184,6 +188,12 @@ public class ConversaService {
                 // o atendente de antes continua, se ainda atende a caixa
                 if (c.getAgenteId() != null && !acesso.membro(caixa.getId(), c.getAgenteId())) {
                     c.setAgenteId(null);
+                }
+                if (c.getAgenteId() == null && assistenteService.ativoPara(caixa)) {
+                    c.setStatus(ConversaStatus.PENDENTE.getCodigo());
+                    c.setRobo(true);
+                    c.setRoboRespostas(0);
+                    c.setRoboFalhas(0);
                 }
                 gravar(c);
                 atividade(c, "Conversa " + antes + " reaberta: o contato escreveu de novo");
@@ -245,6 +255,10 @@ public class ConversaService {
                 automacaoService.disparar("conversa_reaberta", c.getId(), m.getConteudo());
             }
             automacaoService.disparar("mensagem_recebida", c.getId(), m.getConteudo());
+            ConversaDO atual = conversaMapper.selectById(c.getId());
+            if (Boolean.TRUE.equals(atual.getRobo()) && atual.getAgenteId() == null && atual.getStatus() == ConversaStatus.PENDENTE.getCodigo()) {
+                assistenteService.agendarAposGravar(c.getId());
+            }
         }
         if (!r.historico()) {
             publicar("mensagem", c.getId(), m.getId());
@@ -451,6 +465,10 @@ public class ConversaService {
             if (c.getStatus() != ConversaStatus.ABERTA.getCodigo()) {
                 u.setStatus(ConversaStatus.ABERTA.getCodigo());
             }
+            if (Boolean.TRUE.equals(c.getRobo())) {
+                u.setRobo(false);
+                atividade(c, nome(userId) + " assumiu a conversa do assistente");
+            }
             conversaMapper.updateById(u);
             if (u.getPrimeiraRespostaEm() != null) {
                 relatorioService.primeiraResposta(c, agora);
@@ -517,6 +535,12 @@ public class ConversaService {
             return;
         }
         c.setAgenteId(novo);
+        if (novo != null && Boolean.TRUE.equals(c.getRobo())) {
+            c.setRobo(false);
+            if (c.getStatus() == ConversaStatus.PENDENTE.getCodigo()) {
+                c.setStatus(ConversaStatus.ABERTA.getCodigo());
+            }
+        }
         gravar(c);
         atividade(c, novo == null ? nome(userId) + " tirou o atendente"
                 : novo.equals(userId) ? nome(userId) + " assumiu a conversa" : nome(userId) + " atribuiu a " + nome(novo));
@@ -538,7 +562,10 @@ public class ConversaService {
             case ABERTA -> nome(userId) + " reabriu a conversa";
             default -> nome(userId) + " passou a conversa para pendente";
         };
-        aplicarStatus(c, novo, req.getAdiadaAte(), texto);
+        c.setRobo(false);   // a pessoa decidiu a situação: o assistente sai
+        if (!aplicarStatus(c, novo, req.getAdiadaAte(), texto)) {
+            gravar(c);
+        }
     }
 
     /**
@@ -583,6 +610,12 @@ public class ConversaService {
     /** Troca o atendente (macro, automação). */
     void definirAgente(ConversaDO c, Long agenteId, String registro) {
         c.setAgenteId(agenteId);
+        if (agenteId != null && Boolean.TRUE.equals(c.getRobo())) {
+            c.setRobo(false);
+            if (c.getStatus() == ConversaStatus.PENDENTE.getCodigo()) {
+                c.setStatus(ConversaStatus.ABERTA.getCodigo());
+            }
+        }
         gravar(c);
         if (registro != null) {
             atividade(c, registro);
@@ -818,6 +851,7 @@ public class ConversaService {
             r.setAdiadaAte(c.getAdiadaAte());
             r.setUltimaAtividadeEm(c.getUltimaAtividadeEm());
             r.setUltimaEntradaEm(c.getUltimaEntradaEm());
+            r.setRobo(Boolean.TRUE.equals(c.getRobo()));
             // WhatsApp oficial e Instagram: texto livre só até 24 h depois da última mensagem do contato
             if (cx != null && JANELA_24H.contains(cx.getCanal())) {
                 r.setJanelaAte(c.getUltimaEntradaEm() == null ? null : c.getUltimaEntradaEm().plusHours(24));

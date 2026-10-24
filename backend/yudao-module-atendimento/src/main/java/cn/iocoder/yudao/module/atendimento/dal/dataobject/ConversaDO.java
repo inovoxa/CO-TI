@@ -38,5 +38,9 @@ public class ConversaDO extends BaseDO {
     private LocalDateTime ultimaEntradaEm;
     private LocalDateTime ultimaAtividadeEm;
     private String atributos;
+    /** Com o assistente de IA (pendente até o transbordo) */
+    private Boolean robo;
+    private Integer roboRespostas;
+    private Integer roboFalhas;
 
 }

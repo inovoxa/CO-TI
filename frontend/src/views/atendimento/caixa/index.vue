@@ -160,6 +160,31 @@
           placeholder="Como você avalia este atendimento? Responda com uma nota de 1 (ruim) a 5 (ótimo)."
         />
       </el-form-item>
+      <el-form-item label="Assistente de IA">
+        <el-switch v-model="form.dados.roboAtivo" />
+        <span class="dica ml-8px"
+          >responde as conversas novas e passa para uma pessoa quando precisa (exige a IA
+          ligada)</span
+        >
+      </el-form-item>
+      <template v-if="form.dados.roboAtivo">
+        <el-form-item label="Nome do assistente">
+          <el-input v-model="form.dados.roboNome" maxlength="60" placeholder="Assistente da TI" />
+        </el-form-item>
+        <el-form-item label="Instruções">
+          <el-input
+            v-model="form.dados.roboInstrucoes"
+            :rows="3"
+            maxlength="4000"
+            placeholder="Orientações da organização: horários, sistemas atendidos, como se despedir..."
+            type="textarea"
+          />
+        </el-form-item>
+        <el-form-item label="Respostas por conversa">
+          <el-input-number v-model="form.dados.roboMaxRespostas" :max="100" :min="1" />
+          <span class="dica ml-8px">depois disso, passa para uma pessoa</span>
+        </el-form-item>
+      </template>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativo" /></el-form-item>
     </el-form>
     <template #footer>

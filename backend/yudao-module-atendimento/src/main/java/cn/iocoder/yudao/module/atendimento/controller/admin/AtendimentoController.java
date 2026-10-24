@@ -47,6 +47,10 @@ public class AtendimentoController {
     @Resource
     private MacroService macroService;
     @Resource
+    private IaService iaService;
+    @Resource
+    private CopilotoService copilotoService;
+    @Resource
     private RelatorioService relatorioService;
     @Resource
     private cn.iocoder.yudao.module.itsm.service.SlaService slaService;
@@ -191,6 +195,70 @@ public class AtendimentoController {
                 "caixas", lista.stream().map(c -> Map.<String, Object>of("id", c.getId(), "nome", c.getNome())).toList(),
                 "atendentes", agentes.entrySet().stream().map(e -> Map.<String, Object>of("id", e.getKey(), "nome", e.getValue()))
                         .sorted(java.util.Comparator.comparing(m -> m.get("nome").toString())).toList()));
+    }
+
+    // ================= inteligência artificial =================
+
+    @GetMapping("/ia/config")
+    @PreAuthorize("@ss.hasPermission('atendimento:ia:config')")
+    public CommonResult<AtendimentoVOs.IaConfig> iaConfig() {
+        return success(iaService.obter());
+    }
+
+    @PostMapping("/ia/config")
+    @Operation(summary = "Ligar/desligar a IA e escolher o provedor principal do assistente e do copiloto")
+    @PreAuthorize("@ss.hasPermission('atendimento:ia:config')")
+    public CommonResult<AtendimentoVOs.IaConfig> salvarIaConfig(@Valid @RequestBody AtendimentoVOs.IaConfig req) {
+        return success(iaService.salvarConfig(req, getLoginUserId()));
+    }
+
+    @PostMapping("/ia/provedor/save")
+    @Operation(summary = "Gravar um provedor de IA (chave em branco mantém a atual)")
+    @PreAuthorize("@ss.hasPermission('atendimento:ia:config')")
+    public CommonResult<Long> salvarProvedorIa(@Valid @RequestBody AtendimentoVOs.IaProvedor req) {
+        return success(iaService.salvarProvedor(req, getLoginUserId()));
+    }
+
+    @DeleteMapping("/ia/provedor/delete")
+    @PreAuthorize("@ss.hasPermission('atendimento:ia:config')")
+    public CommonResult<Boolean> excluirProvedorIa(@RequestParam("id") Long id) {
+        iaService.excluirProvedor(id, getLoginUserId());
+        return success(true);
+    }
+
+    @PostMapping("/ia/provedor/testar")
+    @Operation(summary = "Testar a conexão com um provedor (sem reserva)")
+    @PreAuthorize("@ss.hasPermission('atendimento:ia:config')")
+    public CommonResult<AtendimentoVOs.IaConfig> testarProvedorIa(@RequestParam("id") Long id) {
+        return success(iaService.testarProvedor(id, getLoginUserId()));
+    }
+
+    @GetMapping("/ia/ativa")
+    @Operation(summary = "A IA está ligada? (mostra o copiloto na conversa)")
+    @PreAuthorize(Q)
+    public CommonResult<Boolean> iaAtiva() {
+        return success(iaService.ativo());
+    }
+
+    @PostMapping("/ia/sugerir")
+    @Operation(summary = "Copiloto: rascunho da próxima resposta")
+    @PreAuthorize(Q)
+    public CommonResult<String> sugerir(@Valid @RequestBody AtendimentoVOs.CopilotoReq req) {
+        return success(copilotoService.sugerir(req.getConversaId(), getLoginUserId()));
+    }
+
+    @PostMapping("/ia/resumir")
+    @Operation(summary = "Copiloto: resumo da conversa")
+    @PreAuthorize(Q)
+    public CommonResult<String> resumir(@Valid @RequestBody AtendimentoVOs.CopilotoReq req) {
+        return success(copilotoService.resumir(req.getConversaId(), getLoginUserId()));
+    }
+
+    @PostMapping("/ia/reescrever")
+    @Operation(summary = "Copiloto: reescrever o texto digitado")
+    @PreAuthorize(Q)
+    public CommonResult<String> reescrever(@Valid @RequestBody AtendimentoVOs.CopilotoReq req) {
+        return success(copilotoService.reescrever(req.getConversaId(), req.getTexto(), req.getEstilo(), getLoginUserId()));
     }
 
     // ================= macros =================

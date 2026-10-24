@@ -17,6 +17,14 @@
               >{{ conversa.statusRotulo }}</el-tag
             >
             <el-tag
+              v-if="conversa.robo"
+              class="ml-6px"
+              disable-transitions
+              size="small"
+              type="primary"
+              >com o assistente</el-tag
+            >
+            <el-tag
               v-if="janelaFechada"
               class="ml-6px"
               disable-transitions
@@ -245,6 +253,35 @@
             @click="abrirModelo"
             ><Icon class="mr-2px" icon="ep:document" />Modelo</el-button
           >
+          <template v-if="iaAtiva">
+            <el-button :loading="copiloto === 'sugerir'" link size="small" @click="sugerir"
+              ><Icon class="mr-2px" icon="ep:magic-stick" />Sugerir</el-button
+            >
+            <el-dropdown
+              :disabled="!texto.trim()"
+              trigger="click"
+              @command="(e: string) => reescrever(e)"
+            >
+              <el-button
+                :disabled="!texto.trim()"
+                :loading="copiloto === 'reescrever'"
+                link
+                size="small"
+                ><Icon class="mr-2px" icon="ep:edit-pen" />Reescrever</el-button
+              >
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="corrigir">Corrigir ortografia</el-dropdown-item>
+                  <el-dropdown-item command="formal">Mais formal</el-dropdown-item>
+                  <el-dropdown-item command="cordial">Mais cordial</el-dropdown-item>
+                  <el-dropdown-item command="curto">Mais curto</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-button :loading="copiloto === 'resumir'" link size="small" @click="resumir"
+              ><Icon class="mr-2px" icon="ep:document-copy" />Resumir</el-button
+            >
+          </template>
           <el-button
             :loading="enviando"
             class="ml-auto"
@@ -324,6 +361,8 @@ const anexos = ref<Atd.Anexo[]>([])
 const enviando = ref(false)
 const respostas = ref<Atd.RespostaPronta[]>([])
 const macros = ref<Atd.Macro[]>([])
+const iaAtiva = ref(false)
+const copiloto = ref<'' | 'sugerir' | 'reescrever' | 'resumir'>('')
 const sugestaoAtiva = ref(0)
 const rolagem = ref<HTMLElement>()
 const campo = ref()
@@ -518,6 +557,37 @@ const tentarDeNovo = async (m: Atd.Mensagem) => {
   m.status = 'pendente'
 }
 
+// copiloto: nada é enviado sozinho; o texto vai para o campo (ou para uma nota, no resumo)
+const sugerir = async () => {
+  copiloto.value = 'sugerir'
+  try {
+    texto.value = await Atd.copilotoSugerir(conversa.value!.id)
+    modo.value = 'responder'
+    campo.value?.focus()
+  } finally {
+    copiloto.value = ''
+  }
+}
+const reescrever = async (estilo: string) => {
+  copiloto.value = 'reescrever'
+  try {
+    texto.value = await Atd.copilotoReescrever(conversa.value!.id, texto.value, estilo)
+    campo.value?.focus()
+  } finally {
+    copiloto.value = ''
+  }
+}
+const resumir = async () => {
+  copiloto.value = 'resumir'
+  try {
+    texto.value = await Atd.copilotoResumir(conversa.value!.id)
+    modo.value = 'nota'
+    message.info('Resumo no campo como nota interna: revise e salve se quiser guardar')
+  } finally {
+    copiloto.value = ''
+  }
+}
+
 const executarMacro = async (m: Atd.Macro) => {
   const feito = await Atd.executarMacro(m.id!, conversa.value!.id)
   message.success(feito.length ? `${m.nome}: ${feito.join(', ')}` : `${m.nome}: nada a mudar`)
@@ -525,7 +595,11 @@ const executarMacro = async (m: Atd.Macro) => {
 }
 
 onMounted(async () => {
-  ;[respostas.value, macros.value] = await Promise.all([Atd.getRespostas(), Atd.getMacros()])
+  ;[respostas.value, macros.value, iaAtiva.value] = await Promise.all([
+    Atd.getRespostas(),
+    Atd.getMacros(),
+    Atd.getIaAtiva()
+  ])
 })
 </script>
 

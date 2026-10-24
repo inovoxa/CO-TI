@@ -58,6 +58,10 @@ public class CanalSegredos {
         return cifrador.cifrar(texto, CONTEXTO);
     }
 
+    public String decifrar(String cifrado) {
+        return cifrado == null ? null : cifrador.decifrar(cifrado, CONTEXTO);
+    }
+
     public boolean configurado() {
         return cifrador.configurado();
     }

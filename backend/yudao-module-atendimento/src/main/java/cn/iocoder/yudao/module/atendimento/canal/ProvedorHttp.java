@@ -47,9 +47,19 @@ public class ProvedorHttp {
     }
 
     public Resposta postJson(String url, String bearer, Object corpo) throws IOException, InterruptedException {
-        HttpRequest.Builder r = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(30))
+        return postJson(url, bearer, corpo, Duration.ofSeconds(30));
+    }
+
+    public Resposta postJson(String url, String bearer, Object corpo, Duration limite) throws IOException, InterruptedException {
+        return postJson(url, bearer, corpo, limite, Map.of());
+    }
+
+    public Resposta postJson(String url, String bearer, Object corpo, Duration limite, Map<String, String> cabecalhos)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder r = HttpRequest.newBuilder(URI.create(url)).timeout(limite)
                 .header("Content-Type", "application/json; charset=utf-8")
                 .POST(HttpRequest.BodyPublishers.ofString(JsonUtils.toJsonString(corpo), StandardCharsets.UTF_8));
+        cabecalhos.forEach(r::header);
         return enviar(r, bearer);
     }
 

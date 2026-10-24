@@ -104,7 +104,9 @@ public class CaixaService {
                 .limitePorAgente(req.getLimitePorAgente() == null ? 0 : req.getLimitePorAgente())
                 .reabrirHoras(req.getReabrirHoras() == null ? 24 : req.getReabrirHoras())
                 .calendarioId(req.getCalendarioId()).mensagemForaHorario(vazio(req.getMensagemForaHorario()))
-                .csatAtivo(Boolean.TRUE.equals(req.getCsatAtivo())).csatMensagem(vazio(req.getCsatMensagem())).build();
+                .csatAtivo(Boolean.TRUE.equals(req.getCsatAtivo())).csatMensagem(vazio(req.getCsatMensagem()))
+                .roboAtivo(Boolean.TRUE.equals(req.getRoboAtivo())).roboNome(vazio(req.getRoboNome()))
+                .roboInstrucoes(vazio(req.getRoboInstrucoes())).roboMaxRespostas(req.getRoboMaxRespostas() == null ? 10 : req.getRoboMaxRespostas()).build();
         if (c.getCalendarioId() != null && slaService.calendario(c.getCalendarioId()) == null) {
             throw exception(CAIXA_CALENDARIO_INVALIDO);
         }
@@ -117,7 +119,8 @@ public class CaixaService {
                     .eq(CaixaDO::getId, c.getId()).set(CaixaDO::getWebhookUrl, url).set(CaixaDO::getSaudacao, c.getSaudacao())
                     .set(CaixaDO::getEquipeId, c.getEquipeId())
                     .set(CaixaDO::getCalendarioId, c.getCalendarioId()).set(CaixaDO::getMensagemForaHorario, c.getMensagemForaHorario())
-                    .set(CaixaDO::getCsatMensagem, c.getCsatMensagem()));
+                    .set(CaixaDO::getCsatMensagem, c.getCsatMensagem())
+                    .set(CaixaDO::getRoboNome, c.getRoboNome()).set(CaixaDO::getRoboInstrucoes, c.getRoboInstrucoes()));
         }
         // membros: troca pela lista enviada
         List<CaixaAgenteDO> existentes = caixaAgenteMapper.selectList(CaixaAgenteDO::getCaixaId, c.getId());
@@ -200,6 +203,10 @@ public class CaixaService {
             v.setMensagemForaHorario(c.getMensagemForaHorario());
             v.setCsatAtivo(c.getCsatAtivo());
             v.setCsatMensagem(c.getCsatMensagem());
+            v.setRoboAtivo(c.getRoboAtivo());
+            v.setRoboNome(c.getRoboNome());
+            v.setRoboInstrucoes(c.getRoboInstrucoes());
+            v.setRoboMaxRespostas(c.getRoboMaxRespostas());
             v.setTokenDefinido(c.getTokenHash() != null);
             v.setSegredoDefinido(c.getWebhookSegredo() != null);
             v.setAbertas(abertas.getOrDefault(c.getId(), 0L));
