@@ -323,6 +323,10 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   de histórico. Os monitores push mantêm o token: os scripts que chamam `/api/push/<token>` continuam funcionando
   apontando para o CO-TI. Depois, em cada monitor, escolha a unidade, o papel no telão e se abre chamado. Só o
   administrador importa, até alguém receber a permissão "Importar do Uptime Kuma".
+- **Dados de demonstração:** `python exemplos/kuma/gerar_kuma_ficticio.py kuma-ficticio.db --pausar-ficticios` gera um
+  `kuma.db` fictício (links de 8 unidades, sistemas, canais, manutenções e 30 dias de histórico com quedas) para testar
+  a importação. Com `--pausar-ficticios`, os monitores de alvo inventado entram pausados, com o histórico; os
+  "CO-TI ·" verificam os serviços do próprio docker-compose.
 - **Retenção:** cada verificação fica `CO_TI_MONITORAMENTO_RETENCAO_DIAS` dias (padrão 31) no TimescaleDB; os totais
   por hora (disponibilidade de 30 dias e 1 ano) ficam 400 dias.
 - Detalhes: `docs/specs/monitoramento.md`.
