@@ -14,20 +14,18 @@
       </el-table-column>
       <el-table-column label="Limite" width="170">
         <template #default="{ row }">
-          <template v-if="row.codigo === 'disco_cheio' || row.codigo === 'sem_contato'">
+          <template v-if="LIMITES[row.codigo]">
             <el-input-number
               v-model="row.limite"
               :disabled="!pode"
-              :max="row.codigo === 'disco_cheio' ? 90 : 365"
+              :max="LIMITES[row.codigo].max"
               :min="1"
               class="!w-100px"
               controls-position="right"
               size="small"
               @change="salvar(row)"
             />
-            <span class="ml-4px text-12px">{{
-              row.codigo === 'disco_cheio' ? '% livre' : 'dias'
-            }}</span>
+            <span class="ml-4px text-12px">{{ LIMITES[row.codigo].unidade }}</span>
           </template>
           <span v-else>—</span>
         </template>
@@ -165,6 +163,13 @@ const message = useMessage()
 const router = useRouter()
 const pode = checkPermi(['inventario:alerta:update'])
 const URGENCIAS = ['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta']
+/** Regras com limite: o máximo aceito e a unidade */
+const LIMITES: Record<string, { max: number; unidade: string }> = {
+  disco_cheio: { max: 90, unidade: '% livre' },
+  sem_contato: { max: 365, unidade: 'dias' },
+  rede_desconhecido: { max: 30, unidade: 'dias (visto)' },
+  suprimento_baixo: { max: 90, unidade: '% restante' }
+}
 
 const regras = ref<Inv.RegraAlerta[]>([])
 const categorias = ref<ItsmApi.Categoria[]>([])
@@ -230,9 +235,14 @@ const avaliar = async () => {
 }
 
 const abrirObjeto = (a: Inv.Alerta) =>
-  a.objeto === 'ativo'
-    ? router.push({ path: '/inventario/ativos', query: { id: a.objetoId } })
-    : router.push({ path: '/governanca/licencas', query: { id: a.objetoId } })
+  a.objeto === 'rede'
+    ? router.push({
+        path: '/inventario/rede',
+        query: { busca: a.titulo.replace(/.*\((.*)\)$/, '$1') }
+      })
+    : a.objeto === 'ativo'
+      ? router.push({ path: '/inventario/ativos', query: { id: a.objetoId } })
+      : router.push({ path: '/governanca/licencas', query: { id: a.objetoId } })
 
 onMounted(async () => {
   await Promise.all([carregarRegras(), carregar()])

@@ -35,6 +35,8 @@ export interface Ativo {
   ultimoContato?: string
   semContato?: boolean
   observacao?: string
+  paginas?: number
+  localizacao?: string
 }
 
 export interface Componente {
@@ -132,6 +134,7 @@ export const ANTIVIRUS = [
 export const ORIGENS = {
   ocs: 'Agente OCS',
   glpi_agent: 'GLPI Agent',
+  snmp: 'SNMP',
   manual: 'Cadastro manual'
 } as Record<string, string>
 
@@ -149,7 +152,8 @@ export const COMPONENTES = {
   bateria: 'Baterias',
   som: 'Som',
   entrada: 'Teclado e mouse',
-  slot: 'Slots'
+  slot: 'Slots',
+  suprimento: 'Suprimentos'
 } as Record<string, string>
 
 export const rotulo = (lista: { valor: string; rotulo: string }[], v?: string) =>
@@ -209,7 +213,7 @@ export interface Alerta {
   id: number
   regra: string
   regraNome: string
-  objeto: 'ativo' | 'licenca'
+  objeto: 'ativo' | 'licenca' | 'rede'
   objetoId: number
   titulo: string
   detalhe?: string
@@ -250,3 +254,101 @@ export const vincularSoftwareLicenca = (licencaId: number, softwareId: number) =
   request.post({ url: '/inventario/licenca/software/vincular', data: { licencaId, softwareId } })
 export const desvincularSoftwareLicenca = (licencaId: number, softwareId: number) =>
   request.post({ url: '/inventario/licenca/software/desvincular', data: { licencaId, softwareId } })
+
+// ========== descoberta de rede ==========
+
+export interface Subrede {
+  subrede: string
+  mascara?: string
+  dispositivos: number
+  desconhecidos: number
+  varredores: string[]
+  ultimaVarredura?: string
+}
+
+export interface DispositivoRede {
+  id: number
+  mac: string
+  ip: string
+  nome?: string
+  subrede?: string
+  ativoId?: number
+  ativoNome?: string
+  ativoTipo?: string
+  vistoPor?: string
+  ignorado: boolean
+  observacao?: string
+  primeiraVez: string
+  ultimaVez: string
+}
+
+export const getSubredes = (): Promise<Subrede[]> =>
+  request.get({ url: '/inventario/rede/subredes' })
+export const getDispositivosRede = (params: any) =>
+  request.get({ url: '/inventario/rede/page', params })
+export const cadastrarDispositivoRede = (data: any): Promise<number> =>
+  request.post({ url: '/inventario/rede/cadastrar', data })
+export const ignorarDispositivoRede = (id: number, ignorado: boolean, observacao?: string) =>
+  request.post({ url: '/inventario/rede/ignorar', data: { id, ignorado, observacao } })
+
+// ========== SNMP ==========
+
+export interface CredencialSnmp {
+  id?: number
+  nome: string
+  versao: 'v2c' | 'v3'
+  comunidade?: string
+  usuario?: string
+  nivel?: string
+  authProtocolo?: string
+  authSenha?: string
+  privProtocolo?: string
+  privSenha?: string
+  porta: number
+  ordem: number
+  ativo: boolean
+  comunidadeDefinida?: boolean
+  authSenhaDefinida?: boolean
+  privSenhaDefinida?: boolean
+}
+
+export interface ResultadoSnmp {
+  ip: string
+  respondeu: boolean
+  credencial?: string
+  nome?: string
+  tipo?: string
+  fabricante?: string
+  modelo?: string
+  numeroSerie?: string
+  descricao?: string
+  paginas?: number
+  suprimentos?: string[]
+  interfaces: number
+  ativoId?: number
+  erro?: string
+}
+
+export interface AlvoSnmp {
+  ip: string
+  credencial?: string
+  ativoId?: number
+  ativoNome?: string
+  ativoTipo?: string
+  ultimaTentativa?: string
+  ultimaResposta?: string
+  erro?: string
+}
+
+export const getCredenciaisSnmp = (): Promise<CredencialSnmp[]> =>
+  request.get({ url: '/inventario/snmp/credenciais' })
+export const salvarCredencialSnmp = (data: CredencialSnmp): Promise<number> =>
+  request.post({ url: '/inventario/snmp/credencial', data })
+export const excluirCredencialSnmp = (id: number) =>
+  request.delete({ url: '/inventario/snmp/credencial', params: { id } })
+export const getAlvosSnmp = (): Promise<AlvoSnmp[]> =>
+  request.get({ url: '/inventario/snmp/alvos' })
+export const consultarSnmp = (ip: string): Promise<ResultadoSnmp> =>
+  request.post({ url: '/inventario/snmp/consultar', params: { ip }, timeout: 120000 })
+export const varrerSnmp = (): Promise<{ alvos: number; responderam: number; gravados: number }> =>
+  request.post({ url: '/inventario/snmp/varrer', timeout: 600000 })

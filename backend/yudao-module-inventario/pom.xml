@@ -25,6 +25,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- consultas SNMP v2c/v3 a impressoras e equipamentos de rede (Apache 2.0) -->
+        <dependency>
+            <groupId>org.snmp4j</groupId>
+            <artifactId>snmp4j</artifactId>
+            <version>3.9.2</version>
+        </dependency>
+
         <!-- limite de requisições na entrada dos agentes -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>

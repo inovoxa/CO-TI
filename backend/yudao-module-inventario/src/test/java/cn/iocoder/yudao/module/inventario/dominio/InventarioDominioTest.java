@@ -119,6 +119,68 @@ class InventarioDominioTest {
     }
 
     @Test
+    void ipdiscoverNoProtocolo() throws Exception {
+        String xml = "<REQUEST><DEVICEID>PC-1-2026-01-01-00-00-00</DEVICEID><QUERY>INVENTORY</QUERY><CONTENT>"
+                + "<HARDWARE><NAME>PC-1</NAME></HARDWARE><IPDISCOVER><H><I>10.20.5.1</I><M>00:11:22:33:44:55</M><N>gw</N></H>"
+                + "<H><I>10.20.5.9</I><M>aa:bb:cc:dd:ee:ff</M><N>-</N></H></IPDISCOVER></CONTENT></REQUEST>";
+        Protocolo.Pedido p = Protocolo.ler(zlib(xml.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(2, p.lista("IPDISCOVER").size());
+        assertEquals("10.20.5.9", p.lista("IPDISCOVER").get(1).get("I"));
+        assertEquals("gw", p.lista("IPDISCOVER").get(0).get("N"));
+        assertEquals("PC-1", p.unico("HARDWARE").get("NAME"));
+
+        Map<String, Object> r = new java.util.LinkedHashMap<>();
+        r.put("RESPONSE", "SEND");
+        r.put("OPTION", Map.of("NAME", "IPDISCOVER", "PARAM", new Protocolo.ComAtributos(
+                new java.util.LinkedHashMap<>(Map.of("IPDISC_LAT", 100)), "10.20.0.0")));
+        String reply = new String(new InflaterInputStream(new java.io.ByteArrayInputStream(Protocolo.replyOcs(r))).readAllBytes(),
+                StandardCharsets.UTF_8);
+        assertTrue(reply.contains("<PARAM IPDISC_LAT=\"100\">10.20.0.0</PARAM>") && reply.contains("<NAME>IPDISCOVER</NAME>"), reply);
+    }
+
+    @Test
+    void snmpImpressoraESwitch() {
+        Map<String, String> v = new java.util.HashMap<>();
+        v.put(SnmpLeitura.SYS_DESCR, "Brother NC-8300h, Firmware Ver.1.10");
+        v.put(SnmpLeitura.SYS_OBJECT_ID, "1.3.6.1.4.1.2435.2.3.9.1");
+        v.put(SnmpLeitura.SYS_NAME, "BRN3C2AF4");
+        v.put(SnmpLeitura.PRT_SERIAL, "E78123K9N456");
+        v.put(SnmpLeitura.PRT_PAGINAS, "48213");
+        v.put(SnmpLeitura.HR_DEVICE_DESCR, "Brother HL-L6402DW series");
+        Map<String, Map<String, String>> t = new java.util.HashMap<>();
+        t.put(SnmpLeitura.PRT_SUPRIMENTO_DESCR, Map.of("1", "Toner Preto", "2", "Cilindro"));
+        t.put(SnmpLeitura.PRT_SUPRIMENTO_MAX, Map.of("1", "100", "2", "-2"));
+        t.put(SnmpLeitura.PRT_SUPRIMENTO_NIVEL, Map.of("1", "7", "2", "-3"));
+        t.put(SnmpLeitura.IF_DESCR, Map.of("1", "Ethernet"));
+        t.put(SnmpLeitura.IF_MAC, Map.of("1", "3c:2a:f4:aa:bb:cc"));
+        SnmpLeitura.Resultado r = SnmpLeitura.interpretar("10.20.5.50", new SnmpLeitura.Dados(v, t));
+        assertEquals("impressora", r.resumo().tipo());
+        assertEquals("Brother", r.resumo().fabricante());
+        assertEquals("Brother HL-L6402DW series", r.resumo().modelo());
+        assertEquals("E78123K9N456", r.resumo().numeroSerie());
+        assertEquals("3C:2A:F4:AA:BB:CC", r.resumo().mac());
+        assertEquals(48213L, r.paginas());
+        SnmpLeitura.Suprimento toner = r.suprimentos().stream().filter(s -> s.descricao().equals("Toner Preto")).findFirst().orElseThrow();
+        assertEquals(7, toner.percentual());
+        assertNull(r.suprimentos().stream().filter(s -> s.descricao().equals("Cilindro")).findFirst().orElseThrow().percentual(),
+                "nível -3 (tem algum) e máximo -2 (desconhecido) não viram %");
+
+        Map<String, String> sw = new java.util.HashMap<>();
+        sw.put(SnmpLeitura.SYS_DESCR, "Cisco IOS Software, C2960 Software");
+        sw.put(SnmpLeitura.SYS_OBJECT_ID, ".1.3.6.1.4.1.9.1.1208");
+        sw.put(SnmpLeitura.SYS_NAME, "sw-core-01");
+        sw.put(SnmpLeitura.IF_NUMBER, "28");
+        sw.put(SnmpLeitura.ENT_SERIAL, "FOC1234X0YZ");
+        sw.put(SnmpLeitura.ENT_MODELO, "WS-C2960X-24TS-L");
+        SnmpLeitura.Resultado s2 = SnmpLeitura.interpretar("10.20.0.2", new SnmpLeitura.Dados(sw, Map.of()));
+        assertEquals("rede", s2.resumo().tipo());
+        assertEquals("Cisco", s2.resumo().fabricante());
+        assertEquals("WS-C2960X-24TS-L", s2.resumo().modelo());
+        assertEquals("sw-core-01", s2.resumo().nome());
+        assertNull(s2.paginas());
+    }
+
+    @Test
     void redesPermitidas() {
         List<String> privadas = List.of("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fd00::/8");
         assertTrue(Redes.permitido("10.20.30.40", privadas));
@@ -130,6 +192,7 @@ class InventarioDominioTest {
         assertFalse(Redes.permitido("exemplo.com", privadas), "nome não é resolvido");
         assertFalse(Redes.permitido(null, privadas));
         assertTrue(Redes.permitido("200.1.2.3", List.of()), "lista vazia = qualquer origem");
+        assertTrue(Redes.permitido("200.1.2.3", List.of("")), "variável de ambiente vazia = qualquer origem");
         assertTrue(Redes.permitido("200.1.2.3", List.of("0.0.0.0/0")));
         assertTrue(Redes.permitido("200.1.2.3", List.of("200.1.2.3")));
     }

@@ -19,6 +19,7 @@ public class InventarioConfiguration {
             rule.addDeptColumn("ativo", "dept_id");
             rule.addUserColumn("ativo", "usuario_id");
             rule.addDeptColumn("alerta_ativo", "dept_id");
+            rule.addDeptColumn("rede_dispositivo", "dept_id");
         };
     }
 

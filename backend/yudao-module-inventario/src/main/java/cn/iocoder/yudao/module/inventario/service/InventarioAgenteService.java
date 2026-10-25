@@ -58,6 +58,8 @@ public class InventarioAgenteService {
     private AdminUserMapper adminUserMapper;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private RedeService redeService;
 
     /** Resposta HTTP pronta para o controller. */
     public record Resposta(int status, String tipo, byte[] corpo, Map<String, String> cabecalhos) {
@@ -102,10 +104,18 @@ public class InventarioAgenteService {
                 Map<String, Object> r = new LinkedHashMap<>();
                 r.put("RESPONSE", enviar ? "SEND" : "STOP");
                 r.put("PROLOG_FREQ", inventarioProperties.getPrologoHoras());
+                // descoberta de rede: a varredura vem no próximo inventário, então só faz sentido se ele vier
+                Protocolo.ComAtributos ipdiscover = enviar ? redeService.opcaoProlog(cmdbAtivoMapper.selectOne(AtivoDO::getDeviceId, deviceId)) : null;
+                if (ipdiscover != null) {
+                    r.put("OPTION", Map.of("NAME", "IPDISCOVER", "PARAM", ipdiscover));
+                }
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(r), Map.of());
             }
             case "INVENTORY" -> {
-                processar(p, deviceId, agente, "ocs");
+                Long ativoId = processar(p, deviceId, agente, "ocs");
+                if (!p.lista("IPDISCOVER").isEmpty()) {
+                    redeService.registrar(p, ativoId);
+                }
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(Map.of("RESPONSE", "NO_ACCOUNT_UPDATE")), Map.of());
             }
             default -> {
@@ -172,7 +182,14 @@ public class InventarioAgenteService {
 
     /** Grava o inventário. Uma máquina por vez (o mesmo agente pode reenviar enquanto o primeiro ainda grava). */
     public Long processar(Protocolo.Pedido p, String deviceId, String agente, String origem) {
-        Normalizacao.Resultado r = Normalizacao.normalizar(p, LocalDate.now());
+        return gravarResultado(Normalizacao.normalizar(p, LocalDate.now()), deviceId, agente, origem);
+    }
+
+    /**
+     * Grava um resultado já normalizado (agente ou SNMP), com a mesma regra de máquina repetida e de histórico.
+     * Origem "snmp": nome e tipo de um ativo que já existe ficam como a equipe deixou (o sysName costuma ser feio).
+     */
+    public Long gravarResultado(Normalizacao.Resultado r, String deviceId, String agente, String origem) {
         synchronized (("cmdb-inv:" + deviceId).intern()) {
             try {
                 return transactionTemplate.execute(s -> gravar(r, deviceId, agente, origem));
@@ -211,6 +228,10 @@ public class InventarioAgenteService {
         }
 
         novo.setId(atual.getId());
+        if ("snmp".equals(origem)) {
+            novo.setNome(null);
+            novo.setTipo(null);
+        }
         if (!deviceId.equals(atual.getDeviceId())) {
             registrar(atual.getId(), agora, "agente", "device_id", atual.getDeviceId(), deviceId);
         }

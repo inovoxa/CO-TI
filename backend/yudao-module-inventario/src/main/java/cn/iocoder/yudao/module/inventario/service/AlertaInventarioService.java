@@ -8,6 +8,10 @@ import cn.iocoder.yudao.module.inventario.dal.dataobject.AlertaAtivoDO;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.AlertaRegraDO;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.AtivoDO;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.ChamadoAtivoDO;
+import cn.iocoder.yudao.module.inventario.dal.dataobject.ComponenteDO;
+import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbComponenteMapper;
+import cn.iocoder.yudao.module.inventario.dal.dataobject.RedeDispositivoDO;
+import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbRedeDispositivoMapper;
 import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAlertaAtivoMapper;
 import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAlertaRegraMapper;
 import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAtivoMapper;
@@ -57,6 +61,10 @@ public class AlertaInventarioService {
     @Resource
     private CmdbChamadoAtivoMapper cmdbChamadoAtivoMapper;
     @Resource
+    private CmdbRedeDispositivoMapper cmdbRedeDispositivoMapper;
+    @Resource
+    private CmdbComponenteMapper cmdbComponenteMapper;
+    @Resource
     private LicencaInventarioService licencaInventarioService;
     @Resource
     private LicencaMapper licencaMapper;
@@ -100,6 +108,18 @@ public class AlertaInventarioService {
             case "disco_cheio" -> {
                 if (req.getLimite() == null || req.getLimite() < 1 || req.getLimite() > 90) {
                     throw exception(ALERTA_LIMITE_INVALIDO, "de 1 a 90 (% livre)");
+                }
+                limite = req.getLimite();
+            }
+            case "suprimento_baixo" -> {
+                if (req.getLimite() == null || req.getLimite() < 1 || req.getLimite() > 90) {
+                    throw exception(ALERTA_LIMITE_INVALIDO, "de 1 a 90 (% restante)");
+                }
+                limite = req.getLimite();
+            }
+            case "rede_desconhecido" -> {
+                if (req.getLimite() == null || req.getLimite() < 1 || req.getLimite() > 30) {
+                    throw exception(ALERTA_LIMITE_INVALIDO, "de 1 a 30 dias");
                 }
                 limite = req.getLimite();
             }
@@ -250,6 +270,35 @@ public class AlertaInventarioService {
                     }
                 }
             }
+            case "suprimento_baixo" -> {
+                int limite = regra.getLimite() == null ? 10 : regra.getLimite();
+                Map<Long, AtivoDO> impressoras = cmdbAtivoMapper.selectList(new LambdaQueryWrapperX<AtivoDO>().eq(AtivoDO::getTipo, "impressora")
+                        .eq(AtivoDO::getSituacao, "em_uso")).stream().collect(Collectors.toMap(AtivoDO::getId, a -> a));
+                if (!impressoras.isEmpty()) {
+                    Map<Long, List<String>> baixos = new LinkedHashMap<>();
+                    for (ComponenteDO c : cmdbComponenteMapper.selectList(new LambdaQueryWrapperX<ComponenteDO>().eq(ComponenteDO::getTipo, "suprimento")
+                            .in(ComponenteDO::getAtivoId, impressoras.keySet()))) {
+                        Integer pct = percentual(c.getDados());
+                        if (pct != null && pct < limite) {
+                            baixos.computeIfAbsent(c.getAtivoId(), k -> new ArrayList<>()).add(c.getDescricao());
+                        }
+                    }
+                    baixos.forEach((id, l2) -> {
+                        AtivoDO a = impressoras.get(id);
+                        l.add(new Achado("ativo", id, "Suprimento acabando: " + a.getNome(), String.join("; ", l2), a.getDeptId()));
+                    });
+                }
+            }
+            case "rede_desconhecido" -> {
+                int dias = regra.getLimite() == null ? 1 : regra.getLimite();
+                for (RedeDispositivoDO d : cmdbRedeDispositivoMapper.selectList(new LambdaQueryWrapperX<RedeDispositivoDO>()
+                        .isNull(RedeDispositivoDO::getAtivoId).eq(RedeDispositivoDO::getIgnorado, false)
+                        .ge(RedeDispositivoDO::getUltimaVez, agora.minusDays(dias)))) {
+                    l.add(new Achado("rede", d.getId(), "Equipamento desconhecido na rede: " + d.getIp() + " (" + d.getMac() + ")",
+                            (d.getNome() == null ? "" : d.getNome() + " · ") + "sub-rede " + d.getSubrede() + " · visto em " + quando(d.getUltimaVez()),
+                            d.getDeptId()));
+                }
+            }
             default -> log.warn("[inventario] regra de alerta desconhecida: {}", regra.getCodigo());
         }
         return l;
@@ -316,6 +365,15 @@ public class AlertaInventarioService {
     private boolean chamadoAberto(Long chamadoId) {
         ChamadoDO c = chamadoMapper.selectById(chamadoId);
         return c != null && ChamadoStatus.de(c.getStatus()).aberto();
+    }
+
+    private static Integer percentual(String dados) {
+        try {
+            Object v = cn.iocoder.yudao.framework.common.util.json.JsonUtils.parseObject(dados, Map.class).get("percentual");
+            return v == null ? null : Integer.valueOf(v.toString());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static String quando(LocalDateTime t) {

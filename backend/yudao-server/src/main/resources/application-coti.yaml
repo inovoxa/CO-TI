@@ -312,6 +312,11 @@ coti:
     inventario-dias: ${CO_TI_INVENTARIO_DIAS:0}   # 0 = inventaria a cada contato
     sem-contato-dias: ${CO_TI_INVENTARIO_SEM_CONTATO_DIAS:30}
     alertas-intervalo-ms: ${CO_TI_INVENTARIO_ALERTAS_MS:900000}   # 0 = só pelo botão "Avaliar agora"
+    ipdiscover: ${CO_TI_INVENTARIO_IPDISCOVER:true}   # descoberta de rede pelos agentes OCS
+    ipdiscover-por-rede: ${CO_TI_INVENTARIO_IPDISCOVER_POR_REDE:1}
+    ipdiscover-redes: ${CO_TI_INVENTARIO_IPDISCOVER_REDES:}   # vazio = todas as sub-redes dos agentes
+    snmp-intervalo-ms: ${CO_TI_INVENTARIO_SNMP_MS:21600000}   # varredura SNMP a cada 6 h; 0 = só manual
+    snmp-tempo-limite-ms: ${CO_TI_INVENTARIO_SNMP_TEMPO_MS:1500}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}

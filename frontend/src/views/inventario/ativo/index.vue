@@ -213,7 +213,7 @@
       <el-table-column label="Antivírus" width="125">
         <template #default="{ row }">
           <el-tag
-            v-if="row.origem !== 'manual'"
+            v-if="AGENTES.includes(row.origem)"
             :type="cor(ANTIVIRUS, row.antivirus)"
             disable-transitions
             size="small"
@@ -327,7 +327,7 @@
             (escolhida à mão)</span
           >
         </el-descriptions-item>
-        <el-descriptions-item v-if="a.origem !== 'manual'" label="Antivírus">
+        <el-descriptions-item v-if="AGENTES.includes(a.origem)" label="Antivírus">
           <el-tag :type="cor(ANTIVIRUS, a.antivirus)" disable-transitions size="small">{{
             rotulo(ANTIVIRUS, a.antivirus)
           }}</el-tag>
@@ -340,6 +340,12 @@
         }}</el-descriptions-item>
         <el-descriptions-item v-if="a.origem !== 'manual'" label="Último contato">{{
           quando(a.ultimoContato)
+        }}</el-descriptions-item>
+        <el-descriptions-item v-if="a.paginas" label="Páginas impressas">{{
+          a.paginas.toLocaleString('pt-BR')
+        }}</el-descriptions-item>
+        <el-descriptions-item v-if="a.localizacao" label="Localização (SNMP)">{{
+          a.localizacao
         }}</el-descriptions-item>
         <el-descriptions-item v-if="a.observacao" :span="2" label="Observação">{{
           a.observacao
@@ -550,6 +556,8 @@ import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
 
 defineOptions({ name: 'InventarioAtivo' })
+/** Origens com agente instalado (antivírus e contato só fazem sentido nelas) */
+const AGENTES = ['ocs', 'glpi_agent']
 const message = useMessage()
 const route = useRoute()
 const router = useRouter()

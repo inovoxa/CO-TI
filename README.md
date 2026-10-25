@@ -270,6 +270,29 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   para a licença. A lista passa a mostrar quantas máquinas têm o software.
 - Detalhes: `docs/specs/inventario-alertas-licencas.md`.
 
+### Descoberta de rede (F3c)
+
+- **Como funciona:** para cada sub-rede onde há agentes OCS, o CO-TI escolhe um agente. Esse agente varre a
+  sub-rede e manda os IPs e MACs que respondem.
+- **Onde ver:** Inventário → Rede mostra, por sub-rede, o que está cadastrado e o que é **desconhecido**. Um
+  equipamento desconhecido pode virar ativo (impressora, switch, telefone IP...) ou ser ignorado com um motivo.
+- **Alerta:** a regra "Equipamento desconhecido na rede" vem desligada.
+- **Variáveis:**
+  - `CO_TI_INVENTARIO_IPDISCOVER` liga ou desliga a descoberta;
+  - `CO_TI_INVENTARIO_IPDISCOVER_REDES` limita as sub-redes varridas.
+- Detalhes: `docs/specs/inventario-rede.md`.
+
+### SNMP: impressoras, switches e o que não tem agente
+
+- **Configurar:** em Inventário → SNMP, cadastre as credenciais (v2c ou v3).
+- **Varredura:** a cada 6 horas o CO-TI consulta por SNMP os IPs descobertos na rede e os ativos cadastrados com IP.
+  O botão "Consultar IP" faz isso na hora para um endereço.
+- **O que entra no inventário:** fabricante, modelo, série, interfaces e, nas impressoras, o contador de páginas e o
+  nível de cada toner (com alerta de toner acabando).
+- **Ativo que já existe:** se a equipe já tinha cadastrado o equipamento, o SNMP atualiza esse cadastro e mantém o
+  nome dado.
+- Detalhes: `docs/specs/inventario-snmp.md`.
+
 ## Assistente interno de IA
 
 O menu **Assistente IA** é um chat para perguntar em português sobre a TI da organização. Exemplos: "quantos

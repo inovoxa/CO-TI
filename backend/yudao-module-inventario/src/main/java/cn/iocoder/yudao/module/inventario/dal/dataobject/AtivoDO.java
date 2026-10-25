@@ -55,5 +55,9 @@ public class AtivoDO extends BaseDO {
     private LocalDateTime ultimoInventario;
     private LocalDateTime ultimoContato;
     private String observacao;
+    /** Contador de páginas (impressoras, pelo SNMP) */
+    private Long paginas;
+    /** sysLocation do SNMP */
+    private String localizacao;
 
 }

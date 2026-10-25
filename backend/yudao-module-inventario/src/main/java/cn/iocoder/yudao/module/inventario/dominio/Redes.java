@@ -13,7 +13,8 @@ public final class Redes {
     }
 
     public static boolean permitido(String ip, List<String> redes) {
-        if (redes == null || redes.isEmpty()) {
+        // variável de ambiente vazia chega como [""]: sem nenhuma rede de verdade, vale qualquer origem
+        if (redes == null || redes.stream().allMatch(r -> r == null || r.isBlank())) {
             return true;
         }
         byte[] endereco = bytes(ip);

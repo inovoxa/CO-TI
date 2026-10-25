@@ -11,6 +11,11 @@ Este produto inclui código de terceiros, mantido sob a licença original de cad
    Copyright (c) 2021-present Archer
    https://github.com/yudaocode/yudao-ui-admin-vue3 — texto da licença em frontend/LICENSE
 
+Bibliotecas de terceiros notáveis usadas pelo núcleo (dependências Maven, mantidas na licença original):
+
+- SNMP4J 3.9 (Apache License 2.0), Copyright (c) Frank Fock e Jochen Katz — consultas SNMP do inventário
+  (backend/yudao-module-inventario).
+
 Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
 
 - GLPI 12.0.0 (GPL-3.0-or-later), Copyright (C) Teclib' e contribuidores. Partes portadas para Java em
@@ -56,6 +61,8 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
       DRIVES, NETWORKS, MONITORS, SOFTWARES...) (Apache/Ocsinventory/Map.pm);
     * critérios de máquina repetida: UUID, série, MAC e nome, ignorando séries genéricas de fábrica
       (Apache/Ocsinventory/Server/Duplicate.pm).
+    * descoberta de rede: opção IPDISCOVER na resposta ao PROLOG, eleição de um agente por sub-rede e leitura dos
+      hosts <H><I/><M/><N/></H> (Apache/Ocsinventory/Server/Capacities/Ipdiscover.pm).
   Os agentes OCS (Ocsinventory-Unix-Agent, Windows Agent) não são distribuídos com o CO-TI.
 - GLPI Agent (GPL-2.0-or-later), Copyright Teclib' — só o formato JSON das mensagens contact/inventory, como
   referência; nenhum código copiado e o agente não é distribuído.

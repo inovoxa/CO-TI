@@ -35,4 +35,18 @@ public class InventarioProperties {
     /** De quanto em quanto tempo os alertas são reavaliados (ms); 0 = só pelo botão "Avaliar agora". */
     private long alertasIntervaloMs = 15 * 60 * 1000L;
 
+    /** Descoberta de rede: um agente OCS por sub-rede varre a rede (ARP/ICMP) e manda o que achou. */
+    private boolean ipdiscover = true;
+    /** Quantos agentes varrem cada sub-rede */
+    private int ipdiscoverPorRede = 1;
+    /** Pausa entre os pacotes da varredura (ms), como no OCS */
+    private int ipdiscoverLatencia = 100;
+    /** Sub-redes que podem ser varridas (CIDR); vazio = todas as que os agentes informarem, menos link-local */
+    private List<String> ipdiscoverRedes = new ArrayList<>();
+
+    /** Varredura SNMP de impressoras e equipamentos de rede (ms); 0 = só pelo botão "Varrer agora". */
+    private long snmpIntervaloMs = 6 * 60 * 60 * 1000L;
+    /** Espera por resposta de cada pacote SNMP (ms) */
+    private int snmpTempoLimiteMs = 1500;
+
 }

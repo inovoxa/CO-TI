@@ -488,6 +488,8 @@ public class AtivoService {
             r.setUltimoContato(a.getUltimoContato());
             r.setSemContato(!"manual".equals(a.getOrigem()) && (a.getUltimoContato() == null || a.getUltimoContato().isBefore(limite)));
             r.setObservacao(a.getObservacao());
+            r.setPaginas(a.getPaginas());
+            r.setLocalizacao(a.getLocalizacao());
             res.add(r);
         }
         return res;

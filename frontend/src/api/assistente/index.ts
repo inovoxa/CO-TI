@@ -53,5 +53,6 @@ export const CONSULTAS: Record<string, string> = {
   buscar_logs: 'Logs',
   buscar_problemas: 'Problemas',
   buscar_mudancas: 'Mudanças',
-  buscar_conversas: 'Conversas do atendimento'
+  buscar_conversas: 'Conversas do atendimento',
+  rede_descoberta: 'Rede descoberta'
 }

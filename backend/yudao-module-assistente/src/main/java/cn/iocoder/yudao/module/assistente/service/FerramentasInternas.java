@@ -12,6 +12,8 @@ import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAtivoMapper;
 import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
+import cn.iocoder.yudao.module.inventario.service.RedeService;
+import cn.iocoder.yudao.module.inventario.controller.admin.vo.RedeVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.atendimento.controller.admin.vo.AtendimentoVOs;
 import cn.iocoder.yudao.module.atendimento.service.ConversaService;
@@ -66,6 +68,8 @@ public class FerramentasInternas {
     private LicencaInventarioService licencaInventarioService;
     @Resource
     private LicencaService licencaService;
+    @Resource
+    private RedeService redeService;
     @Resource
     private ChamadoService chamadoService;
     @Resource
@@ -150,6 +154,11 @@ public class FerramentasInternas {
         registrar("licencas", "Licenças de software (ITSM) com quantidade comprada, usos registrados e instalações encontradas pelo inventário.",
                 props(p("busca", "string", "Software, edição ou fabricante"), p("limite", "integer", "Padrão 20, máximo 50")),
                 new String[]{"itsm:licenca:query"}, this::licencas);
+        registrar("rede_descoberta", "Equipamentos encontrados na varredura da rede (IPDiscover): sub-redes e o que não está cadastrado.",
+                props(p("subrede", "string", "Sub-rede (ex.: 10.20.5.0); vazio = resumo de todas"),
+                        p("situacao", "string", "desconhecidos (padrão) | conhecidos | ignorados | todos"),
+                        p("busca", "string", "IP, MAC ou nome"), p("limite", "integer", "Padrão 30, máximo 80")),
+                new String[]{"inventario:ativo:query"}, this::rede);
         // ---------------------------------------------------------------- Service Desk
         registrar("buscar_chamados", "Procura chamados do Service Desk.",
                 props(p("busca", "string", "Número (#123) ou parte do título"),
@@ -353,7 +362,9 @@ public class FerramentasInternas {
         putSe(m, "pessoa", a.getUsuarioNome() != null ? a.getUsuarioNome() : a.getUsuarioLogin());
         putSe(m, "unidade", a.getDeptNome());
         putSe(m, "ip", a.getIp());
-        if (!"manual".equals(a.getOrigem())) {
+        putSe(m, "paginas_impressas", a.getPaginas());
+        putSe(m, "localizacao", a.getLocalizacao());
+        if (Set.of("ocs", "glpi_agent").contains(a.getOrigem())) {
             m.put("antivirus", a.getAntivirus());
             putSe(m, "ultimo_contato", quando(a.getUltimoContato()));
             if (Boolean.TRUE.equals(a.getSemContato())) {
@@ -490,6 +501,44 @@ public class FerramentasInternas {
             m.put("situacao", l.getSituacaoRotulo());
             return m;
         }).toList());
+    }
+
+    private Object rede(Contexto c) {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("subredes", redeService.subredes().stream().map(x -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("subrede", x.getSubrede());
+            putSe(m, "mascara", x.getMascara());
+            m.put("equipamentos", x.getDispositivos());
+            m.put("desconhecidos", x.getDesconhecidos());
+            putSe(m, "varrida_por", x.getVarredores());
+            putSe(m, "ultima_varredura", quando(x.getUltimaVarredura()));
+            return m;
+        }).toList());
+        if (c.texto("subrede") != null || c.texto("busca") != null || c.texto("situacao") != null) {
+            RedeVOs.PaginaReq req = new RedeVOs.PaginaReq();
+            req.setPageNo(1);
+            req.setPageSize(c.limite(30, 80));
+            req.setSubrede(c.texto("subrede"));
+            req.setSituacao(c.texto("situacao"));
+            req.setBusca(c.texto("busca"));
+            PageResult<RedeVOs.Dispositivo> p = redeService.pagina(req);
+            r.put("total", p.getTotal());
+            r.put("equipamentos", p.getList().stream().map(d -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("ip", d.getIp());
+                m.put("mac", d.getMac());
+                putSe(m, "nome", d.getNome());
+                putSe(m, "ativo", d.getAtivoNome());
+                if (Boolean.TRUE.equals(d.getIgnorado())) {
+                    m.put("ignorado", true);
+                }
+                putSe(m, "observacao", d.getObservacao());
+                m.put("ultima_vez", quando(d.getUltimaVez()));
+                return m;
+            }).toList());
+        }
+        return r;
     }
 
     // ======================================================================================= Service Desk

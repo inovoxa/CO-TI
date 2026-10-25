@@ -164,7 +164,23 @@ public final class Protocolo {
             }
             NodeList filhos = conteudo.getChildNodes();
             for (int i = 0; i < filhos.getLength(); i++) {
-                if (filhos.item(i) instanceof Element secao) {
+                if (filhos.item(i) instanceof Element secao && "IPDISCOVER".equalsIgnoreCase(secao.getTagName())) {
+                    // <IPDISCOVER><H><I>ip</I><M>mac</M><N>nome</N></H>...: um item por H
+                    List<Map<String, String>> hosts = secoes.computeIfAbsent("IPDISCOVER", k -> new ArrayList<>());
+                    NodeList hs = secao.getChildNodes();
+                    for (int j = 0; j < hs.getLength(); j++) {
+                        if (hs.item(j) instanceof Element h) {
+                            Map<String, String> campos = new LinkedHashMap<>();
+                            NodeList cs = h.getChildNodes();
+                            for (int k = 0; k < cs.getLength(); k++) {
+                                if (cs.item(k) instanceof Element c) {
+                                    campos.put(c.getTagName().toUpperCase(Locale.ROOT), c.getTextContent().strip());
+                                }
+                            }
+                            hosts.add(campos);
+                        }
+                    }
+                } else if (filhos.item(i) instanceof Element secao) {
                     Map<String, String> campos = new LinkedHashMap<>();
                     NodeList cs = secao.getChildNodes();
                     boolean temFilho = false;
@@ -302,6 +318,10 @@ public final class Protocolo {
 
     // ======================================================================================= respostas
 
+    /** Elemento com atributos e texto, ex.: {@code <PARAM IPDISC_LAT="100">10.20.0.0</PARAM>}. */
+    public record ComAtributos(Map<String, Object> atributos, String texto) {
+    }
+
     /** {@code <REPLY>} do OCS: pares nome/valor na ordem, com listas (ex.: ACCOUNTINFO). */
     public static byte[] replyOcs(Map<String, Object> campos) {
         StringBuilder s = new StringBuilder("<?xml version='1.0' encoding='UTF-8'?>\n<REPLY>\n");
@@ -312,7 +332,11 @@ public final class Protocolo {
 
     @SuppressWarnings("unchecked")
     private static void escrever(StringBuilder s, String nome, Object valor, String recuo) {
-        if (valor instanceof List<?> l) {
+        if (valor instanceof ComAtributos ca) {
+            s.append(recuo).append('<').append(nome);
+            ca.atributos().forEach((k, v) -> s.append(' ').append(k).append("=\"").append(escaparXml(String.valueOf(v))).append('"'));
+            s.append('>').append(ca.texto() == null ? "" : escaparXml(ca.texto())).append("</").append(nome).append(">\n");
+        } else if (valor instanceof List<?> l) {
             l.forEach(x -> escrever(s, nome, x, recuo));
         } else if (valor instanceof Map<?, ?> m) {
             s.append(recuo).append('<').append(nome).append(">\n");

@@ -89,6 +89,9 @@ public final class AtivoVOs {
         /** Sem contato há mais dias que o configurado */
         private Boolean semContato;
         private String observacao;
+        /** Contador de páginas (impressora pelo SNMP) */
+        private Long paginas;
+        private String localizacao;
     }
 
     @Data
