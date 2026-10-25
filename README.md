@@ -236,6 +236,29 @@ novo, e mensagem repetida não duplica. O corpo bruto é apagado depois de 7 dia
 - **Telegram:** cole o token do @BotFather. "Testar e conectar" cadastra o webhook do robô, com um segredo que o CO-TI
   confere em cada chamada. Só conversas privadas com o robô.
 
+## Inventário (F3a) — agentes OCS e GLPI Agent
+
+Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
+
+- **Endereços:**
+  - Agente OCS: `https://<portal>/ocsinventory`. No Windows: `/SERVER=https://<portal>/ocsinventory`.
+  - GLPI Agent: `https://<portal>/front/inventory.php`, o mesmo caminho do GLPI.
+  - Se o nome do servidor antigo passar a apontar para o CO-TI, nada muda nas máquinas.
+- **Proteção** (no `.env`):
+  - `CO_TI_INVENTARIO_REDES`: redes de onde os agentes podem mandar (CIDR). O padrão são as redes privadas.
+  - `CO_TI_INVENTARIO_USUARIO` e `CO_TI_INVENTARIO_SENHA`: senha HTTP Basic opcional (`/USER` e `/PWD` no agente).
+- **O que aparece em Inventário → Ativos:**
+  - hardware, sistema (com alerta de sistema **sem suporte**), antivírus, softwares e peças;
+  - o histórico do que mudou;
+  - o usuário logado, ligado à pessoa do AD; a unidade do ativo segue a da pessoa.
+- **Máquina repetida:** quando o agente é reinstalado, a máquina é reconhecida pelo UUID, pela série ou pelo
+  MAC + nome.
+- **Integração:**
+  - o chamado ganha o bloco "Equipamentos";
+  - o telão e a tela de inventário do Centro de Operações passam a usar os dados reais.
+
+Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
+
 ## Importar do GLPI 10/11
 
 *Service Desk → Configuração → Importar do GLPI* (só o administrador). Lê o banco MySQL/MariaDB do GLPI e traz:

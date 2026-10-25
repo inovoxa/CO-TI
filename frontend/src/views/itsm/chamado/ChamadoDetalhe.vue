@@ -388,6 +388,67 @@
             >nenhum</span
           >
         </div>
+
+        <div v-if="veInventario" class="mt-14px">
+          <div class="mb-6px flex items-center justify-between text-13px font-bold">
+            Equipamentos
+            <el-button
+              v-if="podeEditar && !equip.escolhendo"
+              link
+              size="small"
+              type="primary"
+              @click="escolherEquipamento"
+              ><Icon icon="ep:plus"
+            /></el-button>
+          </div>
+          <div v-if="equip.escolhendo" class="mb-6px flex gap-4px">
+            <el-select
+              v-model="equip.escolhido"
+              :loading="equip.buscando"
+              :remote-method="buscarEquipamentos"
+              class="flex-1"
+              filterable
+              placeholder="Nome, patrimônio ou IP"
+              remote
+              size="small"
+            >
+              <el-option
+                v-for="o in equip.opcoes"
+                :key="o.id"
+                :label="o.patrimonio ? `${o.nome} (${o.patrimonio})` : o.nome"
+                :value="o.id"
+              />
+            </el-select>
+            <el-button
+              :disabled="!equip.escolhido"
+              size="small"
+              type="primary"
+              @click="ligarEquipamento"
+              >Ligar</el-button
+            >
+            <el-button size="small" @click="equip.escolhendo = false">Cancelar</el-button>
+          </div>
+          <div v-for="e in equip.lista" :key="e.id" class="mb-4px flex items-center text-13px">
+            <el-link :href="`/inventario/ativos?id=${e.id}`" target="_blank" type="primary">{{
+              e.nome
+            }}</el-link>
+            <span class="ml-4px truncate text-[var(--el-text-color-secondary)]"
+              >· {{ e.usuarioNome || e.usuarioLogin || e.soNome || e.tipo }}</span
+            >
+            <el-button
+              v-if="podeEditar"
+              class="ml-auto"
+              link
+              size="small"
+              type="danger"
+              @click="desligarEquipamento(e)"
+              ><Icon icon="ep:close"
+            /></el-button>
+          </div>
+          <span v-if="!equip.lista.length" class="text-12px text-[var(--el-text-color-placeholder)]"
+            >nenhum</span
+          >
+        </div>
       </div>
     </div>
 
@@ -498,6 +559,7 @@ import {
   corStatus,
   duracao
 } from '@/api/itsm'
+import * as InvApi from '@/api/inventario'
 import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 import LinhaDoTempo from '../components/LinhaDoTempo.vue'
@@ -537,7 +599,8 @@ const CAMPOS: Record<string, string> = {
   'aprovacao+': '+ Aprovador',
   'problema+': '+ Problema',
   'mudanca+': '+ Mudança',
-  aprovacao: 'Aprovação'
+  aprovacao: 'Aprovação',
+  ativo: 'Equipamento'
 }
 const rotuloCampo = (c: string) => CAMPOS[c] || c
 
@@ -615,6 +678,8 @@ const carregar = async (id: number) => {
     }
     if (aba.value === 'historico') historico.value = await ItsmApi.getHistorico(id)
     itil.value = veItil ? await ItsmApi.getItilDoChamado(id) : []
+    equip.lista = veInventario ? await InvApi.getAtivosDoChamado(id) : []
+    equip.escolhendo = false
   } finally {
     carregando.value = false
   }
@@ -741,6 +806,47 @@ const incluirAtor = async () => {
     equipeId: atorDialogo.modo === 'equipe' ? atorDialogo.equipeId : undefined
   })
   atorDialogo.visivel = false
+  await recarregar()
+}
+
+// ---------- equipamentos (inventário) ----------
+const veInventario = checkPermi(['inventario:ativo:query'])
+const podeEditar = checkPermi(['itsm:chamado:update'])
+const equip = reactive({
+  lista: [] as InvApi.Ativo[],
+  escolhendo: false,
+  escolhido: undefined as number | undefined,
+  opcoes: [] as InvApi.Ativo[],
+  buscando: false
+})
+/** Começa pelos equipamentos de quem pediu; a busca procura em todos */
+const escolherEquipamento = async () => {
+  equip.escolhendo = true
+  equip.escolhido = undefined
+  const ids = (chamado.value?.solicitantes ?? [])
+    .map((s) => s.userId)
+    .filter((x): x is number => !!x)
+  const listas = await Promise.all(ids.map((u) => InvApi.getAtivosDoUsuario(u)))
+  const ligados = new Set(equip.lista.map((e) => e.id))
+  equip.opcoes = listas.flat().filter((e) => !ligados.has(e.id))
+}
+const buscarEquipamentos = async (texto: string) => {
+  if (!texto) return
+  equip.buscando = true
+  try {
+    const r = await InvApi.getAtivos({ busca: texto, pageNo: 1, pageSize: 20 })
+    equip.opcoes = r.list
+  } finally {
+    equip.buscando = false
+  }
+}
+const ligarEquipamento = async () => {
+  await InvApi.vincularAtivo(chamado.value!.id, equip.escolhido!)
+  await recarregar()
+}
+const desligarEquipamento = async (e: InvApi.Ativo) => {
+  await message.confirm(`Desligar ${e.nome} deste chamado?`)
+  await InvApi.desvincularAtivo(chamado.value!.id, e.id)
   await recarregar()
 }
 

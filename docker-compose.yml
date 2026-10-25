@@ -71,6 +71,10 @@ services:
       CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
       CO_TI_TELEGRAM_URL: ${CO_TI_TELEGRAM_URL:-https://api.telegram.org}
       CO_TI_VIACEP_URL: ${CO_TI_VIACEP_URL-https://viacep.com.br/ws}
+      # inventário: redes de onde os agentes podem mandar e senha HTTP Basic opcional
+      CO_TI_INVENTARIO_REDES: ${CO_TI_INVENTARIO_REDES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}
+      CO_TI_INVENTARIO_USUARIO: ${CO_TI_INVENTARIO_USUARIO:-}
+      CO_TI_INVENTARIO_SENHA: ${CO_TI_INVENTARIO_SENHA:-}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
       CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
     volumes:

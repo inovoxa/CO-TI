@@ -303,6 +303,14 @@ coti:
         impressao-digital: ${CO_TI_AD_SSH_IMPRESSAO:}  # obrigatória: ssh-keyscan -t ed25519 host | ssh-keygen -lf -
         # script: padrão C:\Scripts\Executar_AD_Automatico.ps1 (troque pela variável COTI_ITSM_AD_SSH_SCRIPT)
         tempo-limite-seg: ${CO_TI_AD_SSH_TEMPO_LIMITE:120}
+  inventario:
+    # Agentes OCS e GLPI Agent: apontar para https://<portal>/ocsinventory (ou /front/inventory.php)
+    agente-redes: ${CO_TI_INVENTARIO_REDES:10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}   # vazio = qualquer origem
+    agente-usuario: ${CO_TI_INVENTARIO_USUARIO:}   # HTTP Basic opcional (/USER e /PWD no agente)
+    agente-senha: ${CO_TI_INVENTARIO_SENHA:}
+    prologo-horas: ${CO_TI_INVENTARIO_PROLOGO_HORAS:12}
+    inventario-dias: ${CO_TI_INVENTARIO_DIAS:0}   # 0 = inventaria a cada contato
+    sem-contato-dias: ${CO_TI_INVENTARIO_SEM_CONTATO_DIAS:30}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}

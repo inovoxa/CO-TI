@@ -1,0 +1,161 @@
+package cn.iocoder.yudao.module.inventario.dominio;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.Deflater;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class InventarioDominioTest {
+
+    private static byte[] amostra() throws Exception {
+        try (InputStream in = InventarioDominioTest.class.getResourceAsStream("/inventario/ocs-windows.xml")) {
+            return in.readAllBytes();
+        }
+    }
+
+    private static byte[] zlib(byte[] dados) {
+        return Protocolo.comprimir(dados);
+    }
+
+    @Test
+    void leXmlDoAgenteOcsComprimidoComZlibOuGzip() throws Exception {
+        Protocolo.Pedido p = Protocolo.ler(zlib(amostra()));
+        assertEquals("INVENTORY", p.consulta());
+        assertEquals("UBS-CENTRO-07-2026-10-20-08-15-02", p.deviceId());
+        assertEquals(2, p.lista("MEMORIES").size());
+        assertEquals("Dell Inc.", p.unico("BIOS").get("SMANUFACTURER"));
+        ByteArrayOutputStream gz = new ByteArrayOutputStream();
+        try (GZIPOutputStream g = new GZIPOutputStream(gz)) {
+            g.write(amostra());
+        }
+        assertEquals("INVENTORY", Protocolo.ler(gz.toByteArray()).consulta());
+        assertEquals("INVENTORY", Protocolo.ler(amostra()).consulta(), "sem compressão");
+        Deflater cru = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        cru.setInput(amostra());
+        cru.finish();
+        byte[] buf = new byte[200_000];
+        int n = cru.deflate(buf);
+        assertEquals("INVENTORY", Protocolo.ler(java.util.Arrays.copyOf(buf, n)).consulta(), "deflate sem cabeçalho");
+    }
+
+    @Test
+    void prologoEXxeBloqueado() {
+        String prolog = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><REQUEST><DEVICEID>PC-1-2026-01-01-00-00-00</DEVICEID><QUERY>PROLOG</QUERY></REQUEST>";
+        Protocolo.Pedido p = Protocolo.ler(zlib(prolog.getBytes(StandardCharsets.UTF_8)));
+        assertEquals("PROLOG", p.consulta());
+        assertEquals("PC-1-2026-01-01-00-00-00", p.deviceId());
+        String xxe = "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><REQUEST><QUERY>&x;</QUERY></REQUEST>";
+        assertThrows(Protocolo.ProtocoloInvalido.class, () -> Protocolo.ler(xxe.getBytes(StandardCharsets.UTF_8)));
+        assertThrows(Protocolo.ProtocoloInvalido.class, () -> Protocolo.ler(new byte[]{1, 2, 3, 4}));
+    }
+
+    @Test
+    void bombaDeCompressaoEhRecusada() {
+        byte[] zeros = new byte[Protocolo.MAXIMO_DESCOMPRIMIDO + 1024];
+        assertThrows(Protocolo.ProtocoloInvalido.class, () -> Protocolo.ler(zlib(zeros)));
+    }
+
+    @Test
+    void respostaComprimidaComoOServidorOcs() throws Exception {
+        byte[] r = Protocolo.replyOcs(Map.of("RESPONSE", "SEND", "PROLOG_FREQ", 12));
+        String xml = new String(new InflaterInputStream(new java.io.ByteArrayInputStream(r)).readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(xml.contains("<REPLY>") && xml.contains("<RESPONSE>SEND</RESPONSE>") && xml.contains("<PROLOG_FREQ>12</PROLOG_FREQ>"), xml);
+    }
+
+    @Test
+    void normalizaODesktop() throws Exception {
+        Normalizacao.Resultado r = Normalizacao.normalizar(Protocolo.ler(zlib(amostra())), LocalDate.of(2026, 10, 24));
+        Normalizacao.Resumo a = r.resumo();
+        assertEquals("desktop", a.tipo());
+        assertEquals("UBS-CENTRO-07", a.nome());
+        assertEquals("7GH2K93", a.numeroSerie());
+        assertEquals("PMA-004521", a.patrimonio());
+        assertEquals("Microsoft Windows 11 Pro", a.soNome());
+        assertFalse(a.soSemSuporte());
+        assertEquals(8, a.cpuNucleos());
+        assertEquals(16135, a.memoriaMb());
+        assertEquals(486400L, a.discoTotalMb(), "só o disco local, não a unidade de rede");
+        assertEquals(153600L, a.discoLivreMb());
+        assertEquals("A4:BB:6D:12:34:56", a.mac(), "a placa física, não a virtual do Hyper-V");
+        assertEquals("maria.silva", a.usuarioLogin());
+        assertEquals("ativo", a.antivirus(), "Windows 11 tem o Defender");
+        assertEquals(3, r.softwares().size());
+        assertEquals(java.time.LocalDate.of(2026, 9, 30), r.softwares().get(0).instaladoEm());
+        assertEquals("64", r.softwares().get(0).arquitetura());
+        assertEquals("32 bits", r.softwares().get(2).arquitetura());
+        List<Normalizacao.Componente> mem = r.componentes().stream().filter(c -> c.tipo().equals("memoria")).toList();
+        assertEquals(2, mem.size());
+        assertEquals("M378A1K43EB2|1|8192", mem.get(0).chave());
+        assertEquals("8192 MB · DDR4 · 3200 MHz", mem.get(0).descricao());
+        assertTrue(r.componentes().stream().anyMatch(c -> c.tipo().equals("monitor") && c.chave().equals("CN0V1X7H|DELL P2422H|Monitor PnP genérico")));
+    }
+
+    @Test
+    void regras() {
+        assertEquals("notebook", Normalizacao.tipo("Notebook", "Windows 11", "Physical", "Dell", "Latitude"));
+        assertEquals("servidor", Normalizacao.tipo("Desktop", "Microsoft Windows Server 2019 Standard", null, "Dell", "R740"));
+        assertEquals("virtual", Normalizacao.tipo("Other", "Ubuntu", null, "VMware, Inc.", "VMware Virtual Platform"));
+        assertTrue(Normalizacao.semSuporte("Microsoft Windows 7 Professional", null, LocalDate.of(2026, 1, 1)));
+        assertTrue(Normalizacao.semSuporte("Microsoft Windows 10 Pro", null, LocalDate.of(2026, 1, 1)));
+        assertFalse(Normalizacao.semSuporte("Microsoft Windows 10 Pro", null, LocalDate.of(2025, 1, 1)));
+        assertFalse(Normalizacao.semSuporte("Microsoft Windows 10 Enterprise LTSC", null, LocalDate.of(2026, 1, 1)));
+        assertFalse(Normalizacao.semSuporte("Microsoft Windows Server 2016", null, LocalDate.of(2026, 10, 1)));
+        assertTrue(Normalizacao.generico("To Be Filled By O.E.M."));
+        assertTrue(Normalizacao.generico("00000000-0000-0000-0000-000000000000"));
+        assertFalse(Normalizacao.generico("7GH2K93"));
+        assertEquals("maria.silva", Normalizacao.usuario("PREFEITURA\\maria.silva"));
+        assertEquals("joao", Normalizacao.usuario("joao@prefeitura.local"));
+        assertNull(Normalizacao.usuario("SYSTEM"));
+        assertEquals(Normalizacao.chaveSoftware("Google  Chrome ", "Google LLC"), Normalizacao.chaveSoftware("google  chrome", "GOOGLE LLC"));
+    }
+
+    @Test
+    void redesPermitidas() {
+        List<String> privadas = List.of("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fd00::/8");
+        assertTrue(Redes.permitido("10.20.30.40", privadas));
+        assertTrue(Redes.permitido("172.31.255.1", privadas));
+        assertFalse(Redes.permitido("172.32.0.1", privadas));
+        assertTrue(Redes.permitido("::ffff:192.168.1.5", privadas), "IPv4 mapeado em IPv6");
+        assertTrue(Redes.permitido("fd12::1", privadas));
+        assertFalse(Redes.permitido("200.1.2.3", privadas));
+        assertFalse(Redes.permitido("exemplo.com", privadas), "nome não é resolvido");
+        assertFalse(Redes.permitido(null, privadas));
+        assertTrue(Redes.permitido("200.1.2.3", List.of()), "lista vazia = qualquer origem");
+        assertTrue(Redes.permitido("200.1.2.3", List.of("0.0.0.0/0")));
+        assertTrue(Redes.permitido("200.1.2.3", List.of("200.1.2.3")));
+    }
+
+    @Test
+    void jsonDoGlpiAgent() {
+        String j = """
+                {"action":"inventory","deviceid":"nb-ti-01-2026-10-01-10-00-00","itemtype":"Computer","content":{
+                 "hardware":{"name":"NB-TI-01","memory":15872,"uuid":"1234-ABCD"},
+                 "operatingsystem":{"full_name":"Microsoft Windows 10 Pro","version":"22H2","arch":"64-bit"},
+                 "bios":{"ssn":"5CG1234XYZ","smanufacturer":"HP","smodel":"EliteBook 840 G8","type":"Notebook"},
+                 "cpus":[{"name":"Intel(R) Core(TM) i5-1145G7","core":4,"thread":8}],
+                 "antivirus":[{"name":"Windows Defender","enabled":true,"uptodate":false}],
+                 "users":[{"login":"joao.ti","domain":"PREFEITURA"}],
+                 "softwares":[{"name":"Mozilla Firefox","version":"131.0","publisher":"Mozilla","install_date":"2026-10-01"}]}}""";
+        Protocolo.Pedido p = Protocolo.ler(zlib(j.getBytes(StandardCharsets.UTF_8)));
+        assertEquals("glpi", p.formato());
+        assertEquals("INVENTORY", p.consulta());
+        Normalizacao.Resultado r = Normalizacao.normalizar(p, LocalDate.of(2026, 10, 24));
+        assertEquals("notebook", r.resumo().tipo());
+        assertEquals("Microsoft Windows 10 Pro", r.resumo().soNome());
+        assertTrue(r.resumo().soSemSuporte());
+        assertEquals(4, r.resumo().cpuNucleos());
+        assertEquals("desatualizado", r.resumo().antivirus());
+        assertEquals("joao.ti", r.resumo().usuarioLogin());
+        assertEquals(LocalDate.of(2026, 10, 1), r.softwares().get(0).instaladoEm());
+    }
+
+}
