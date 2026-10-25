@@ -20,6 +20,7 @@
         <module>yudao-module-itsm</module>
         <module>yudao-module-atendimento</module>
         <module>yudao-module-inventario</module>
+        <module>yudao-module-assistente</module>
 <!--        <module>yudao-module-member</module>-->
 <!--        <module>yudao-module-bpm</module>-->
 <!--        <module>yudao-module-report</module>-->

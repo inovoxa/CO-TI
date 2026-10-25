@@ -67,6 +67,7 @@ export interface Detalhe {
   componentes: Componente[]
   softwares: SoftwareInstalado[]
   chamados: ChamadoVinculado[]
+  alertas: Alerta[]
 }
 
 export interface Historico {
@@ -85,6 +86,7 @@ export interface Software {
   editora?: string
   instalacoes: number
   versoes: number
+  licencas?: string[]
 }
 
 export interface PainelAgentes {
@@ -160,6 +162,12 @@ export const gb = (mb?: number | null) =>
     : `${(mb / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} GB`
 
 export const getAtivos = (params: any) => request.get({ url: '/inventario/ativo/page', params })
+export interface Opcoes {
+  sistemas: { valor: string; total: number }[]
+  fabricantes: { valor: string; total: number }[]
+  modelos: { valor: string; total: number }[]
+}
+export const getOpcoes = (): Promise<Opcoes> => request.get({ url: '/inventario/ativo/opcoes' })
 export const getContagens = (): Promise<Record<string, number>> =>
   request.get({ url: '/inventario/ativo/contagens' })
 export const getAtivo = (id: number): Promise<Detalhe> =>
@@ -182,3 +190,63 @@ export const vincularAtivo = (chamadoId: number, ativoId: number) =>
   request.post({ url: '/inventario/ativo/vincular', data: { chamadoId, ativoId } })
 export const desvincularAtivo = (chamadoId: number, ativoId: number) =>
   request.post({ url: '/inventario/ativo/desvincular', data: { chamadoId, ativoId } })
+
+// ========== alertas ==========
+
+export interface RegraAlerta {
+  id: number
+  codigo: string
+  nome: string
+  ativo: boolean
+  abrirChamado: boolean
+  limite?: number
+  categoriaId?: number
+  urgencia: number
+  abertos: number
+}
+
+export interface Alerta {
+  id: number
+  regra: string
+  regraNome: string
+  objeto: 'ativo' | 'licenca'
+  objetoId: number
+  titulo: string
+  detalhe?: string
+  deptNome?: string
+  inicio: string
+  fim?: string
+  chamadoId?: number
+}
+
+export const getRegrasAlerta = (): Promise<RegraAlerta[]> =>
+  request.get({ url: '/inventario/alerta/regras' })
+export const salvarRegraAlerta = (data: RegraAlerta) =>
+  request.put({ url: '/inventario/alerta/regra', data })
+export const getAlertas = (params: any) => request.get({ url: '/inventario/alerta/page', params })
+export const avaliarAlertas = (): Promise<{
+  abertos: number
+  encerrados: number
+  chamados: number
+}> => request.post({ url: '/inventario/alerta/avaliar' })
+
+// ========== licenças × softwares ==========
+
+export interface Conformidade {
+  licencaId: number
+  quantidade: number
+  emUso: number
+  instalacoes: number
+  excedida: boolean
+  softwares: Software[]
+  ativos: Ativo[]
+}
+
+export const getConformidade = (licencaId: number): Promise<Conformidade> =>
+  request.get({ url: '/inventario/licenca/conformidade', params: { licencaId } })
+export const getInstalacoesLicencas = (): Promise<Record<number, number>> =>
+  request.get({ url: '/inventario/licenca/instalacoes' })
+export const vincularSoftwareLicenca = (licencaId: number, softwareId: number) =>
+  request.post({ url: '/inventario/licenca/software/vincular', data: { licencaId, softwareId } })
+export const desvincularSoftwareLicenca = (licencaId: number, softwareId: number) =>
+  request.post({ url: '/inventario/licenca/software/desvincular', data: { licencaId, softwareId } })

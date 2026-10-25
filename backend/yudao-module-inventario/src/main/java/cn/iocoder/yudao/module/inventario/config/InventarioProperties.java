@@ -32,4 +32,7 @@ public class InventarioProperties {
     /** Sem contato há mais que isto (dias): o ativo aparece como "sem comunicação". */
     private int semContatoDias = 30;
 
+    /** De quanto em quanto tempo os alertas são reavaliados (ms); 0 = só pelo botão "Avaliar agora". */
+    private long alertasIntervaloMs = 15 * 60 * 1000L;
+
 }

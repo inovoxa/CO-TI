@@ -31,6 +31,25 @@ public final class AtivoVOs {
         /** sem_suporte | antivirus | sem_contato */
         private String alerta;
         private Long softwareId;
+        /** Nome do sistema operacional (igual) */
+        private String sistema;
+        private String fabricante;
+        private String modelo;
+        /** ativo | desatualizado | ausente | desconhecido */
+        private String antivirus;
+        /** ocs | glpi_agent | manual */
+        private String origem;
+        /** Memória em GB (inclusive) */
+        private Integer memoriaMinGb;
+        private Integer memoriaMaxGb;
+    }
+
+    /** Valores existentes para os filtros, com quantos ativos têm cada um. */
+    @Data
+    public static class Opcoes {
+        private List<Map<String, Object>> sistemas;
+        private List<Map<String, Object>> fabricantes;
+        private List<Map<String, Object>> modelos;
     }
 
     @Data
@@ -107,6 +126,7 @@ public final class AtivoVOs {
         private List<Componente> componentes = new ArrayList<>();
         private List<SoftwareInstalado> softwares = new ArrayList<>();
         private List<ChamadoVinculado> chamados = new ArrayList<>();
+        private List<AlertaVOs.Resp> alertas = new ArrayList<>();
     }
 
     @Data
@@ -185,6 +205,8 @@ public final class AtivoVOs {
         private String editora;
         private Long instalacoes;
         private Long versoes;
+        /** Licenças do ITSM em que o software conta */
+        private List<String> licencas;
     }
 
     /** Painel da página "Agentes": como apontar os agentes e quem está reportando. */

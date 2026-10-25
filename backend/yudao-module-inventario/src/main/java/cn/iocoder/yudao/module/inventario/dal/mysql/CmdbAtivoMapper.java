@@ -33,6 +33,14 @@ public interface CmdbAtivoMapper extends BaseMapperX<AtivoDO> {
             " WHERE s.deleted = 0<if test='busca != null'> AND (s.nome ILIKE #{busca} OR s.editora ILIKE #{busca})</if></script>"})
     long contarSoftwares(@Param("busca") String busca);
 
+    /**
+     * Valores de uma coluna com a quantidade de ativos. {@code coluna} vem só do código (so_nome, fabricante, modelo),
+     * nunca do usuário.
+     */
+    @Select("SELECT ${coluna} AS valor, count(*) AS total FROM cmdb.ativo a WHERE a.deleted = 0 AND ${coluna} IS NOT NULL"
+            + " AND ${coluna} <> '' GROUP BY ${coluna} ORDER BY total DESC, ${coluna} LIMIT 200")
+    List<Map<String, Object>> valoresDistintos(@Param("coluna") String coluna);
+
     /** Versões de agente em uso (página "Agentes"). */
     @Select("SELECT a.origem, coalesce(a.agente, '?') AS agente, count(*) AS total FROM cmdb.ativo a WHERE a.deleted = 0"
             + " AND a.origem <> 'manual' GROUP BY a.origem, coalesce(a.agente, '?') ORDER BY total DESC LIMIT 30")

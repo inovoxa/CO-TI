@@ -29,6 +29,22 @@
       <el-table-column label="Editora" min-width="200" prop="editora" show-overflow-tooltip />
       <el-table-column align="right" label="Instalações" prop="instalacoes" width="120" />
       <el-table-column align="right" label="Versões" prop="versoes" width="100" />
+      <el-table-column label="Licenças" min-width="200">
+        <template #default="{ row }">
+          <el-tag
+            v-for="l in row.licencas"
+            :key="l"
+            class="mr-4px"
+            disable-transitions
+            size="small"
+            type="success"
+            >{{ l }}</el-tag
+          >
+          <span v-if="!row.licencas?.length" class="text-[var(--el-text-color-placeholder)]"
+            >—</span
+          >
+        </template>
+      </el-table-column>
     </el-table>
     <Pagination
       v-model:limit="q.pageSize"

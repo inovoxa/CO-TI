@@ -62,9 +62,111 @@
       </el-form-item>
       <el-form-item>
         <el-button @click="buscar"><Icon class="mr-5px" icon="ep:search" /> Buscar</el-button>
+        <el-button link type="primary" @click="maisFiltros = !maisFiltros">
+          <Icon :icon="maisFiltros ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-4px" />
+          Mais filtros<template v-if="filtrosExtras"> ({{ filtrosExtras }})</template>
+        </el-button>
         <el-button v-if="pode" plain type="primary" @click="abrirNovo">
           <Icon class="mr-5px" icon="ep:plus" /> Cadastrar sem agente
         </el-button>
+      </el-form-item>
+    </el-form>
+    <el-form v-show="maisFiltros" :inline="true" class="mt-10px -mb-15px" label-width="0">
+      <el-form-item>
+        <el-select
+          v-model="q.sistema"
+          class="!w-260px"
+          clearable
+          filterable
+          placeholder="Sistema operacional"
+          @change="buscar"
+        >
+          <el-option
+            v-for="o in opcoes.sistemas"
+            :key="o.valor"
+            :label="`${o.valor} (${o.total})`"
+            :value="o.valor"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
+          v-model="q.fabricante"
+          class="!w-190px"
+          clearable
+          filterable
+          placeholder="Fabricante"
+          @change="buscar"
+        >
+          <el-option
+            v-for="o in opcoes.fabricantes"
+            :key="o.valor"
+            :label="`${o.valor} (${o.total})`"
+            :value="o.valor"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
+          v-model="q.modelo"
+          class="!w-200px"
+          clearable
+          filterable
+          placeholder="Modelo"
+          @change="buscar"
+        >
+          <el-option
+            v-for="o in opcoes.modelos"
+            :key="o.valor"
+            :label="`${o.valor} (${o.total})`"
+            :value="o.valor"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
+          v-model="q.antivirus"
+          class="!w-160px"
+          clearable
+          placeholder="Antivírus"
+          @change="buscar"
+        >
+          <el-option v-for="av in ANTIVIRUS" :key="av.valor" :label="av.rotulo" :value="av.valor" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
+          v-model="q.origem"
+          class="!w-170px"
+          clearable
+          placeholder="Origem"
+          @change="buscar"
+        >
+          <el-option v-for="(r, v) in ORIGENS" :key="v" :label="r" :value="v" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <span class="mr-6px text-13px">Memória</span>
+        <el-input-number
+          v-model="q.memoriaMinGb"
+          :min="0"
+          class="!w-110px"
+          controls-position="right"
+          placeholder="de (GB)"
+          @change="buscar"
+        />
+        <span class="mx-4px">a</span>
+        <el-input-number
+          v-model="q.memoriaMaxGb"
+          :min="0"
+          class="!w-110px"
+          controls-position="right"
+          placeholder="até (GB)"
+          @change="buscar"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button v-if="filtrosExtras" link @click="limparExtras">Limpar</el-button>
       </el-form-item>
     </el-form>
     <div v-if="q.softwareId" class="mt-10px">
@@ -173,6 +275,20 @@
       <div v-if="pode" class="mb-12px">
         <el-button @click="abrirEdicao"><Icon class="mr-4px" icon="ep:edit" />Editar</el-button>
       </div>
+      <el-alert
+        v-for="al in detalhe.d.alertas"
+        :key="al.id"
+        :closable="false"
+        class="mb-8px"
+        show-icon
+        type="warning"
+      >
+        <template #title>
+          {{ al.titulo }}
+          <span v-if="al.chamadoId"> · chamado #{{ al.chamadoId }}</span>
+        </template>
+        <span v-if="al.detalhe">{{ al.detalhe }}</span>
+      </el-alert>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item label="Patrimônio">{{ a.patrimonio || '—' }}</el-descriptions-item>
         <el-descriptions-item label="Número de série">{{
@@ -458,8 +574,33 @@ const q = reactive({
   situacao: undefined as string | undefined,
   deptId: undefined as number | undefined,
   alerta: '',
-  softwareId: undefined as number | undefined
+  softwareId: undefined as number | undefined,
+  sistema: undefined as string | undefined,
+  fabricante: undefined as string | undefined,
+  modelo: undefined as string | undefined,
+  antivirus: undefined as string | undefined,
+  origem: undefined as string | undefined,
+  memoriaMinGb: undefined as number | undefined,
+  memoriaMaxGb: undefined as number | undefined
 })
+const maisFiltros = ref(false)
+const opcoes = ref<Inv.Opcoes>({ sistemas: [], fabricantes: [], modelos: [] })
+const EXTRAS = [
+  'sistema',
+  'fabricante',
+  'modelo',
+  'antivirus',
+  'origem',
+  'memoriaMinGb',
+  'memoriaMaxGb'
+] as const
+const filtrosExtras = computed(
+  () => EXTRAS.filter((k) => q[k] !== undefined && q[k] !== null && q[k] !== '').length
+)
+const limparExtras = () => {
+  for (const k of EXTRAS) (q as any)[k] = undefined
+  buscar()
+}
 const detalhe = reactive({ visivel: false, d: undefined as Inv.Detalhe | undefined })
 const a = computed(() => detalhe.d!.ativo)
 const aba = ref('componentes')
@@ -544,7 +685,9 @@ const carregar = async () => {
   loading.value = true
   try {
     const params: any = { ...q }
-    if (!params.alerta) delete params.alerta
+    for (const k of Object.keys(params)) {
+      if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
+    }
     const [r, c] = await Promise.all([Inv.getAtivos(params), Inv.getContagens()])
     lista.value = r.list
     total.value = r.total
@@ -671,6 +814,7 @@ watch(
 
 onMounted(async () => {
   depts.value = handleTree(await DeptApi.getSimpleDeptList())
+  Inv.getOpcoes().then((o) => (opcoes.value = o))
   await aplicarQuery()
 })
 </script>

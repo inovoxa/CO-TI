@@ -18,6 +18,7 @@ public class InventarioConfiguration {
         return rule -> {
             rule.addDeptColumn("ativo", "dept_id");
             rule.addUserColumn("ativo", "usuario_id");
+            rule.addDeptColumn("alerta_ativo", "dept_id");
         };
     }
 

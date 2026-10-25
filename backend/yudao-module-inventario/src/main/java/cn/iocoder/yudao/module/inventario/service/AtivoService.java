@@ -66,7 +66,14 @@ public class AtivoService {
         LambdaQueryWrapperX<AtivoDO> q = new LambdaQueryWrapperX<AtivoDO>()
                 .eqIfPresent(AtivoDO::getTipo, req.getTipo())
                 .eqIfPresent(AtivoDO::getSituacao, req.getSituacao())
-                .eqIfPresent(AtivoDO::getUsuarioId, req.getUsuarioId());
+                .eqIfPresent(AtivoDO::getUsuarioId, req.getUsuarioId())
+                .eqIfPresent(AtivoDO::getSoNome, vazio(req.getSistema()))
+                .eqIfPresent(AtivoDO::getFabricante, vazio(req.getFabricante()))
+                .eqIfPresent(AtivoDO::getModelo, vazio(req.getModelo()))
+                .eqIfPresent(AtivoDO::getAntivirus, vazio(req.getAntivirus()))
+                .eqIfPresent(AtivoDO::getOrigem, vazio(req.getOrigem()))
+                .geIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMinGb() == null ? null : req.getMemoriaMinGb() * 1024 - 512)
+                .leIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMaxGb() == null ? null : req.getMemoriaMaxGb() * 1024 + 512);
         if (req.getDeptId() != null) {
             Set<Long> depts = new HashSet<>(List.of(req.getDeptId()));
             deptApi.getChildDeptList(req.getDeptId()).forEach(d -> depts.add(d.getId()));
@@ -93,6 +100,19 @@ public class AtivoService {
         q.orderByAsc(AtivoDO::getNome);
         PageResult<AtivoDO> p = cmdbAtivoMapper.selectPage(req, q);
         return new PageResult<>(converter(p.getList()), p.getTotal());
+    }
+
+    /** Sistemas, fabricantes e modelos que existem (no escopo de quem consulta), para os filtros. */
+    public AtivoVOs.Opcoes opcoes() {
+        AtivoVOs.Opcoes o = new AtivoVOs.Opcoes();
+        o.setSistemas(cmdbAtivoMapper.valoresDistintos("so_nome"));
+        o.setFabricantes(cmdbAtivoMapper.valoresDistintos("fabricante"));
+        o.setModelos(cmdbAtivoMapper.valoresDistintos("modelo"));
+        return o;
+    }
+
+    private static String vazio(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     public Map<String, Long> contagens() {

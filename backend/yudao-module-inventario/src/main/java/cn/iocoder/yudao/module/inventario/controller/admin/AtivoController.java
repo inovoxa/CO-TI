@@ -4,7 +4,9 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
+import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
+import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -27,12 +29,23 @@ public class AtivoController {
 
     @Resource
     private AtivoService ativoService;
+    @Resource
+    private AlertaInventarioService alertaInventarioService;
+    @Resource
+    private LicencaInventarioService licencaInventarioService;
 
     @GetMapping("/page")
     @Operation(summary = "Lista de ativos (filtros e alertas)")
     @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
     public CommonResult<PageResult<AtivoVOs.Resp>> pagina(@Valid AtivoVOs.PaginaReq req) {
         return success(ativoService.pagina(req));
+    }
+
+    @GetMapping("/opcoes")
+    @Operation(summary = "Sistemas, fabricantes e modelos existentes (para os filtros)")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public CommonResult<AtivoVOs.Opcoes> opcoes() {
+        return success(ativoService.opcoes());
     }
 
     @GetMapping("/contagens")
@@ -46,7 +59,9 @@ public class AtivoController {
     @Operation(summary = "Ativo com componentes, softwares e chamados")
     @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
     public CommonResult<AtivoVOs.Detalhe> detalhe(@RequestParam("id") Long id) {
-        return success(ativoService.detalhe(id));
+        AtivoVOs.Detalhe d = ativoService.detalhe(id);
+        d.setAlertas(alertaInventarioService.doAtivo(id));
+        return success(d);
     }
 
     @GetMapping("/historico")
@@ -83,7 +98,11 @@ public class AtivoController {
     @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
     public CommonResult<PageResult<AtivoVOs.SoftwareResp>> softwares(@RequestParam(value = "busca", required = false) String busca,
                                                                       @Valid PageParam pagina) {
-        return success(ativoService.softwares(busca, pagina));
+        PageResult<AtivoVOs.SoftwareResp> p = ativoService.softwares(busca, pagina);
+        Map<Long, List<String>> licencas = licencaInventarioService.licencasDosSoftwares(
+                p.getList().stream().map(AtivoVOs.SoftwareResp::getId).toList());
+        p.getList().forEach(s -> s.setLicencas(licencas.getOrDefault(s.getId(), List.of())));
+        return success(p);
     }
 
     @GetMapping("/agentes")

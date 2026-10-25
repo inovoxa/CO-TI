@@ -62,6 +62,18 @@
           <span v-else>{{ row.emUso }} (ilimitada)</span>
         </template>
       </el-table-column>
+      <el-table-column v-if="veInventario" align="right" label="Encontradas" width="110">
+        <template #default="{ row }">
+          <span
+            :class="
+              row.quantidade >= 0 && (instalacoes[row.id!] ?? 0) > row.quantidade
+                ? 'font-bold text-[var(--el-color-danger)]'
+                : ''
+            "
+            >{{ instalacoes[row.id!] ?? '—' }}</span
+          >
+        </template>
+      </el-table-column>
       <el-table-column label="Expira" width="120">
         <template #default="{ row }">{{ data(row.expira) }}</template>
       </el-table-column>
@@ -194,6 +206,9 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
+        <el-tab-pane v-if="veInventario" label="Instalações encontradas" lazy>
+          <LicencaInstalacoes :editavel="pode" :licenca-id="detalhe.l.id!" @alterado="carregar" />
+        </el-tab-pane>
         <el-tab-pane label="Custos">
           <CustosTabela :editavel="pode" :objeto-id="detalhe.l.id!" objeto="licenca" />
         </el-tab-pane>
@@ -324,12 +339,17 @@ import { SITUACOES_LICENCA, cor, data } from '@/api/itsm/governanca'
 import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 import CustosTabela from '../governanca/CustosTabela.vue'
+import LicencaInstalacoes from '../../inventario/LicencaInstalacoes.vue'
+import { getInstalacoesLicencas } from '@/api/inventario'
 
 defineOptions({ name: 'ItsmLicenca' })
 const message = useMessage()
 const route = useRoute()
 const pode = checkPermi(['itsm:licenca:update'])
 const veChave = checkPermi(['itsm:licenca:ver-chave'])
+/** Instalações encontradas pelo inventário (F3b) */
+const veInventario = checkPermi(['inventario:ativo:query'])
+const instalacoes = ref<Record<number, number>>({})
 const TIPOS = ['Assinatura', 'Perpétua', 'OEM', 'Volume', 'Por usuário', 'Por dispositivo', 'Livre']
 const regras = { software: [{ required: true, message: 'Informe o software', trigger: 'blur' }] }
 const largura = computed(() => (window.innerWidth < 1100 ? '100%' : '60%'))
@@ -353,6 +373,7 @@ const carregar = async () => {
     const r = await Gov.getLicencas(q)
     lista.value = r.list
     total.value = r.total
+    if (veInventario) instalacoes.value = await getInstalacoesLicencas()
   } finally {
     loading.value = false
   }
