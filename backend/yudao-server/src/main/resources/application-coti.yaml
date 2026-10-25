@@ -317,6 +317,11 @@ coti:
     ipdiscover-redes: ${CO_TI_INVENTARIO_IPDISCOVER_REDES:}   # vazio = todas as sub-redes dos agentes
     snmp-intervalo-ms: ${CO_TI_INVENTARIO_SNMP_MS:21600000}   # varredura SNMP a cada 6 h; 0 = só manual
     snmp-tempo-limite-ms: ${CO_TI_INVENTARIO_SNMP_TEMPO_MS:1500}
+    # pacotes (teledeploy): os agentes baixam de https://<pacotes-endereco>; vazio = CO_TI_URL_PUBLICA + /download
+    pacotes-endereco: ${CO_TI_INVENTARIO_PACOTES_ENDERECO:}
+    pacotes-protocolo: ${CO_TI_INVENTARIO_PACOTES_PROTOCOLO:HTTPS}
+    pacotes-pasta: ${CO_TI_INVENTARIO_PACOTES_PASTA:arquivos/pacotes}
+    pacote-max-mb: ${CO_TI_INVENTARIO_PACOTE_MAX_MB:2048}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}

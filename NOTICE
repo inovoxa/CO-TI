@@ -63,6 +63,10 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
       (Apache/Ocsinventory/Server/Duplicate.pm).
     * descoberta de rede: opção IPDISCOVER na resposta ao PROLOG, eleição de um agente por sub-rede e leitura dos
       hosts <H><I/><M/><N/></H> (Apache/Ocsinventory/Server/Capacities/Ipdiscover.pm).
+    * implantação de pacotes: opção DOWNLOAD (CONF e PACK) no PROLOG, arquivo info, fragmentos <id>-<n> e
+      resultado QUERY=DOWNLOAD (Apache/Ocsinventory/Server/Capacities/Download.pm,
+      ocsreports/require/teledeploy/PackageBuilder.php e, do lado do agente,
+      Ocsinventory-Unix-Agent/lib/Ocsinventory/Agent/Modules/Download.pm).
   Os agentes OCS (Ocsinventory-Unix-Agent, Windows Agent) não são distribuídos com o CO-TI.
 - GLPI Agent (GPL-2.0-or-later), Copyright Teclib' — só o formato JSON das mensagens contact/inventory, como
   referência; nenhum código copiado e o agente não é distribuído.

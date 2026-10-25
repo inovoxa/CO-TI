@@ -13,6 +13,8 @@ import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.RedeService;
+import cn.iocoder.yudao.module.inventario.service.PacoteService;
+import cn.iocoder.yudao.module.inventario.controller.admin.vo.PacoteVOs;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.RedeVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.atendimento.controller.admin.vo.AtendimentoVOs;
@@ -70,6 +72,8 @@ public class FerramentasInternas {
     private LicencaService licencaService;
     @Resource
     private RedeService redeService;
+    @Resource
+    private PacoteService pacoteService;
     @Resource
     private ChamadoService chamadoService;
     @Resource
@@ -159,6 +163,11 @@ public class FerramentasInternas {
                         p("situacao", "string", "desconhecidos (padrão) | conhecidos | ignorados | todos"),
                         p("busca", "string", "IP, MAC ou nome"), p("limite", "integer", "Padrão 30, máximo 80")),
                 new String[]{"inventario:ativo:query"}, this::rede);
+        registrar("pacotes", "Pacotes de software implantados pelos agentes OCS e a situação em cada máquina.",
+                props(p("pacote", "string", "Parte do nome do pacote; vazio = todos, só com as contagens"),
+                        p("situacao", "string", "aguardando | notificado | sucesso | erro | cancelado"),
+                        p("limite", "integer", "Padrão 30, máximo 80")),
+                new String[]{"inventario:pacote:query"}, this::pacotes);
         // ---------------------------------------------------------------- Service Desk
         registrar("buscar_chamados", "Procura chamados do Service Desk.",
                 props(p("busca", "string", "Número (#123) ou parte do título"),
@@ -535,6 +544,39 @@ public class FerramentasInternas {
                 }
                 putSe(m, "observacao", d.getObservacao());
                 m.put("ultima_vez", quando(d.getUltimaVez()));
+                return m;
+            }).toList());
+        }
+        return r;
+    }
+
+    private Object pacotes(Contexto c) {
+        String nome = c.texto("pacote");
+        List<PacoteVOs.Pacote> l = pacoteService.listar().stream()
+                .filter(x -> nome == null || semAcento(x.getNome()).contains(semAcento(nome))).toList();
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("pacotes", l.stream().map(x -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("nome", x.getNome());
+            m.put("acao", x.getAcao());
+            putSe(m, "comando", x.getComando());
+            m.put("plataforma", x.getPlataforma());
+            m.put("ativo", x.getAtivo());
+            m.put("maquinas_por_situacao", x.getContagens());
+            return m;
+        }).toList());
+        if (nome != null && l.size() == 1) {
+            PacoteVOs.ImplantacoesReq req = new PacoteVOs.ImplantacoesReq();
+            req.setPageNo(1);
+            req.setPageSize(c.limite(30, 80));
+            req.setPacoteId(l.get(0).getId());
+            req.setSituacao(c.texto("situacao"));
+            r.put("maquinas", pacoteService.implantacoes(req).getList().stream().map(i -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("maquina", i.getAtivoNome());
+                m.put("situacao", i.getSituacao());
+                putSe(m, "resposta_do_agente", i.getCodigo());
+                putSe(m, "concluido_em", quando(i.getConcluidoEm()));
                 return m;
             }).toList());
         }

@@ -60,6 +60,8 @@ public class InventarioAgenteService {
     private TransactionTemplate transactionTemplate;
     @Resource
     private RedeService redeService;
+    @Resource
+    private PacoteService pacoteService;
 
     /** Resposta HTTP pronta para o controller. */
     public record Resposta(int status, String tipo, byte[] corpo, Map<String, String> cabecalhos) {
@@ -106,8 +108,17 @@ public class InventarioAgenteService {
                 r.put("PROLOG_FREQ", inventarioProperties.getPrologoHoras());
                 // descoberta de rede: a varredura vem no próximo inventário, então só faz sentido se ele vier
                 Protocolo.ComAtributos ipdiscover = enviar ? redeService.opcaoProlog(cmdbAtivoMapper.selectOne(AtivoDO::getDeviceId, deviceId)) : null;
+                List<Object> opcoes = new ArrayList<>();
                 if (ipdiscover != null) {
-                    r.put("OPTION", Map.of("NAME", "IPDISCOVER", "PARAM", ipdiscover));
+                    opcoes.add(Map.of("NAME", "IPDISCOVER", "PARAM", ipdiscover));
+                }
+                // pacotes pendentes vão em todo PROLOG, com ou sem inventário (como no OCS)
+                Map<String, Object> download = pacoteService.opcaoProlog(cmdbAtivoMapper.selectOne(AtivoDO::getDeviceId, deviceId));
+                if (download != null) {
+                    opcoes.add(download);
+                }
+                if (!opcoes.isEmpty()) {
+                    r.put("OPTION", opcoes);
                 }
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(r), Map.of());
             }
@@ -118,8 +129,14 @@ public class InventarioAgenteService {
                 }
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(Map.of("RESPONSE", "NO_ACCOUNT_UPDATE")), Map.of());
             }
+            case "DOWNLOAD" -> {
+                // resultado da implantação: ID do pacote e ERR (SUCCESS, ERR_BAD_DIGEST, EXIT_CODE_n...)
+                Map<String, String> req = p.unico("REQUEST");
+                pacoteService.resultado(cmdbAtivoMapper.selectOne(AtivoDO::getDeviceId, deviceId), req.get("ID"), req.get("ERR"));
+                return new Resposta(200, "application/x-compressed", new byte[0], Map.of());
+            }
             default -> {
-                // UPDATE, DOWNLOAD, IPDISCOVER... ainda não (F3c)
+                // UPDATE e outros
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(Map.of("RESPONSE", "OTHER_ERROR")), Map.of());
             }
         }

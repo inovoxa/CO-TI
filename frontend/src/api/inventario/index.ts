@@ -352,3 +352,63 @@ export const consultarSnmp = (ip: string): Promise<ResultadoSnmp> =>
   request.post({ url: '/inventario/snmp/consultar', params: { ip }, timeout: 120000 })
 export const varrerSnmp = (): Promise<{ alvos: number; responderam: number; gravados: number }> =>
   request.post({ url: '/inventario/snmp/varrer', timeout: 600000 })
+
+// ========== pacotes (teledeploy) ==========
+
+export interface Pacote {
+  id?: number
+  nome: string
+  descricao?: string
+  plataforma: string
+  acao: 'EXECUTE' | 'STORE' | 'LAUNCH'
+  comando?: string
+  caminho?: string
+  prioridade: number
+  notificar: boolean
+  notificarTexto?: string
+  ativo: boolean
+  fileid?: string
+  arquivoNome?: string
+  tamanho?: number
+  sha256?: string
+  fragmentos?: number
+  contagens?: Record<string, number>
+}
+
+export interface Implantacao {
+  id: number
+  pacoteId: number
+  pacoteNome?: string
+  ativoId: number
+  ativoNome: string
+  situacao: string
+  codigo?: string
+  pedidoEm: string
+  notificadoEm?: string
+  concluidoEm?: string
+}
+
+export const getPacotes = (): Promise<Pacote[]> => request.get({ url: '/inventario/pacote/list' })
+export const salvarPacote = (data: Pacote): Promise<number> =>
+  request.post({ url: '/inventario/pacote/save', data })
+/** Corpo bruto (sem multipart): pacotes passam do limite de upload comum */
+export const enviarArquivoPacote = (id: number, arquivo: File, progresso?: (p: number) => void) =>
+  request.put({
+    url: '/inventario/pacote/arquivo',
+    params: { id, nome: arquivo.name },
+    data: arquivo,
+    headersType: 'application/octet-stream',
+    timeout: 900000,
+    onUploadProgress: (e: any) =>
+      progresso && e.total && progresso(Math.round((e.loaded * 100) / e.total))
+  })
+export const implantarPacote = (data: {
+  pacoteId: number
+  ativoIds?: number[]
+  deptId?: number
+}): Promise<{ pedidos: number; jaPendentes: number; ignorados: number }> =>
+  request.post({ url: '/inventario/pacote/implantar', data })
+export const cancelarImplantacao = (id: number) =>
+  request.post({ url: '/inventario/pacote/cancelar', params: { id } })
+export const getImplantacoes = (params: any) =>
+  request.get({ url: '/inventario/pacote/implantacoes', params })

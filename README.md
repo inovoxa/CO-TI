@@ -293,6 +293,17 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   nome dado.
 - Detalhes: `docs/specs/inventario-snmp.md`.
 
+### Implantação de pacotes (teledeploy do agente OCS)
+
+- **Onde:** Inventário → Pacotes.
+- **Como funciona:** crie o pacote (executar um comando, abrir um arquivo ou só copiar), envie o zip ou tar.gz e
+  escolha as máquinas ou uma unidade. O agente OCS baixa e executa no próximo contato, e a tela mostra o resultado de
+  cada máquina.
+- **Permissão:** só o administrador implanta, até alguém receber a permissão "Criar e implantar pacotes". Tudo vai para
+  a auditoria.
+- **HTTPS:** os agentes exigem o portal em HTTPS, com um certificado em que confiem.
+- Detalhes: `docs/specs/inventario-pacotes.md`.
+
 ## Assistente interno de IA
 
 O menu **Assistente IA** é um chat para perguntar em português sobre a TI da organização. Exemplos: "quantos

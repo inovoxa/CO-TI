@@ -49,4 +49,13 @@ public class InventarioProperties {
     /** Espera por resposta de cada pacote SNMP (ms) */
     private int snmpTempoLimiteMs = 1500;
 
+    /** Pasta dos fragmentos dos pacotes (volume persistente) */
+    private String pacotesPasta = "arquivos/pacotes";
+    /** host[:porta]/caminho de onde os agentes baixam (INFO_LOC/PACK_LOC); vazio = endereço público do portal + /download */
+    private String pacotesEndereco = "";
+    /** Protocolo dos fragmentos (o arquivo info é sempre HTTPS no agente) */
+    private String pacotesProtocolo = "HTTPS";
+    private int pacoteMaxMb = 2048;
+    private int pacoteFragmentoKb = 1024;
+
 }

@@ -154,9 +154,22 @@ public final class Protocolo {
         if (!"REQUEST".equalsIgnoreCase(raiz.getTagName())) {
             throw new ProtocoloInvalido("raiz do XML não é REQUEST");
         }
-        String consulta = textoFilho(raiz, "QUERY");
-        String device = textoFilho(raiz, "DEVICEID");
+        // o agente Unix escreve com XML::Simple, que põe os campos como atributos: <REQUEST QUERY="DOWNLOAD" ID=".."/>
+        Map<String, String> raizCampos = new LinkedHashMap<>();
+        for (int i = 0; i < raiz.getAttributes().getLength(); i++) {
+            raizCampos.put(raiz.getAttributes().item(i).getNodeName().toUpperCase(Locale.ROOT), raiz.getAttributes().item(i).getNodeValue().strip());
+        }
+        NodeList daRaiz = raiz.getChildNodes();
+        for (int i = 0; i < daRaiz.getLength(); i++) {
+            if (daRaiz.item(i) instanceof Element e && !"CONTENT".equalsIgnoreCase(e.getTagName())
+                    && e.getElementsByTagName("*").getLength() == 0) {
+                raizCampos.putIfAbsent(e.getTagName().toUpperCase(Locale.ROOT), e.getTextContent().strip());
+            }
+        }
+        String consulta = raizCampos.get("QUERY");
+        String device = raizCampos.get("DEVICEID");
         Map<String, List<Map<String, String>>> secoes = new LinkedHashMap<>();
+        secoes.put("REQUEST", new ArrayList<>(List.of(raizCampos)));
         Element conteudo = filho(raiz, "CONTENT");
         if (conteudo != null) {
             if (device == null) {
@@ -347,7 +360,7 @@ public final class Protocolo {
         }
     }
 
-    static String escaparXml(String t) {
+    public static String escaparXml(String t) {
         return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
     }
 

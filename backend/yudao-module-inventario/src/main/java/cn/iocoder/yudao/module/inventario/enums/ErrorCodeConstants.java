@@ -21,6 +21,13 @@ public interface ErrorCodeConstants {
     ErrorCode SNMP_SEM_CREDENCIAL = new ErrorCode(1_103_000_012, "Cadastre e ative pelo menos uma credencial SNMP");
     ErrorCode SNMP_FALHA = new ErrorCode(1_103_000_013, "Falha no SNMP: {}");
     ErrorCode SNMP_VARRENDO = new ErrorCode(1_103_000_014, "Já há uma varredura SNMP em andamento");
+    ErrorCode PACOTE_NAO_EXISTE = new ErrorCode(1_103_000_015, "Pacote não encontrado");
+    ErrorCode PACOTE_INVALIDO = new ErrorCode(1_103_000_016, "Pacote inválido: {}");
+    ErrorCode PACOTE_JA_IMPLANTADO = new ErrorCode(1_103_000_017, "Este pacote já foi implantado: o que ele executa não muda. Crie outro pacote");
+    ErrorCode PACOTE_GRANDE = new ErrorCode(1_103_000_018, "Arquivo maior que o limite de {} MB");
+    ErrorCode PACOTE_ARQUIVO_FALHOU = new ErrorCode(1_103_000_019, "Não foi possível guardar o arquivo: {}");
+    ErrorCode PACOTE_SEM_ARQUIVO = new ErrorCode(1_103_000_020, "Envie o arquivo do pacote (e deixe-o ativo) antes de implantar");
+    ErrorCode PACOTE_SEM_ENDERECO = new ErrorCode(1_103_000_021, "Defina CO_TI_URL_PUBLICA (ou CO_TI_INVENTARIO_PACOTES_ENDERECO): os agentes baixam o pacote por esse endereço");
     ErrorCode ALERTA_LIMITE_INVALIDO = new ErrorCode(1_103_000_006, "Limite inválido: use {}");
 
 }
