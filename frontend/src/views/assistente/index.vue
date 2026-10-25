@@ -33,8 +33,8 @@
           <Icon class="mb-8px" icon="ep:magic-stick" :size="36" />
           <div class="mb-4px text-16px font-bold">Pergunte sobre a TI da organização</div>
           <div class="mb-14px text-13px text-[var(--el-text-color-secondary)]">
-            O assistente consulta inventário, chamados, base de conhecimento, licenças, pessoas,
-            links e logs, só com o que você tem permissão para ver.
+            O assistente consulta inventário, chamados, problemas, mudanças, conversas, base de
+            conhecimento, licenças, pessoas, links e logs, só com o que você tem permissão para ver.
           </div>
           <div class="flex flex-wrap justify-center gap-8px">
             <el-button v-for="e in EXEMPLOS" :key="e" round size="small" @click="enviar(e)">{{

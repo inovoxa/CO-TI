@@ -259,6 +259,31 @@ Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
 
 Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
 
+### Alertas e licenças (F3b)
+
+- **Alertas:** Inventário → Alertas reúne sistema sem suporte, antivírus, disco quase cheio, computador sem
+  comunicação e licença com mais instalações que o comprado.
+  - Os alertas se encerram sozinhos quando a condição normaliza.
+  - Cada regra pode abrir chamado; o chamado já vem ligado à máquina.
+  - A reavaliação é a cada 15 minutos (`CO_TI_INVENTARIO_ALERTAS_MS`).
+- **Licenças:** em Governança → Licenças, a aba "Instalações encontradas" diz quais softwares do inventário contam
+  para a licença. A lista passa a mostrar quantas máquinas têm o software.
+- Detalhes: `docs/specs/inventario-alertas-licencas.md`.
+
+## Assistente interno de IA
+
+O menu **Assistente IA** é um chat para perguntar em português sobre a TI da organização. Exemplos: "quantos
+computadores ainda usam Windows 10 na Saúde?", "qual o status do link da UBS Centro?", "o que está pendente no
+chamado #123?".
+
+- **O que consulta:** inventário, alertas, licenças, chamados, problemas, mudanças, conversas, base de conhecimento,
+  pessoas, links e logs.
+- **Com quais permissões:** as de quem pergunta, incluindo o escopo de unidade.
+- **Só leitura:** ele não altera nada.
+- **Configuração:** usa o provedor de IA configurado em Atendimento → Inteligência artificial (OpenRouter, OpenAI,
+  Ollama local etc.).
+- Detalhes: `docs/specs/assistente-interno.md`.
+
 ## Importar do GLPI 10/11
 
 *Service Desk → Configuração → Importar do GLPI* (só o administrador). Lê o banco MySQL/MariaDB do GLPI e traz:

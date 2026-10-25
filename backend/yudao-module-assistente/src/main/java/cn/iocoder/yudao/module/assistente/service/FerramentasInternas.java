@@ -13,7 +13,12 @@ import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
+import cn.iocoder.yudao.module.atendimento.controller.admin.vo.AtendimentoVOs;
+import cn.iocoder.yudao.module.atendimento.service.ConversaService;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.GovernancaVOs;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.ItilVOs;
+import cn.iocoder.yudao.module.itsm.service.MudancaService;
+import cn.iocoder.yudao.module.itsm.service.ProblemaService;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.KbVOs;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import cn.iocoder.yudao.module.itsm.service.KbService;
@@ -65,6 +70,12 @@ public class FerramentasInternas {
     private ChamadoService chamadoService;
     @Resource
     private KbService kbService;
+    @Resource
+    private ProblemaService problemaService;
+    @Resource
+    private MudancaService mudancaService;
+    @Resource
+    private ConversaService conversaService;
     @Resource
     private AdminUserMapper adminUserMapper;
     @Resource
@@ -153,6 +164,20 @@ public class FerramentasInternas {
                 props(p("somente_abertos", "boolean", "Padrão true")), new String[0], this::meusChamados);
         registrar("buscar_base_conhecimento", "Procura artigos da base de conhecimento e devolve o texto dos mais relevantes.",
                 props(p("consulta", "string", "Assunto ou palavras-chave")), new String[0], this::baseConhecimento);
+        registrar("buscar_problemas", "Problemas (gestão de problemas ITIL): causa de incidentes repetidos.",
+                props(p("busca", "string", "Número ou parte do título"), p("fila", "string", "abertos (padrão) | encerrados | todos"),
+                        p("limite", "integer", "Padrão 15, máximo 40")),
+                new String[]{"itsm:problema:query"}, c -> itil(c, true));
+        registrar("buscar_mudancas", "Mudanças (gestão de mudanças ITIL): o que vai ser alterado no ambiente e quando.",
+                props(p("busca", "string", "Número ou parte do título"),
+                        p("fila", "string", "abertos (padrão) | aprovacao (aguardando aprovação) | agenda | encerrados | todos"),
+                        p("limite", "integer", "Padrão 15, máximo 40")),
+                new String[]{"itsm:mudanca:query"}, c -> itil(c, false));
+        registrar("buscar_conversas", "Conversas do atendimento (WhatsApp, Telegram, Instagram, e-mail, widget).",
+                props(p("busca", "string", "Nome ou telefone do contato, ou texto"),
+                        p("situacao", "string", "abertas (padrão) | pendentes | resolvidas"),
+                        p("limite", "integer", "Padrão 15, máximo 40")),
+                new String[]{"atendimento:conversa:query"}, this::conversas);
         // ---------------------------------------------------------------- pessoas e Centro de Operações
         registrar("buscar_pessoas", "Procura pessoas cadastradas (nome, login, e-mail, unidade, celular) e quantos ativos usam.",
                 props(p("busca", "string", "Nome, login ou e-mail"), p("limite", "integer", "Padrão 10, máximo 30")),
@@ -560,6 +585,61 @@ public class FerramentasInternas {
             artigos.add(m);
         }
         return Map.of("artigos", artigos);
+    }
+
+    private Object itil(Contexto c, boolean problema) {
+        ItilVOs.PaginaReq req = new ItilVOs.PaginaReq();
+        req.setPageNo(1);
+        req.setPageSize(c.limite(15, 40));
+        req.setBusca(c.texto("busca"));
+        if (c.texto("fila") != null) {
+            req.setFila(c.texto("fila"));
+        }
+        PageResult<ItilVOs.Resp> p = problema ? problemaService.pagina(req, c.userId()) : mudancaService.pagina(req, c.userId());
+        return Map.of("total", p.getTotal(), problema ? "problemas" : "mudancas", p.getList().stream().map(x -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("numero", x.getId());
+            m.put("titulo", x.getTitulo());
+            m.put("situacao", x.getStatusRotulo());
+            putSe(m, "tipo", x.getTipoRotulo());
+            putSe(m, "prioridade", x.getPrioridadeRotulo());
+            putSe(m, "unidade", x.getDept());
+            m.put("aberto_em", quando(x.getAbertoEm()));
+            putSe(m, "inicio_previsto", quando(x.getInicioPrevisto()));
+            if (Boolean.TRUE.equals(x.getAtrasado())) {
+                m.put("atrasado", true);
+            }
+            putSe(m, "chamados_ligados", x.getTotalChamados());
+            putSe(m, "causas", x.getCausas() == null ? null : texto(x.getCausas(), 400));
+            return m;
+        }).toList());
+    }
+
+    private Object conversas(Contexto c) {
+        AtendimentoVOs.FiltroConversa f = new AtendimentoVOs.FiltroConversa();
+        f.setPageNo(1);
+        f.setPageSize(c.limite(15, 40));
+        f.setAba("todas");
+        f.setBusca(c.texto("busca"));
+        f.setStatus(switch (Optional.ofNullable(c.texto("situacao")).orElse("abertas")) {
+            case "resolvidas" -> 1;
+            case "pendentes" -> 2;
+            default -> 0;
+        });
+        PageResult<AtendimentoVOs.ConversaResumo> p = conversaService.pagina(f, c.userId());
+        return Map.of("total", p.getTotal(), "conversas", p.getList().stream().map(x -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("numero", x.getId());
+            m.put("contato", x.getContato());
+            putSe(m, "caixa", x.getCaixa());
+            m.put("situacao", x.getStatusRotulo());
+            putSe(m, "atendente", x.getAgente());
+            putSe(m, "chamado", x.getChamadoId());
+            putSe(m, "ultima_atividade", quando(x.getUltimaAtividadeEm()));
+            putSe(m, "ultima_mensagem", x.getUltimaMensagem() == null ? null : texto(x.getUltimaMensagem(), 200));
+            putSe(m, "nao_lidas", x.getNaoLidas());
+            return m;
+        }).toList());
     }
 
     // ======================================================================================= pessoas e operações

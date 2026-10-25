@@ -50,5 +50,8 @@ export const CONSULTAS: Record<string, string> = {
   buscar_base_conhecimento: 'Base de conhecimento',
   buscar_pessoas: 'Pessoas',
   status_links: 'Links',
-  buscar_logs: 'Logs'
+  buscar_logs: 'Logs',
+  buscar_problemas: 'Problemas',
+  buscar_mudancas: 'Mudanças',
+  buscar_conversas: 'Conversas do atendimento'
 }
