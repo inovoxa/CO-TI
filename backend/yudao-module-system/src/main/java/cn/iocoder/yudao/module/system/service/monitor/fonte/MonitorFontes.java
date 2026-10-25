@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.system.service.monitor.fonte;
 
 import cn.iocoder.yudao.module.system.controller.admin.monitor.vo.MonitorModuloVOs.*;
 
+import java.util.Map;
+
 /**
  * Contratos das "fontes" de cada módulo. As telas e o controller só conhecem estas interfaces.
  *
@@ -28,6 +30,23 @@ public final class MonitorFontes {
     public interface Links {
         /** filtro: problema | links | servicos | todos */
         ListaVO<LinkVO> listarLinks(Long unidadeId, String filtro, int limite);
+    }
+
+    /**
+     * Estado real do link principal de cada unidade, para o telão (o monitoramento implementa). Sem implementação, o
+     * telão usa o link simulado.
+     */
+    public interface IndicadoresLink {
+        /** unidadeId → link principal; unidade sem monitor principal aparece no ar, sem latência (não é verificada) */
+        Map<Long, LinkUnidade> linksPrincipais();
+    }
+
+    /**
+     * @param link           online | degradado | offline
+     * @param latenciaMs     última latência (null fora do ar)
+     * @param disponibilidade disponibilidade das últimas 24 h, em %
+     */
+    public record LinkUnidade(String link, Integer latenciaMs, Double disponibilidade) {
     }
 
     public interface Inventario {

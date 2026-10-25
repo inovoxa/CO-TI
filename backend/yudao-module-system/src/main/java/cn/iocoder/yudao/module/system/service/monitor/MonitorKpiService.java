@@ -4,6 +4,8 @@ import cn.iocoder.yudao.module.system.controller.admin.monitor.vo.OcorrenciaVO;
 import cn.iocoder.yudao.module.system.controller.admin.monitor.vo.UnitKpiVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
 import cn.iocoder.yudao.module.system.dal.mysql.monitor.MonitorUnitMapper;
+import cn.iocoder.yudao.module.system.service.monitor.fonte.MonitorFontes;
+import org.springframework.beans.factory.ObjectProvider;
 import jakarta.annotation.Resource; // no branch master (JDK 8) troque por javax.annotation.Resource
 import org.springframework.stereotype.Service;
 
@@ -34,6 +36,9 @@ public class MonitorKpiService {
 
     @Resource
     private MonitorUnitMapper monitorUnitMapper;
+    /** Monitoramento real do link principal (módulo de monitoramento); sem ele, o link é simulado */
+    @Resource
+    private ObjectProvider<MonitorFontes.IndicadoresLink> indicadoresLink;
 
     /** unitId -> última leitura */
     private final Map<Long, UnitKpiVO> estado = new ConcurrentHashMap<>();
@@ -61,9 +66,21 @@ public class MonitorKpiService {
     /** Atualiza todas as unidades ativas, gera ocorrências das mudanças e devolve tudo. */
     public Rodada atualizarTodas() {
         Rodada rodada = new Rodada();
+        MonitorFontes.IndicadoresLink fonteLink = indicadoresLink.getIfAvailable();
+        Map<Long, MonitorFontes.LinkUnidade> reais = null;
+        if (fonteLink != null) {
+            try {
+                reais = fonteLink.linksPrincipais();
+            } catch (RuntimeException e) {
+                reais = null; // o telão não para por causa do monitoramento
+            }
+        }
         for (MonitorUnitDO unidade : getUnidadesAtivas()) {
             UnitKpiVO anterior = estado.get(unidade.getId());
-            UnitKpiVO novo = lerIndicadores(unidade, anterior);
+            UnitKpiVO novo = lerIndicadores(unidade, anterior, reais == null);
+            if (reais != null) {
+                aplicarLinkReal(novo, reais.get(unidade.getId()));
+            }
             novo.setStatus(calcularStatus(novo));
             novo.setAtualizadoEm(System.currentTimeMillis());
             estado.put(unidade.getId(), novo);
@@ -135,9 +152,24 @@ public class MonitorKpiService {
         }
     }
 
+    /** Link, latência e disponibilidade vêm do monitor principal da unidade; sem monitor, a unidade fica no ar. */
+    private static void aplicarLinkReal(UnitKpiVO k, MonitorFontes.LinkUnidade real) {
+        if (real == null) {
+            k.setLink("online");
+            k.setLatenciaMs(0);
+            k.setDisponibilidade(100.0);
+            return;
+        }
+        k.setLink(real.link());
+        k.setLatenciaMs(real.latenciaMs() == null ? 0 : real.latenciaMs());
+        if (real.disponibilidade() != null) {
+            k.setDisponibilidade(Math.round(real.disponibilidade() * 100) / 100d);
+        }
+    }
+
     // ===================== SIMULAÇÃO — substitua por dados reais =====================
 
-    private UnitKpiVO lerIndicadores(MonitorUnitDO unidade, UnitKpiVO a) {
+    private UnitKpiVO lerIndicadores(MonitorUnitDO unidade, UnitKpiVO a, boolean linkSimulado) {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         if (a == null) {
             int hosts = 15 + r.nextInt(120);
@@ -173,9 +205,11 @@ public class MonitorKpiService {
         boolean backup = a.getBackupOk() ? r.nextInt(1000) >= 2 : r.nextInt(100) < 15;
 
         // link: ~0,3% de chance de cair e ~0,8% de degradar por leitura; volta em média em ~3 leituras
-        String link = a.getLink();
+        String link = linkSimulado ? a.getLink() : "online"; // com monitoramento real, o link vem dele depois
         int p = r.nextInt(1000);
-        if ("online".equals(link)) {
+        if (!linkSimulado) {
+            link = "online";
+        } else if ("online".equals(link)) {
             link = p < 3 ? "offline" : p < 11 ? "degradado" : "online";
         } else if (p < 300) {
             link = "online";

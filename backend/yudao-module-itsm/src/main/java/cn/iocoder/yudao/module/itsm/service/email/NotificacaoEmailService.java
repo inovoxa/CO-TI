@@ -223,8 +223,14 @@ public class NotificacaoEmailService {
      */
     @DataPermission(enable = false)
     public int avisar(String evento, Collection<Long> pessoas, Map<String, String> valores, String linkRelativo) {
+        return avisar(evento, pessoas, List.of(), valores, linkRelativo);
+    }
+
+    /** Como {@link #avisar(String, Collection, Map, String)}, também para endereços avulsos (ex.: canal de aviso do monitoramento). */
+    @DataPermission(enable = false)
+    public int avisar(String evento, Collection<Long> pessoas, Collection<String> enderecos, Map<String, String> valores, String linkRelativo) {
         EmailConfigDO cfg = emailConfigMapper.selectById(EmailConfigDO.UNICA);
-        if (cfg == null || !Boolean.TRUE.equals(cfg.getAtivo()) || cfg.getRemetenteEmail() == null || pessoas.isEmpty()) {
+        if (cfg == null || !Boolean.TRUE.equals(cfg.getAtivo()) || cfg.getRemetenteEmail() == null || (pessoas.isEmpty() && enderecos.isEmpty())) {
             return 0;
         }
         EmailEventoDO modelo = emailEventoMapper.selectById(evento);
@@ -232,8 +238,15 @@ public class NotificacaoEmailService {
             return 0;
         }
         Map<String, String> para = new LinkedHashMap<>();
-        adminUserMapper.selectBatchIds(new HashSet<>(pessoas)).stream().filter(u -> CommonStatusEnum.isEnable(u.getStatus()))
-                .forEach(u -> adicionar(para, u, "tecnico"));
+        if (!pessoas.isEmpty()) {
+            adminUserMapper.selectBatchIds(new HashSet<>(pessoas)).stream().filter(u -> CommonStatusEnum.isEnable(u.getStatus()))
+                    .forEach(u -> adicionar(para, u, "tecnico"));
+        }
+        for (String e : enderecos) {
+            if (e != null && e.trim().matches("[^@\\s<>\"]+@[^@\\s<>\"]+\\.[^@\\s<>\"]+")) {
+                para.putIfAbsent(e.trim().toLowerCase(Locale.ROOT), "tecnico");
+            }
+        }
         if (para.isEmpty()) {
             return 0;
         }

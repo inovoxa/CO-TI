@@ -78,6 +78,10 @@ services:
       CO_TI_INVENTARIO_IPDISCOVER: ${CO_TI_INVENTARIO_IPDISCOVER:-true}
       CO_TI_INVENTARIO_IPDISCOVER_REDES: ${CO_TI_INVENTARIO_IPDISCOVER_REDES:-}
       CO_TI_INVENTARIO_SNMP_MS: ${CO_TI_INVENTARIO_SNMP_MS:-21600000}
+      # monitoramento: retenção e busca de endereço das unidades (vazio = desligado, para rede sem internet)
+      CO_TI_MONITORAMENTO_RETENCAO_DIAS: ${CO_TI_MONITORAMENTO_RETENCAO_DIAS:-31}
+      CO_TI_GEOCODIFICACAO_URL: ${CO_TI_GEOCODIFICACAO_URL-https://nominatim.openstreetmap.org/search}
+      CO_TI_GEOCODIFICACAO_CONTATO: ${CO_TI_GEOCODIFICACAO_CONTATO:-}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
       CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
     volumes:

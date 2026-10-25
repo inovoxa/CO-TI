@@ -32,6 +32,12 @@ public class MonitorUnitDO extends BaseDO {
     private String city;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private String cep;
+    private String logradouro;
+    private String numero;
+    private String complemento;
+    private String bairro;
+    private String uf;
     /** 0 = ativa, 1 = inativa (CommonStatusEnum) */
     private Integer status;
 

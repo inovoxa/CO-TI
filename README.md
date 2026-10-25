@@ -304,6 +304,29 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
 - **HTTPS:** os agentes exigem o portal em HTTPS, com um certificado em que confiem.
 - Detalhes: `docs/specs/inventario-pacotes.md`.
 
+## Monitoramento (F4) — no lugar do Uptime Kuma
+
+- **Onde:** Monitoramento → Monitores, Manutenções, Canais de aviso e Unidades.
+- **Tipos:** HTTP(S), HTTP com palavra-chave, HTTP com consulta JSON, porta TCP, ping, DNS, push e manual. Cada
+  monitor tem intervalo, tentativas antes de cair, tempo limite, "invertido" e limite de lentidão; o HTTP avisa também
+  quando o certificado está perto de vencer.
+- **Quando cai:** avisa pelos canais (e-mail, Matrix, Telegram ou webhook), abre chamado se o monitor pedir e, ao
+  voltar, registra no chamado e o soluciona. Janelas de manutenção (uma vez, toda semana ou manual) suspendem
+  verificação, aviso e chamado.
+- **Telão:** o monitor marcado como **link principal** de uma unidade define a cor dela no mapa; a tela "Links e
+  serviços" do Centro de Operações e o assistente passam a mostrar os monitores reais.
+- **Unidades no mapa:** o CEP preenche o endereço (ViaCEP), o número completa e as coordenadas vêm do OpenStreetMap
+  (Nominatim); dá para ajustar o ponto no mapa. Em rede sem internet, deixe `CO_TI_VIACEP_URL` e
+  `CO_TI_GEOCODIFICACAO_URL` vazios e marque o ponto à mão.
+- **Importar do Uptime Kuma:** em Monitores → "Importar do Uptime Kuma", envie o `kuma.db` (pasta `data` do Kuma,
+  com o Kuma parado). Entram os monitores dos tipos acima, os canais de aviso, as manutenções e, se quiser, até 30 dias
+  de histórico. Os monitores push mantêm o token: os scripts que chamam `/api/push/<token>` continuam funcionando
+  apontando para o CO-TI. Depois, em cada monitor, escolha a unidade, o papel no telão e se abre chamado. Só o
+  administrador importa, até alguém receber a permissão "Importar do Uptime Kuma".
+- **Retenção:** cada verificação fica `CO_TI_MONITORAMENTO_RETENCAO_DIAS` dias (padrão 31) no TimescaleDB; os totais
+  por hora (disponibilidade de 30 dias e 1 ano) ficam 400 dias.
+- Detalhes: `docs/specs/monitoramento.md`.
+
 ## Assistente interno de IA
 
 O menu **Assistente IA** é um chat para perguntar em português sobre a TI da organização. Exemplos: "quantos
@@ -311,7 +334,7 @@ computadores ainda usam Windows 10 na Saúde?", "qual o status do link da UBS Ce
 chamado #123?".
 
 - **O que consulta:** inventário, alertas, licenças, chamados, problemas, mudanças, conversas, base de conhecimento,
-  pessoas, links e logs.
+  pessoas, monitores, links e logs.
 - **Com quais permissões:** as de quem pergunta, incluindo o escopo de unidade.
 - **Só leitura:** ele não altera nada.
 - **Configuração:** usa o provedor de IA configurado em Atendimento → Inteligência artificial (OpenRouter, OpenAI,

@@ -5,6 +5,8 @@ COPY . .
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests -pl yudao-server -am
 
 FROM eclipse-temurin:21-jre
+# ping: monitores do tipo ping (ICMP sem root: o Docker libera net.ipv4.ping_group_range)
+RUN apt-get update && apt-get install -y --no-install-recommends iputils-ping && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system coti && useradd --system --gid coti --home /app coti \
     && mkdir -p /app/logs /app/arquivos && chown -R coti:coti /app
 WORKDIR /app

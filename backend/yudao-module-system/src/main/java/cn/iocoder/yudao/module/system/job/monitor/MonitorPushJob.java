@@ -34,8 +34,9 @@ public class MonitorPushJob {
     @Resource
     private cn.iocoder.yudao.module.system.service.monitor.MatrixNotifier matrixNotifier;
 
+    /** Também chamado na hora pelo monitoramento quando o link principal de uma unidade muda (sincronizado: uma rodada por vez). */
     @Scheduled(fixedRate = 5000, initialDelay = 10000)
-    public void push() {
+    public synchronized void push() {
         try {
             MonitorKpiService.Rodada rodada = monitorKpiService.atualizarTodas();
             if (!rodada.leituras.isEmpty()) {

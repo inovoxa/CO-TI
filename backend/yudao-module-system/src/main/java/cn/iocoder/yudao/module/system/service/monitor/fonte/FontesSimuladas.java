@@ -48,6 +48,8 @@ public class FontesSimuladas implements MonitorFontes.Chamados, MonitorFontes.Li
     private MonitorKpiService monitorKpiService;
     @Resource
     private WebSocketMessageSender webSocketMessageSender;
+    @Resource
+    private org.springframework.context.ApplicationContext applicationContext;
 
     private final Random r = new Random(20261021);
     private final Object lock = new Object();
@@ -355,9 +357,16 @@ public class FontesSimuladas implements MonitorFontes.Chamados, MonitorFontes.Li
                     }
                 }
             }
-            enviar("monitor-link", linksMudaram);
-            enviar("monitor-chamado", chamadosMudaram.stream().distinct().map(this::comUnidade).collect(Collectors.toList()));
-            enviar("monitor-log", logsNovos);
+            // só o que ainda é simulado: com a fonte real ligada (@Primary), as telas não recebem dados inventados
+            if (simulado(MonitorFontes.Links.class)) {
+                enviar("monitor-link", linksMudaram);
+            }
+            if (simulado(MonitorFontes.Chamados.class)) {
+                enviar("monitor-chamado", chamadosMudaram.stream().distinct().map(this::comUnidade).collect(Collectors.toList()));
+            }
+            if (simulado(MonitorFontes.Logs.class)) {
+                enviar("monitor-log", logsNovos);
+            }
             if (!eventosNovos.isEmpty() || !contadoresMudaram.isEmpty()) {
                 Map<String, Object> cam = new LinkedHashMap<>();
                 cam.put("eventos", eventosNovos);
@@ -366,6 +375,15 @@ public class FontesSimuladas implements MonitorFontes.Chamados, MonitorFontes.Li
             }
         } catch (Exception e) {
             log.error("[monitor] falha na simulação das fontes", e);
+        }
+    }
+
+    /** A fonte ativa deste módulo é esta simulação (nenhuma fonte real marcada com @Primary)? */
+    private boolean simulado(Class<?> contrato) {
+        try {
+            return applicationContext.getBean(contrato) == this;
+        } catch (org.springframework.beans.BeansException e) {
+            return true;
         }
     }
 

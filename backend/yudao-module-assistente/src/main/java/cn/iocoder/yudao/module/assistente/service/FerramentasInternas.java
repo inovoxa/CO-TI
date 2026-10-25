@@ -27,7 +27,13 @@ import cn.iocoder.yudao.module.itsm.controller.admin.vo.KbVOs;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import cn.iocoder.yudao.module.itsm.service.KbService;
 import cn.iocoder.yudao.module.itsm.service.gov.LicencaService;
+import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
+import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
+import cn.iocoder.yudao.module.monitoramento.dominio.Estados;
+import cn.iocoder.yudao.module.monitoramento.service.MonitorService;
 import cn.iocoder.yudao.module.system.controller.admin.monitor.vo.MonitorModuloVOs;
+import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
+import cn.iocoder.yudao.module.system.dal.mysql.monitor.MonitorUnitMapper;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.dept.DeptMapper;
@@ -90,6 +96,10 @@ public class FerramentasInternas {
     private DeptMapper deptMapper;
     @Resource
     private MonitorFontes.Links fonteLinks;
+    @Resource
+    private MonitorService monitorService;
+    @Resource
+    private MonitorUnitMapper monitorUnitMapper;
     @Resource
     private MonitorFontes.Logs fonteLogs;
 
@@ -206,6 +216,13 @@ public class FerramentasInternas {
         registrar("status_links", "Links e serviços monitorados no Centro de Operações: estado, latência e disponibilidade.",
                 props(p("filtro", "string", "todos (padrão) | down | lento | ou parte do nome"), p("limite", "integer", "Padrão 30, máximo 80")),
                 new String[]{"system:monitor-links:query"}, this::links);
+        registrar("monitores", "Monitores de disponibilidade (sites, sistemas, links, portas, DNS): estado, desde quando,"
+                        + " tempo de resposta, disponibilidade de 24 h e 30 dias, chamado aberto. Com um só resultado, traz também as"
+                        + " últimas mudanças de estado (quedas e quanto duraram).",
+                props(p("busca", "string", "Parte do nome, do endereço ou da descrição"),
+                        p("situacao", "string", "problema (fora ou pendente) | fora | pendente | no_ar | manutencao | pausado | todos (padrão)"),
+                        p("unidade", "string", "Nome (ou parte) da unidade"), p("limite", "integer", "Padrão 20, máximo 50")),
+                new String[]{"monitoramento:monitor:query"}, this::monitores);
         registrar("buscar_logs", "Eventos de log centralizados (falhas de logon, bloqueios, erros).",
                 props(p("busca", "string", "Texto a procurar"), p("nivel", "string", "todos | info | aviso | erro | critico"),
                         p("limite", "integer", "Padrão 30, máximo 80")),
@@ -792,6 +809,64 @@ public class FerramentasInternas {
                     return m;
                 }).toList();
         return Map.of("contagens", l.getContagens(), "resumo", l.getResumo(), "links", links);
+    }
+
+    private Object monitores(Contexto c) {
+        MonitorVOs.PaginaReq req = new MonitorVOs.PaginaReq();
+        req.setPageNo(1);
+        req.setPageSize(c.limite(20, 50));
+        req.setBusca(c.texto("busca"));
+        String situacao = c.texto("situacao");
+        req.setSituacao(situacao == null || "todos".equals(situacao) ? null : situacao);
+        String unidade = c.texto("unidade");
+        if (unidade != null) {
+            List<MonitorUnitDO> us = monitorUnitMapper.selectList().stream()
+                    .filter(u -> semAcento(u.getName()).contains(semAcento(unidade))).toList();
+            if (us.isEmpty()) {
+                return Map.of("total", 0, "observacao", "nenhuma unidade com '" + unidade + "'");
+            }
+            req.setUnidadeId(us.get(0).getId());
+        }
+        PageResult<MonitorVOs.Resp> p = monitorService.pagina(req);
+        List<Map<String, Object>> lista = p.getList().stream().map(m -> {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("id", m.getId());
+            r.put("nome", m.getNome());
+            r.put("tipo", m.getTipo());
+            putSe(r, "alvo", m.getAlvo() == null ? null : m.getAlvo() + (m.getPorta() == null ? "" : ":" + m.getPorta()));
+            putSe(r, "unidade", m.getUnidadeNome());
+            if (!"servico".equals(m.getPapel())) {
+                r.put("papel", m.getPapel());
+            }
+            r.put("estado", !Boolean.TRUE.equals(m.getAtivo()) ? "pausado" : Estados.nome(m.getEstado()));
+            if (Boolean.TRUE.equals(m.getLento())) {
+                r.put("lento", true);
+            }
+            putSe(r, "desde", quando(m.getEstadoDesde()));
+            putSe(r, "resposta_ms", m.getUltimaLatenciaMs());
+            putSe(r, "ultima_mensagem", m.getUltimaMsg());
+            putSe(r, "disponibilidade_24h", m.getUptime24h());
+            putSe(r, "disponibilidade_30d", m.getUptime30d());
+            putSe(r, "certificado_dias", m.getCertDias());
+            putSe(r, "chamado", m.getChamadoId());
+            return r;
+        }).toList();
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("total", p.getTotal());
+        res.put("contagens", monitorService.contagens());
+        res.put("monitores", lista);
+        if (p.getList().size() == 1) {
+            MonitorDO m = monitorService.existente(p.getList().get(0).getId());
+            res.put("mudancas_de_estado", monitorService.eventos(List.of(m), LocalDateTime.now().minusDays(30), 15).stream().map(e -> {
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("quando", quando(e.getMomento()));
+                x.put("estado", Estados.nome(e.getEstado()));
+                putSe(x, "antes_por", e.getDuracaoAnteriorS() == null ? null : MonitorService.duracao(e.getDuracaoAnteriorS()));
+                putSe(x, "mensagem", e.getMsg());
+                return x;
+            }).toList());
+        }
+        return res;
     }
 
     private Object logs(Contexto c) {

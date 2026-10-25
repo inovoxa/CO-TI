@@ -70,7 +70,20 @@ Partes portadas (registre aqui cada porta, com o arquivo de origem e a versão):
   Os agentes OCS (Ocsinventory-Unix-Agent, Windows Agent) não são distribuídos com o CO-TI.
 - GLPI Agent (GPL-2.0-or-later), Copyright Teclib' — só o formato JSON das mensagens contact/inventory, como
   referência; nenhum código copiado e o agente não é distribuído.
-- Uptime Kuma 2.5.7 (MIT), Copyright (c) Louis Lam — ainda nenhuma parte portada.
+- Uptime Kuma 2.5.7 (MIT), Copyright (c) 2021 Louis Lam. Comportamento conferido e reescrito em Java em
+  backend/yudao-module-monitoramento (sem trechos copiados):
+    * estados no ar/fora/pendente/manutenção, tentativas antes de cair, batidas importantes, quando avisar e o
+      reaviso a cada N verificações fora (server/model/monitor.js: beat, isImportantBeat,
+      isImportantForNotification);
+    * disponibilidade com pendente contando como fora e manutenção fora da conta (server/uptime-calculator.js);
+    * tipos http, keyword, json-query, port, ping, dns, push e manual e o formato da URL de push
+      /api/push/<token>?status=&msg=&ping= (server/monitor-types, server/routers/api-router.js);
+    * importador: lê as tabelas monitor, heartbeat, notification, monitor_notification, maintenance e
+      monitor_maintenance do kuma.db (estrutura em db/knex_init_db.js e db/knex_migrations) — nenhum código do
+      Kuma é executado ou copiado.
+  The MIT License: Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  and associated documentation files, to deal in the Software without restriction, subject to the condition that
+  the above copyright notice and this permission notice shall be included in all copies or substantial portions.
 - Chatwoot 4.19.0, só o código fora de enterprise/ (MIT), Copyright (c) Chatwoot Inc. — usado como referência de
   comportamento do módulo de atendimento (caixas, contatos, conversas, mensagens, etiquetas, respostas prontas,
   canal API): os códigos de situação da conversa e de tipo de mensagem são os mesmos; o código é escrito em Java,

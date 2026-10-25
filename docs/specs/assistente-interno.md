@@ -35,7 +35,8 @@ Inteligência artificial (finalidade `interno` no registro de uso).
 | `buscar_problemas` / `buscar_mudancas` | `itsm:problema:query` / `itsm:mudanca:query` | problemas e mudanças |
 | `buscar_conversas` | `atendimento:conversa:query` | conversas do atendimento |
 | `buscar_pessoas` | `system:user:query` | nome, login, e-mail, celular, unidade e máquinas |
-| `status_links` / `buscar_logs` | `system:monitor-links:query` / `system:monitor-logs:query` | Centro de Operações |
+| `monitores` | `monitoramento:monitor:query` | estado, desde quando, resposta, disponibilidade, chamado e (com um só resultado) as últimas quedas |
+| `status_links` / `buscar_logs` | `system:monitor-links:query` / `system:monitor-logs:query` | Centro de Operações (os links vêm do monitoramento) |
 
 Para incluir uma consulta nova, registre-a em `FerramentasInternas` com a permissão do módulo dono dos dados.
 
