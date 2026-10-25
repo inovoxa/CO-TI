@@ -99,7 +99,7 @@ public final class SnmpLeitura {
         String mac = interfaces.stream().map(Interface::mac).filter(Objects::nonNull).findFirst().orElse(null);
         String nome = Optional.ofNullable(d.v(SYS_NAME)).orElse(ip);
         Normalizacao.Resumo r = new Normalizacao.Resumo(tipo, nome, fabricante, modelo, serie, null, null, null, null, null, false,
-                null, null, null, null, null, ip, mac, null, null, "desconhecido");
+                null, null, null, null, null, ip, mac, null, null, "desconhecido", null);
         return new Resultado(r, paginas, suprimentos, interfaces, d.v(SYS_OBJECT_ID), d.v(SYS_LOCATION), d.v(SYS_CONTACT), descr);
     }
 

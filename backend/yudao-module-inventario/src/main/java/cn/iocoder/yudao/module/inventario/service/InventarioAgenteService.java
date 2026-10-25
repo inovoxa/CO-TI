@@ -281,7 +281,7 @@ public class InventarioAgenteService {
             new Campo("cpu_nucleos", AtivoDO::getCpuNucleos), new Campo("memoria_mb", AtivoDO::getMemoriaMb),
             new Campo("disco_total_mb", AtivoDO::getDiscoTotalMb), new Campo("mac", AtivoDO::getMac),
             new Campo("dominio", AtivoDO::getDominio), new Campo("usuario_login", AtivoDO::getUsuarioLogin),
-            new Campo("antivirus", AtivoDO::getAntivirus), new Campo("so_sem_suporte", AtivoDO::getSoSemSuporte));
+            new Campo("antivirus", AtivoDO::getAntivirus), new Campo("disco_tipo", AtivoDO::getDiscoTipo), new Campo("so_sem_suporte", AtivoDO::getSoSemSuporte));
 
     /** Mesma máquina: DEVICEID, senão UUID, senão série + fabricante, senão MAC + nome. */
     AtivoDO localizar(String deviceId, Normalizacao.Resumo n) {
@@ -322,7 +322,7 @@ public class InventarioAgenteService {
                 .numeroSerie(limpar(n.numeroSerie(), 100)).patrimonio(limpar(n.patrimonio(), 100)).uuid(limpar(n.uuid(), 64))
                 .soNome(limpar(n.soNome(), 255)).soVersao(limpar(n.soVersao(), 100)).soArquitetura(limpar(n.soArquitetura(), 30))
                 .soSemSuporte(n.soSemSuporte()).cpu(limpar(n.cpu(), 255)).cpuNucleos(n.cpuNucleos()).memoriaMb(n.memoriaMb())
-                .discoTotalMb(n.discoTotalMb()).discoLivreMb(n.discoLivreMb()).ip(limpar(n.ip(), 64)).mac(limpar(n.mac(), 32))
+                .discoTotalMb(n.discoTotalMb()).discoLivreMb(n.discoLivreMb()).discoTipo(n.discoTipo()).ip(limpar(n.ip(), 64)).mac(limpar(n.mac(), 32))
                 .dominio(limpar(n.dominio(), 255)).usuarioLogin(limpar(n.usuarioLogin(), 255)).antivirus(n.antivirus())
                 .build();
     }

@@ -88,6 +88,7 @@ class InventarioDominioTest {
         assertEquals("A4:BB:6D:12:34:56", a.mac(), "a placa física, não a virtual do Hyper-V");
         assertEquals("maria.silva", a.usuarioLogin());
         assertEquals("ativo", a.antivirus(), "Windows 11 tem o Defender");
+        assertEquals("ssd", a.discoTipo(), "Samsung SSD 980");
         assertEquals(3, r.softwares().size());
         assertEquals(java.time.LocalDate.of(2026, 9, 30), r.softwares().get(0).instaladoEm());
         assertEquals("64", r.softwares().get(0).arquitetura());
@@ -221,4 +222,31 @@ class InventarioDominioTest {
         assertEquals(LocalDate.of(2026, 10, 1), r.softwares().get(0).instaladoEm());
     }
 
+    private static Map<String, String> disco(String modelo, String tipo) {
+        return Map.of("MODEL", modelo, "TYPE", tipo, "NAME", "PHYSICALDRIVE0");
+    }
+
+    @Test
+    void classificaOTipoDeDisco() {
+        String fixo = "Fixed hard disk media";
+        // SSD pelo nome, pela interface ou pelo modelo OEM
+        for (String m : List.of("Samsung SSD 870 EVO 500GB", "KINGSTON SA400S37240G", "SAMSUNG MZVLB256HBHQ-000L7", "WDC WDS240G2G0A-00JH30",
+                "WDC PC SN530 SDBPNPZ-256G", "KINGSTON SNVS250G", "CT480BX500SSD1", "SK hynix HFS256G39TND-N210A", "Micron MTFDDAK256TBN")) {
+            assertEquals("ssd", Normalizacao.classeDisco(disco(m, fixo)), m);
+        }
+        assertEquals("ssd", Normalizacao.classeDisco(Map.of("MODEL", "Generic 512G", "INTERFACE", "NVMe")));
+        // HD pelo modelo
+        for (String m : List.of("WDC WD10EZEX-08WN4A0", "ST1000DM010-2EP102", "TOSHIBA MQ01ABD100", "Hitachi HTS545050A7E380", "SAMSUNG HD502HJ",
+                "TOSHIBA DT01ACA100")) {
+            assertEquals("hdd", Normalizacao.classeDisco(disco(m, fixo)), m);
+        }
+        assertEquals("desconhecido", Normalizacao.classeDisco(disco("VMware Virtual disk SCSI Disk Device", fixo)));
+        assertNull(Normalizacao.classeDisco(disco("SanDisk Cruzer Blade USB Device", "Removable Media")), "pen drive não conta");
+        // a máquina
+        assertEquals("ssd", Normalizacao.discoTipo(List.of(disco("Samsung SSD 860", fixo), disco("SanDisk Cruzer USB Device", "Removable Media"))));
+        assertEquals("misto", Normalizacao.discoTipo(List.of(disco("KINGSTON SA400S37240G", fixo), disco("ST1000DM010-2EP102", fixo))));
+        assertEquals("hdd", Normalizacao.discoTipo(List.of(disco("WDC WD10EZEX-08WN4A0", fixo), disco("Disco genérico", fixo))));
+        assertEquals("desconhecido", Normalizacao.discoTipo(List.of(disco("Disco genérico", fixo))));
+        assertNull(Normalizacao.discoTipo(List.of()));
+    }
 }

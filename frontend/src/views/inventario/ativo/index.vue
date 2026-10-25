@@ -136,6 +136,17 @@
       </el-form-item>
       <el-form-item>
         <el-select
+          v-model="q.discoTipo"
+          class="!w-190px"
+          clearable
+          placeholder="Tipo de disco"
+          @change="buscar"
+        >
+          <el-option v-for="d in DISCOS" :key="d.valor" :label="d.rotulo" :value="d.valor" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
           v-model="q.origem"
           class="!w-170px"
           clearable
@@ -309,6 +320,14 @@
           {{ gb(a.discoTotalMb) }}
           <span v-if="a.discoLivreMb !== undefined && a.discoLivreMb !== null">
             · {{ gb(a.discoLivreMb) }} livres</span
+          >
+          <el-tag
+            v-if="a.discoTipo"
+            :type="cor(DISCOS, a.discoTipo)"
+            class="ml-6px"
+            disable-transitions
+            size="small"
+            >{{ rotulo(DISCOS, a.discoTipo) }}</el-tag
           >
         </el-descriptions-item>
         <el-descriptions-item label="IP / MAC"
@@ -543,6 +562,7 @@ import * as Inv from '@/api/inventario'
 import {
   ANTIVIRUS,
   COMPONENTES,
+  DISCOS,
   ORIGENS,
   SITUACOES_ATIVO,
   TIPOS_ATIVO,
@@ -587,6 +607,7 @@ const q = reactive({
   fabricante: undefined as string | undefined,
   modelo: undefined as string | undefined,
   antivirus: undefined as string | undefined,
+  discoTipo: undefined as string | undefined,
   origem: undefined as string | undefined,
   memoriaMinGb: undefined as number | undefined,
   memoriaMaxGb: undefined as number | undefined
@@ -598,6 +619,7 @@ const EXTRAS = [
   'fabricante',
   'modelo',
   'antivirus',
+  'discoTipo',
   'origem',
   'memoriaMinGb',
   'memoriaMaxGb'
@@ -666,6 +688,7 @@ const CAMPOS: Record<string, string> = {
   usuario_login: 'Usuário logado',
   usuario_id: 'Usuário',
   antivirus: 'Antivírus',
+  disco_tipo: 'Tipo de disco',
   situacao: 'Situação',
   dept_id: 'Unidade',
   device_id: 'Identificador do agente'

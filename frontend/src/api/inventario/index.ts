@@ -18,6 +18,7 @@ export interface Ativo {
   memoriaMb?: number
   discoTotalMb?: number
   discoLivreMb?: number
+  discoTipo?: string
   ip?: string
   mac?: string
   dominio?: string
@@ -129,6 +130,15 @@ export const ANTIVIRUS = [
   { valor: 'desatualizado', rotulo: 'Desatualizado', cor: 'warning' },
   { valor: 'ausente', rotulo: 'Ausente', cor: 'danger' },
   { valor: 'desconhecido', rotulo: 'Desconhecido', cor: 'info' }
+]
+
+/** Tipo de disco, classificado pelo modelo de cada disco que o agente informou */
+export const DISCOS = [
+  { valor: 'com_ssd', rotulo: 'Com SSD (SSD ou misto)', cor: 'success', filtro: true },
+  { valor: 'ssd', rotulo: 'SSD', cor: 'success' },
+  { valor: 'hdd', rotulo: 'HD', cor: 'warning' },
+  { valor: 'misto', rotulo: 'SSD + HD', cor: 'primary' },
+  { valor: 'desconhecido', rotulo: 'Não identificado', cor: 'info' }
 ]
 
 export const ORIGENS = {

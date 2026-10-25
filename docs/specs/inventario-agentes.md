@@ -69,7 +69,8 @@ fica no histórico. Pedidos do mesmo `DEVICEID` são gravados um de cada vez.
   - sistema, versão e arquitetura, e se o sistema está **sem suporte** do fabricante na data;
   - processador, núcleos, memória, discos locais (total e livre), IP, MAC da placa física e domínio;
   - último usuário logado, sem o domínio;
-  - antivírus: ativo, desatualizado, ausente ou desconhecido.
+  - antivírus: ativo, desatualizado, ausente ou desconhecido;
+  - tipo de disco: SSD, HD, misto (os dois) ou não identificado (ver abaixo).
 - **Componentes** (`cmdb.ativo_componente`): cada peça com uma chave que a identifica (série, slot, MAC…).
 - **Softwares**: um catálogo único por nome + editora normalizados (`cmdb.software`) e as instalações por máquina,
   com versão, data e arquitetura.
@@ -79,11 +80,31 @@ fica no histórico. Pedidos do mesmo `DEVICEID` são gravados um de cada vez.
   - a exceção é quando alguém escolheu a unidade à mão (`dept_manual`).
 - **Patrimônio:** o agente só preenche quando o campo está vazio. A etiqueta cadastrada pela equipe vale mais.
 
+## Tipo de disco (`disco_tipo`)
+
+O agente OCS do Windows informa "Fixed hard disk media" tanto para SSD quanto para HD. Por isso, cada disco
+(`STORAGES`) é classificado pelo modelo, nome, descrição, tipo e interface:
+
+- **SSD:** "SSD", "NVMe", "Solid State" ou "M.2", ou um modelo conhecido de SSD que não traz "SSD" no nome
+  (Samsung OEM `MZ…`, Kingston `SA400`/`SUV`/`SNV`, WD `WDS`/`PC SN`, Crucial `CT…BX/MX`, Micron `MTFD`, SK hynix
+  `HFS`/`HFM`, Kioxia `KBG`, Toshiba `THNSN`);
+- **HD:** "HDD", rotação ("RPM") ou um modelo conhecido de HD (WD `WD…`, Seagate `ST…`, Toshiba `MQ0`/`DT01`/`HDW`,
+  Hitachi/HGST, Samsung `HD…`);
+- pen drive, leitor de cartão e CD/DVD não contam;
+- o resto fica **não identificado**.
+
+A máquina fica `ssd` (só SSD), `hdd` (só HD), `misto` (os dois) ou `desconhecido` (nenhum disco identificado). Um
+disco não identificado não muda o resultado dos que foram identificados. Sem discos informados (SNMP, cadastro manual),
+o campo fica vazio. O filtro "Com SSD" junta `ssd` e `misto`.
+
+Os ativos inventariados antes da classificação são classificados na subida do backend, a partir dos componentes
+guardados. A mudança de tipo (troca de HD por SSD) entra no histórico.
+
 ## Histórico (`cmdb.historico`, somente inclusão)
 
 - **Primeiro inventário:** uma linha de resumo.
 - **Inventários seguintes:**
-  - campos que mudaram (nome, sistema, memória, usuário, antivírus…). IP e espaço livre ficam de fora, porque
+  - campos que mudaram (nome, sistema, memória, usuário, antivírus, tipo de disco…). IP e espaço livre ficam de fora, porque
     mudam o tempo todo;
   - peças incluídas e removidas;
   - softwares instalados e removidos.

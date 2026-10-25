@@ -3,11 +3,13 @@ package cn.iocoder.yudao.module.inventario.service;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.inventario.config.InventarioProperties;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.*;
 import cn.iocoder.yudao.module.inventario.dal.mysql.*;
+import cn.iocoder.yudao.module.inventario.dominio.Normalizacao;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoDO;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
@@ -72,8 +74,12 @@ public class AtivoService {
                 .eqIfPresent(AtivoDO::getModelo, vazio(req.getModelo()))
                 .eqIfPresent(AtivoDO::getAntivirus, vazio(req.getAntivirus()))
                 .eqIfPresent(AtivoDO::getOrigem, vazio(req.getOrigem()))
+                .eqIfPresent(AtivoDO::getDiscoTipo, "com_ssd".equals(req.getDiscoTipo()) ? null : vazio(req.getDiscoTipo()))
                 .geIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMinGb() == null ? null : req.getMemoriaMinGb() * 1024 - 512)
                 .leIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMaxGb() == null ? null : req.getMemoriaMaxGb() * 1024 + 512);
+        if ("com_ssd".equals(req.getDiscoTipo())) {
+            q.in(AtivoDO::getDiscoTipo, "ssd", "misto");
+        }
         if (req.getDeptId() != null) {
             Set<Long> depts = new HashSet<>(List.of(req.getDeptId()));
             deptApi.getChildDeptList(req.getDeptId()).forEach(d -> depts.add(d.getId()));
@@ -124,6 +130,32 @@ public class AtivoService {
         c.put("sem_contato", cmdbAtivoMapper.selectCount(new LambdaQueryWrapperX<AtivoDO>().ne(AtivoDO::getOrigem, "manual")
                 .lt(AtivoDO::getUltimoContato, limiteContato())));
         return c;
+    }
+
+    /**
+     * Classifica o tipo de disco dos ativos que têm discos registrados e ainda não têm o tipo (os que existiam antes da
+     * classificação). Os novos inventários já chegam classificados.
+     */
+    @DataPermission(enable = false)
+    public int classificarDiscosPendentes() {
+        List<ComponenteDO> discos = cmdbComponenteMapper.selectList(new LambdaQueryWrapperX<ComponenteDO>()
+                .eq(ComponenteDO::getTipo, "disco")
+                .apply("EXISTS (SELECT 1 FROM cmdb.ativo a WHERE a.id = ativo_componente.ativo_id AND a.deleted = 0 AND a.disco_tipo IS NULL)"));
+        Map<Long, List<Map<String, String>>> porAtivo = new HashMap<>();
+        for (ComponenteDO c : discos) {
+            Map<String, String> d = new HashMap<>();
+            lerDados(c.getDados()).forEach((k, v) -> d.put(k, v == null ? null : String.valueOf(v)));
+            porAtivo.computeIfAbsent(c.getAtivoId(), k -> new ArrayList<>()).add(d);
+        }
+        int n = 0;
+        for (Map.Entry<Long, List<Map<String, String>>> e : porAtivo.entrySet()) {
+            String tipo = Normalizacao.discoTipo(e.getValue());
+            if (tipo != null) {
+                cmdbAtivoMapper.updateById(AtivoDO.builder().id(e.getKey()).discoTipo(tipo).build());
+                n++;
+            }
+        }
+        return n;
     }
 
     public AtivoVOs.Detalhe detalhe(Long id) {
@@ -471,6 +503,7 @@ public class AtivoService {
             r.setMemoriaMb(a.getMemoriaMb());
             r.setDiscoTotalMb(a.getDiscoTotalMb());
             r.setDiscoLivreMb(a.getDiscoLivreMb());
+            r.setDiscoTipo(a.getDiscoTipo());
             r.setIp(a.getIp());
             r.setMac(a.getMac());
             r.setDominio(a.getDominio());

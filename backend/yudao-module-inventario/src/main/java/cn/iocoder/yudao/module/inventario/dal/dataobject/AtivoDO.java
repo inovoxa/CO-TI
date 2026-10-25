@@ -40,6 +40,8 @@ public class AtivoDO extends BaseDO {
     private Integer memoriaMb;
     private Long discoTotalMb;
     private Long discoLivreMb;
+    /** ssd | hdd | misto | desconhecido; null sem discos informados */
+    private String discoTipo;
     private String ip;
     private String mac;
     private String dominio;

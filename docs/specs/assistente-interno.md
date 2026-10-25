@@ -21,9 +21,9 @@ Inteligência artificial (finalidade `interno` no registro de uso).
 
 | Consulta | Permissão | O que traz |
 |---|---|---|
-| `buscar_ativos` | `inventario:ativo:query` | máquinas por nome, tipo, sistema (nome parcial), fabricante, modelo, antivírus, alerta, situação, unidade, pessoa, software e memória |
+| `buscar_ativos` | `inventario:ativo:query` | máquinas por nome, tipo, sistema (nome parcial), fabricante, modelo, antivírus, tipo de disco (com SSD, só SSD, HD, misto), alerta, situação, unidade, pessoa, software e memória |
 | `detalhar_ativo` | `inventario:ativo:query` | hardware, peças, softwares, alertas e chamados de uma máquina |
-| `resumo_inventario` | `inventario:ativo:query` | contagem por sistema, fabricante, modelo, tipo, antivírus, situação, unidade ou origem |
+| `resumo_inventario` | `inventario:ativo:query` | contagem por sistema, fabricante, modelo, tipo, tipo de disco, antivírus, situação, unidade ou origem |
 | `buscar_softwares` | `inventario:ativo:query` | catálogo com instalações e licenças |
 | `alertas_inventario` | `inventario:ativo:query` | alertas abertos ou encerrados |
 | `licencas` | `itsm:licenca:query` | compradas, usos registrados, instalações encontradas |

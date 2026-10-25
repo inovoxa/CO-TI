@@ -37,6 +37,8 @@ public final class AtivoVOs {
         private String modelo;
         /** ativo | desatualizado | ausente | desconhecido */
         private String antivirus;
+        /** ssd | hdd | misto | desconhecido; "com_ssd" = ssd ou misto */
+        private String discoTipo;
         /** ocs | glpi_agent | manual */
         private String origem;
         /** Memória em GB (inclusive) */
@@ -71,6 +73,7 @@ public final class AtivoVOs {
         private Integer memoriaMb;
         private Long discoTotalMb;
         private Long discoLivreMb;
+        private String discoTipo;
         private String ip;
         private String mac;
         private String dominio;

@@ -134,6 +134,7 @@ public class FerramentasInternas {
                         p("sistema", "string", "Nome do sistema operacional, ou parte dele (ex.: Windows 10)"),
                         p("fabricante", "string", "Fabricante (ex.: Dell)"), p("modelo", "string", "Modelo (ex.: OptiPlex 7090)"),
                         p("antivirus", "string", "ativo | desatualizado | ausente | desconhecido"),
+                        p("disco", "string", "Tipo de disco: com_ssd (só SSD ou SSD + HD) | ssd (só SSD) | hdd (só HD) | misto | desconhecido"),
                         p("alerta", "string", "sem_suporte | antivirus | sem_contato"),
                         p("situacao", "string", "em_uso | estoque | manutencao | baixado"),
                         p("unidade", "string", "Nome (ou parte) da unidade/departamento"),
@@ -145,8 +146,10 @@ public class FerramentasInternas {
         registrar("detalhar_ativo", "Detalhe de um ativo: hardware, peças, softwares instalados, alertas abertos e chamados ligados.",
                 props(p("id", "integer", "Número do ativo (de buscar_ativos)"), p("nome", "string", "Nome da máquina, se não souber o número")),
                 new String[]{"inventario:ativo:query"}, this::detalharAtivo);
-        registrar("resumo_inventario", "Quantidades do inventário agrupadas por um campo, mais os totais de alertas.",
-                props(p("agrupar_por", "string", "sistema | fabricante | modelo | tipo | antivirus | situacao | unidade | origem")),
+        registrar("resumo_inventario", "Quantidades do inventário agrupadas por um campo, mais os totais de alertas. Para o tipo de disco"
+                        + " (SSD/HD), agrupe por disco: \"desconhecido\" é disco cujo modelo não diz se é SSD ou HD, e \"(sem informação)\""
+                        + " são ativos sem discos informados (impressoras, cadastros manuais).",
+                props(p("agrupar_por", "string", "sistema | fabricante | modelo | tipo | disco | antivirus | situacao | unidade | origem")),
                 new String[]{"inventario:ativo:query"}, this::resumoInventario);
         registrar("buscar_softwares", "Catálogo de softwares encontrados nas máquinas, com quantas instalações e as licenças ligadas.",
                 props(p("busca", "string", "Parte do nome do software ou da editora"), p("limite", "integer", "Padrão 20, máximo 50")),
@@ -274,6 +277,7 @@ public class FerramentasInternas {
         req.setFabricante(c.texto("fabricante"));
         req.setModelo(c.texto("modelo"));
         req.setAntivirus(c.texto("antivirus"));
+        req.setDiscoTipo(c.texto("disco"));
         req.setAlerta(c.texto("alerta"));
         req.setSituacao(c.texto("situacao"));
         req.setMemoriaMinGb(c.inteiro("memoria_min_gb"));
@@ -368,6 +372,7 @@ public class FerramentasInternas {
         if (a.getDiscoTotalMb() != null && a.getDiscoTotalMb() > 0 && a.getDiscoLivreMb() != null) {
             m.put("disco", Math.round(a.getDiscoTotalMb() / 1024.0) + " GB, " + Math.round(100.0 * a.getDiscoLivreMb() / a.getDiscoTotalMb()) + "% livre");
         }
+        putSe(m, "disco_tipo", a.getDiscoTipo());
         putSe(m, "pessoa", a.getUsuarioNome() != null ? a.getUsuarioNome() : a.getUsuarioLogin());
         putSe(m, "unidade", a.getDeptNome());
         putSe(m, "ip", a.getIp());
@@ -428,6 +433,7 @@ public class FerramentasInternas {
             case "fabricante" -> AtivoDO::getFabricante;
             case "modelo" -> AtivoDO::getModelo;
             case "antivirus" -> AtivoDO::getAntivirus;
+            case "disco" -> AtivoDO::getDiscoTipo;
             case "situacao" -> AtivoDO::getSituacao;
             case "unidade" -> AtivoDO::getDeptId;
             case "origem" -> AtivoDO::getOrigem;

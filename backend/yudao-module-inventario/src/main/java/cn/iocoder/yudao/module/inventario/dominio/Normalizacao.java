@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /**
  * Do inventário do agente para o ativo do CMDB, sem dependência de servidor: resumo (tipo, sistema, CPU, memória,
- * disco, rede, usuário), componentes com a chave que identifica cada peça e os softwares instalados.
+ * disco, tipo de disco, rede, usuário), componentes com a chave que identifica cada peça e os softwares instalados.
  */
 public final class Normalizacao {
 
@@ -19,7 +19,7 @@ public final class Normalizacao {
     public record Resumo(String tipo, String nome, String fabricante, String modelo, String numeroSerie, String patrimonio, String uuid,
                          String soNome, String soVersao, String soArquitetura, boolean soSemSuporte, String cpu, Integer cpuNucleos,
                          Integer memoriaMb, Long discoTotalMb, Long discoLivreMb, String ip, String mac, String dominio,
-                         String usuarioLogin, String antivirus) {
+                         String usuarioLogin, String antivirus, String discoTipo) {
     }
 
     public record Componente(String tipo, String chave, String descricao, Map<String, String> dados) {
@@ -107,7 +107,7 @@ public final class Normalizacao {
                 semSuporte(soNome, hw.get("OSVERSION"), hoje), cortar(cpu, 255), nucleos, inteiro(hw.get("MEMORY")),
                 total > 0 ? total : null, total > 0 ? livre : null, cortar(ip, 64), mac,
                 cortar(Optional.ofNullable(vazio(hw.get("WORKGROUP"))).orElse(vazio(hw.get("USERDOMAIN"))), 255), cortar(login, 255),
-                antivirus(p, soNome));
+                antivirus(p, soNome), discoTipo(p.lista("STORAGES")));
         return new Resultado(r, componentes, softwares(p));
     }
 
@@ -254,6 +254,54 @@ public final class Normalizacao {
         }
         u = u.strip();
         return u.isEmpty() || simples(u).equals("system") ? null : u;
+    }
+
+    /** Modelos de SSD que não trazem "SSD" no nome (OEM Samsung, Kingston A400/UV400/NV, WD Green/Blue SSD, Micron, Kioxia, SK hynix). */
+    private static final Pattern MODELO_SSD = Pattern.compile(
+            "\\b(mz[0-9a-z]{5,}|sa400\\w*|suv[0-9]\\w*|sv300\\w*|skc[0-9]\\w*|snv[0-9s]\\w*|sedc\\w*|wds[0-9]\\w*|mtfd\\w*|thnsn\\w*|kbg[0-9]\\w*|hf[sm][0-9]\\w*|pc sn[0-9]\\w*|ct[0-9]+(mx|bx|p[0-9])\\w*)");
+    /** Modelos de HD (disco giratório) dos fabricantes comuns. */
+    private static final Pattern MODELO_HD = Pattern.compile(
+            "\\b(wd[0-9]{2,}[a-z]\\w*|st[0-9]{3,}[a-z]{2}\\w*|hts[0-9]\\w*|hgst\\w*|hitachi\\w*|mq0[0-9]\\w*|dt01\\w*|hdw[a-z]\\w*|hd[0-9]{3}[a-z]{2}\\w*|hn-m\\w*)");
+
+    /**
+     * Tipo de disco da máquina: {@code ssd}, {@code hdd}, {@code misto} (os dois) ou {@code desconhecido}; null sem
+     * discos informados. O agente OCS do Windows informa "Fixed hard disk media" para os dois, então a classificação vai
+     * pelo modelo e pela interface; disco que não se identifica não muda o resultado dos que se identificam.
+     */
+    public static String discoTipo(List<Map<String, String>> discos) {
+        boolean ssd = false;
+        boolean hdd = false;
+        boolean algum = false;
+        for (Map<String, String> d : discos) {
+            String c = classeDisco(d);
+            if (c == null) {
+                continue;
+            }
+            algum = true;
+            ssd |= c.equals("ssd");
+            hdd |= c.equals("hdd");
+        }
+        if (!algum) {
+            return null;
+        }
+        return ssd && hdd ? "misto" : ssd ? "ssd" : hdd ? "hdd" : "desconhecido";
+    }
+
+    /** ssd | hdd | desconhecido; null para o que não é disco interno (pen drive, leitor de cartão, CD). */
+    static String classeDisco(Map<String, String> d) {
+        String texto = simples(String.join(" ", Objects.toString(d.get("MODEL"), ""), Objects.toString(d.get("NAME"), ""),
+                Objects.toString(d.get("DESCRIPTION"), ""), Objects.toString(d.get("TYPE"), ""), Objects.toString(d.get("INTERFACE"), ""),
+                Objects.toString(d.get("MANUFACTURER"), "")));
+        if (Termos.contem(texto, "usb", "removable", "removivel", "cd-rom", "cdrom", "dvd", "card reader", "sd card", "floppy", "flash drive")) {
+            return null;
+        }
+        if (Termos.contem(texto, "ssd", "nvme", "solid state", "m.2") || MODELO_SSD.matcher(texto).find()) {
+            return "ssd";
+        }
+        if (Termos.contem(texto, "hdd", "rpm") || MODELO_HD.matcher(texto).find()) {
+            return "hdd";
+        }
+        return "desconhecido";
     }
 
     private static boolean discoLocal(Map<String, String> d) {
