@@ -28,6 +28,29 @@ public class AuthLoginReqVO extends CaptchaVerificationReqVO {
     @Pattern(regexp = "^[a-zA-Z0-9._-]{1,30}$", message = "Usuário só pode ter letras, números, ponto, hífen e sublinhado")
     private String username;
 
+    /** CO-TI: o login chega como no Windows (DOMINIO\joao.silva ou joao.silva@dominio); valida e autentica só a conta */
+    public AuthLoginReqVO setUsername(String username) {
+        this.username = contaDoLogin(username);
+        return this;
+    }
+
+    /** "PMA\joao.silva", "joao.silva@pma.local" e "joao.silva" → "joao.silva" */
+    public static String contaDoLogin(String login) {
+        if (login == null) {
+            return null;
+        }
+        String s = login.strip();
+        int barra = s.lastIndexOf('\\');
+        if (barra >= 0) {
+            s = s.substring(barra + 1);
+        }
+        int arroba = s.indexOf('@');
+        if (arroba >= 0) {
+            s = s.substring(0, arroba);
+        }
+        return s;
+    }
+
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "buzhidao")
     @NotEmpty(message = "Informe a senha")
     @Length(min = 1, max = 128, message = "Senha deve ter até 128 caracteres") // CO-TI: senhas do AD podem passar de 16
