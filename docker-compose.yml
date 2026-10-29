@@ -82,8 +82,26 @@ services:
       CO_TI_MONITORAMENTO_RETENCAO_DIAS: ${CO_TI_MONITORAMENTO_RETENCAO_DIAS:-31}
       CO_TI_GEOCODIFICACAO_URL: ${CO_TI_GEOCODIFICACAO_URL-https://nominatim.openstreetmap.org/search}
       CO_TI_GEOCODIFICACAO_CONTATO: ${CO_TI_GEOCODIFICACAO_CONTATO:-}
+      # retenção dos registros técnicos (dias; 0 = guardar para sempre), rotinas em paralelo e custo do hash de senha
+      CO_TI_RETENCAO_LOG_OPERACOES_DIAS: ${CO_TI_RETENCAO_LOG_OPERACOES_DIAS:-730}
+      CO_TI_RETENCAO_LOG_ACESSO_DIAS: ${CO_TI_RETENCAO_LOG_ACESSO_DIAS:-365}
+      CO_TI_RETENCAO_LOG_API_DIAS: ${CO_TI_RETENCAO_LOG_API_DIAS:-30}
+      CO_TI_RETENCAO_LOG_ERROS_DIAS: ${CO_TI_RETENCAO_LOG_ERROS_DIAS:-90}
+      CO_TI_AGENDADOR_THREADS: ${CO_TI_AGENDADOR_THREADS:-8}
+      CO_TI_BCRYPT_CUSTO: ${CO_TI_BCRYPT_CUSTO:-12}
+      CO_TI_WS_SENDER: ${CO_TI_WS_SENDER:-local}
+      CO_TI_LOGS_RECEPCAO: ${CO_TI_LOGS_RECEPCAO:-true}
+      CO_TI_LOGS_PERMITIDOS: ${CO_TI_LOGS_PERMITIDOS:-}
+      CO_TI_LOGS_RETENCAO_DIAS: ${CO_TI_LOGS_RETENCAO_DIAS:-30}
+      CO_TI_SYSLOG_PORTA: ${CO_TI_SYSLOG_PORTA:-514}
+      CO_TI_GELF_PORTA: ${CO_TI_GELF_PORTA:-12201}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
       CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
+    ports:
+      # logs: Syslog (FortiGate, servidores, NXLog) e GELF (Windows via NXLog/Winlogbeat)
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/udp"
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/tcp"
+      - "${CO_TI_GELF_PORTA:-12201}:12201/udp"
     volumes:
       - backendlogs:/app/logs
       - arquivos:/app/arquivos

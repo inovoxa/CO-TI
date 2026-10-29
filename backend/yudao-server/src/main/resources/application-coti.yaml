@@ -9,6 +9,13 @@ spring:
       - org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration # 默认 local 环境，不开启 Quartz 的自动配置
       - org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration # 禁用 AI 模块的 Qdrant，手动创建
       - org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration # 禁用 AI 模块的 Milvus，手动创建
+  # CO-TI: as rotinas @Scheduled (verificações, SLA, e-mail, WhatsApp, AD) rodam em paralelo; o padrão do Spring é 1 thread,
+  # e uma rotina demorada (ex.: sincronizar um AD grande) parava todas as outras
+  task:
+    scheduling:
+      pool:
+        size: ${CO_TI_AGENDADOR_THREADS:8}
+      thread-name-prefix: coti-agendador-
   # 数据源配置项
   datasource:
     druid: # Druid 【监控】相关的全局配置
@@ -164,33 +171,17 @@ logging:
   file:
     name: ${CO_TI_LOG_DIR:${user.home}/logs}/${spring.application.name}.log # 日志文件名，全路径
   level:
-    # 配置自己写的 MyBatis Mapper 打印日志
-    cn.iocoder.yudao.module.bpm.dal.mysql: debug
-    cn.iocoder.yudao.module.infra.dal.mysql: debug
-    cn.iocoder.yudao.module.infra.dal.mysql.logger.ApiErrorLogMapper: INFO # 配置 ApiErrorLogMapper 的日志级别为 info，避免和 GlobalExceptionHandler 重复打印
-    cn.iocoder.yudao.module.infra.dal.mysql.job.JobLogMapper: INFO # 配置 JobLogMapper 的日志级别为 info
-    cn.iocoder.yudao.module.infra.dal.mysql.file.FileConfigMapper: INFO # 配置 FileConfigMapper 的日志级别为 info
-    cn.iocoder.yudao.module.pay.dal.mysql: debug
-    cn.iocoder.yudao.module.pay.dal.mysql.notify.PayNotifyTaskMapper: INFO # 配置 PayNotifyTaskMapper 的日志级别为 info
-    cn.iocoder.yudao.module.system.dal.mysql: debug
-    cn.iocoder.yudao.module.system.dal.mysql.sms.SmsChannelMapper: INFO # 配置 SmsChannelMapper 的日志级别为 info
-    cn.iocoder.yudao.module.tool.dal.mysql: debug
-    cn.iocoder.yudao.module.member.dal.mysql: debug
-    cn.iocoder.yudao.module.trade.dal.mysql: debug
-    cn.iocoder.yudao.module.promotion.dal.mysql: debug
-    cn.iocoder.yudao.module.statistics.dal.mysql: debug
-    cn.iocoder.yudao.module.crm.dal.mysql: debug
-    cn.iocoder.yudao.module.erp.dal.mysql: debug
-    cn.iocoder.yudao.module.mes.dal.mysql: debug
-    cn.iocoder.yudao.module.wms.dal.mysql: debug
-    cn.iocoder.yudao.module.iot.dal.mysql: debug
-    cn.iocoder.yudao.module.iot.dal.tdengine: DEBUG
-    cn.iocoder.yudao.module.iot.service.rule: debug
-    cn.iocoder.yudao.module.ai.dal.mysql: debug
-    cn.iocoder.yudao.module.im.dal.mysql: debug
+    # CO-TI: em INFO. O DEBUG dos mappers gravava cada consulta com os parâmetros (inclusive hashes de senha e dados
+    # pessoais) e enchia o disco. Para investigar um problema, suba com LOGGING_LEVEL_CN_IOCODER_YUDAO=debug.
+    cn.iocoder.yudao: info
     org.springframework.context.support.PostProcessorRegistrationDelegate: ERROR # TODO 芋艿：先禁用，Spring Boot 3.X 存在部分错误的 WARN 提示
 
 debug: false
+
+# CO-TI: captcha do login com fundos próprios (ferramentas/captcha/gerar_fundos.py) e marca d'água do produto
+aj:
+  captcha:
+    water-mark: CO-TI
 
 --- #################### 微信公众号、小程序相关配置 ####################
 wx:
@@ -228,6 +219,7 @@ yudao:
     enable: ${CO_TI_CAPTCHA:true}
   security:
     mock-enable: false # CO-TI: nunca aceitar token de teste
+    password-encoder-length: ${CO_TI_BCRYPT_CUSTO:12} # CO-TI: o padrão do RuoYi (4) é fraco demais; hashes antigos continuam valendo
   pay:
     order-notify-url: http://localhost/admin-api/pay/notify/order # 支付渠道的【支付】回调地址
     refund-notify-url: http://localhost/admin-api/pay/notify/refund # 支付渠道的【退款】回调地址
@@ -333,6 +325,22 @@ coti:
     geocodificacao-contato: ${CO_TI_GEOCODIFICACAO_CONTATO:}   # e-mail da TI (pedido da política do OpenStreetMap)
     kuma-max-mb: ${CO_TI_KUMA_MAX_MB:2048}
     kuma-pasta: ${CO_TI_KUMA_PASTA:arquivos/kuma}
+  logs:   # logs centralizados (no lugar do Graylog): Syslog UDP/TCP e GELF UDP
+    recepcao: ${CO_TI_LOGS_RECEPCAO:true}
+    syslog-udp-porta: 1514      # portas dentro do contêiner; o docker-compose publica 514 e 12201
+    syslog-tcp-porta: 1514
+    gelf-udp-porta: 12201
+    porta-publica-syslog: ${CO_TI_SYSLOG_PORTA:514}   # só para a tela de fontes mostrar onde apontar
+    porta-publica-gelf: ${CO_TI_GELF_PORTA:12201}
+    permitidos: ${CO_TI_LOGS_PERMITIDOS:}   # quem pode mandar (ex.: 172.16.0.0/12,10.0.0.0/8); vazio = todos
+    retencao-dias: ${CO_TI_LOGS_RETENCAO_DIAS:30}
+    fila-maxima: ${CO_TI_LOGS_FILA:200000}
+  retencao:   # limpeza diária de registros técnicos antigos (LimpezaRegistrosJob); 0 = guardar para sempre
+    log-operacoes-dias: ${CO_TI_RETENCAO_LOG_OPERACOES_DIAS:730}
+    log-acesso-dias: ${CO_TI_RETENCAO_LOG_ACESSO_DIAS:365}
+    log-api-dias: ${CO_TI_RETENCAO_LOG_API_DIAS:30}
+    log-erros-dias: ${CO_TI_RETENCAO_LOG_ERROS_DIAS:90}
+    log-tarefas-dias: ${CO_TI_RETENCAO_LOG_TAREFAS_DIAS:30}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}

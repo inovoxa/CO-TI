@@ -22,9 +22,43 @@ cp .env.example .env        # troque todas as senhas (openssl rand -base64 32)
 docker compose up -d --build
 ```
 
-Depois abra `http://<servidor>:8080` e entre como `admin`, com a senha inicial definida. Em seguida, remova `CO_TI_ADMIN_SENHA_INICIAL` do `.env`.
+Depois abra `http://<servidor>:8080` (ou a porta de `CO_TI_HTTP_PORT`) e entre como `admin`, com a senha inicial definida. Em seguida, remova `CO_TI_ADMIN_SENHA_INICIAL` do `.env`.
 
 Serviços: `postgres` (PostgreSQL 16, TimescaleDB e pgvector), `redis`, `backend` e `frontend` (nginx, que publica o portal, a API `/admin-api` e o WebSocket `/infra/ws` na mesma origem).
+
+### Dados de demonstração
+
+Num banco recém-criado, `python ferramentas/semente/semente.py` carrega uma prefeitura fictícia (Araraquara): secretarias,
+escolas, UBS e CRAS como unidades no mapa, ~540 servidores e perfis, equipes, SLAs, categorias e o catálogo de serviços,
+base de conhecimento, governança, ~500 equipamentos com softwares, monitores e conversas de WhatsApp, além de 3 anos de
+chamados (~150 mil, com atores, acompanhamentos, soluções, histórico e pesquisa de satisfação), problemas ligados aos
+chamados que os revelaram, uma mudança por semana (com janela, aprovação e plano de retorno) e projetos da TI com
+tarefas. Leva cerca de 1 minuto.
+
+- `--anos` e `--chamados` mudam o volume; `--seed` muda os dados (a mesma semente gera os mesmos dados).
+- `--somente-chamados` e `--somente-gestao` refazem só uma etapa num banco já carregado (com a mesma `--seed`).
+- Contas de demonstração: `tecnico.demo`, `coordenador.demo`, `noc.demo`, `gestor.demo` e `servidor.demo`, com a senha
+  `CO_TI_SENHA_DEMO` do `.env` (o script cria uma na primeira vez). As demais pessoas não têm senha local.
+- Os links das unidades entram pausados (o IP do roteador é fictício); os monitores do próprio CO-TI e do portal da
+  Prefeitura verificam de verdade.
+- Para recomeçar do zero: `docker compose down` e `docker volume rm coti_pgdata coti_redisdata coti_arquivos`.
+
+### Volume e retenção
+
+- **Rotinas em paralelo:** verificações, SLA, e-mail, WhatsApp e AD rodam num pool de `CO_TI_AGENDADOR_THREADS` (8);
+  uma rotina demorada (ex.: sincronizar um AD grande) não para as outras.
+- **Limpeza diária (03h37):** tokens de sessão expirados e logs de operação, acesso, API e erros mais antigos que
+  `CO_TI_RETENCAO_LOG_*_DIAS`. Chamados, conversas, inventário e auditoria ficam sempre. As verificações do
+  monitoramento têm retenção própria (`CO_TI_MONITORAMENTO_RETENCAO_DIAS`).
+- **Buscas:** título de chamado e nome/login de pessoa usam índice trigram (`pg_trgm`). Os campos de pessoa buscam
+  enquanto se digita (no máximo 30 resultados), em vez de baixar todos os usuários.
+- **Referência medida** (150 mil chamados, 540 pessoas, banco de 400 MB): fila de chamados e busca por título em ~70 ms,
+  painel de 12 meses em ~0,45 s.
+- **Mais de uma instância do backend:** as rotinas se coordenam pelo Redis. Filas (e-mail, WhatsApp, webhooks, AD,
+  SLA, monitores) reivindicam cada item, então todas as instâncias trabalham juntas; as rotinas de varredura e limpeza
+  (sincronização do AD, SNMP, alertas do inventário, retenções) rodam em uma instância por vez. Para escalar, use
+  `CO_TI_WS_SENDER=redis` (avisos ao vivo chegam a quem está em qualquer instância) e o mesmo volume de anexos para
+  todas.
 
 ## Ligar o Active Directory
 
@@ -38,7 +72,7 @@ CO_TI_AD_BIND_SENHA=...
 CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 ```
 
-- **Login:** a senha é conferida no AD (bind). Na primeira entrada, o usuário é criado no portal. Contas com vínculo ao AD **só** entram com a senha do AD. O `admin` local continua entrando mesmo com o AD fora do ar.
+- **Login:** a senha é conferida no AD (bind). Na primeira entrada, o usuário é criado no portal. Contas com vínculo ao AD **só** entram com a senha do AD. O `admin` local continua entrando mesmo com o AD fora do ar. O usuário pode ser digitado como no Windows: `joao.silva`, `EMPRESA\joao.silva` ou `joao.silva@empresa.local`; o domínio é descartado e vale a conta (`sAMAccountName`).
 - **Estrutura:** as OUs abaixo de `CO_TI_AD_OU_RAIZ` (padrão: a base) viram departamentos debaixo do departamento `CO_TI_AD_DEPT_RAIZ_ID` (100, "Empresa").
 - **Perfis:** em `coti.ad.grupos-perfis` (`application-coti.yaml`), cada grupo do AD é mapeado para um perfil do portal (`noc`, `service_desk`, `soc`, `portaria`, `gestor_unidade`, `telao`). Os grupos aninhados também valem.
 - **Sincronização completa:** a cada 30 min (`CO_TI_AD_CRON`). Quem sumiu do AD ou foi desativado lá é desativado no portal. Se mais de 20% das contas sumirem de uma vez, a sincronização não desativa ninguém e registra um erro, porque o mais provável é um filtro mal configurado.
@@ -331,6 +365,22 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   por hora (disponibilidade de 30 dias e 1 ano) ficam 400 dias.
 - Detalhes: `docs/specs/monitoramento.md`.
 
+## Logs centralizados — no lugar do Graylog
+
+O CO-TI recebe Syslog (UDP e TCP, porta `CO_TI_SYSLOG_PORTA`, 514) e GELF (UDP, `CO_TI_GELF_PORTA`, 12201), separa os
+campos do FortiGate e dos eventos do Windows e monta painéis no estilo do Graylog em **Logs → Painéis**: abas
+(Contas, Máquinas, Arquivos, Firewall), filtro para todos os quadros, contadores com variação, rankings e mensagens.
+Clique num valor para ver as mensagens dele, somá-lo ao filtro ou excluí-lo. **Logs → Busca** tem a linguagem do
+Graylog (`event_id:4740`, `hostname:*youtube* AND -action:blocked`) e **Logs → Fontes** mostra as entradas e como
+configurar o FortiGate, o NXLog e o rsyslog.
+
+- Guarda `CO_TI_LOGS_RETENCAO_DIAS` (30) dias; comprime depois de 2 dias (cerca de 10 vezes menos espaço).
+- Para volume alto (firewall), mande por **TCP**: se a gravação atrasar, o CO-TI segura a conexão em vez de descartar.
+- Libere as portas no firewall do servidor (514 TCP/UDP e 12201 UDP).
+- Para testar: `python ferramentas/logs/simular.py --historico 7 --volume 500000` ou `--ao-vivo --taxa 50`.
+
+Detalhes em `docs/specs/logs.md`.
+
 ## Assistente interno de IA
 
 O menu **Assistente IA** é um chat para perguntar em português sobre a TI da organização. Exemplos: "quantos
@@ -376,7 +426,7 @@ Como fica:
   - O mesmo código não serve duas vezes. O desafio do login vale 5 minutos e 5 tentativas.
   - Quem perde o celular e os códigos: o administrador usa *Usuários → Mais → Redefinir verificação em duas etapas*.
 - **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA (e, depois, o cofre) com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular.
-- **Trilha de auditoria** (*Centro de Operações → Auditoria*):
+- **Trilha de auditoria** (*Sistema → Auditoria do sistema → Trilha de auditoria*):
   - registra login, falhas, MFA, mudanças vindas do AD e a senha inicial;
   - é encadeada por SHA-256: o botão *Verificar integridade* aponta a primeira linha alterada ou removida;
   - o banco recusa `UPDATE`/`DELETE`/`TRUNCATE` nela.
@@ -386,7 +436,8 @@ Como fica:
 - **Logins alternativos desligados:** auto-cadastro, SMS e login social do RuoYi ficam desligados (`coti.seguranca.login-alternativo`). O `grant_type=password` do OAuth2 é recusado para quem tem MFA.
 - **Dados que não ficam guardados:**
   - o navegador não guarda a senha ("lembrar" guarda só o usuário);
-  - o log não grava senha nem token;
+  - o log não grava senha nem token, e o SQL fica fora do log (para investigar: `LOGGING_LEVEL_CN_IOCODER_YUDAO=debug`);
+  - senhas locais com bcrypt de custo `CO_TI_BCRYPT_CUSTO` (12); hashes antigos continuam valendo;
   - o painel `/druid` fica desligado.
 - **IP real:** o nginx sobrescreve `X-Forwarded-For` com o IP da conexão. Atrás de outro proxy, configure o módulo `realip`.
 

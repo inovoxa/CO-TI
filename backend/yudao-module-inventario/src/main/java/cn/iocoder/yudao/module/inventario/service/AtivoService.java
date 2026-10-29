@@ -238,6 +238,15 @@ public class AtivoService {
                 .ne(AtivoDO::getSituacao, "baixado").orderByDesc(AtivoDO::getUltimoContato)));
     }
 
+    /** Ativos com estes IPs, o de contato mais recente primeiro (para dizer de quem é um IP visto nos logs). */
+    public List<AtivoVOs.Resp> dosIps(Collection<String> ips) {
+        if (ips.isEmpty()) {
+            return List.of();
+        }
+        return converter(cmdbAtivoMapper.selectList(new LambdaQueryWrapperX<AtivoDO>().in(AtivoDO::getIp, ips)
+                .ne(AtivoDO::getSituacao, "baixado").orderByDesc(AtivoDO::getUltimoContato)));
+    }
+
     // ======================================================================================= manutenção
 
     @Transactional(rollbackFor = Exception.class)

@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.assistente.enums.ErrorCodeConstants.AUDIO_INVALIDO;
 import static cn.iocoder.yudao.module.assistente.enums.ErrorCodeConstants.IA_INDISPONIVEL;
 import static cn.iocoder.yudao.module.assistente.enums.ErrorCodeConstants.SESSAO_NAO_EXISTE;
 
@@ -29,6 +30,16 @@ import static cn.iocoder.yudao.module.assistente.enums.ErrorCodeConstants.SESSAO
 @Service
 @Slf4j
 public class AssistenteInternoService {
+
+    /** Acrescentado ao prompt quando a resposta vai ser lida em voz alta */
+    static final String PROMPT_FALADA = """
+
+            Esta conversa é por voz: sua resposta será lida em voz alta. Responda em poucas frases curtas e naturais, \
+            sem Markdown, tabelas, listas longas ou links. Arredonde números grandes e cite no máximo três itens; \
+            se houver mais, diga quantos são e sugira ver a lista completa no portal.
+            """;
+    /** Áudio aceito para transcrever (cerca de 2 minutos de fala) */
+    static final int AUDIO_MAXIMO = 10 * 1024 * 1024;
 
     /** Rodadas de ferramentas por pergunta (cada rodada pode ter várias consultas) */
     static final int MAXIMO_RODADAS = 6;
@@ -94,7 +105,8 @@ public class AssistenteInternoService {
         AdminUserDO pessoa = adminUserMapper.selectById(userId);
         List<Map<String, Object>> mensagens = new ArrayList<>();
         mensagens.add(Map.of("role", "system", "content", prompt(pessoa == null ? "uma pessoa da equipe" : pessoa.getNickname(),
-                LocalDate.now(), definicoes.stream().map(d -> String.valueOf(((Map<?, ?>) d.get("function")).get("name"))).toList())));
+                LocalDate.now(), definicoes.stream().map(d -> String.valueOf(((Map<?, ?>) d.get("function")).get("name"))).toList())
+                + (Boolean.TRUE.equals(req.getFalada()) ? PROMPT_FALADA : "")));
         for (AssistenteMensagemDO m : anteriores) {
             mensagens.add(Map.of("role", m.getPapel(), "content", m.getConteudo()));
         }
@@ -120,6 +132,30 @@ public class AssistenteInternoService {
         r.setConsultas(consultas);
         r.setErro(erro);
         return r;
+    }
+
+    // ======================================================================================= voz
+
+    public AssistenteVOs.Voz voz() {
+        AssistenteVOs.Voz v = new AssistenteVOs.Voz();
+        v.setIa(iaService.ativo());
+        v.setTranscricao(iaService.transcreve());
+        return v;
+    }
+
+    /** Fala gravada no navegador → texto, pelo provedor de IA com modelo de transcrição. O áudio não é guardado. */
+    public String transcrever(byte[] audio, String nome, String tipo) {
+        if (!iaService.transcreve()) {
+            throw exception(IA_INDISPONIVEL, "nenhum provedor de IA com modelo de transcrição (Atendimento → Inteligência artificial)");
+        }
+        if (audio.length == 0 || audio.length > AUDIO_MAXIMO) {
+            throw exception(AUDIO_INVALIDO);
+        }
+        String texto = iaService.transcrever(audio, nome == null || nome.isBlank() ? "fala.webm" : nome, tipo, null);
+        if (texto == null) {
+            throw exception(IA_INDISPONIVEL, "a transcrição falhou; tente de novo ou digite");
+        }
+        return texto;
     }
 
     /** Laço com o modelo: enquanto ele pedir consultas, executa e devolve os resultados. */

@@ -42,15 +42,15 @@
             }}</el-button>
           </div>
         </div>
-        <div v-for="m in mensagens" :key="m.id" :class="['msg', m.papel, { erro: m.erro }]">
+        <div v-for="(m, i) in mensagens" :key="m.id" :class="['msg', m.papel, { erro: m.erro }]">
           <div v-if="m.papel === 'user'" class="balao">{{ m.conteudo }}</div>
           <div v-else class="balao">
             <div v-dompurify-html="markdown(m.conteudo)" class="md"></div>
             <div v-if="m.consultas?.length" class="consultas">
               <Icon class="mr-4px" icon="ep:search" />Consultou:
               <el-tooltip
-                v-for="(c, i) in m.consultas"
-                :key="i"
+                v-for="(c, j) in m.consultas"
+                :key="j"
                 :content="JSON.stringify(c.argumentos)"
                 placement="top"
               >
@@ -59,6 +59,16 @@
                 }}</el-tag>
               </el-tooltip>
             </div>
+            <el-button
+              v-if="detalheLogs(m.consultas)"
+              class="mt-6px"
+              plain
+              size="small"
+              type="primary"
+              @click="verDetalhes(i)"
+            >
+              <Icon class="mr-4px" icon="ep:data-analysis" />Ver detalhes da pesquisa
+            </el-button>
           </div>
         </div>
         <div v-if="enviando" class="msg assistant">
@@ -87,85 +97,44 @@
 </template>
 
 <script lang="ts" setup>
-import MarkdownIt from 'markdown-it'
 import * as Api from '@/api/assistente'
 import { CONSULTAS } from '@/api/assistente'
+import { EXEMPLOS, detalheLogs, markdown, quando, useConversa } from './conversa'
 
 defineOptions({ name: 'AssistenteInterno' })
 const message = useMessage()
-
-const EXEMPLOS = [
-  'Quantos computadores ainda usam Windows 10?',
-  'Quais máquinas estão com o antivírus desatualizado?',
-  'Resuma a fila do Service Desk',
-  'Quais licenças estão com mais instalações que o comprado?',
-  'Algum link fora do ar agora?'
-]
-
-const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
-const markdown = (t: string) => md.render(t ?? '')
+const router = useRouter()
 
 const sessoes = ref<Api.Sessao[]>([])
-const sessaoId = ref<number>()
-const mensagens = ref<Api.Mensagem[]>([])
 const texto = ref('')
-const enviando = ref(false)
 const rolagem = ref<HTMLElement>()
-
-const quando = (d?: string) =>
-  d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''
 
 const descer = () =>
   nextTick(() => rolagem.value && (rolagem.value.scrollTop = rolagem.value.scrollHeight))
+
+const conversa = useConversa(descer)
+const { sessaoId, mensagens, enviando, abrir } = conversa
 
 const carregarSessoes = async () => {
   sessoes.value = await Api.getSessoes()
 }
 
-const abrir = async (id: number) => {
-  sessaoId.value = id
-  mensagens.value = await Api.getMensagens(id)
-  descer()
-}
-
 const nova = () => {
-  sessaoId.value = undefined
-  mensagens.value = []
+  conversa.nova()
   texto.value = ''
 }
 
 const enviar = async (pergunta?: string) => {
   const t = (pergunta ?? texto.value).trim()
   if (!t || enviando.value) return
+  const antes = sessaoId.value
   texto.value = ''
-  mensagens.value.push({
-    id: -Date.now(),
-    papel: 'user',
-    conteudo: t,
-    criadaEm: new Date().toISOString()
-  })
-  enviando.value = true
-  descer()
-  try {
-    const r = await Api.perguntar(t, sessaoId.value)
-    const nova = sessaoId.value !== r.sessaoId
-    sessaoId.value = r.sessaoId
-    mensagens.value.push({
-      id: -Date.now() - 1,
-      papel: 'assistant',
-      conteudo: r.resposta,
-      erro: r.erro,
-      consultas: r.consultas,
-      criadaEm: new Date().toISOString()
-    })
-    if (nova) carregarSessoes()
-  } catch {
+  const r = await conversa.enviar(t)
+  if (!r) {
     // a mensagem de erro já aparece pelo interceptador; devolve o texto para tentar de novo
-    mensagens.value.pop()
     texto.value = t
-  } finally {
-    enviando.value = false
-    descer()
+  } else if (antes !== r.sessaoId) {
+    carregarSessoes()
   }
 }
 
@@ -177,6 +146,13 @@ const excluir = async (s: Api.Sessao) => {
 }
 
 onMounted(carregarSessoes)
+
+/** Abre a tela "Detalhes da pesquisa" com a consulta de logs da resposta (a pergunta vem da mensagem anterior) */
+const verDetalhes = (i: number) => {
+  const anterior = mensagens.value[i - 1]
+  const destino = detalheLogs(mensagens.value[i].consultas, anterior?.papel === 'user' ? anterior.conteudo : undefined)
+  if (destino) router.push(destino)
+}
 </script>
 
 <style lang="scss" scoped>

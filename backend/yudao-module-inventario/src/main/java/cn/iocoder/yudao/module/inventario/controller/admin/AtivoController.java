@@ -78,6 +78,13 @@ public class AtivoController {
         return success(ativoService.doUsuario(usuarioId));
     }
 
+    @GetMapping("/dos-ips")
+    @Operation(summary = "Ativos com estes IPs (de quem é um IP visto nos logs)")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public CommonResult<List<AtivoVOs.Resp>> dosIps(@RequestParam("ips") List<String> ips) {
+        return success(ativoService.dosIps(ips.stream().limit(100).toList()));
+    }
+
     @PostMapping("/create")
     @Operation(summary = "Cadastrar ativo sem agente")
     @PreAuthorize("@ss.hasPermission('inventario:ativo:update')")

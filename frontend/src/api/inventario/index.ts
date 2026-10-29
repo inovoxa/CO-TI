@@ -193,6 +193,9 @@ export const getAtivosDoUsuario = (usuarioId: number): Promise<Ativo[]> =>
 export const criarAtivo = (data: any): Promise<number> =>
   request.post({ url: '/inventario/ativo/create', data })
 export const atualizarAtivo = (data: any) => request.put({ url: '/inventario/ativo/update', data })
+/** Ativos com estes IPs (o de contato mais recente primeiro) */
+export const getAtivosDosIps = (ips: string[]): Promise<Ativo[]> =>
+  request.get({ url: '/inventario/ativo/dos-ips', params: { ips: ips.join(',') } })
 export const getSoftwares = (params: any) =>
   request.get({ url: '/inventario/ativo/software/page', params })
 export const getPainelAgentes = (): Promise<PainelAgentes> =>

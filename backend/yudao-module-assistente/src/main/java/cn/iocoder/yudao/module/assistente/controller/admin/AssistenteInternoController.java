@@ -9,10 +9,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -33,6 +36,22 @@ public class AssistenteInternoController {
     @RateLimiter(time = 60, count = 20, keyResolver = UserRateLimiterKeyResolver.class)
     public CommonResult<AssistenteVOs.Resposta> perguntar(@Valid @RequestBody AssistenteVOs.PerguntaReq req) {
         return success(assistenteInternoService.perguntar(req, getLoginUserId()));
+    }
+
+    @GetMapping("/voz")
+    @Operation(summary = "O que está disponível para conversar por voz")
+    @PreAuthorize("@ss.hasPermission('assistente:usar')")
+    public CommonResult<AssistenteVOs.Voz> voz() {
+        return success(assistenteInternoService.voz());
+    }
+
+    @PostMapping(value = "/transcrever", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Transcreve a fala gravada (conversa por voz)")
+    @PreAuthorize("@ss.hasPermission('assistente:usar')")
+    @RateLimiter(time = 60, count = 30, keyResolver = UserRateLimiterKeyResolver.class)
+    public CommonResult<String> transcrever(@RequestParam("arquivo") MultipartFile arquivo) throws IOException {
+        return success(assistenteInternoService.transcrever(arquivo.getBytes(), arquivo.getOriginalFilename(),
+                arquivo.getContentType()));
     }
 
     @GetMapping("/sessoes")

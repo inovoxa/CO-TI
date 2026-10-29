@@ -6,6 +6,9 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.AlertaVOs;
+import cn.iocoder.yudao.module.logs.controller.admin.vo.LogsVOs;
+import cn.iocoder.yudao.module.logs.service.ConsultaLogsService;
+import cn.iocoder.yudao.module.logs.service.PainelLogsService;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.AtivoDO;
 import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAtivoMapper;
@@ -101,7 +104,9 @@ public class FerramentasInternas {
     @Resource
     private MonitorUnitMapper monitorUnitMapper;
     @Resource
-    private MonitorFontes.Logs fonteLogs;
+    private ConsultaLogsService consultaLogsService;
+    @Resource
+    private PainelLogsService painelLogsService;
 
     /** Uma ferramenta: nome, o que faz, parâmetros (JSON Schema), permissões (qualquer uma serve; vazio = todos). */
     private record Ferramenta(String nome, String descricao, Map<String, Object> parametros, String[] permissoes,
@@ -223,10 +228,29 @@ public class FerramentasInternas {
                         p("situacao", "string", "problema (fora ou pendente) | fora | pendente | no_ar | manutencao | pausado | todos (padrão)"),
                         p("unidade", "string", "Nome (ou parte) da unidade"), p("limite", "integer", "Padrão 20, máximo 50")),
                 new String[]{"monitoramento:monitor:query"}, this::monitores);
-        registrar("buscar_logs", "Eventos de log centralizados (falhas de logon, bloqueios, erros).",
-                props(p("busca", "string", "Texto a procurar"), p("nivel", "string", "todos | info | aviso | erro | critico"),
-                        p("limite", "integer", "Padrão 30, máximo 80")),
-                new String[]{"system:monitor-logs:query"}, this::logs);
+        // logs: as mesmas consultas dos painéis (contar e ranking dão números exatos; buscar devolve exemplos)
+        registrar("buscar_logs", "Mensagens de log (as mais recentes primeiro), com o total encontrado. Use para ver "
+                        + "exemplos e detalhes; para quantidades use contar_logs e para \"quem mais/quais mais\" use "
+                        + "ranking_logs. " + GUIA_LOGS,
+                props(P_CONSULTA, P_FLUXO, P_PERIODO, P_DE, P_ATE, p("limite", "integer", "Padrão 20, máximo 60")),
+                new String[]{"logs:consultar"}, this::buscarLogs);
+        registrar("contar_logs", "Conta mensagens de log (ou valores distintos de um campo) no período e no período "
+                        + "anterior de mesmo tamanho, para comparar. " + GUIA_LOGS,
+                props(P_CONSULTA, P_FLUXO, P_PERIODO, P_DE, P_ATE,
+                        p("distinto", "string", "Conta valores diferentes deste campo em vez de mensagens (ex.: usuario = "
+                                + "quantas pessoas; srcip = quantos computadores)"), P_MEDIR),
+                new String[]{"logs:consultar"}, this::contarLogs);
+        registrar("ranking_logs", "Valores mais frequentes de um campo nos logs, com a quantidade de cada (ex.: sites mais "
+                        + "acessados, contas com mais falhas de logon, quem mais apagou arquivos), ou os que mais "
+                        + "consumiram banda (medir=bytes). " + GUIA_LOGS,
+                props(p("campo", "string", "Campo agrupado (obrigatório): hostname, srcip, catdesc, usuario, computador, "
+                                + "origem, aplicacao, objeto, compartilhamento, event_id..."),
+                        P_CONSULTA, P_FLUXO, P_PERIODO, P_DE, P_ATE, P_MEDIR,
+                        p("limite", "integer", "Quantos itens. Padrão 10, máximo 50")),
+                new String[]{"logs:consultar"}, this::rankingLogs);
+        registrar("paineis_logs", "Painéis de logs da tela (Contas, Máquinas, Arquivos, Firewall) e a consulta exata de "
+                        + "cada quadro. Use quando a pergunta citar um quadro ou para reaproveitar a consulta dele.",
+                props(), new String[]{"logs:consultar"}, c -> paineisLogs());
     }
 
     // ======================================================================================= catálogo
@@ -869,16 +893,232 @@ public class FerramentasInternas {
         return res;
     }
 
-    private Object logs(Contexto c) {
-        MonitorModuloVOs.ListaVO<MonitorModuloVOs.LogVO> l = fonteLogs.buscarLogs(null, c.texto("nivel"), c.texto("busca"), c.limite(30, 80));
-        return Map.of("total", l.getTotal(), "contagens", l.getContagens(), "resumo", l.getResumo(), "eventos", l.getLista().stream().map(x -> {
+    // ======================================================================================= logs
+
+    private static final String GUIA_LOGS = "Fluxos: firewall (FortiGate: hostname, srcip, dstip, action "
+            + "[passthrough|blocked], catdesc, subtype [webfilter|virus|ips|forward], user), contas (eventos do Windows "
+            + "dos controladores de domínio: event_id 4624 logon, 4625 falha de logon, 4740 conta bloqueada, 4720 "
+            + "criada, 4726 excluída, 4738 modificada, 4723/4724 senha, 4728/4729/4732/4733 grupos; campos usuario, "
+            + "computador, ip_origem, acao), arquivos (servidor de arquivos: acao \"Arquivo apagado\", usuario, objeto, "
+            + "compartilhamento) e maquinas (erros e serviços do Windows e Syslog dos servidores; nivel 0-3 = erro). "
+            + "Contas de computador terminam em $ (exclua com -usuario:*$ para contar pessoas). Ponha na consulta "
+            + "TODOS os critérios da pergunta (o que aconteceu E onde E quem). Exemplos: arquivos apagados na Saúde = "
+            + "acao:\"Arquivo apagado\" AND compartilhamento:*SAUDE* ; sites bloqueados de um IP = action:blocked AND "
+            + "srcip:172.21.1.220 ; falhas de logon de pessoas = event_id:4625 AND -usuario:*$. Os logs não têm a "
+            + "unidade: para uma unidade (ex.: UBS Vila Xavier), primeiro busque as máquinas dela no inventário "
+            + "(buscar_ativos com unidade) para saber a rede e filtre por ela (srcip:10.0.15.* no firewall, "
+            + "ip_origem:10.0.15.* em contas). O ranking por srcip/ip_origem já traz máquina, pessoa e unidade de cada IP: "
+            + "use esses dados como vieram, sem cruzar de novo. Banda (consumo, download, tráfego em GB) só no firewall "
+            + "e com medir=bytes: some os logs de sessão (type:traffic), que trazem os bytes da sessão inteira; o "
+            + "webfilter registra o acesso, não o consumo. Internet = type:traffic AND dstintfrole:wan; de um site ou "
+            + "serviço = type:traffic AND hostname:*netflix* (ou catdesc:\"Streaming Media and Download\"). "
+            + "Acessos (quantas vezes) continuam sendo subtype:webfilter.";
+    private static final Map.Entry<String, Object> P_MEDIR = p("medir", "string", "quantidade (padrão: conta mensagens) | "
+            + "bytes (soma a banda, enviados + recebidos, dos logs do firewall) | sentbyte (só enviados) | rcvdbyte (só recebidos)");
+    private static final Map.Entry<String, Object> P_CONSULTA = p("consulta", "string", "Linguagem do Graylog: "
+            + "campo:valor, campo:\"com espaço\", campo:abc* (curinga), campo:<=3, -campo:valor (excluir), AND, OR, "
+            + "parênteses e texto livre. Ex.: event_id:4740 ; hostname:*youtube* AND action:blocked ; "
+            + "event_id:4625 AND usuario:joao.silva. Vazio = tudo do fluxo");
+    private static final Map.Entry<String, Object> P_FLUXO = p("fluxo", "string", "firewall | contas | maquinas | arquivos (vazio = todos)");
+    private static final Map.Entry<String, Object> P_PERIODO = p("periodo", "string",
+            "hoje (desde a meia-noite) | ontem | 5m | 15m | 30m | 1h | 4h | 12h | 1d (últimas 24 h, padrão) | 2d | 7d | 30d "
+                    + "| tudo. \"Hoje\" é hoje, não as últimas 24 h. Para datas exatas use de/ate (AAAA-MM-DD)");
+    private static final Map.Entry<String, Object> P_DE = p("de", "string", "Início exato (AAAA-MM-DD ou AAAA-MM-DDTHH:MM); substitui o período");
+    private static final Map.Entry<String, Object> P_ATE = p("ate", "string", "Fim exato (padrão: agora)");
+    private static final DateTimeFormatter DATA_HORA_SEG = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+    private LogsVOs.Filtro filtroLogs(Contexto c) {
+        LogsVOs.Filtro f = new LogsVOs.Filtro();
+        f.setConsulta(c.texto("consulta"));
+        f.setFluxo(c.texto("fluxo"));
+        f.setPeriodo(c.texto("periodo") == null ? "1d" : c.texto("periodo"));
+        f.setDe(dataHora(c.texto("de")));
+        f.setAte(dataHora(c.texto("ate")));
+        return f;
+    }
+
+    /** "2026-10-27" ou "2026-10-27T08:00" (horário local) */
+    private static LocalDateTime dataHora(String s) {
+        if (s == null) {
+            return null;
+        }
+        try {
+            return s.length() <= 10 ? java.time.LocalDate.parse(s).atStartOfDay() : LocalDateTime.parse(s.length() == 16 ? s + ":00" : s);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new cn.iocoder.yudao.framework.common.exception.ServiceException(400, "data inválida: " + s + " (use AAAA-MM-DD ou AAAA-MM-DDTHH:MM)");
+        }
+    }
+
+    private static Map<String, Object> periodoUsado(LogsVOs.Filtro f) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (f.getDe() != null) {
+            m.put("de", DATA_HORA.format(f.getDe()));
+            m.put("ate", f.getAte() == null ? "agora" : DATA_HORA.format(f.getAte()));
+        } else {
+            m.put("periodo", f.getPeriodo());
+        }
+        return m;
+    }
+
+    private Object buscarLogs(Contexto c) {
+        LogsVOs.MensagensReq req = new LogsVOs.MensagensReq();
+        req.setFiltro(filtroLogs(c));
+        req.setTamanho(c.limite(20, 60));
+        LogsVOs.Mensagens r = consultaLogsService.mensagens(req);
+        Map<String, Object> out = new LinkedHashMap<>(periodoUsado(req.getFiltro()));
+        out.put("total", r.getTotal() > r.getLimiteTotal() ? "mais de " + r.getLimiteTotal() : r.getTotal());
+        out.put("mensagens", r.getLista().stream().map(m -> {
+            Map<String, Object> x = new LinkedHashMap<>();
+            x.put("quando", DATA_HORA_SEG.format(m.getMomento()));
+            x.put("fluxo", m.getFluxo());
+            x.put("origem", m.getOrigem());
+            x.put("nivel", m.getNivel());
+            // os campos separados dizem mais que o texto bruto (o do FortiGate repete os campos)
+            Map<String, Object> campos = new LinkedHashMap<>(m.getCampos() == null ? Map.of() : m.getCampos());
+            campos.keySet().removeIf(k -> k.matches("(?i)devid|eventtime|tz|logid|vd|sessionid|poluuid|srcuuid|dstuuid|"
+                    + "srcintfrole|dstintfrole|date|time|pid|msgid|SubjectLogonId|TargetLogonId|LogonGuid|ProcessId"));
+            x.put("campos", campos);
+            if (!Objects.equals(m.getFluxo(), "firewall")) {
+                x.put("mensagem", texto(m.getMensagem(), 300));
+            }
+            return x;
+        }).toList());
+        return out;
+    }
+
+    private Object contarLogs(Contexto c) {
+        LogsVOs.ContagemReq req = new LogsVOs.ContagemReq();
+        req.setFiltro(filtroLogs(c));
+        req.setDistinto(c.texto("distinto"));
+        req.setSoma(soma(c));
+        sessoesDeBanda(req.getFiltro(), req.getSoma());
+        LogsVOs.Contagem r = consultaLogsService.contagem(req);
+        Map<String, Object> out = new LinkedHashMap<>(periodoUsado(req.getFiltro()));
+        if (req.getSoma() != null) {
+            out.put("consulta_usada", req.getFiltro().getConsulta());
+            out.put("banda_" + req.getSoma(), bytes(r.getValor()));
+            out.put("bytes", r.getValor());
+            // sem bytes no período anterior não há com o que comparar (o log de sessão pode não estar ligado ainda)
+            if (r.getAnterior() != null && r.getAnterior() > 0) {
+                out.put("periodo_anterior_mesmo_tamanho", bytes(r.getAnterior()));
+            }
+            return out;
+        }
+        out.put(req.getDistinto() == null ? "mensagens" : "valores_distintos_de_" + req.getDistinto(), r.getValor());
+        if (r.getAnterior() != null) {
+            out.put("periodo_anterior_mesmo_tamanho", r.getAnterior());
+        }
+        return out;
+    }
+
+    private Object rankingLogs(Contexto c) {
+        String campo = c.texto("campo");
+        if (campo == null) {
+            return Map.of("erro", "informe o campo do ranking");
+        }
+        LogsVOs.RankingReq req = new LogsVOs.RankingReq();
+        req.setFiltro(filtroLogs(c));
+        req.setCampo(campo);
+        req.setLimite(c.limite(10, 50));
+        req.setSoma(soma(c));
+        sessoesDeBanda(req.getFiltro(), req.getSoma());
+        LogsVOs.Ranking r = consultaLogsService.ranking(req);
+        boolean banda = req.getSoma() != null;
+        Map<String, Object> out = new LinkedHashMap<>(periodoUsado(req.getFiltro()));
+        out.put("campo", campo);
+        if (banda) {
+            out.put("consulta_usada", req.getFiltro().getConsulta());
+            out.put("medida", "banda (" + req.getSoma() + ")");
+            out.put("banda_total", bytes(r.getTotal()));
+        } else {
+            out.put("mensagens_com_o_campo", r.getTotal());
+        }
+        Map<String, AtivoVOs.Resp> donos = CAMPOS_IP.contains(campo) && permissionApi.hasAnyPermissions(c.userId(), "inventario:ativo:query")
+                ? donosDosIps(r.getItens().stream().map(LogsVOs.Item::getValor).toList()) : Map.of();
+        out.put("itens", r.getItens().stream().map(i -> {
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("quando", x.getTs() == null ? null : DATA_HORA.format(Instant.ofEpochMilli(x.getTs()).atZone(ZoneId.systemDefault())));
-            m.put("origem", x.getOrigem());
-            m.put("nivel", x.getNivel());
-            m.put("mensagem", texto(x.getMensagem(), 400));
+            m.put("valor", i.getValor());
+            if (banda) {
+                m.put("banda", bytes(i.getTotal()));
+                m.put("sessoes", i.getMensagens());
+                if (r.getTotal() > 0) {
+                    m.put("percentual", Math.round(i.getTotal() * 1000.0 / r.getTotal()) / 10.0);
+                }
+            } else {
+                m.put("quantidade", i.getTotal());
+            }
+            AtivoVOs.Resp a = donos.get(i.getValor());
+            if (a != null) {  // o cruzamento vem pronto: o modelo erra quando junta as listas sozinho
+                m.put("maquina", a.getNome());
+                putSe(m, "pessoa", a.getUsuarioNome() != null ? a.getUsuarioNome() : a.getUsuarioLogin());
+                putSe(m, "unidade", a.getDeptNome());
+            }
             return m;
         }).toList());
+        if (!donos.isEmpty()) {
+            out.put("observacao", "máquina, pessoa e unidade vêm do inventário atual (quem usa a máquina com esse IP hoje)");
+        }
+        return out;
+    }
+
+    private static final Set<String> CAMPOS_IP = Set.of("srcip", "dstip", "ip", "ip_origem");
+
+    /** medir: bytes | sentbyte | rcvdbyte; quantidade (ou vazio) = contar mensagens */
+    private static String soma(Contexto c) {
+        String m = c.texto("medir");
+        return m == null || m.equalsIgnoreCase("quantidade") ? null
+                : m.equalsIgnoreCase("banda") ? ConsultaLogsService.BYTES : m.strip();
+    }
+
+    /**
+     * Banda vem dos logs de sessão (type:traffic, com os bytes da sessão inteira); o webfilter também traz bytes,
+     * parciais, e somar os dois contaria o mesmo acesso duas vezes. Se a consulta não escolheu o tipo, escolhe aqui.
+     */
+    private static void sessoesDeBanda(LogsVOs.Filtro f, String soma) {
+        if (soma == null) {
+            return;
+        }
+        String q = f.getConsulta() == null ? "" : f.getConsulta();
+        if (!q.matches("(?s).*\\b(sub)?type:.*")) {
+            f.setConsulta(q.isBlank() ? "type:traffic" : "type:traffic AND (" + q + ")");
+        }
+        if (f.getFluxo() == null) {
+            f.setFluxo("firewall");
+        }
+    }
+
+    /** 1536 → "1,5 KB" (base 1024, como o FortiGate mostra) */
+    static String bytes(long n) {
+        String[] u = {"B", "KB", "MB", "GB", "TB", "PB"};
+        double v = n;
+        int i = 0;
+        while (v >= 1024 && i < u.length - 1) {
+            v /= 1024;
+            i++;
+        }
+        return String.format(new java.util.Locale("pt", "BR"), i == 0 ? "%.0f %s" : "%.1f %s", v, u[i]);
+    }
+
+    private Map<String, AtivoVOs.Resp> donosDosIps(List<String> ips) {
+        Map<String, AtivoVOs.Resp> m = new HashMap<>();
+        for (AtivoVOs.Resp a : ativoService.dosIps(ips)) {
+            m.putIfAbsent(a.getIp(), a);
+        }
+        return m;
+    }
+
+    private Object paineisLogs() {
+        return painelLogsService.listar().stream().map(p -> Map.of("painel", p.getNome(), "quadros",
+                p.getWidgets().stream().map(w -> {
+                    Map<String, Object> q = new LinkedHashMap<>();
+                    for (String k : List.of("titulo", "tipo", "fluxo", "consulta", "campo", "distinto", "periodo")) {
+                        Object v = w.get(k);
+                        if (v != null && !v.toString().isBlank()) {
+                            q.put(k, v);
+                        }
+                    }
+                    return q;
+                }).toList())).toList();
     }
 
     // ======================================================================================= apoio

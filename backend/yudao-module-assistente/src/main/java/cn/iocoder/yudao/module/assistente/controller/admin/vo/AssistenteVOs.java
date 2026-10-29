@@ -20,6 +20,16 @@ public final class AssistenteVOs {
         @NotBlank
         @Size(max = 4000)
         private String texto;
+        /** true = a resposta vai ser lida em voz alta (conversa por voz): curta e sem tabelas */
+        private Boolean falada;
+    }
+
+    @Data
+    public static class Voz {
+        /** Há provedor de IA com modelo de transcrição: o áudio gravado vira texto no servidor */
+        private boolean transcricao;
+        /** A IA está ligada (sem ela o assistente não responde) */
+        private boolean ia;
     }
 
     @Data

@@ -9,5 +9,6 @@ public interface ErrorCodeConstants {
 
     ErrorCode SESSAO_NAO_EXISTE = new ErrorCode(1_104_000_000, "Conversa não encontrada");
     ErrorCode IA_INDISPONIVEL = new ErrorCode(1_104_000_001, "O assistente não está disponível: {}");
+    ErrorCode AUDIO_INVALIDO = new ErrorCode(1_104_000_002, "Áudio vazio ou longo demais (até cerca de 2 minutos)");
 
 }
