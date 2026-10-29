@@ -499,9 +499,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="Usuário">
-              <el-select v-model="form.dados.usuarioId" class="w-full" clearable filterable>
-                <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-              </el-select>
+              <UsuarioSelect v-model="form.dados.usuarioId" class="w-full" clearable filterable />
             </el-form-item>
           </el-col>
         </template>
@@ -558,6 +556,7 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Inv from '@/api/inventario'
 import {
   ANTIVIRUS,
@@ -571,7 +570,6 @@ import {
   rotulo
 } from '@/api/inventario'
 import * as DeptApi from '@/api/system/dept'
-import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
 
@@ -593,7 +591,6 @@ const lista = ref<Inv.Ativo[]>([])
 const total = ref(0)
 const contagens = ref<Record<string, number>>({})
 const depts = ref<any[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const q = reactive({
   pageNo: 1,
   pageSize: 20,
@@ -767,9 +764,7 @@ const carregarHistorico = async () => {
   }
 }
 
-const carregarListas = async () => {
-  if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
-}
+const carregarListas = async () => {}
 
 const abrirNovo = async () => {
   form.novo = true

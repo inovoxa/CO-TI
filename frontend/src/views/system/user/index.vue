@@ -1,8 +1,4 @@
 <template>
-  <doc-alert title="Usuários" url="https://doc.iocoder.cn/user-center/" />
-  <doc-alert title="Login externo" url="https://doc.iocoder.cn/social-user/" />
-  <doc-alert title="Importar e exportar Excel" url="https://doc.iocoder.cn/excel-import-and-export/" />
-
   <el-row :gutter="20">
     <!-- 左侧部门树 -->
     <el-col :span="4" :xs="24">

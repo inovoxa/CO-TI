@@ -2,7 +2,12 @@
   <Dialog v-model="visivel" title="Novo chamado" width="900px">
     <el-form ref="formRef" v-loading="carregando" :model="form" :rules="regras" label-width="110px">
       <el-form-item label="Título" prop="titulo">
-        <el-input v-model="form.titulo" maxlength="255" placeholder="Resumo do problema ou do pedido" show-word-limit />
+        <el-input
+          v-model="form.titulo"
+          maxlength="255"
+          placeholder="Resumo do problema ou do pedido"
+          show-word-limit
+        />
       </el-form-item>
       <el-row>
         <el-col :span="12">
@@ -15,8 +20,19 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="Categoria" prop="categoriaId">
-            <el-select v-model="form.categoriaId" class="w-full" clearable filterable placeholder="Selecione">
-              <el-option v-for="c in categorias" :key="c.id" :label="c.nomeCompleto" :value="c.id" />
+            <el-select
+              v-model="form.categoriaId"
+              class="w-full"
+              clearable
+              filterable
+              placeholder="Selecione"
+            >
+              <el-option
+                v-for="c in categorias"
+                :key="c.id"
+                :label="c.nomeCompleto"
+                :value="c.id"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -37,15 +53,24 @@
         <el-col :span="8">
           <el-form-item label="Prioridade">
             <el-select v-model="form.prioridade" class="w-full" clearable placeholder="Automática">
-              <el-option v-for="p in PRIORIDADES" :key="p.valor" :label="p.rotulo" :value="p.valor" />
+              <el-option
+                v-for="p in PRIORIDADES"
+                :key="p.valor"
+                :label="p.rotulo"
+                :value="p.valor"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="Solicitantes">
-            <el-select v-model="form.solicitanteIds" class="w-full" filterable multiple placeholder="Eu mesmo">
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            <UsuarioSelect
+              v-model="form.solicitanteIds"
+              class="w-full"
+              filterable
+              multiple
+              placeholder="Eu mesmo"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -57,14 +82,24 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="Técnicos">
-            <el-select v-model="form.tecnicoIds" class="w-full" filterable multiple placeholder="Pela categoria">
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            <UsuarioSelect
+              v-model="form.tecnicoIds"
+              class="w-full"
+              filterable
+              multiple
+              placeholder="Pela categoria"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="Equipes">
-            <el-select v-model="form.equipeIds" class="w-full" filterable multiple placeholder="Pela categoria">
+            <el-select
+              v-model="form.equipeIds"
+              class="w-full"
+              filterable
+              multiple
+              placeholder="Pela categoria"
+            >
               <el-option v-for="e in equipes" :key="e.id" :label="e.nome" :value="e.id!" />
             </el-select>
           </el-form-item>
@@ -82,9 +117,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as ItsmApi from '@/api/itsm'
 import { ESCALA, PRIORIDADES } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 
 defineOptions({ name: 'ChamadoForm' })
 const emit = defineEmits(['success'])
@@ -96,7 +131,6 @@ const formRef = ref()
 const categorias = ref<ItsmApi.Categoria[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
 const origens = ref<ItsmApi.Origem[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 
 const vazio = () => ({
   titulo: '',
@@ -119,11 +153,10 @@ const open = async () => {
   form.value = vazio()
   carregando.value = true
   try {
-    ;[categorias.value, equipes.value, origens.value, usuarios.value] = await Promise.all([
+    ;[categorias.value, equipes.value, origens.value] = await Promise.all([
       ItsmApi.getCategorias(true),
       ItsmApi.getEquipes(true),
-      ItsmApi.getOrigens(true),
-      UserApi.getSimpleUserList()
+      ItsmApi.getOrigens(true)
     ])
   } finally {
     carregando.value = false

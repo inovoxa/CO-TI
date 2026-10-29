@@ -1,7 +1,7 @@
 <!-- Rota: /operacoes/links · Permissão: system:monitor-links:query -->
 <template>
   <div class="pg">
-    <MonitorHeader titulo="Links e serviços" fonte="Verificações de disponibilidade · Uptime Kuma (/metrics) ou Zabbix" />
+    <MonitorHeader titulo="Links por unidade" fonte="Resumo do Monitoramento, filtrado pela unidade escolhida no mapa" />
 
     <div class="grid-kpi">
       <Kpi label="Monitores no ar" :valor="`${up}/${c.todos || 0}`" :apoio="lentos ? `${lentos} com latência alta` : 'verificação contínua'" :nivel="up === c.todos ? 'ok' : 'warn'" />

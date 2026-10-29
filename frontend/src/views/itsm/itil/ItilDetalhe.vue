@@ -432,15 +432,13 @@
         <el-radio-button value="pessoa">Pessoa</el-radio-button>
         <el-radio-button value="equipe">Equipe</el-radio-button>
       </el-radio-group>
-      <el-select
+      <UsuarioSelect
         v-if="atorDialogo.modo === 'pessoa'"
         v-model="atorDialogo.userId"
         class="w-full"
         filterable
         placeholder="Pessoa"
-      >
-        <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-      </el-select>
+      />
       <el-select
         v-else
         v-model="atorDialogo.equipeId"
@@ -460,15 +458,13 @@
     <Dialog v-model="pedido.visivel" title="Pedir aprovação da mudança" width="460px">
       <el-form label-position="top">
         <el-form-item label="Quem aprova (todos precisam aprovar; uma recusa recusa)">
-          <el-select
+          <UsuarioSelect
             v-model="pedido.aprovadorIds"
             class="w-full"
             filterable
             multiple
             placeholder="Pessoas"
-          >
-            <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="O que precisa ser avaliado">
           <el-input v-model="pedido.comentario" maxlength="2000" type="textarea" />
@@ -485,6 +481,7 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import { ElMessageBox } from 'element-plus'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as ItsmApi from '@/api/itsm'
@@ -499,7 +496,6 @@ import {
   statusItil,
   type ObjetoItil
 } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 import LinhaDoTempo from '../components/LinhaDoTempo.vue'
 
 defineOptions({ name: 'ItilDetalhe' })
@@ -603,7 +599,6 @@ const aprovacoes = ref<ItsmApi.AprovacaoMudanca[]>([])
 const historico = ref<ItsmApi.Historico[]>([])
 const categorias = ref<ItsmApi.Categoria[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const edicao = ref<any>({})
 const editorKey = ref(0)
 const largura = computed(() => (window.innerWidth < 1200 ? '100%' : '75%'))
@@ -701,10 +696,9 @@ const open = async (id: number) => {
   aba.value = 'tempo'
   nova.value = novaVazia()
   await carregar(id)
-  ;[categorias.value, equipes.value, usuarios.value] = await Promise.all([
+  ;[categorias.value, equipes.value] = await Promise.all([
     ItsmApi.getCategorias(true),
-    ItsmApi.getEquipes(true),
-    UserApi.getSimpleUserList()
+    ItsmApi.getEquipes(true)
   ])
 }
 defineExpose({ open })

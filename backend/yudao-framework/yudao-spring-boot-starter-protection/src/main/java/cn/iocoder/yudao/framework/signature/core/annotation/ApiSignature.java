@@ -34,7 +34,7 @@ public @interface ApiSignature {
      *
      * @see GlobalErrorCodeConstants#BAD_REQUEST
      */
-    String message() default "签名不正确"; // 为空时，使用 BAD_REQUEST 错误提示
+    String message() default "Assinatura inválida"; // 为空时，使用 BAD_REQUEST 错误提示
 
     /**
      * 签名字段：appId 应用ID

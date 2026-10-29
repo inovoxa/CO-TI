@@ -40,28 +40,13 @@
       </section>
 
       <!-- 3. links com problema -->
-      <section v-else-if="QUADROS[atual].id === 'links'" class="q-lista">
+      <section v-else class="q-lista">
         <ol>
           <li v-for="l in links" :key="l.id" :class="l.estado === 'down' ? 'n-critico' : 'n-atencao'">
             <time>{{ l.estado === 'down' ? 'FORA' : `${l.latenciaMs} ms` }}</time><b>{{ l.nome }}</b>
             <span class="beats"><i v-for="(b, j) in l.historico" :key="j" :class="b"></i></span>
           </li>
           <li v-if="!links.length" class="vazio ok">Todos os links e serviços no ar.</li>
-        </ol>
-      </section>
-
-      <!-- 4. câmeras e acesso -->
-      <section v-else class="q-cam">
-        <div class="lado lado--grid">
-          <div class="big"><span>Veículos hoje</span><strong>{{ int(cam.veiculosEntraram) }}</strong><em>{{ int(cam.veiculosSairam) }} saíram</em></div>
-          <div class="big" :class="cam.vagas && cam.noEstacionamento / cam.vagas > 0.9 ? 'warn' : ''"><span>Estacionamento</span><strong>{{ int(cam.noEstacionamento) }}/{{ int(cam.vagas) }}</strong><em>vagas ocupadas</em></div>
-          <div class="big"><span>Pessoas no prédio</span><strong>{{ int(cam.funcionarios + cam.visitantes) }}</strong><em>{{ int(cam.funcionarios) }} funcionários · {{ int(cam.visitantes) }} visitantes</em></div>
-          <div class="big" :class="cam.alertas ? 'crit' : ''"><span>Alertas de acesso</span><strong>{{ cam.alertas }}</strong><em>carona na catraca, placa sem cadastro</em></div>
-        </div>
-        <ol class="q-lista__ol">
-          <li v-for="(e, i) in cam.eventos.slice(0, 10)" :key="e.ts + '-' + i" :class="e.alerta ? 'n-critico' : 'n-info'">
-            <time>{{ hora(e.ts) }}</time><b>{{ e.camera }} · {{ store.nomeUnidade(e.unidadeId) }}</b><span>{{ e.texto }}</span>
-          </li>
         </ol>
       </section>
     </main>
@@ -83,7 +68,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import * as Api from '@/api/monitor'
-import type { CameraResumo, Link } from '@/api/monitor'
+import type { Link } from '@/api/monitor'
 import { useMonitorStore } from '@/store/modules/monitor'
 import { useMonitorSocket } from '@/hooks/web/useMonitorSocket'
 import MapaUnidades from '../components/MapaUnidades.vue'
@@ -94,8 +79,7 @@ defineOptions({ name: 'MonitorTelao' })
 const QUADROS = [
   { id: 'mapa', titulo: 'Mapa e situação' },
   { id: 'ocorrencias', titulo: 'Ocorrências' },
-  { id: 'links', titulo: 'Links com problema' },
-  { id: 'cameras', titulo: 'Câmeras e acesso' }
+  { id: 'links', titulo: 'Links com problema' }
 ] as const
 
 const route = useRoute()
@@ -108,7 +92,7 @@ store.carregar()
 const unidades = computed(() => store.unidades)
 const base = computed(() => store.unidades.filter((u) => !store.unidadeId || u.id === store.unidadeId))
 const resumo = computed(() => {
-  let on = 0, off = 0, ch = 0, sla = 0, inc = 0, disp = 0, n = 0
+  let on = 0, off = 0, ch = 0, sla = 0, sOn = 0, sTot = 0, disp = 0, n = 0
   base.value.forEach(({ kpi: k }) => {
     if (!k) return
     n++
@@ -116,14 +100,15 @@ const resumo = computed(() => {
     if (k.link === 'offline') off++
     ch += k.chamadosAbertos
     sla += k.slaVencido
-    inc += k.incidentesSeg
+    sOn += k.servicosNoAr
+    sTot += k.servicosTotal
     disp += k.disponibilidade
   })
   return [
     { l: 'Links online', v: `${on}/${n}`, a: off ? `${off} fora do ar` : 'nenhum fora do ar', n: off ? 'crit' : on < n ? 'warn' : 'ok' },
     { l: 'Disponibilidade 24 h', v: `${dec(n ? disp / n : 100, 2)}%`, a: 'média das unidades', n: '' },
     { l: 'Chamados abertos', v: int(ch), a: `${sla} com SLA vencido`, n: sla ? 'warn' : '' },
-    { l: 'Incidentes de segurança', v: String(inc), a: inc ? 'ver o SOC' : 'nenhum aberto', n: inc ? 'crit' : '' }
+    { l: 'Serviços no ar', v: `${sOn}/${sTot}`, a: sTot - sOn ? `${sTot - sOn} fora do ar` : 'todos no ar', n: sOn < sTot ? 'warn' : sTot ? 'ok' : '' }
   ]
 })
 const ocorrencias = computed(() => {
@@ -133,12 +118,10 @@ const ocorrencias = computed(() => {
 
 // dados dos quadros que vêm de outros módulos (se o perfil do telão não tiver a permissão, o quadro fica vazio)
 const links = ref<Link[]>([])
-const cam = ref<CameraResumo>({ veiculosEntraram: 0, veiculosSairam: 0, noEstacionamento: 0, vagas: 0, funcionarios: 0, visitantes: 0, alertas: 0, cameras: [], eventos: [] })
 async function atualizarQuadro() {
   const id = QUADROS[atual.value].id
   try {
     if (id === 'links') links.value = (await Api.listarLinks({ unidadeId: store.unidadeId, filtro: 'problema' })).lista.slice(0, 12)
-    if (id === 'cameras') cam.value = await Api.resumoCameras({ unidadeId: store.unidadeId })
   } catch (e) {
     console.warn('[telão] quadro sem dados', id, e)
   }
@@ -217,7 +200,6 @@ onBeforeUnmount(() => {
 .q-mapa { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; height: 100%; }
 .mapa { height: 100%; }
 .lado { display: flex; flex-direction: column; gap: 12px; }
-.lado--grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .big {
   padding: 14px 18px; border: 1px solid var(--line); border-top: 4px solid var(--line); border-radius: 10px; background: var(--panel);
   span { display: block; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
@@ -225,15 +207,14 @@ onBeforeUnmount(() => {
   em { display: block; font-size: 15px; font-style: normal; color: var(--muted); }
   &.ok { border-top-color: var(--ok); } &.warn { border-top-color: var(--warn); } &.crit { border-top-color: var(--crit); strong { color: var(--crit); } }
 }
-.q-lista ol, .q-lista__ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.q-lista li, .q-lista__ol li {
+.q-lista ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.q-lista li {
   display: grid; grid-template-columns: 110px 340px minmax(0, 1fr); gap: 16px; align-items: center;
   padding: 12px 16px; border-left: 6px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 20px;
   time { color: var(--muted); font-variant-numeric: tabular-nums; } b { font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   &.n-critico { border-left-color: var(--crit); } &.n-atencao { border-left-color: var(--warn); } &.n-info { border-left-color: var(--ok); }
   &.vazio { display: block; color: var(--muted); &.ok { color: var(--ok); } }
 }
-.q-cam { display: flex; flex-direction: column; gap: 16px; }
 .beats { display: flex; gap: 3px; i { width: 8px; height: 26px; border-radius: 2px; background: var(--line); } i.u { background: var(--ok); } i.p { background: var(--warn); } i.d { background: var(--crit); } }
 .tv__foot {
   position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; opacity: 0.25; transition: opacity 0.3s;
@@ -245,5 +226,5 @@ onBeforeUnmount(() => {
   .barra { position: absolute; left: 0; right: 0; bottom: -10px; height: 3px; background: var(--line); i { display: block; height: 100%; background: #6aa3ff; } }
 }
 @media (prefers-reduced-motion: reduce) { .tv__foot { transition: none; } }
-@media (max-width: 1100px) { .q-mapa { grid-template-columns: 1fr; } .lado--grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .q-lista li { grid-template-columns: 80px 1fr; } }
+@media (max-width: 1100px) { .q-mapa { grid-template-columns: 1fr; } .q-lista li { grid-template-columns: 80px 1fr; } }
 </style>

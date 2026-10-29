@@ -3,7 +3,9 @@
     <el-button v-hasPermi="['itsm:categoria:create']" plain type="primary" @click="abrir()">
       <Icon class="mr-5px" icon="ep:plus" /> Nova categoria
     </el-button>
-    <el-button @click="expandir = !expandir"><Icon class="mr-5px" icon="ep:sort" /> Expandir/recolher</el-button>
+    <el-button @click="expandir = !expandir"
+      ><Icon class="mr-5px" icon="ep:sort" /> Expandir/recolher</el-button
+    >
   </ContentWrap>
 
   <ContentWrap>
@@ -20,12 +22,18 @@
         <template #default="{ row }">{{ responsavel(row) }}</template>
       </el-table-column>
       <el-table-column label="SLA de solução" min-width="160">
-        <template #default="{ row }">{{ slas.find((s) => s.id === row.slaSolucaoId)?.nome || '—' }}</template>
+        <template #default="{ row }">{{
+          slas.find((s) => s.id === row.slaSolucaoId)?.nome || '—'
+        }}</template>
       </el-table-column>
       <el-table-column label="Uso" width="200">
         <template #default="{ row }">
-          <el-tag v-if="row.paraIncidente" class="mr-4px" disable-transitions size="small">Incidente</el-tag>
-          <el-tag v-if="row.paraRequisicao" disable-transitions size="small" type="success">Requisição</el-tag>
+          <el-tag v-if="row.paraIncidente" class="mr-4px" disable-transitions size="small"
+            >Incidente</el-tag
+          >
+          <el-tag v-if="row.paraRequisicao" disable-transitions size="small" type="success"
+            >Requisição</el-tag
+          >
         </template>
       </el-table-column>
       <el-table-column align="center" label="No portal" width="100">
@@ -33,16 +41,27 @@
       </el-table-column>
       <el-table-column align="center" label="Ativa" width="80">
         <template #default="{ row }">
-          <el-tag :type="row.ativo ? 'success' : 'info'" disable-transitions size="small">{{ row.ativo ? 'Sim' : 'Não' }}</el-tag>
+          <el-tag :type="row.ativo ? 'success' : 'info'" disable-transitions size="small">{{
+            row.ativo ? 'Sim' : 'Não'
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column align="center" label="Ações" width="220">
         <template #default="{ row }">
-          <el-button v-hasPermi="['itsm:categoria:update']" link type="primary" @click="abrir(row)">Editar</el-button>
-          <el-button v-hasPermi="['itsm:categoria:create']" link type="primary" @click="abrir(undefined, row.id)">
+          <el-button v-hasPermi="['itsm:categoria:update']" link type="primary" @click="abrir(row)"
+            >Editar</el-button
+          >
+          <el-button
+            v-hasPermi="['itsm:categoria:create']"
+            link
+            type="primary"
+            @click="abrir(undefined, row.id)"
+          >
             Subcategoria
           </el-button>
-          <el-button v-hasPermi="['itsm:categoria:delete']" link type="danger" @click="excluir(row)">Excluir</el-button>
+          <el-button v-hasPermi="['itsm:categoria:delete']" link type="danger" @click="excluir(row)"
+            >Excluir</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -61,29 +80,67 @@
           node-key="id"
         />
       </el-form-item>
-      <el-form-item label="Nome" prop="nome"><el-input v-model="form.nome" maxlength="100" /></el-form-item>
+      <el-form-item label="Nome" prop="nome"
+        ><el-input v-model="form.nome" maxlength="100"
+      /></el-form-item>
       <el-form-item label="Código" prop="codigo">
-        <el-input v-model="form.codigo" maxlength="64" placeholder="Opcional; usado por integrações e formulários" />
+        <el-input
+          v-model="form.codigo"
+          maxlength="64"
+          placeholder="Opcional; usado por integrações e formulários"
+        />
       </el-form-item>
-      <el-form-item label="Descrição"><el-input v-model="form.descricao" maxlength="1000" type="textarea" /></el-form-item>
+      <el-form-item label="Descrição"
+        ><el-input v-model="form.descricao" maxlength="1000" type="textarea"
+      /></el-form-item>
       <el-form-item label="Atribuir à equipe">
-        <el-select v-model="form.equipeId" class="w-full" clearable filterable placeholder="Ninguém">
+        <el-select
+          v-model="form.equipeId"
+          class="w-full"
+          clearable
+          filterable
+          placeholder="Ninguém"
+        >
           <el-option v-for="e in equipes" :key="e.id" :label="e.nome" :value="e.id!" />
         </el-select>
       </el-form-item>
       <el-form-item label="Atribuir ao técnico">
-        <el-select v-model="form.tecnicoId" class="w-full" clearable filterable placeholder="Ninguém">
-          <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-        </el-select>
+        <UsuarioSelect
+          v-model="form.tecnicoId"
+          class="w-full"
+          clearable
+          filterable
+          placeholder="Ninguém"
+        />
       </el-form-item>
       <el-form-item label="SLA de atendimento">
-        <el-select v-model="form.slaAtendimentoId" class="w-full" clearable placeholder="O da prioridade">
-          <el-option v-for="s in slas.filter((x) => x.tipo === 1)" :key="s.id" :label="s.nome" :value="s.id!" />
+        <el-select
+          v-model="form.slaAtendimentoId"
+          class="w-full"
+          clearable
+          placeholder="O da prioridade"
+        >
+          <el-option
+            v-for="s in slas.filter((x) => x.tipo === 1)"
+            :key="s.id"
+            :label="s.nome"
+            :value="s.id!"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="SLA de solução">
-        <el-select v-model="form.slaSolucaoId" class="w-full" clearable placeholder="O da prioridade">
-          <el-option v-for="s in slas.filter((x) => x.tipo === 0)" :key="s.id" :label="s.nome" :value="s.id!" />
+        <el-select
+          v-model="form.slaSolucaoId"
+          class="w-full"
+          clearable
+          placeholder="O da prioridade"
+        >
+          <el-option
+            v-for="s in slas.filter((x) => x.tipo === 0)"
+            :key="s.id"
+            :label="s.nome"
+            :value="s.id!"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="Uso">
@@ -102,9 +159,10 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
+import { garantirUsuarios, nomeUsuario } from '@/hooks/web/useUsuarios'
 import { handleTree } from '@/utils/tree'
 import * as ItsmApi from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 
 defineOptions({ name: 'ItsmCategoria' })
 const message = useMessage()
@@ -113,7 +171,6 @@ const loading = ref(true)
 const lista = ref<ItsmApi.Categoria[]>([])
 const arvore = ref<any[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const slas = ref<ItsmApi.Sla[]>([])
 const expandir = ref(true)
 const mostrar = ref(true)
@@ -138,7 +195,13 @@ const vazio = () => ({
 const form = ref(vazio())
 const regras = {
   nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
-  codigo: [{ pattern: /^[A-Za-z0-9._-]*$/, message: 'Só letras, números, ponto, hífen e sublinhado', trigger: 'blur' }]
+  codigo: [
+    {
+      pattern: /^[A-Za-z0-9._-]*$/,
+      message: 'Só letras, números, ponto, hífen e sublinhado',
+      trigger: 'blur'
+    }
+  ]
 }
 
 watch(expandir, async () => {
@@ -149,8 +212,9 @@ watch(expandir, async () => {
 
 const responsavel = (c: ItsmApi.Categoria) => {
   const partes: string[] = []
-  if (c.equipeId) partes.push(equipes.value.find((e) => e.id === c.equipeId)?.nome || '#' + c.equipeId)
-  if (c.tecnicoId) partes.push(usuarios.value.find((u) => u.id === c.tecnicoId)?.nickname || '#' + c.tecnicoId)
+  if (c.equipeId)
+    partes.push(equipes.value.find((e) => e.id === c.equipeId)?.nome || '#' + c.equipeId)
+  if (c.tecnicoId) partes.push(nomeUsuario(c.tecnicoId))
   return partes.join(' · ') || '—'
 }
 
@@ -158,6 +222,7 @@ const carregar = async () => {
   loading.value = true
   try {
     lista.value = await ItsmApi.getCategorias()
+    garantirUsuarios(lista.value.map((c) => c.tecnicoId))
     arvore.value = handleTree(
       [...lista.value].sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome)),
       'id',
@@ -169,7 +234,9 @@ const carregar = async () => {
 }
 
 const abrir = (c?: ItsmApi.Categoria, parentId?: number) => {
-  form.value = c ? { ...vazio(), ...c, codigo: c.codigo || '' } : { ...vazio(), parentId: parentId ?? 0 }
+  form.value = c
+    ? { ...vazio(), ...c, codigo: c.codigo || '' }
+    : { ...vazio(), parentId: parentId ?? 0 }
   dialogo.value = true
 }
 
@@ -189,9 +256,8 @@ const excluir = async (c: ItsmApi.Categoria) => {
 }
 
 onMounted(async () => {
-  ;[equipes.value, usuarios.value, slas.value] = await Promise.all([
+  ;[equipes.value, slas.value] = await Promise.all([
     ItsmApi.getEquipes(),
-    UserApi.getSimpleUserList(),
     ItsmApi.getSlas().catch(() => [])
   ])
   await carregar()

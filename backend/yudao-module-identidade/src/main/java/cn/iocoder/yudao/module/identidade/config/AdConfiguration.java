@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.identidade.config;
 
+import cn.iocoder.yudao.framework.redis.core.ExecucaoUnica;
 import cn.iocoder.yudao.module.identidade.ad.AdDiretorio;
 import cn.iocoder.yudao.module.identidade.dal.mysql.VinculoAdMapper;
 import cn.iocoder.yudao.module.identidade.service.AdAutenticador;
@@ -13,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
+
+import java.time.Duration;
 
 /**
  * Beans do AD: só existem com {@code coti.ad.habilitado=true}. Sem eles o login usa só contas locais.
@@ -44,21 +47,27 @@ public class AdConfiguration {
     }
 
     @Bean
-    public AdSincronizacaoJob adSincronizacaoJob(AdSincronizacaoService servico) {
-        return new AdSincronizacaoJob(servico);
+    public AdSincronizacaoJob adSincronizacaoJob(AdSincronizacaoService servico, ExecucaoUnica execucaoUnica) {
+        return new AdSincronizacaoJob(servico, execucaoUnica);
     }
 
-    /** Uma instância por vez: com mais de um backend, ligue a sincronização em só um deles (coti.ad.cron-sincronizacao=-). */
+    /** Com mais de um backend, cada vez da sincronização roda em uma instância só (a primeira que chega). */
     public static class AdSincronizacaoJob {
 
         private final AdSincronizacaoService servico;
+        private final ExecucaoUnica execucaoUnica;
 
-        AdSincronizacaoJob(AdSincronizacaoService servico) {
+        AdSincronizacaoJob(AdSincronizacaoService servico, ExecucaoUnica execucaoUnica) {
             this.servico = servico;
+            this.execucaoUnica = execucaoUnica;
         }
 
         @Scheduled(cron = "${coti.ad.cron-sincronizacao:0 */30 * * * *}")
         public void executar() {
+            execucaoUnica.executar("identidade:sincronizacao-ad", Duration.ofMinutes(10), this::sincronizar);
+        }
+
+        private void sincronizar() {
             try {
                 servico.sincronizarTudo();
             } catch (Exception e) {

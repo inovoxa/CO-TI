@@ -364,7 +364,8 @@ const getPictrue = async () => {
     backToken.value = res.repData.token
     secretKey.value = res.repData.secretKey
   } else {
-    tipWords.value = res.repMsg
+    // CO-TI: a mensagem do componente de captcha vem em chinês
+    tipWords.value = 'Não foi possível carregar a verificação. Tente de novo em instantes.'
   }
 }
 </script>

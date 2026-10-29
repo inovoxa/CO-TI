@@ -61,18 +61,4 @@ public interface ErrorCodeConstants {
     // ========== 数据源配置 1-001-007-000 ==========
     ErrorCode DATA_SOURCE_CONFIG_NOT_EXISTS = new ErrorCode(1_001_007_000, "Fonte de dados não encontrada");
     ErrorCode DATA_SOURCE_CONFIG_NOT_OK = new ErrorCode(1_001_007_001, "Não foi possível conectar à fonte de dados");
-
-    // ========== 学生 1-001-201-000 ==========
-    ErrorCode DEMO01_CONTACT_NOT_EXISTS = new ErrorCode(1_001_201_000, "Contato de exemplo não encontrado");
-    ErrorCode DEMO02_CATEGORY_NOT_EXISTS = new ErrorCode(1_001_201_001, "Categoria de exemplo não encontrada");
-    ErrorCode DEMO02_CATEGORY_EXITS_CHILDREN = new ErrorCode(1_001_201_002, "Exclua as subcategorias antes");
-    ErrorCode DEMO02_CATEGORY_PARENT_NOT_EXITS = new ErrorCode(1_001_201_003,"Categoria superior não encontrada");
-    ErrorCode DEMO02_CATEGORY_PARENT_ERROR = new ErrorCode(1_001_201_004, "Uma categoria não pode ser pai dela mesma");
-    ErrorCode DEMO02_CATEGORY_NAME_DUPLICATE = new ErrorCode(1_001_201_005, "Já existe uma categoria com esse nome");
-    ErrorCode DEMO02_CATEGORY_PARENT_IS_CHILD = new ErrorCode(1_001_201_006, "Uma subcategoria não pode virar pai do próprio superior");
-    ErrorCode DEMO03_STUDENT_NOT_EXISTS = new ErrorCode(1_001_201_007, "Aluno não encontrado");
-    ErrorCode DEMO03_COURSE_NOT_EXISTS = new ErrorCode(1_001_201_008, "Curso não encontrado");
-    ErrorCode DEMO03_GRADE_NOT_EXISTS = new ErrorCode(1_001_201_009, "Turma não encontrada");
-    ErrorCode DEMO03_GRADE_EXISTS = new ErrorCode(1_001_201_010, "A turma já existe");
-
 }

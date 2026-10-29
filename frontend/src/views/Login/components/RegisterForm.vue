@@ -143,7 +143,7 @@ const registerRules = {
   password: [
     { required: true, trigger: 'blur', message: 'Digite a sua senha' },
     { min: 5, max: 20, message: 'A senha deve ter de 5 a 20 caracteres', trigger: 'blur' },
-    { pattern: /^[^<>"'|\\]+$/, message: '不能包含非法字符：< > " \' \\\ |', trigger: 'blur' }
+    { pattern: /^[^<>"'|\\]+$/, message: 'Não pode conter os caracteres < > " \' \\\ |', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, trigger: 'blur', message: 'Digite a senha novamente' },

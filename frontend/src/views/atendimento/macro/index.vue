@@ -55,7 +55,7 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item label="Ações">
-        <AcoesEditor v-model="form.dados.acoes" :agentes="usuarios" :etiquetas="etiquetas" />
+        <AcoesEditor v-model="form.dados.acoes" :etiquetas="etiquetas" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -68,7 +68,6 @@
 <script lang="ts" setup>
 import * as Atd from '@/api/atendimento'
 import { ACOES } from '@/api/atendimento'
-import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 import AcoesEditor from '../automacao/AcoesEditor.vue'
 
@@ -80,7 +79,6 @@ const podeTodos = checkPermi(['atendimento:macro:todos'])
 const loading = ref(true)
 const lista = ref<Atd.Macro[]>([])
 const etiquetas = ref<Atd.Etiqueta[]>([])
-const usuarios = ref<{ id: number; nickname: string }[]>([])
 const formRef = ref()
 const form = reactive({ visivel: false, dados: {} as Atd.Macro })
 
@@ -114,10 +112,7 @@ const excluir = async (m: Atd.Macro) => {
 
 onMounted(async () => {
   await carregar()
-  ;[etiquetas.value, usuarios.value] = await Promise.all([
-    Atd.getEtiquetas(),
-    UserApi.getSimpleUserList()
-  ])
+  etiquetas.value = await Atd.getEtiquetas()
 })
 </script>
 

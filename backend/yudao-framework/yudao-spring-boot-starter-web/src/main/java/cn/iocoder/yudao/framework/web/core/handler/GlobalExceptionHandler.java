@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
     /**
      * 忽略的 ServiceException 错误提示，避免打印过多 logger
      */
-    public static final Set<String> IGNORE_ERROR_MESSAGES = SetUtils.asSet("无效的刷新令牌");
+    public static final Set<String> IGNORE_ERROR_MESSAGES = SetUtils.asSet("Sessão inválida: entre novamente");
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     private final String applicationName;
@@ -128,7 +128,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = MissingServletRequestParameterException.class)
     public CommonResult<?> missingServletRequestParameterExceptionHandler(MissingServletRequestParameterException ex) {
         log.warn("[missingServletRequestParameterExceptionHandler]", ex);
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数缺失:%s", ex.getParameterName()));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Parâmetro obrigatório ausente: %s", ex.getParameterName()));
     }
 
     /**
@@ -139,7 +139,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public CommonResult<?> methodArgumentTypeMismatchExceptionHandler(MethodArgumentTypeMismatchException ex) {
         log.warn("[methodArgumentTypeMismatchExceptionHandler]", ex);
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数类型错误:%s", ex.getMessage()));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Parâmetro com tipo inválido: %s", ex.getMessage()));
     }
 
     /**
@@ -164,7 +164,7 @@ public class GlobalExceptionHandler {
         if (StrUtil.isEmpty(errorMessage)) {
             return CommonResult.error(BAD_REQUEST);
         }
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数不正确:%s", errorMessage));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Dados inválidos: %s", errorMessage));
     }
 
     /**
@@ -175,7 +175,7 @@ public class GlobalExceptionHandler {
         log.warn("[handleBindException]", ex);
         FieldError fieldError = ex.getFieldError();
         assert fieldError != null; // 断言，避免告警
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数不正确:%s", fieldError.getDefaultMessage()));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Dados inválidos: %s", fieldError.getDefaultMessage()));
     }
 
     /**
@@ -189,10 +189,10 @@ public class GlobalExceptionHandler {
         log.warn("[methodArgumentTypeInvalidFormatExceptionHandler]", ex);
         if (ex.getCause() instanceof InvalidFormatException) {
             InvalidFormatException invalidFormatException = (InvalidFormatException) ex.getCause();
-            return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数类型错误:%s", invalidFormatException.getValue()));
+            return CommonResult.error(BAD_REQUEST.getCode(), String.format("Parâmetro com tipo inválido: %s", invalidFormatException.getValue()));
         }
         if (StrUtil.startWith(ex.getMessage(), "Required request body is missing")) {
-            return CommonResult.error(BAD_REQUEST.getCode(), "请求参数类型错误: request body 缺失");
+            return CommonResult.error(BAD_REQUEST.getCode(), "Requisição sem corpo (request body)");
         }
         return defaultExceptionHandler(ServletUtils.getRequest(), ex);
     }
@@ -204,7 +204,7 @@ public class GlobalExceptionHandler {
     public CommonResult<?> constraintViolationExceptionHandler(ConstraintViolationException ex) {
         log.warn("[constraintViolationExceptionHandler]", ex);
         ConstraintViolation<?> constraintViolation = ex.getConstraintViolations().iterator().next();
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数不正确:%s", constraintViolation.getMessage()));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Dados inválidos: %s", constraintViolation.getMessage()));
     }
 
     /**
@@ -222,7 +222,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public CommonResult<?> maxUploadSizeExceededExceptionHandler(MaxUploadSizeExceededException ex) {
-        return CommonResult.error(BAD_REQUEST.getCode(), "上传文件过大，请调整后重试");
+        return CommonResult.error(BAD_REQUEST.getCode(), "Arquivo grande demais: reduza o tamanho e tente de novo");
     }
 
     /**
@@ -235,7 +235,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public CommonResult<?> noHandlerFoundExceptionHandler(NoHandlerFoundException ex) {
         log.warn("[noHandlerFoundExceptionHandler]", ex);
-        return CommonResult.error(NOT_FOUND.getCode(), String.format("请求地址不存在:%s", ex.getRequestURL()));
+        return CommonResult.error(NOT_FOUND.getCode(), String.format("Endereço não encontrado: %s", ex.getRequestURL()));
     }
 
     /**
@@ -244,7 +244,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     private CommonResult<?> noResourceFoundExceptionHandler(HttpServletRequest req, NoResourceFoundException ex) {
         log.warn("[noResourceFoundExceptionHandler]", ex);
-        return CommonResult.error(NOT_FOUND.getCode(), String.format("请求地址不存在:%s", ex.getResourcePath()));
+        return CommonResult.error(NOT_FOUND.getCode(), String.format("Endereço não encontrado: %s", ex.getResourcePath()));
     }
 
     /**
@@ -255,7 +255,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public CommonResult<?> httpRequestMethodNotSupportedExceptionHandler(HttpRequestMethodNotSupportedException ex) {
         log.warn("[httpRequestMethodNotSupportedExceptionHandler]", ex);
-        return CommonResult.error(METHOD_NOT_ALLOWED.getCode(), String.format("请求方法不正确:%s", ex.getMessage()));
+        return CommonResult.error(METHOD_NOT_ALLOWED.getCode(), String.format("Método HTTP não permitido: %s", ex.getMessage()));
     }
 
     /**
@@ -266,7 +266,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public CommonResult<?> httpMediaTypeNotSupportedExceptionHandler(HttpMediaTypeNotSupportedException ex) {
         log.warn("[httpMediaTypeNotSupportedExceptionHandler]", ex);
-        return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求类型不正确:%s", ex.getMessage()));
+        return CommonResult.error(BAD_REQUEST.getCode(), String.format("Tipo de conteúdo não suportado: %s", ex.getMessage()));
     }
 
     /**
@@ -276,7 +276,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(value = AccessDeniedException.class)
     public CommonResult<?> accessDeniedExceptionHandler(HttpServletRequest req, AccessDeniedException ex) {
-        log.warn("[accessDeniedExceptionHandler][userId({}) 无法访问 url({})]", WebFrameworkUtils.getLoginUserId(req),
+        log.warn("[accessDeniedExceptionHandler][userId({}) sem acesso à url({})]", WebFrameworkUtils.getLoginUserId(req),
                 req.getRequestURL(), ex);
         return CommonResult.error(FORBIDDEN);
     }
@@ -355,7 +355,7 @@ public class GlobalExceptionHandler {
             // 执行插入 errorLog
             apiErrorLogApi.createApiErrorLogAsync(errorLog);
         } catch (Throwable th) {
-            log.error("[createExceptionLog][url({}) log({}) 发生异常]", req.getRequestURI(),  JsonUtils.toJsonString(errorLog), th);
+            log.error("[createExceptionLog][url({}) log({}) falhou]", req.getRequestURI(),  JsonUtils.toJsonString(errorLog), th);
         }
     }
 
@@ -369,7 +369,7 @@ public class GlobalExceptionHandler {
         errorLog.setExceptionRootCauseMessage(ExceptionUtil.getRootCauseMessage(e));
         errorLog.setExceptionStackTrace(ExceptionUtil.stacktraceToString(e));
         StackTraceElement[] stackTraceElements = e.getStackTrace();
-        Assert.notEmpty(stackTraceElements, "异常 stackTraceElements 不能为空");
+        Assert.notEmpty(stackTraceElements, "stackTraceElements da exceção não pode ser vazio");
         StackTraceElement stackTraceElement = stackTraceElements[0];
         errorLog.setExceptionClassName(stackTraceElement.getClassName());
         errorLog.setExceptionFileName(stackTraceElement.getFileName());
@@ -402,99 +402,99 @@ public class GlobalExceptionHandler {
         }
         // 1. 工作流
         if (message.contains("bpm_")) {
-            log.error("[工作流模块 yudao-module-bpm - 表结构未导入][参考 https://cloud.iocoder.cn/bpm/ 开启]");
+            log.error("[Módulo yudao-module-bpm desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[工作流模块 yudao-module-bpm - 表结构未导入][参考 https://cloud.iocoder.cn/bpm/ 开启]");
+                    "[Módulo yudao-module-bpm desativado no CO-TI: tabelas não importadas]");
         }
         // 2. 支付平台
         if (message.contains("pay_")) {
-            log.error("[支付模块 yudao-module-pay - 表结构未导入][参考 https://cloud.iocoder.cn/pay/build/ 开启]");
+            log.error("[Módulo yudao-module-pay desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[支付模块 yudao-module-pay - 表结构未导入][参考 https://cloud.iocoder.cn/pay/build/ 开启]");
+                    "[Módulo yudao-module-pay desativado no CO-TI: tabelas não importadas]");
         }
         // 3. 数据报表
         if (message.contains("report_")) {
-            log.error("[报表模块 yudao-module-report - 表结构未导入][参考 https://cloud.iocoder.cn/report/ 开启]");
+            log.error("[Módulo yudao-module-report desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[报表模块 yudao-module-report - 表结构未导入][参考 https://cloud.iocoder.cn/report/ 开启]");
+                    "[Módulo yudao-module-report desativado no CO-TI: tabelas não importadas]");
         }
         // 4. 微信公众号
         if (message.contains("mp_")) {
-            log.error("[微信公众号 yudao-module-mp - 表结构未导入][参考 https://cloud.iocoder.cn/mp/build/ 开启]");
+            log.error("[Módulo yudao-module-mp desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[微信公众号 yudao-module-mp - 表结构未导入][参考 https://cloud.iocoder.cn/mp/build/ 开启]");
+                    "[Módulo yudao-module-mp desativado no CO-TI: tabelas não importadas]");
         }
         // 5. 商城系统
         if (StrUtil.containsAny(message, "product_", "promotion_", "trade_")) {
-            log.error("[商城系统 yudao-module-mall - 表结构未导入][参考 https://cloud.iocoder.cn/mall/build/ 开启]");
+            log.error("[Módulo yudao-module-mall desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[商城系统 yudao-module-mall - 表结构未导入][参考 https://cloud.iocoder.cn/mall/build/ 开启]");
+                    "[Módulo yudao-module-mall desativado no CO-TI: tabelas não importadas]");
         }
         // 6. ERP 系统
         if (message.contains("erp_")) {
-            log.error("[ERP 系统 yudao-module-erp - 表结构未导入][参考 https://cloud.iocoder.cn/erp/build/ 开启]");
+            log.error("[Módulo yudao-module-erp desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[ERP 系统 yudao-module-erp - 表结构未导入][参考 https://cloud.iocoder.cn/erp/build/ 开启]");
+                    "[Módulo yudao-module-erp desativado no CO-TI: tabelas não importadas]");
         }
         // 7. WMS 仓库管理系统
         if (message.contains("wms_")) {
-            log.error("[WMS 仓库管理系统 yudao-module-wms - 表结构未导入][参考 https://doc.iocoder.cn/wms/build/ 开启]");
+            log.error("[Módulo yudao-module-wms desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[WMS 仓库管理系统 yudao-module-wms - 表结构未导入][参考 https://doc.iocoder.cn/wms/build/ 开启]");
+                    "[Módulo yudao-module-wms desativado no CO-TI: tabelas não importadas]");
         }
         // 8. CRM 系统
         if (message.contains("crm_")) {
-            log.error("[CRM 系统 yudao-module-crm - 表结构未导入][参考 https://cloud.iocoder.cn/crm/build/ 开启]");
+            log.error("[Módulo yudao-module-crm desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[CRM 系统 yudao-module-crm - 表结构未导入][参考 https://cloud.iocoder.cn/crm/build/ 开启]");
+                    "[Módulo yudao-module-crm desativado no CO-TI: tabelas não importadas]");
         }
         // 9. MES 系统
         if (message.contains("mes_")) {
-            log.error("[MES 系统 yudao-module-mes - 表结构未导入][参考 https://doc.iocoder.cn/mes/build/ 开启]");
+            log.error("[Módulo yudao-module-mes desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[MES 系统 yudao-module-mes - 表结构未导入][参考 https://doc.iocoder.cn/mes/build/ 开启]");
+                    "[Módulo yudao-module-mes desativado no CO-TI: tabelas não importadas]");
         }
         // 10. HRM 人力资源管理系统
         if (message.contains("hrm_")) {
-            log.error("[HRM 人力资源管理系统 yudao-module-hrm - 表结构未导入][参考 https://doc.iocoder.cn/hrm/build/ 开启]");
+            log.error("[Módulo yudao-module-hrm desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[HRM 人力资源管理系统 yudao-module-hrm - 表结构未导入][参考 https://doc.iocoder.cn/hrm/build/ 开启]");
+                    "[Módulo yudao-module-hrm desativado no CO-TI: tabelas não importadas]");
         }
         // 11. FMS 财务管理系统
         if (message.contains("fms_")) {
-            log.error("[FMS 财务管理系统 yudao-module-fms - 表结构未导入][参考 https://doc.iocoder.cn/fms/build/ 开启]");
+            log.error("[Módulo yudao-module-fms desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[FMS 财务管理系统 yudao-module-fms - 表结构未导入][参考 https://doc.iocoder.cn/fms/build/ 开启]");
+                    "[Módulo yudao-module-fms desativado no CO-TI: tabelas não importadas]");
         }
         // 12. PMS 项目管理系统
         if (message.contains("pms_")) {
-            log.error("[PMS 项目管理系统 yudao-module-pms - 表结构未导入][参考 https://doc.iocoder.cn/pms/build/ 开启]");
+            log.error("[Módulo yudao-module-pms desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[PMS 项目管理系统 yudao-module-pms - 表结构未导入][参考 https://doc.iocoder.cn/pms/build/ 开启]");
+                    "[Módulo yudao-module-pms desativado no CO-TI: tabelas não importadas]");
         }
         // 13. OA 协同办公
         if (message.contains("oa_")) {
-            log.error("[OA 协同办公 yudao-module-oa - 表结构未导入][参考 https://doc.iocoder.cn/oa/build/ 开启]");
+            log.error("[Módulo yudao-module-oa desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[OA 协同办公 yudao-module-oa - 表结构未导入][参考 https://doc.iocoder.cn/oa/build/ 开启]");
+                    "[Módulo yudao-module-oa desativado no CO-TI: tabelas não importadas]");
         }
         // 14. AI 大模型
         if (message.contains("ai_")) {
-            log.error("[AI 大模型 yudao-module-ai - 表结构未导入][参考 https://cloud.iocoder.cn/ai/build/ 开启]");
+            log.error("[Módulo yudao-module-ai desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[AI 大模型 yudao-module-ai - 表结构未导入][参考 https://cloud.iocoder.cn/ai/build/ 开启]");
+                    "[Módulo yudao-module-ai desativado no CO-TI: tabelas não importadas]");
         }
         // 15. IoT 物联网
         if (message.contains("iot_")) {
-            log.error("[IoT 物联网 yudao-module-iot - 表结构未导入][参考 https://doc.iocoder.cn/iot/build/ 开启]");
+            log.error("[Módulo yudao-module-iot desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[IoT 物联网 yudao-module-iot - 表结构未导入][参考 https://doc.iocoder.cn/iot/build/ 开启]");
+                    "[Módulo yudao-module-iot desativado no CO-TI: tabelas não importadas]");
         }
         // 16. IM 即时通讯
         if (message.contains("im_")) {
-            log.error("[IM 即时通讯 yudao-module-im - 表结构未导入][参考 https://doc.iocoder.cn/im/build/ 开启]");
+            log.error("[Módulo yudao-module-im desativado no CO-TI: tabelas não importadas]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
-                    "[IM 即时通讯 yudao-module-im - 表结构未导入][参考 https://doc.iocoder.cn/im/build/ 开启]");
+                    "[Módulo yudao-module-im desativado no CO-TI: tabelas não importadas]");
         }
         return null;
     }

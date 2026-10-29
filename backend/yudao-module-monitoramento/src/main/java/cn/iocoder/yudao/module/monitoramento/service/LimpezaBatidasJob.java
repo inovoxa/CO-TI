@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
+import cn.iocoder.yudao.framework.redis.core.ExecucaoUnica;
 import cn.iocoder.yudao.module.monitoramento.config.MonitoramentoProperties;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorMapper;
 import jakarta.annotation.Resource;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -21,9 +23,15 @@ public class LimpezaBatidasJob {
     private MonMonitorMapper monMonitorMapper;
     @Resource
     private MonitoramentoProperties monitoramentoProperties;
+    @Resource
+    private ExecucaoUnica execucaoUnica;
 
     @Scheduled(cron = "0 17 3 * * *")
     public void limpar() {
+        execucaoUnica.executar("monitoramento:retencao", Duration.ofHours(1), this::limparAgora);
+    }
+
+    private void limparAgora() {
         try {
             LocalDateTime agora = LocalDateTime.now();
             int pedacos = monMonitorMapper.apagarBatidasAntigas(agora.minusDays(Math.max(1, monitoramentoProperties.getRetencaoDias())));

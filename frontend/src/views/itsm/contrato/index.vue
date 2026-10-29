@@ -276,9 +276,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="Responsável">
-            <el-select v-model="form.dados.responsavelId" class="w-full" clearable filterable>
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            <UsuarioSelect v-model="form.dados.responsavelId" class="w-full" clearable filterable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -323,10 +321,10 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import { ElMessageBox } from 'element-plus'
 import * as Gov from '@/api/itsm/governanca'
 import { RENOVACOES, SITUACOES_CONTRATO, cor, data, reais } from '@/api/itsm/governanca'
-import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import { defaultProps, handleTree } from '@/utils/tree'
 import { dateFormatter } from '@/utils/formatTime'
@@ -358,7 +356,6 @@ const loading = ref(true)
 const lista = ref<Gov.Contrato[]>([])
 const total = ref(0)
 const fornecedores = ref<Gov.Resumo[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const depts = ref<any[]>([])
 const q = reactive({ pageNo: 1, pageSize: 20, busca: '', situacao: '', fornecedorId: undefined })
 const detalhe = reactive({ visivel: false, c: undefined as Gov.Contrato | undefined })
@@ -402,11 +399,8 @@ const abrirForm = async (c?: Gov.Contrato) => {
         encerrado: false
       }
   form.visivel = true
-  if (!usuarios.value.length) {
-    ;[usuarios.value, depts.value] = await Promise.all([
-      UserApi.getSimpleUserList(),
-      DeptApi.getSimpleDeptList().then(handleTree)
-    ])
+  if (!depts.value.length) {
+    depts.value = await DeptApi.getSimpleDeptList().then(handleTree)
   }
 }
 

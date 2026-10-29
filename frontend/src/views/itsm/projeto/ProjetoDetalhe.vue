@@ -225,16 +225,17 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="Responsável">
-              <el-select v-model="form.dados.responsavelId" class="w-full" clearable filterable>
-                <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-              </el-select>
+              <UsuarioSelect
+                v-model="form.dados.responsavelId"
+                class="w-full"
+                clearable
+                filterable
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="Equipe">
-              <el-select v-model="form.dados.membroIds" class="w-full" filterable multiple>
-                <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-              </el-select>
+              <UsuarioSelect v-model="form.dados.membroIds" class="w-full" filterable multiple />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -309,9 +310,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="Responsável">
-          <el-select v-model="tarefa.dados.responsavelId" class="w-full" clearable filterable>
-            <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-          </el-select>
+          <UsuarioSelect v-model="tarefa.dados.responsavelId" class="w-full" clearable filterable />
         </el-form-item>
         <el-form-item label="Previsto">
           <el-date-picker
@@ -390,10 +389,10 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Gov from '@/api/itsm/governanca'
 import { SITUACOES_PROJETO, SITUACOES_TAREFA, cor, data, reais } from '@/api/itsm/governanca'
 import { PRIORIDADES } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import { defaultProps, handleTree } from '@/utils/tree'
 import CustosTabela from '../governanca/CustosTabela.vue'
@@ -413,7 +412,6 @@ const largura = computed(() => (window.innerWidth < 1200 ? '100%' : '75%'))
 const visivel = ref(false)
 const aba = ref('gantt')
 const p = ref<Gov.Projeto>()
-const usuarios = ref<UserApi.UserVO[]>([])
 const orcamentos = ref<Gov.Resumo[]>([])
 const depts = ref<any[]>([])
 const formRef = ref()
@@ -455,9 +453,8 @@ const link = (v: Gov.VinculoProjeto) =>
     : `/servicedesk/${v.objeto === 'problema' ? 'problemas' : 'mudancas'}?id=${v.objetoId}`
 
 const listas = async () => {
-  if (!usuarios.value.length) {
-    ;[usuarios.value, orcamentos.value, depts.value] = await Promise.all([
-      UserApi.getSimpleUserList(),
+  if (!depts.value.length) {
+    ;[orcamentos.value, depts.value] = await Promise.all([
       Gov.getOrcamentosSimples().catch(() => []),
       DeptApi.getSimpleDeptList().then(handleTree)
     ])

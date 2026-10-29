@@ -3,6 +3,8 @@ import { computed, defineComponent, unref } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 import { Backtop } from '@/components/Backtop'
 import { Setting } from '@/layout/components/Setting'
+import AssistenteFlutuante from '@/components/AssistenteFlutuante/index.vue'
+import { checkPermi } from '@/utils/permission'
 import { useRenderLayout } from './components/useRenderLayout'
 import { useDesign } from '@/hooks/web/useDesign'
 import { getLayoutRenderMode } from '@/utils/layout'
@@ -68,6 +70,8 @@ export default defineComponent({
         <Backtop></Backtop>
 
         <Setting></Setting>
+
+        {checkPermi(['assistente:usar']) ? <AssistenteFlutuante /> : undefined}
       </section>
     )
   }

@@ -123,8 +123,6 @@ const copyConfig = async () => {
       locale: ${appStore.getLocale},
       // ícone de mensagens
       message: ${appStore.getMessage},
-      // ícone do chat
-      im: ${appStore.getIm},
       // abas
       tagsView: ${appStore.getTagsView},
       // abas imersivas

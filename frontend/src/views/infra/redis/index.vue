@@ -1,7 +1,4 @@
 <template>
-  <doc-alert title="Cache Redis" url="https://doc.iocoder.cn/redis-cache/" />
-  <doc-alert title="Cache local" url="https://doc.iocoder.cn/local-cache/" />
-
   <el-scrollbar height="calc(100vh - 88px - 40px - 50px)">
     <el-row>
       <!-- 基本信息 -->

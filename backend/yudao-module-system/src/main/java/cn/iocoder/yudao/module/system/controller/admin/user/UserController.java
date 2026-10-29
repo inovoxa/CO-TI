@@ -143,6 +143,23 @@ public class UserController {
         return success(UserConvert.INSTANCE.convertSimpleList(list, deptMap));
     }
 
+    /**
+     * CO-TI: para os campos de pessoa, no lugar de baixar todos os usuários. Com {@code ids}, devolve esses usuários
+     * (inclusive desativados, para mostrar o nome de quem já estava escolhido); com {@code nome}, os ativos que contêm
+     * o trecho no nome ou no login.
+     */
+    @GetMapping("/buscar")
+    @Operation(summary = "Buscar usuários por nome ou login (no máximo 30)")
+    public CommonResult<List<UserSimpleRespVO>> buscarUsuarios(
+            @RequestParam(value = "nome", required = false) String nome,
+            @RequestParam(value = "ids", required = false) List<Long> ids) {
+        List<AdminUserDO> list = CollUtil.isNotEmpty(ids)
+                ? userService.getUserList(ids.size() > 200 ? ids.subList(0, 200) : ids)
+                : userService.buscarUsuarios(nome, 30);
+        Map<Long, DeptDO> deptMap = deptService.getDeptMap(convertList(list, AdminUserDO::getDeptId));
+        return success(UserConvert.INSTANCE.convertSimpleList(list, deptMap));
+    }
+
     @GetMapping("/get")
     @Operation(summary = "获得用户详情")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")

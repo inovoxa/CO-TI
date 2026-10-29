@@ -31,6 +31,9 @@ const props = defineProps({
   notMerge: propTypes.bool.def(false)
 })
 
+// CO-TI: clique nos elementos do gráfico (ex.: barra do histograma de logs)
+const emit = defineEmits<{ (e: 'click', params: any): void }>()
+
 const isDark = computed(() => appStore.getIsDark)
 
 const theme = computed(() => {
@@ -65,6 +68,7 @@ const initChart = () => {
   if (unref(elRef) && props.options) {
     echartRef = echarts.init(unref(elRef) as HTMLElement)
     echartRef?.setOption(unref(options), props.notMerge)
+    echartRef?.on('click', (p) => emit('click', p))
   }
 }
 
@@ -93,8 +97,16 @@ const contentResizeHandler = async (e: TransitionEvent) => {
   }
 }
 
+// CO-TI: acompanha o tamanho do próprio contêiner (quadros que mudam de largura ou abrem em tela cheia)
+let observador: ResizeObserver | undefined
+
 onMounted(() => {
   initChart()
+
+  if (typeof ResizeObserver !== 'undefined' && unref(elRef)) {
+    observador = new ResizeObserver(() => resizeHandler())
+    observador.observe(unref(elRef) as HTMLElement)
+  }
 
   window.addEventListener('resize', resizeHandler)
 
@@ -104,6 +116,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  observador?.disconnect()
   window.removeEventListener('resize', resizeHandler)
   unref(contentEl) &&
     (unref(contentEl) as Element).removeEventListener('transitionend', contentResizeHandler)

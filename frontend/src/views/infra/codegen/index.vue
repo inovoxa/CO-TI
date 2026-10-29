@@ -1,9 +1,4 @@
 <template>
-  <doc-alert title="Gerar código (tabela simples)" url="https://doc.iocoder.cn/new-feature/" />
-  <doc-alert title="Gerar código (árvore)" url="https://doc.iocoder.cn/new-feature/tree/" />
-  <doc-alert title="Gerar código (mestre/detalhe)" url="https://doc.iocoder.cn/new-feature/master-sub/" />
-  <doc-alert title="Teste unitário" url="https://doc.iocoder.cn/unit-test/" />
-
   <!-- 搜索 -->
   <ContentWrap>
     <el-form

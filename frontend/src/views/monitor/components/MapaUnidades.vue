@@ -30,8 +30,8 @@ function popup(u: MonitorUnit) {
   if (!k) return `<b>${u.name}</b><br>${u.city || ''}`
   return `<b>${u.name}</b><br><small>${u.city || ''}</small><br>` +
     `Link: ${LINK[k.link]}${k.link !== 'offline' ? ` · ${k.latenciaMs} ms` : ''}<br>` +
-    `Servidores: ${k.hostsOnline}/${k.hostsTotal} · ${k.temperaturaC.toFixed(1)} °C<br>` +
-    `Chamados: ${k.chamadosAbertos} (${k.slaVencido} SLA vencido) · Incidentes: ${k.incidentesSeg}`
+    `Serviços no ar: ${k.servicosNoAr}/${k.servicosTotal}<br>` +
+    `Chamados: ${k.chamadosAbertos} (${k.slaVencido} SLA vencido)`
 }
 
 function desenhar() {

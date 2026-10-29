@@ -1,8 +1,4 @@
 <template>
-  <doc-alert title="Tarefas agendadas" url="https://doc.iocoder.cn/job/" />
-  <doc-alert title="Tarefas assíncronas" url="https://doc.iocoder.cn/async-task/" />
-  <doc-alert title="Fila de mensagens" url="https://doc.iocoder.cn/message-queue/" />
-
   <ContentWrap>
     <!-- 搜索工作栏 -->
     <el-form

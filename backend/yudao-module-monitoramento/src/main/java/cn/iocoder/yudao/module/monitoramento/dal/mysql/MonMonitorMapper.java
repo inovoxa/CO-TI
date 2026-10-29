@@ -59,7 +59,8 @@ public interface MonMonitorMapper extends BaseMapperX<MonitorDO> {
             + " FROM monitor.batida WHERE monitor_id = #{monitorId} AND momento > #{desde} GROUP BY 1 ORDER BY 1")
     List<Map<String, Object>> serie(@Param("monitorId") Long monitorId, @Param("desde") LocalDateTime desde, @Param("intervalo") String intervalo);
 
-    @Select("SELECT count(*) FROM drop_chunks('monitor.batida', older_than => CAST(#{limite} AS timestamp))")
+    // função dona da tabela (V45): drop_chunks exige ser dono, e a aplicação conecta como coti_app
+    @Select("SELECT public.coti_apagar_pedacos('monitor.batida', CAST(#{limite} AS timestamp))")
     int apagarBatidasAntigas(@Param("limite") LocalDateTime limite);
 
     @Delete("DELETE FROM monitor.batida_hora WHERE hora < #{limite}")

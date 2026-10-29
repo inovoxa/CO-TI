@@ -733,9 +733,12 @@ public class ConversaService {
         int n = 0;
         for (ConversaDO c : conversaMapper.selectList(new LambdaQueryWrapperX<ConversaDO>().eq(ConversaDO::getStatus, ConversaStatus.ADIADA.getCodigo())
                 .le(ConversaDO::getAdiadaAte, LocalDateTime.now()))) {
-            conversaMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<ConversaDO>()
+            // só quem de fato mudou o status registra a reabertura (outra instância pode ter chegado antes)
+            if (conversaMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<ConversaDO>()
                     .eq(ConversaDO::getId, c.getId()).eq(ConversaDO::getStatus, ConversaStatus.ADIADA.getCodigo())
-                    .set(ConversaDO::getStatus, ConversaStatus.ABERTA.getCodigo()).set(ConversaDO::getAdiadaAte, null));
+                    .set(ConversaDO::getStatus, ConversaStatus.ABERTA.getCodigo()).set(ConversaDO::getAdiadaAte, null)) != 1) {
+                continue;
+            }
             atividade(c, "O prazo de adiamento acabou: conversa reaberta");
             publicar("conversa", c.getId(), null);
             n++;

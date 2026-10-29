@@ -62,15 +62,13 @@
       </el-form-item>
       <template v-if="form.dados.tipo === 'email'">
         <el-form-item label="Pessoas">
-          <el-select
+          <UsuarioSelect
             v-model="cfg.pessoas"
             class="w-full"
             filterable
             multiple
             placeholder="usuários do CO-TI"
-          >
-            <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="Outros e-mails">
           <el-input v-model="enderecos" placeholder="separados por vírgula" />
@@ -145,9 +143,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Mon from '@/api/monitoramento'
 import { CANAIS } from '@/api/monitoramento'
-import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 
 defineOptions({ name: 'MonitoramentoCanal' })
@@ -156,7 +154,6 @@ const pode = checkPermi(['monitoramento:canal:update'])
 const regras = { nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }] }
 const lista = ref<Mon.Canal[]>([])
 const loading = ref(true)
-const usuarios = ref<any[]>([])
 const formRef = ref()
 const form = reactive({ visivel: false, dados: {} as Mon.Canal })
 const cfg = ref<Record<string, any>>({})
@@ -183,7 +180,6 @@ const carregar = async () => {
   }
 }
 const abrir = async (c?: Mon.Canal) => {
-  if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
   form.dados = c ? { ...c } : { nome: '', tipo: 'email', padrao: false, ativo: true }
   cfg.value = { ...(c?.config || {}) }
   enderecos.value = (cfg.value.enderecos || []).join(', ')

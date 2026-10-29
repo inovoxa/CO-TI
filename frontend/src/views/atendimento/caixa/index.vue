@@ -100,9 +100,7 @@
         </el-form-item>
       </template>
       <el-form-item label="Quem atende">
-        <el-select v-model="form.dados.agenteIds" class="w-full" filterable multiple>
-          <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-        </el-select>
+        <UsuarioSelect v-model="form.dados.agenteIds" class="w-full" filterable multiple />
       </el-form-item>
       <el-form-item label="Distribuição">
         <el-switch
@@ -261,9 +259,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Atd from '@/api/atendimento'
 import { CANAIS } from '@/api/atendimento'
-import * as UserApi from '@/api/system/user'
 import CanalConfig from './CanalConfig.vue'
 
 defineOptions({ name: 'AtendimentoCaixa' })
@@ -272,7 +270,6 @@ const regras = { nome: [{ required: true, message: 'Informe o nome', trigger: 'b
 
 const loading = ref(true)
 const lista = ref<Atd.Caixa[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const formRef = ref()
 const canalRef = ref()
 const calendarios = ref<{ id: number; nome: string }[]>([])
@@ -304,7 +301,6 @@ const abrir = async (c?: Atd.Caixa) => {
         agenteIds: []
       }
   form.visivel = true
-  if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
   if (!calendarios.value.length) calendarios.value = await Atd.getCalendariosCaixa()
   modelosAviso.value =
     c?.id && c.canal === 'whatsapp_cloud'

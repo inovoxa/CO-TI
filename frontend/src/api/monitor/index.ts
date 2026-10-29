@@ -8,17 +8,10 @@ export interface UnitKpi {
   link: 'online' | 'degradado' | 'offline'
   latenciaMs: number
   disponibilidade: number
-  hostsOnline: number
-  hostsTotal: number
-  temperaturaC: number
-  energia: 'rede' | 'nobreak'
-  autonomiaMin?: number | null
-  cpuPct: number
-  storagePct: number
-  backupOk: boolean
+  servicosNoAr: number
+  servicosTotal: number
   chamadosAbertos: number
   slaVencido: number
-  incidentesSeg: number
   status: Status
   atualizadoEm: number
 }
@@ -26,7 +19,7 @@ export interface UnitKpi {
 export interface Ocorrencia {
   unitId: number
   nivel: 'info' | 'atencao' | 'critico'
-  categoria: 'rede' | 'ativos' | 'datacenter' | 'atendimento' | 'seguranca'
+  categoria: 'rede' | 'ativos' | 'atendimento'
   texto: string
   momento: number
 }
@@ -117,14 +110,6 @@ export interface Equipamento {
   ip: string
 }
 
-export interface LogLinha {
-  ts: number
-  origem: string
-  nivel: 'info' | 'aviso' | 'erro' | 'critico'
-  mensagem: string
-  unidadeId: number
-}
-
 export interface Camera {
   id: string
   nome: string
@@ -173,9 +158,6 @@ export const listarLinks = (p: { unidadeId?: number; filtro?: string }): Promise
 
 export const listarEquipamentos = (p: { unidadeId?: number; filtro?: string; busca?: string }): Promise<Lista<Equipamento>> =>
   request.get({ url: '/system/monitor/inventario', params: limpo(p) })
-
-export const buscarLogs = (p: { unidadeId?: number; nivel?: string; busca?: string }): Promise<Lista<LogLinha>> =>
-  request.get({ url: '/system/monitor/logs', params: limpo(p) })
 
 export const resumoCameras = (p: { unidadeId?: number }): Promise<CameraResumo> =>
   request.get({ url: '/system/monitor/cameras', params: limpo(p) })

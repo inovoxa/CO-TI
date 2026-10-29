@@ -17,12 +17,6 @@ declare global {
   declare type TimeoutHandle = ReturnType<typeof setTimeout>
   declare type IntervalHandle = ReturnType<typeof setInterval>
 
-  const _hmt: any[]
-
-  interface Window {
-    _hmt?: any[]
-    bpmnInstances?: any
-  }
 
   type SummaryMethodProps<T extends Recordable = Recordable> = Parameters<
     import('element-plus').SummaryMethod<T>

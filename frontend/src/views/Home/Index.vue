@@ -1,435 +1,582 @@
+<!-- Tela de início do CO-TI: pendências do usuário, situação dos módulos que o perfil enxerga e atalhos -->
 <template>
-  <div>
-    <el-card shadow="never">
-      <el-skeleton :loading="loading" animated>
-        <el-row :gutter="16" justify="space-between">
-          <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
-            <div class="flex items-center">
-              <el-avatar :src="avatar" :size="70" class="mr-16px">
-                <img src="@/assets/imgs/avatar.gif" alt="" />
-              </el-avatar>
-              <div>
-                <div class="text-20px">
-                  {{ t('workplace.welcome') }} {{ username }} {{ t('workplace.happyDay') }}
-                </div>
-                <div class="mt-10px text-14px text-gray-500">
-                  {{ t('workplace.toady') }}
-                </div>
-              </div>
-            </div>
-          </el-col>
-          <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
-            <div class="h-70px flex items-center justify-end lt-sm:mt-10px">
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.project') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.project"
-                  :duration="2600"
-                />
-              </div>
-              <el-divider direction="vertical" />
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.toDo') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.todo"
-                  :duration="2600"
-                />
-              </div>
-              <el-divider direction="vertical" border-style="dashed" />
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.access') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.access"
-                  :duration="2600"
-                />
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-      </el-skeleton>
+  <div class="inicio">
+    <el-card shadow="never" class="boas-vindas">
+      <div class="bv">
+        <el-avatar :src="avatar" :size="56">
+          <img src="@/assets/imgs/avatar.gif" alt="" />
+        </el-avatar>
+        <div class="bv__texto">
+          <h2>{{ saudacao }}, {{ username }}</h2>
+          <p>{{ hoje }} · Centro de Operações de TI</p>
+        </div>
+        <div class="bv__acoes">
+          <el-button v-if="tem('AssistenteInterno')" @click="ir('AssistenteInterno')">
+            <Icon icon="ep:magic-stick" class="mr-6px" /> Perguntar ao assistente
+          </el-button>
+          <el-button v-if="tem('ItsmCatalogo')" type="primary" @click="ir('ItsmCatalogo')">
+            <Icon icon="ep:plus" class="mr-6px" /> Abrir chamado
+          </el-button>
+        </div>
+      </div>
     </el-card>
-  </div>
 
-  <el-row class="mt-8px" :gutter="8" justify="space-between">
-    <el-col :xl="16" :lg="16" :md="24" :sm="24" :xs="24" class="mb-8px">
-      <el-card shadow="never">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.project') }}</span>
-            <el-link
-              type="primary"
-              :underline="false"
-              href="https://github.com/yudaocode"
-              target="_blank"
-            >
-              {{ t('action.more') }}
-            </el-link>
-          </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <el-row :gutter="8" class="gap-y-8px">
-            <el-col
-              v-for="(item, index) in projects"
-              :key="`card-${index}`"
-              :xl="8"
-              :lg="8"
-              :md="8"
-              :sm="24"
-              :xs="24"
-              class="!flex"
-            >
-              <el-card
-                shadow="hover"
-                class="flex-1 cursor-pointer"
-                body-class="flex h-full flex-col"
-                @click="handleProjectClick(item.message)"
+    <el-skeleton :loading="loading" animated :rows="3" class="mt-12px">
+      <section v-for="g in grupos" :key="g.titulo" class="grupo">
+        <h3>{{ g.titulo }}</h3>
+        <div class="grid-kpi">
+          <Kpi v-for="k in g.kpis" :key="k.label" v-bind="k" />
+        </div>
+      </section>
+    </el-skeleton>
+
+    <div class="cols">
+      <div class="col">
+        <el-card shadow="never" :body-style="{ padding: '0' }">
+          <template #header>
+            <div class="ch">
+              Meus chamados <small>{{ meusAbertos }} em aberto</small>
+              <el-link
+                v-if="tem('ItsmPortal')"
+                type="primary"
+                :underline="false"
+                @click="ir('ItsmPortal')"
               >
-                <div class="flex items-center">
-                  <Icon
-                    :icon="item.icon"
-                    :size="25"
-                    class="mr-8px flex-none"
-                    :style="{ color: item.color }"
-                  />
-                  <span class="min-w-0 line-clamp-2 text-16px" :title="item.name">{{
-                    item.name
-                  }}</span>
-                </div>
-                <div
-                  class="mt-12px break-all line-clamp-2 text-12px text-gray-400"
-                  :title="t(item.message)"
-                >
-                  {{ t(item.message) }}
-                </div>
-                <div
-                  class="mt-auto flex items-center justify-between gap-8px pt-12px text-12px text-gray-400"
-                >
-                  <span class="min-w-0 truncate" :title="item.personal">{{ item.personal }}</span>
-                  <span class="shrink-0 whitespace-nowrap">
-                    {{ formatTime(item.time, 'yyyy-MM-dd') }}
-                  </span>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
-
-      <el-card shadow="never" class="mt-8px">
-        <el-skeleton :loading="loading" animated>
-          <el-row :gutter="20" justify="space-between">
-            <el-col :xl="10" :lg="10" :md="24" :sm="24" :xs="24">
-              <el-card shadow="hover" class="mb-8px">
-                <el-skeleton :loading="loading" animated>
-                  <Echart :options="pieOptionsData" :height="280" />
-                </el-skeleton>
-              </el-card>
-            </el-col>
-            <el-col :xl="14" :lg="14" :md="24" :sm="24" :xs="24">
-              <el-card shadow="hover" class="mb-8px">
-                <el-skeleton :loading="loading" animated>
-                  <Echart :options="barOptionsData" :height="280" />
-                </el-skeleton>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
-    </el-col>
-    <el-col :xl="8" :lg="8" :md="24" :sm="24" :xs="24" class="mb-8px">
-      <el-card shadow="never">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.shortcutOperation') }}</span>
-          </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <el-row>
-            <el-col v-for="item in shortcut" :key="`team-${item.name}`" :span="8" class="mb-8px">
-              <div class="flex items-center">
-                <Icon :icon="item.icon" class="mr-8px" :style="{ color: item.color }" />
-                <el-link type="default" :underline="false" @click="handleShortcutClick(item.url)">
-                  {{ item.name }}
-                </el-link>
-              </div>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
-      <el-card shadow="never" class="mt-8px">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.notice') }}</span>
-            <el-link type="primary" :underline="false">{{ t('action.more') }}</el-link>
-          </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <div v-for="(item, index) in notice" :key="`dynamics-${index}`">
-            <div class="flex items-center">
-              <el-avatar :src="avatar" :size="35" class="mr-16px">
-                <img src="@/assets/imgs/avatar.gif" alt="" />
-              </el-avatar>
-              <div>
-                <div class="text-14px">
-                  <Highlight :keys="item.keys.map((v) => t(v))">
-                    {{ item.type }} : {{ item.title }}
-                  </Highlight>
-                </div>
-                <div class="mt-16px text-12px text-gray-400">
-                  {{ formatTime(item.date, 'yyyy-MM-dd') }}
-                </div>
-              </div>
+                Ver todos
+              </el-link>
             </div>
-            <el-divider />
-          </div>
-        </el-skeleton>
-      </el-card>
-    </el-col>
-  </el-row>
-</template>
-<script lang="ts" setup>
-import { set } from 'lodash-es'
-import { EChartsOption } from 'echarts'
-import { formatTime } from '@/utils'
+          </template>
+          <ul class="lista">
+            <li v-for="c in meus" :key="c.id" @click="ir('ItsmPortal', { chamado: c.id })">
+              <span class="lista__id">#{{ c.id }}</span>
+              <div class="lista__corpo">
+                <p>{{ c.titulo }}</p>
+                <small
+                  >{{ c.categoria || 'Sem categoria' }} · aberto em
+                  {{ formatTime(c.abertoEm, 'dd/MM/yyyy HH:mm') }}</small
+                >
+              </div>
+              <el-tag :type="corStatus(c.status)" size="small">{{ c.statusRotulo }}</el-tag>
+            </li>
+            <li v-if="!meus.length" class="vazio">
+              Você não tem chamados.
+              <el-link
+                v-if="tem('ItsmCatalogo')"
+                type="primary"
+                :underline="false"
+                @click="ir('ItsmCatalogo')"
+              >
+                Abrir pelo catálogo de serviços
+              </el-link>
+            </li>
+          </ul>
+        </el-card>
 
+        <el-card
+          v-if="aprovacoes.length"
+          shadow="never"
+          class="mt-12px"
+          :body-style="{ padding: '0' }"
+        >
+          <template #header>
+            <div class="ch">
+              Aguardando sua aprovação <small>{{ aprovacoes.length }}</small>
+              <el-link type="primary" :underline="false" @click="ir('ItsmAprovacao')"
+                >Responder</el-link
+              >
+            </div>
+          </template>
+          <ul class="lista">
+            <li v-for="a in aprovacoes.slice(0, 5)" :key="a.id" @click="ir('ItsmAprovacao')">
+              <span class="lista__id">#{{ a.chamadoId }}</span>
+              <div class="lista__corpo">
+                <p>{{ a.chamadoTitulo }}</p>
+                <small
+                  >{{ a.solicitante || a.solicitadoPor }} · pedido em
+                  {{ formatTime(a.pedidoEm, 'dd/MM/yyyy HH:mm') }}</small
+                >
+              </div>
+            </li>
+          </ul>
+        </el-card>
+      </div>
+
+      <div class="col">
+        <el-card shadow="never">
+          <template #header><div class="ch">Acesso rápido</div></template>
+          <div class="atalhos">
+            <button
+              v-for="a in atalhos"
+              :key="a.rota"
+              type="button"
+              class="atalho"
+              @click="ir(a.rota)"
+            >
+              <Icon :icon="a.icone" :size="22" :style="{ color: a.cor }" />
+              <span>{{ a.nome }}</span>
+            </button>
+          </div>
+        </el-card>
+
+        <el-card
+          v-if="eventos.length"
+          shadow="never"
+          class="mt-12px"
+          :body-style="{ padding: '0' }"
+        >
+          <template #header>
+            <div class="ch">
+              Monitoramento <small>últimas mudanças de estado</small>
+              <el-link type="primary" :underline="false" @click="ir('MonitoramentoMonitor')"
+                >Monitores</el-link
+              >
+            </div>
+          </template>
+          <ol class="feed">
+            <li v-for="(e, i) in eventos" :key="e.monitorId + '-' + i" :class="`e-${e.estado}`">
+              <time>{{ formatTime(e.momento, 'dd/MM HH:mm') }}</time>
+              <div>
+                <span class="m">{{ ESTADOS[e.estado]?.rotulo }}</span>
+                <p
+                  >{{ e.monitorNome }}<template v-if="e.msg"> · {{ e.msg }}</template></p
+                >
+              </div>
+            </li>
+          </ol>
+        </el-card>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { formatTime } from '@/utils'
+import { checkPermi } from '@/utils/permission'
 import { useUserStore } from '@/store/modules/user'
-// import { useWatermark } from '@/hooks/web/useWatermark'
-import type { WorkplaceTotal, Project, Notice, Shortcut } from './types'
-import { pieOptions, barOptions } from './echarts-data'
 import { useRouter } from 'vue-router'
+import Kpi from '@/views/monitor/components/Kpi.vue'
+import * as Itsm from '@/api/itsm'
+import * as Monitoramento from '@/api/monitoramento'
+import * as Inventario from '@/api/inventario'
 
 defineOptions({ name: 'Index' })
 
-const { t } = useI18n()
+type KpiItem = InstanceType<typeof Kpi>['$props']
+
 const router = useRouter()
 const userStore = useUserStore()
-// const { setWatermark } = useWatermark()
-const loading = ref(true)
 const avatar = userStore.getUser.avatar
 const username = userStore.getUser.nickname
-const pieOptionsData = reactive<EChartsOption>(pieOptions) as EChartsOption
-// 获取统计数
-let totalSate = reactive<WorkplaceTotal>({
-  project: 0,
-  access: 0,
-  todo: 0
+const { corStatus } = Itsm
+const { ESTADOS } = Monitoramento
+
+const agora = new Date()
+const h = agora.getHours()
+const saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
+const hoje = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+
+/** os menus vêm do perfil: só existe rota para o que o usuário pode abrir */
+const tem = (rota: string) => router.hasRoute(rota)
+const ir = (rota: string, query?: Record<string, any>) => router.push({ name: rota, query })
+const link = (rota: string, query?: Record<string, any>) =>
+  tem(rota) ? { name: rota, query } : undefined
+const n = (v?: number) => (v ?? 0).toLocaleString('pt-BR')
+
+const ATALHOS = [
+  { rota: 'ItsmCatalogo', nome: 'Catálogo de serviços', icone: 'ep:grid', cor: '#409eff' },
+  { rota: 'ItsmPortal', nome: 'Meus chamados', icone: 'ep:chat-line-square', cor: '#409eff' },
+  { rota: 'ItsmKb', nome: 'Base de conhecimento', icone: 'ep:reading', cor: '#67c23a' },
+  { rota: 'ItsmChamado', nome: 'Fila de chamados', icone: 'ep:tickets', cor: '#e6a23c' },
+  { rota: 'ItsmPainel', nome: 'Painel do Service Desk', icone: 'ep:data-analysis', cor: '#e6a23c' },
+  { rota: 'ItsmExecucaoAd', nome: 'Execuções no AD', icone: 'ep:cpu', cor: '#e6a23c' },
+  { rota: 'AtendimentoConversa', nome: 'Conversas', icone: 'ep:chat-line-round', cor: '#25d366' },
+  { rota: 'InventarioAtivo', nome: 'Inventário', icone: 'ep:monitor', cor: '#8e44ad' },
+  { rota: 'MonitoramentoMonitor', nome: 'Monitoramento', icone: 'ep:odometer', cor: '#f56c6c' },
+  {
+    rota: 'MonitorVisaoGeral',
+    nome: 'Centro de Operações',
+    icone: 'ep:data-board',
+    cor: '#f56c6c'
+  },
+  { rota: 'AssistenteInterno', nome: 'Assistente IA', icone: 'ep:magic-stick', cor: '#7c3aed' }
+]
+const atalhos = ATALHOS.filter((a) => tem(a.rota))
+
+const loading = ref(true)
+const meus = ref<Itsm.Chamado[]>([])
+const meusAbertos = ref(0)
+const aprovacoes = ref<Itsm.Aprovacao[]>([])
+const fila = ref<Record<string, number>>()
+const monitores = ref<Monitoramento.Contagens>()
+const ativos = ref<Record<string, number>>()
+const eventos = ref<Monitoramento.Evento[]>([])
+
+const grupos = computed(() => {
+  const g: { titulo: string; kpis: KpiItem[] }[] = []
+  const pendencias: KpiItem[] = [
+    {
+      label: 'Meus chamados abertos',
+      valor: n(meusAbertos.value),
+      apoio: meusAbertos.value ? 'acompanhe as respostas' : 'nada em aberto',
+      to: link('ItsmPortal')
+    }
+  ]
+  if (tem('ItsmAprovacao')) {
+    pendencias.push({
+      label: 'Aprovações aguardando',
+      valor: n(aprovacoes.value.length),
+      apoio: aprovacoes.value.length ? 'pedidos esperando você' : 'nenhuma pendente',
+      nivel: aprovacoes.value.length ? 'warn' : '',
+      to: link('ItsmAprovacao')
+    })
+  }
+  g.push({ titulo: 'Para você', kpis: pendencias })
+
+  const f = fila.value
+  if (f) {
+    g.push({
+      titulo: 'Service Desk',
+      kpis: [
+        {
+          label: 'Chamados abertos',
+          valor: n(f.abertos),
+          apoio: `${n(f.pendentes)} pendentes`,
+          to: link('ItsmChamado')
+        },
+        {
+          label: 'Novos sem técnico',
+          valor: n(f.novos),
+          nivel: f.novos ? 'warn' : 'ok',
+          to: link('ItsmChamado')
+        },
+        {
+          label: 'SLA vencido',
+          valor: n(f.sla),
+          apoio: f.sla ? 'priorize estes' : 'todos no prazo',
+          nivel: f.sla ? 'crit' : 'ok',
+          to: link('ItsmChamado')
+        },
+        {
+          label: 'Solucionados',
+          valor: n(f.solucionados),
+          apoio: 'aguardando fechamento',
+          to: link('ItsmPainel')
+        }
+      ]
+    })
+  }
+
+  const m = monitores.value
+  if (m) {
+    g.push({
+      titulo: 'Monitoramento',
+      kpis: [
+        {
+          label: 'No ar',
+          valor: `${n(m.noAr)}/${n(m.todos - m.pausado)}`,
+          apoio: m.lento ? `${n(m.lento)} lentos` : 'tempo de resposta normal',
+          nivel: m.fora ? 'crit' : m.lento ? 'warn' : 'ok',
+          to: link('MonitoramentoMonitor')
+        },
+        {
+          label: 'Fora do ar',
+          valor: n(m.fora),
+          apoio: m.manutencao ? `${n(m.manutencao)} em manutenção` : '',
+          nivel: m.fora ? 'crit' : 'ok',
+          to: link('MonitoramentoMonitor')
+        },
+        {
+          label: 'Certificados vencendo',
+          valor: n(m.certificadoVencendo),
+          nivel: m.certificadoVencendo ? 'warn' : '',
+          to: link('MonitoramentoMonitor')
+        }
+      ]
+    })
+  }
+
+  const a = ativos.value
+  if (a) {
+    g.push({
+      titulo: 'Inventário',
+      kpis: [
+        { label: 'Ativos', valor: n(a.todos), to: link('InventarioAtivo') },
+        {
+          label: 'Sem contato',
+          valor: n(a.sem_contato),
+          nivel: a.sem_contato ? 'warn' : '',
+          to: link('InventarioAtivo')
+        },
+        {
+          label: 'Antivírus com problema',
+          valor: n(a.antivirus),
+          nivel: a.antivirus ? 'crit' : 'ok',
+          to: link('InventarioAtivo')
+        },
+        {
+          label: 'SO sem suporte',
+          valor: n(a.sem_suporte),
+          nivel: a.sem_suporte ? 'warn' : '',
+          to: link('InventarioAtivo')
+        }
+      ]
+    })
+  }
+  return g
 })
 
-const getCount = async () => {
-  const data = {
-    project: 40,
-    access: 2340,
-    todo: 10
-  }
-  totalSate = Object.assign(totalSate, data)
-}
-
-// 获取项目数
-let projects = reactive<Project[]>([])
-const getProject = async () => {
-  const data = [
-    {
-      name: 'ruoyi-vue-pro',
-      icon: 'simple-icons:springboot',
-      message: 'github.com/YunaiV/ruoyi-vue-pro',
-      personal: 'Chamados',
-      time: new Date('2025-01-02'),
-      color: '#6DB33F'
-    },
-    {
-      name: 'yudao-ui-admin-vue3',
-      icon: 'ep:element-plus',
-      message: 'github.com/yudaocode/yudao-ui-admin-vue3',
-      personal: 'Atendimento',
-      time: new Date('2025-02-03'),
-      color: '#409EFF'
-    },
-    {
-      name: 'yudao-mall-uniapp',
-      icon: 'icon-park-outline:mall-bag',
-      message: 'github.com/yudaocode/yudao-mall-uniapp',
-      personal: 'Inventário',
-      time: new Date('2025-03-04'),
-      color: '#ff4d4f'
-    },
-    {
-      name: 'yudao-cloud',
-      icon: 'material-symbols:cloud-outline',
-      message: 'github.com/YunaiV/yudao-cloud',
-      personal: 'Monitoramento',
-      time: new Date('2025-04-05'),
-      color: '#1890ff'
-    },
-    {
-      name: 'yudao-ui-admin-vben',
-      icon: 'devicon:antdesign',
-      message: 'github.com/yudaocode/yudao-ui-admin-vben',
-      personal: 'Logs',
-      time: new Date('2025-05-06'),
-      color: '#e18525'
-    },
-    {
-      name: 'yudao-ui-admin-uniapp',
-      icon: 'ant-design:mobile',
-      message: 'github.com/yudaocode/yudao-ui-admin-uniapp',
-      personal: 'Cofre de senhas',
-      time: new Date('2025-06-01'),
-      color: '#2979ff'
-    }
-  ]
-  projects = Object.assign(projects, data)
-}
-
-// 获取通知公告
-let notice = reactive<Notice[]>([])
-const getNotice = async () => {
-  const data = [
-    {
-      title: 'Integração total com o Active Directory',
-      type: 'Identidade',
-      keys: ['JDK', 'Vue'],
-      date: new Date()
-    },
-    {
-      title: 'Banco único, trilha de auditoria e verificação em duas etapas',
-      type: 'Segurança',
-      keys: ['Boot', 'Cloud'],
-      date: new Date()
-    },
-    {
-      title: 'Núcleo open source (GPLv3), instalado na infraestrutura da sua empresa',
-      type: 'Open source',
-      keys: ['GPLv3'],
-      date: new Date()
-    },
-    {
-      title: 'Tudo da TI em um só lugar: chamados, atendimento, inventário, monitoramento e logs',
-      type: 'Plataforma única',
-      keys: ['Unificado', '10w+'],
-      date: new Date()
-    }
-  ]
-  notice = Object.assign(notice, data)
-}
-
-// 获取快捷入口
-let shortcut = reactive<Shortcut[]>([])
-
-const getShortcut = async () => {
-  const data = [
-    {
-      name: 'Início',
-      icon: 'ion:home-outline',
-      url: '/',
-      color: '#1fdaca'
-    },
-    {
-      name: 'Loja',
-      icon: 'ep:shop',
-      url: '/mall/home',
-      color: '#ff6b6b'
-    },
-    {
-      name: 'IA',
-      icon: 'tabler:ai',
-      url: '/ai/chat',
-      color: '#7c3aed'
-    },
-    {
-      name: 'ERP',
-      icon: 'simple-icons:erpnext',
-      url: '/erp/home',
-      color: '#3fb27f'
-    },
-    {
-      name: 'CRM',
-      icon: 'simple-icons:civicrm',
-      url: '/crm/backlog',
-      color: '#4daf1bc9'
-    },
-    {
-      name: 'IoT',
-      icon: 'fa-solid:hdd',
-      url: '/iot/home',
-      color: '#1a73e8'
-    }
-  ]
-  shortcut = Object.assign(shortcut, data)
-}
-
-// 用户来源
-const getUserAccessSource = async () => {
-  const data = [
-    { value: 335, name: 'analysis.directAccess' },
-    { value: 310, name: 'analysis.mailMarketing' },
-    { value: 234, name: 'analysis.allianceAdvertising' },
-    { value: 135, name: 'analysis.videoAdvertising' },
-    { value: 1548, name: 'analysis.searchEngines' }
-  ]
-  set(
-    pieOptionsData,
-    'legend.data',
-    data.map((v) => t(v.name))
-  )
-  pieOptionsData!.series![0].data = data.map((v) => {
-    return {
-      name: t(v.name),
-      value: v.value
-    }
-  })
-}
-const barOptionsData = reactive<EChartsOption>(barOptions) as EChartsOption
-
-// 周活跃量
-const getWeeklyUserActivity = async () => {
-  const data = [
-    { value: 13253, name: 'analysis.monday' },
-    { value: 34235, name: 'analysis.tuesday' },
-    { value: 26321, name: 'analysis.wednesday' },
-    { value: 12340, name: 'analysis.thursday' },
-    { value: 24643, name: 'analysis.friday' },
-    { value: 1322, name: 'analysis.saturday' },
-    { value: 1324, name: 'analysis.sunday' }
-  ]
-  set(
-    barOptionsData,
-    'xAxis.data',
-    data.map((v) => t(v.name))
-  )
-  set(barOptionsData, 'series', [
-    {
-      name: t('analysis.activeQuantity'),
-      data: data.map((v) => v.value),
-      type: 'bar'
-    }
-  ])
-}
-
-const getAllApi = async () => {
-  await Promise.all([
-    getCount(),
-    getProject(),
-    getNotice(),
-    getShortcut(),
-    getUserAccessSource(),
-    getWeeklyUserActivity()
+/** cada bloco carrega sozinho: a falha de um módulo não derruba a tela */
+const carregar = async () => {
+  await Promise.allSettled([
+    Itsm.getMeus({ pageNo: 1, pageSize: 5, somenteAbertos: false }).then((p) => {
+      meus.value = p.list
+    }),
+    Itsm.getMeus({ pageNo: 1, pageSize: 1, somenteAbertos: true }).then((p) => {
+      meusAbertos.value = p.total
+    }),
+    tem('ItsmAprovacao') &&
+      Itsm.getMinhasAprovacoes(true).then((l) => {
+        aprovacoes.value = l
+      }),
+    checkPermi(['itsm:chamado:query']) &&
+      Itsm.getContagens().then((c) => {
+        fila.value = c
+      }),
+    checkPermi(['monitoramento:monitor:query']) &&
+      Promise.all([Monitoramento.getContagens(), Monitoramento.getEventos(2)]).then(([c, e]) => {
+        monitores.value = c
+        eventos.value = e.slice(0, 8)
+      }),
+    checkPermi(['inventario:ativo:query']) &&
+      Inventario.getContagens().then((c) => {
+        ativos.value = c
+      })
   ])
   loading.value = false
 }
 
-const handleProjectClick = (message: string) => {
-  window.open(`https://${message}`, '_blank')
-}
-
-const handleShortcutClick = (url: string) => {
-  router.push(url)
-}
-
-getAllApi()
+carregar()
 </script>
+
+<style scoped lang="scss">
+.inicio {
+  padding: 4px;
+}
+
+.bv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.bv__texto {
+  flex: 1;
+  min-width: 200px;
+}
+
+.bv__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.grupo {
+  margin-top: 14px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--el-text-color-secondary);
+    text-transform: uppercase;
+  }
+}
+
+.grid-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.col {
+  min-width: 0;
+}
+
+.ch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+
+  small {
+    font-weight: 400;
+    color: var(--el-text-color-secondary);
+  }
+
+  .el-link {
+    margin-left: auto;
+    font-weight: 400;
+  }
+}
+
+.lista {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    &:hover {
+      background: var(--el-fill-color-light);
+    }
+  }
+
+  li.vazio {
+    display: block;
+    color: var(--el-text-color-secondary);
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+  }
+
+  p {
+    margin: 0;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.lista__id {
+  flex: none;
+  width: 56px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--el-text-color-secondary);
+}
+
+.lista__corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.atalhos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.atalho {
+  display: flex;
+  padding: 12px 6px;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+  text-align: center;
+  cursor: pointer;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: var(--el-fill-color-light);
+    border-color: var(--el-color-primary-light-5);
+  }
+}
+
+.feed {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+    padding: 7px 12px;
+    border-left: 3px solid var(--el-border-color-light);
+  }
+
+  li.e-0 {
+    border-left-color: var(--el-color-danger);
+  }
+
+  li.e-1 {
+    border-left-color: var(--el-color-success);
+  }
+
+  li.e-2 {
+    border-left-color: var(--el-color-warning);
+  }
+
+  time {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-secondary);
+  }
+
+  .m {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--el-text-color-secondary);
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 1px 0 0;
+    font-size: 13px;
+  }
+}
+
+@media (width <= 1100px) {
+  .grid-kpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

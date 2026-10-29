@@ -1,14 +1,17 @@
 package cn.iocoder.yudao.module.inventario.service;
 
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
+import cn.iocoder.yudao.framework.redis.core.ExecucaoUnica;
 import cn.iocoder.yudao.module.inventario.config.InventarioProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 /**
- * Varredura SNMP no intervalo configurado ({@code coti.inventario.snmp-intervalo-ms}).
+ * Varredura SNMP no intervalo configurado ({@code coti.inventario.snmp-intervalo-ms}), em uma instância só.
  */
 @Component
 @Slf4j
@@ -18,6 +21,8 @@ public class SnmpJob {
     private InventarioProperties inventarioProperties;
     @Resource
     private SnmpService snmpService;
+    @Resource
+    private ExecucaoUnica execucaoUnica;
 
     private long ultima = System.currentTimeMillis();
 
@@ -27,7 +32,12 @@ public class SnmpJob {
         if (intervalo <= 0 || System.currentTimeMillis() - ultima < intervalo) {
             return;
         }
-        ultima = System.currentTimeMillis();
+        if (execucaoUnica.executar("inventario:snmp", Duration.ofMillis(intervalo).minusSeconds(5), this::varrer)) {
+            ultima = System.currentTimeMillis();
+        }
+    }
+
+    private void varrer() {
         try {
             snmpService.varrer();
         } catch (ServiceException e) {

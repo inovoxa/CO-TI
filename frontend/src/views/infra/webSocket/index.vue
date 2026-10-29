@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="WebSocket em tempo real" url="https://doc.iocoder.cn/websocket/" />
-
   <div class="flex">
     <!-- 左侧：建立连接、发送消息 -->
     <el-card :gutter="12" class="w-1/2" shadow="always">
@@ -32,15 +30,12 @@
         placeholder="Digite a mensagem"
         type="textarea"
       />
-      <el-select v-model="sendUserId" class="mt-4" placeholder="Selecione o destinatário">
-        <el-option key="" label="Todos" value="" />
-        <el-option
-          v-for="user in userList"
-          :key="user.id"
-          :label="user.nickname"
-          :value="user.id"
-        />
-      </el-select>
+      <UsuarioSelect
+        v-model="sendUserId"
+        class="mt-4"
+        clearable
+        placeholder="Destinatário (vazio = todos)"
+      />
       <el-button :disabled="!getIsOpen" block class="ml-2 mt-4" type="primary" @click="handlerSend">
         Enviar
       </el-button>
@@ -72,7 +67,7 @@
 import { formatDate } from '@/utils/formatTime'
 import { useWebSocket } from '@vueuse/core'
 import { getRefreshToken } from '@/utils/auth'
-import * as UserApi from '@/api/system/user'
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 
 defineOptions({ name: 'InfraWebSocket' })
 
@@ -150,12 +145,12 @@ watchEffect(() => {
 
 /** 发送消息 */
 const sendText = ref('') // 发送内容
-const sendUserId = ref('') // 发送人
+const sendUserId = ref<number | null>(null) // 发送人
 const handlerSend = () => {
   // 1.1 先 JSON 化 message 消息内容
   const messageContent = JSON.stringify({
     text: sendText.value,
-    toUserId: sendUserId.value
+    toUserId: sendUserId.value ?? ''
   })
   // 1.2 再 JSON 化整个消息
   const jsonMessage = JSON.stringify({
@@ -176,10 +171,4 @@ const toggleConnectStatus = () => {
   }
 }
 
-/** 初始化 **/
-const userList = ref<any[]>([]) // 用户列表
-onMounted(async () => {
-  // 获取用户列表
-  userList.value = await UserApi.getSimpleUserList()
-})
 </script>

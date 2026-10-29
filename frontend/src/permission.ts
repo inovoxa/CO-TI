@@ -21,8 +21,7 @@ const whiteList = [
   '/auth-redirect',
   '/bind',
   '/register',
-  '/oauthLogin/gitee',
-  '/pms/kb/document/share'
+  '/oauthLogin/gitee'
 ]
 
 // 路由加载前

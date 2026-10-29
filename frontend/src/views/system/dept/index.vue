@@ -73,7 +73,7 @@
       <el-table-column prop="name" label="Nome do departamento" />
       <el-table-column prop="leader" label="Responsável">
         <template #default="scope">
-          {{ userList.find((user) => user.id === scope.row.leaderUserId)?.nickname }}
+          {{ scope.row.leaderUserId ? nomeUsuario(scope.row.leaderUserId) : '' }}
         </template>
       </el-table-column>
       <el-table-column prop="sort" label="Ordem" />
@@ -121,7 +121,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import { handleTree } from '@/utils/tree'
 import * as DeptApi from '@/api/system/dept'
 import DeptForm from './DeptForm.vue'
-import * as UserApi from '@/api/system/user'
+import { garantirUsuarios, nomeUsuario } from '@/hooks/web/useUsuarios'
 
 defineOptions({ name: 'SystemDept' })
 
@@ -139,13 +139,13 @@ const queryParams = reactive({
 const queryFormRef = ref() // 搜索的表单
 const isExpandAll = ref(true) // 是否展开，默认全部展开
 const refreshTable = ref(true) // 重新渲染表格状态
-const userList = ref<UserApi.UserVO[]>([]) // 用户列表
 
 /** 查询部门列表 */
 const getList = async () => {
   loading.value = true
   try {
     const data = await DeptApi.getDeptList(queryParams)
+    garantirUsuarios(data.map((d) => d.leaderUserId))
     list.value = handleTree(data)
   } finally {
     loading.value = false
@@ -214,7 +214,5 @@ const handleDeleteBatch = async () => {
 /** 初始化 **/
 onMounted(async () => {
   await getList()
-  // 获取用户列表
-  userList.value = await UserApi.getSimpleUserList()
 })
 </script>

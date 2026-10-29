@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="Configuração de mensagens internas" url="https://doc.iocoder.cn/notify/" />
-
   <!-- 搜索工作栏 -->
   <ContentWrap>
     <el-form

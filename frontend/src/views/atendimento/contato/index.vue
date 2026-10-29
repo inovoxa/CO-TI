@@ -74,15 +74,13 @@
         ><el-input v-model="form.dados.email" maxlength="255"
       /></el-form-item>
       <el-form-item label="Pessoa do portal">
-        <el-select
+        <UsuarioSelect
           v-model="form.dados.userId"
           class="w-full"
           clearable
           filterable
           placeholder="Não é da empresa"
-        >
-          <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="Observação"
         ><el-input v-model="form.dados.observacao" :rows="3" type="textarea"
@@ -102,8 +100,8 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Atd from '@/api/atendimento'
-import * as UserApi from '@/api/system/user'
 import { dateFormatter } from '@/utils/formatTime'
 import { checkPermi } from '@/utils/permission'
 
@@ -116,7 +114,6 @@ const pode = checkPermi(['atendimento:contato:update'])
 const loading = ref(true)
 const lista = ref<Atd.Contato[]>([])
 const total = ref(0)
-const usuarios = ref<UserApi.UserVO[]>([])
 const q = reactive({ pageNo: 1, pageSize: 20, busca: '' })
 const form = reactive({ visivel: false, dados: {} as Atd.Contato })
 
@@ -138,7 +135,6 @@ const buscar = () => {
 const abrir = async (c?: Atd.Contato) => {
   form.dados = c ? { ...c } : { nome: '', bloqueado: false }
   form.visivel = true
-  if (!usuarios.value.length) usuarios.value = await UserApi.getSimpleUserList()
 }
 const salvar = async () => {
   await Atd.salvarContato(form.dados)

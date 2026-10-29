@@ -54,4 +54,14 @@ public interface AdminUserMapper extends BaseMapperX<AdminUserDO> {
         return selectList(AdminUserDO::getDeptId, deptIds);
     }
 
+    /** CO-TI: usuários ativos cujo nome ou login contém o trecho (índice trigram), em ordem de nome. */
+    default List<AdminUserDO> selectListParaBusca(Integer status, String trecho, int limite) {
+        String padrao = "%" + trecho.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        return selectList(new LambdaQueryWrapperX<AdminUserDO>()
+                .eq(AdminUserDO::getStatus, status)
+                .and(w -> w.apply("nickname ILIKE {0}", padrao).or().apply("username ILIKE {0}", padrao))
+                .orderByAsc(AdminUserDO::getNickname)
+                .last("LIMIT " + limite));
+    }
+
 }

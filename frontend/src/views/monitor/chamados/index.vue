@@ -1,7 +1,7 @@
 <!-- Rota: /operacoes/chamados · Permissões: system:monitor-chamados:query (ver) e :create (abrir) -->
 <template>
   <div class="pg">
-    <MonitorHeader titulo="Chamados" fonte="Fila de atendimento · GLPI (API REST) ou módulo próprio">
+    <MonitorHeader titulo="Chamados por unidade" fonte="Resumo do Service Desk, filtrado pela unidade escolhida no mapa">
       <template #acoes>
         <el-button v-hasPermi="['system:monitor-chamados:create']" type="primary" @click="dlg = true">Novo chamado</el-button>
       </template>

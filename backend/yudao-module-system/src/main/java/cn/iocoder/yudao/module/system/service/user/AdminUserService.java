@@ -232,6 +232,13 @@ public interface AdminUserService {
     List<AdminUserDO> getUserListByStatus(Integer status, @Nullable Long deptId);
 
     /**
+     * CO-TI: busca para os campos de pessoa — usuários ativos cujo nome ou login contém o trecho.
+     *
+     * @param limite máximo de resultados (a tela pede mais letras quando passa disso)
+     */
+    List<AdminUserDO> buscarUsuarios(String trecho, int limite);
+
+    /**
      * 判断密码是否匹配
      *
      * @param rawPassword 未加密的密码

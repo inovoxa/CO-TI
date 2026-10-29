@@ -23,6 +23,16 @@ export const getSimpleUserList = (): Promise<UserVO[]> => {
   return request.get({ url: '/system/user/simple-list' })
 }
 
+// CO-TI: campos de pessoa buscam enquanto se digita (no máximo 30), em vez de baixar todos os usuários
+export const buscarUsuarios = (nome: string): Promise<UserVO[]> => {
+  return request.get({ url: '/system/user/buscar', params: { nome } })
+}
+
+// CO-TI: nomes de quem já está escolhido num campo (inclusive usuários desativados)
+export const getUsuariosPorIds = (ids: number[]): Promise<UserVO[]> => {
+  return request.get({ url: '/system/user/buscar', params: { ids: ids.join(',') } })
+}
+
 // 按用户编号查询用户精简信息（点头像弹名片）
 export const getSimpleUser = (id: number | string) => {
   return request.get<UserVO>({ url: '/system/user/get-simple', params: { id } })

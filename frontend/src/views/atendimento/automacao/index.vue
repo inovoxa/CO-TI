@@ -96,6 +96,12 @@
                   maxlength="500"
                   :placeholder="c.campo === 'conteudo' ? 'senha, acesso, e-mail (basta um)' : ''"
                 />
+                <UsuarioSelect
+                  v-else-if="CAMPOS[c.campo]?.valor === 'agentes'"
+                  v-model="c.valor"
+                  class="w-full"
+                  multiple
+                />
                 <el-select v-else v-model="c.valor" class="w-full" filterable multiple>
                   <el-option
                     v-for="o in opcoes(CAMPOS[c.campo]?.valor)"
@@ -117,7 +123,7 @@
         </div>
       </el-form-item>
       <el-form-item label="Então">
-        <AcoesEditor v-model="form.dados.acoes" :agentes="usuarios" :etiquetas="etiquetas" />
+        <AcoesEditor v-model="form.dados.acoes" :etiquetas="etiquetas" />
       </el-form-item>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativa" /></el-form-item>
     </el-form>
@@ -140,7 +146,7 @@ import {
   SEM_VALOR,
   STATUS_CONVERSA
 } from '@/api/atendimento'
-import * as UserApi from '@/api/system/user'
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import { formatDate } from '@/utils/formatTime'
 import AcoesEditor from './AcoesEditor.vue'
 
@@ -152,7 +158,6 @@ const loading = ref(true)
 const lista = ref<Atd.Automacao[]>([])
 const caixas = ref<Atd.Caixa[]>([])
 const etiquetas = ref<Atd.Etiqueta[]>([])
-const usuarios = ref<{ id: number; nickname: string }[]>([])
 const formRef = ref()
 const form = reactive({ visivel: false, dados: {} as Atd.Automacao })
 const hora = (t: number) => formatDate(new Date(t), 'DD/MM HH:mm')
@@ -169,8 +174,6 @@ const opcoes = (tipo?: string): { valor: any; rotulo: string }[] => {
       return PRIORIDADES.map((p) => ({ valor: p.valor, rotulo: p.rotulo }))
     case 'etiquetas':
       return etiquetas.value.map((e) => ({ valor: e.id, rotulo: e.nome }))
-    case 'agentes':
-      return usuarios.value.map((u) => ({ valor: u.id, rotulo: u.nickname }))
     default:
       return []
   }
@@ -218,11 +221,7 @@ const excluir = async (a: Atd.Automacao) => {
 
 onMounted(async () => {
   await carregar()
-  ;[caixas.value, etiquetas.value, usuarios.value] = await Promise.all([
-    Atd.getCaixas(),
-    Atd.getEtiquetas(),
-    UserApi.getSimpleUserList()
-  ])
+  ;[caixas.value, etiquetas.value] = await Promise.all([Atd.getCaixas(), Atd.getEtiquetas()])
 })
 </script>
 

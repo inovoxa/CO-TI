@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.itsm.fonte;
 
+import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.CategoriaDO;
@@ -26,11 +27,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Fonte real da tela "Centro de Operações → Chamados" e do telão: lê o ITSM no lugar dos dados simulados do MVP.
+ * Fonte real da tela "Centro de Operações → Chamados por unidade" e dos chamados de cada unidade no telão: lê o ITSM
+ * no lugar dos dados simulados do MVP.
  */
 @Primary
 @Component
-public class ItsmChamadosFonte implements MonitorFontes.Chamados {
+public class ItsmChamadosFonte implements MonitorFontes.Chamados, MonitorFontes.IndicadoresChamados {
 
     /** Abertos + os solucionados/fechados mais recentes que a tela mostra */
     private static final int RECENTES_ENCERRADOS = 200;
@@ -190,6 +192,31 @@ public class ItsmChamadosFonte implements MonitorFontes.Chamados {
     }
 
     /** Cada departamento aponta para a unidade (monitor_unit) cuja raiz é ele ou um ancestral. */
+    /** Abertos por unidade; SLA vencido segue a regra da fila (prazo de solução passado e chamado fora de pendente). */
+    @Override
+    @DataPermission(enable = false)
+    public Map<Long, MonitorFontes.ChamadosUnidade> chamadosPorUnidade() {
+        Map<Long, MonitorUnitDO> unidadePorDept = unidadePorDept();
+        if (unidadePorDept.isEmpty()) {
+            return Map.of();
+        }
+        LocalDateTime agora = LocalDateTime.now();
+        Map<Long, int[]> soma = new HashMap<>();
+        for (ChamadoDO c : chamadoMapper.selectList(new LambdaQueryWrapperX<ChamadoDO>()
+                .in(ChamadoDO::getDeptId, unidadePorDept.keySet())
+                .lt(ChamadoDO::getStatus, ChamadoStatus.SOLUCIONADO.getCodigo()))) {
+            int[] n = soma.computeIfAbsent(unidadePorDept.get(c.getDeptId()).getId(), k -> new int[2]);
+            n[0]++;
+            if (!Objects.equals(c.getStatus(), ChamadoStatus.PENDENTE.getCodigo())
+                    && c.getPrazoSolucao() != null && c.getPrazoSolucao().isBefore(agora)) {
+                n[1]++;
+            }
+        }
+        Map<Long, MonitorFontes.ChamadosUnidade> out = new HashMap<>();
+        soma.forEach((unidade, n) -> out.put(unidade, new MonitorFontes.ChamadosUnidade(n[0], n[1])));
+        return out;
+    }
+
     private Map<Long, MonitorUnitDO> unidadePorDept() {
         Map<Long, MonitorUnitDO> mapa = new HashMap<>();
         for (MonitorUnitDO u : unitMapper.selectList()) {

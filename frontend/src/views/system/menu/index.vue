@@ -1,7 +1,4 @@
 <template>
-  <doc-alert title="Permissões de tela" url="https://doc.iocoder.cn/resource-permission" />
-  <doc-alert title="Rota do menu" url="https://doc.iocoder.cn/vue3/route/" />
-
   <!-- 搜索工作栏 -->
   <ContentWrap>
     <el-form
@@ -181,7 +178,7 @@ const columns: Column<MenuVO>[] = [
       if (checkPermi(['system:menu:update'])) {
         buttons.push(
           <ElButton key="edit" link type="primary" onClick={() => openForm('update', rowData.id)}>
-            修改
+            Editar
           </ElButton>
         )
       }
@@ -193,14 +190,14 @@ const columns: Column<MenuVO>[] = [
             type="primary"
             onClick={() => openForm('create', undefined, rowData.id)}
           >
-            新增
+            Adicionar
           </ElButton>
         )
       }
       if (checkPermi(['system:menu:delete'])) {
         buttons.push(
           <ElButton key="delete" link type="danger" onClick={() => handleDelete(rowData.id)}>
-            删除
+            Excluir
           </ElButton>
         )
       }

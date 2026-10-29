@@ -499,23 +499,6 @@ export const erpCalculatePercentage = (value: number, total: number) => {
 }
 
 /**
- * 适配 echarts map 的地名
- *
- * @param areaName 地区名称
- */
-export const areaReplace = (areaName: string) => {
-  if (!areaName) {
-    return areaName
-  }
-  return areaName
-    .replace('维吾尔自治区', '')
-    .replace('壮族自治区', '')
-    .replace('回族自治区', '')
-    .replace('自治区', '')
-    .replace('省', '')
-}
-
-/**
  * 解析 JSON 字符串
  *
  * @param str

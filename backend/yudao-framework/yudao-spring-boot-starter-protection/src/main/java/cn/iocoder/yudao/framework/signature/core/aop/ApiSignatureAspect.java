@@ -45,7 +45,7 @@ public class ApiSignatureAspect {
         }
 
         // 2. 验证不通过，抛出异常
-        log.error("[beforePointCut][方法{} 参数({}) 签名失败]", joinPoint.getSignature().toString(),
+        log.error("[beforePointCut][método {} parâmetros ({}) com assinatura inválida]", joinPoint.getSignature().toString(),
                 joinPoint.getArgs());
         throw new ServiceException(BAD_REQUEST.getCode(),
                 StrUtil.blankToDefault(signature.message(), BAD_REQUEST.getMsg()));
@@ -59,7 +59,7 @@ public class ApiSignatureAspect {
         // 1.2 校验 appId 是否能获取到对应的 appSecret
         String appId = request.getHeader(signature.appId());
         String appSecret = signatureRedisDAO.getAppSecret(appId);
-        Assert.notNull(appSecret, "[appId({})] 找不到对应的 appSecret", appId);
+        Assert.notNull(appSecret, "[appId({})] appSecret não encontrado", appId);
 
         // 2. 校验签名【重要！】
         String clientSignature = request.getHeader(signature.sign()); // 客户端签名
@@ -73,8 +73,8 @@ public class ApiSignatureAspect {
         String nonce = request.getHeader(signature.nonce());
         if (BooleanUtil.isFalse(signatureRedisDAO.setNonce(appId, nonce, signature.timeout() * 2, signature.timeUnit()))) {
             String timestamp = request.getHeader(signature.timestamp());
-            log.info("[verifySignature][appId({}) timestamp({}) nonce({}) sign({}) 存在重复请求]", appId, timestamp, nonce, clientSignature);
-            throw new ServiceException(GlobalErrorCodeConstants.REPEATED_REQUESTS.getCode(), "存在重复请求");
+            log.info("[verifySignature][appId({}) timestamp({}) nonce({}) sign({}) requisição repetida]", appId, timestamp, nonce, clientSignature);
+            throw new ServiceException(GlobalErrorCodeConstants.REPEATED_REQUESTS.getCode(), "Requisição repetida; aguarde e tente de novo");
         }
         return true;
     }

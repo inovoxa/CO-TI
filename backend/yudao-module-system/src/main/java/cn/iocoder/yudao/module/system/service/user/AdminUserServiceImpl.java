@@ -621,6 +621,11 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     @Override
+    public List<AdminUserDO> buscarUsuarios(String trecho, int limite) {
+        return userMapper.selectListParaBusca(CommonStatusEnum.ENABLE.getStatus(), trecho == null ? "" : trecho.trim(), limite);
+    }
+
+    @Override
     public boolean isPasswordMatch(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }

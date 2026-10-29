@@ -9,14 +9,11 @@
 
     <div class="grid-kpi">
       <Kpi label="Links online" :valor="`${t.online}/${base.length}`" :apoio="t.offline || t.degradado ? `${t.offline} fora · ${t.degradado} lento` : 'todos normais'"
-           :nivel="t.offline ? 'crit' : t.degradado ? 'warn' : 'ok'" :to="ir('MonitorLinks')" />
-      <Kpi label="Disponibilidade 24 h" :valor="`${dec(t.disp, 2)}%`" apoio="média das unidades" />
-      <Kpi label="Servidores respondendo" :valor="`${int(t.hostsOn)}/${int(t.hostsTot)}`" :apoio="t.hostsTot - t.hostsOn ? `${t.hostsTot - t.hostsOn} sem resposta` : 'todos respondendo'"
-           :nivel="t.hostsOn < t.hostsTot ? 'warn' : ''" :to="ir('MonitorInventario')" />
-      <Kpi label="Datacenter" :valor="`${dec(t.tempMax)} °C máx`" :apoio="`${t.nobreak ? t.nobreak + ' no nobreak' : 'energia normal'} · ${t.backupFalha} backup c/ falha`"
-           :nivel="t.tempMax >= 30 ? 'crit' : t.nobreak || t.tempMax >= 27 || t.backupFalha ? 'warn' : ''" />
-      <Kpi label="Chamados abertos" :valor="int(t.chamados)" :apoio="`${t.sla} com SLA vencido`" :nivel="t.sla ? 'warn' : ''" :to="ir('MonitorChamados')" />
-      <Kpi label="Incidentes de segurança" :valor="t.incidentes" :apoio="t.incidentes ? 'ver logs e câmeras' : 'nenhum aberto'" :nivel="t.incidentes ? 'crit' : ''" :to="ir('MonitorLogs')" />
+           :nivel="t.offline ? 'crit' : t.degradado ? 'warn' : 'ok'" :to="ir('MonitorLinks', 'MonitoramentoMonitor')" />
+      <Kpi label="Disponibilidade 24 h" :valor="`${dec(t.disp, 2)}%`" apoio="média dos links principais" />
+      <Kpi label="Serviços no ar" :valor="`${int(t.servOn)}/${int(t.servTot)}`" :apoio="t.servTot - t.servOn ? `${t.servTot - t.servOn} fora do ar` : t.servTot ? 'todos no ar' : 'nenhum monitor na unidade'"
+           :nivel="t.servOn < t.servTot ? 'warn' : t.servTot ? 'ok' : ''" :to="ir('MonitorLinks', 'MonitoramentoMonitor')" />
+      <Kpi label="Chamados abertos" :valor="int(t.chamados)" :apoio="`${t.sla} com SLA vencido`" :nivel="t.sla ? 'warn' : ''" :to="ir('MonitorChamados', 'ItsmChamado')" />
     </div>
 
     <div class="cols">
@@ -60,38 +57,37 @@ defineOptions({ name: 'MonitorVisaoGeral' })
 const store = useMonitorStore()
 const route = useRoute()
 const router = useRouter()
-const CATEGORIA = { rede: 'Rede', ativos: 'Servidores', datacenter: 'Datacenter', atendimento: 'Suporte', seguranca: 'Segurança' } as const
+const CATEGORIA = { rede: 'Rede', ativos: 'Serviços', atendimento: 'Suporte' } as const
 
 const base = computed(() => store.unidades.filter((u) => !store.unidadeId || u.id === store.unidadeId))
 const t = computed(() => {
-  const r = { online: 0, degradado: 0, offline: 0, disp: 0, hostsOn: 0, hostsTot: 0, tempMax: 0, nobreak: 0, backupFalha: 0, chamados: 0, sla: 0, incidentes: 0 }
+  const r = { online: 0, degradado: 0, offline: 0, disp: 0, servOn: 0, servTot: 0, chamados: 0, sla: 0 }
   let n = 0
   base.value.forEach(({ kpi: k }) => {
     if (!k) return
     n++
     r[k.link]++
     r.disp += k.disponibilidade
-    r.hostsOn += k.hostsOnline
-    r.hostsTot += k.hostsTotal
-    r.tempMax = Math.max(r.tempMax, k.temperaturaC)
-    if (k.energia === 'nobreak') r.nobreak++
-    if (!k.backupOk) r.backupFalha++
+    r.servOn += k.servicosNoAr
+    r.servTot += k.servicosTotal
     r.chamados += k.chamadosAbertos
     r.sla += k.slaVencido
-    r.incidentes += k.incidentesSeg
   })
   r.disp = n ? r.disp / n : 100
   return r
 })
 
-/** atalho para outra página mantendo o filtro de unidade na URL */
-const ir = (name: string) => ({ name, query: route.query })
+/** atalho para a primeira página que o perfil tem (a visão por unidade ou o módulo), mantendo o filtro na URL */
+const ir = (...nomes: string[]) => {
+  const name = nomes.find((n) => router.hasRoute(n))
+  return name ? { name, query: route.query } : undefined
+}
 const abrirTelao = () => window.open(router.resolve({ name: 'MonitorTelao' }).href, '_blank')
 </script>
 
 <style scoped lang="scss">
 .pg { padding: 4px; }
-.grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.grid-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
 .card-mapa :deep(.el-card__body) { height: 460px; }
 .ch {
@@ -115,7 +111,7 @@ const abrirTelao = () => window.open(router.resolve({ name: 'MonitorTelao' }).hr
   p { margin: 1px 0 0; font-size: 13px; }
 }
 @media (max-width: 1280px) {
-  .grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="Envio e download" url="https://doc.iocoder.cn/file/" />
-
   <!-- 搜索 -->
   <ContentWrap>
     <el-form

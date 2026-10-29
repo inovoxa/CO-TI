@@ -49,6 +49,18 @@ ESCOPO = [
     B + 'yudao-module-infra/src/main/java/**/enums/ErrorCodeConstants.java',
     B + 'yudao-module-system/src/main/java/**/controller/admin/**/vo/**/*.java',
     B + 'yudao-module-infra/src/main/java/**/controller/admin/**/vo/**/*.java',
+    B + 'yudao-module-system/src/main/java/**/service/oauth2/OAuth2TokenServiceImpl.java',
+    # backend: respostas de erro do framework (validação, tratador global, proteção, sessão)
+    B + 'yudao-framework/yudao-common/src/main/java/**/validation/*.java',
+    B + 'yudao-framework/yudao-common/src/main/java/**/pojo/PageParam.java',
+    B + 'yudao-framework/yudao-common/src/main/java/**/util/object/PageUtils.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-web/src/main/java/**/handler/GlobalExceptionHandler.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-web/src/main/java/**/encrypt/core/filter/ApiEncryptFilter.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-security/src/main/java/**/filter/TokenAuthenticationFilter.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-protection/src/main/java/**/annotation/*.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-protection/src/main/java/**/signature/core/aop/ApiSignatureAspect.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-excel/src/main/java/**/dict/validation/InDict.java',
+    B + 'yudao-framework/yudao-spring-boot-starter-excel/src/main/java/**/handler/SelectSheetWriteHandler.java',
 ]
 EXTENSOES = ('.vue', '.ts', '.js', '.java')
 

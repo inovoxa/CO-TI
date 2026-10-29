@@ -45,15 +45,13 @@
         />
       </el-form-item>
       <el-form-item label="Técnicos">
-        <el-select
+        <UsuarioSelect
           v-model="form.tecnicoIds"
           class="w-full"
           filterable
           multiple
           placeholder="Ninguém ainda"
-        >
-          <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="Descrição">
         <Editor v-model="form.descricao" :directory="objeto" height="200px" />
@@ -67,9 +65,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as ItsmApi from '@/api/itsm'
 import { ESCALA, TIPOS_MUDANCA, type ObjetoItil } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 import { useUserStore } from '@/store/modules/user'
 
 defineOptions({ name: 'ItilForm' })
@@ -81,7 +79,6 @@ const visivel = ref(false)
 const enviando = ref(false)
 const formRef = ref()
 const categorias = ref<ItsmApi.Categoria[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const vazio = () => ({
   titulo: '',
   tipo: 2,
@@ -98,10 +95,7 @@ const regras = { titulo: [{ required: true, message: 'Informe o título', trigge
 const open = async () => {
   form.value = vazio()
   visivel.value = true
-  ;[categorias.value, usuarios.value] = await Promise.all([
-    ItsmApi.getCategorias(true),
-    UserApi.getSimpleUserList()
-  ])
+  categorias.value = await ItsmApi.getCategorias(true)
 }
 defineExpose({ open })
 

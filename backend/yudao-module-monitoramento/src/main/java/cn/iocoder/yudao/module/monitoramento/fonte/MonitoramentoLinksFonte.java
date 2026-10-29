@@ -18,8 +18,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Fonte real da tela "Centro de Operações → Links e serviços" e do link de cada unidade no telão: lê o monitoramento
- * no lugar dos dados simulados do MVP.
+ * Fonte real da tela "Centro de Operações → Links por unidade" e do link e dos serviços de cada unidade no telão: lê o
+ * monitoramento no lugar dos dados simulados do MVP.
  */
 @Primary
 @Component
@@ -76,6 +76,26 @@ public class MonitoramentoLinksFonte implements MonitorFontes.Links, MonitorFont
                     .average().stream().boxed().findFirst().orElse(null);
             out.put(unidade, new MonitorFontes.LinkUnidade(link, g == 2 ? null : pior.getUltimaLatenciaMs(), disp));
         });
+        return out;
+    }
+
+    /** Monitores ativos de cada unidade; os em manutenção e os ainda não verificados não entram na conta. */
+    @Override
+    @DataPermission(enable = false)
+    public Map<Long, MonitorFontes.ServicosUnidade> servicosPorUnidade() {
+        Map<Long, int[]> soma = new HashMap<>();
+        for (MonitorDO m : monMonitorMapper.selectList(new LambdaQueryWrapperX<MonitorDO>().eq(MonitorDO::getAtivo, true)
+                .isNotNull(MonitorDO::getUnidadeId))) {
+            Integer e = m.getEstado();
+            if (e == null || e == Estados.MANUTENCAO) {
+                continue;
+            }
+            int[] s = soma.computeIfAbsent(m.getUnidadeId(), k -> new int[2]);
+            s[0] += e == Estados.NO_AR ? 1 : 0;
+            s[1]++;
+        }
+        Map<Long, MonitorFontes.ServicosUnidade> out = new HashMap<>();
+        soma.forEach((unidade, s) -> out.put(unidade, new MonitorFontes.ServicosUnidade(s[0], s[1])));
         return out;
     }
 

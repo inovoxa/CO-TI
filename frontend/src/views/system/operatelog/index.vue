@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="Logs do sistema" url="https://doc.iocoder.cn/system-log/" />
-
   <ContentWrap>
     <!-- 搜索工作栏 -->
     <el-form
@@ -11,20 +9,12 @@
       label-width="68px"
     >
       <el-form-item label="Usuário" prop="userId">
-        <el-select
+        <UsuarioSelect
           v-model="queryParams.userId"
           clearable
-          filterable
           placeholder="Digite o usuário"
           class="!w-240px"
-        >
-          <el-option
-            v-for="user in userList"
-            :key="user.id"
-            :label="user.nickname"
-            :value="user.id"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="Módulo" prop="type">
         <el-input
@@ -136,8 +126,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import download from '@/utils/download'
 import * as OperateLogApi from '@/api/system/operatelog'
 import OperateLogDetail from './OperateLogDetail.vue'
-import * as UserApi from '@/api/system/user'
-const userList = ref<UserApi.UserVO[]>([]) // 用户列表
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 
 defineOptions({ name: 'SystemOperateLog' })
 
@@ -207,7 +196,5 @@ const handleExport = async () => {
 /** 初始化 **/
 onMounted(async () => {
   await getList()
-  // 获得用户列表
-  userList.value = await UserApi.getSimpleUserList()
 })
 </script>

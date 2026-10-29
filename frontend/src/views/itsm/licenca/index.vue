@@ -168,16 +168,14 @@
               <el-radio-button value="pessoa">Pessoa</el-radio-button>
               <el-radio-button value="equipamento">Equipamento</el-radio-button>
             </el-radio-group>
-            <el-select
+            <UsuarioSelect
               v-if="uso.modo === 'pessoa'"
               v-model="uso.userId"
               class="!w-240px"
               filterable
               placeholder="Pessoa"
               size="small"
-            >
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            />
             <el-input
               v-else
               v-model="uso.equipamento"
@@ -311,9 +309,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="Responsável">
-            <el-select v-model="form.dados.responsavelId" class="w-full" clearable filterable>
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            <UsuarioSelect v-model="form.dados.responsavelId" class="w-full" clearable filterable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -334,9 +330,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Gov from '@/api/itsm/governanca'
 import { SITUACOES_LICENCA, cor, data } from '@/api/itsm/governanca'
-import * as UserApi from '@/api/system/user'
 import { checkPermi } from '@/utils/permission'
 import CustosTabela from '../governanca/CustosTabela.vue'
 import LicencaInstalacoes from '../../inventario/LicencaInstalacoes.vue'
@@ -359,7 +355,6 @@ const lista = ref<Gov.Licenca[]>([])
 const total = ref(0)
 const fornecedores = ref<Gov.Resumo[]>([])
 const contratos = ref<Gov.Resumo[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const q = reactive({ pageNo: 1, pageSize: 20, busca: '', situacao: '' })
 const detalhe = reactive({ visivel: false, l: undefined as Gov.Licenca | undefined })
 const chaveVista = ref('')
@@ -388,9 +383,8 @@ const filtrar = (s: string) => {
 }
 
 const carregarListas = async () => {
-  if (!usuarios.value.length) {
-    ;[usuarios.value, fornecedores.value, contratos.value] = await Promise.all([
-      UserApi.getSimpleUserList(),
+  if (!fornecedores.value.length) {
+    ;[fornecedores.value, contratos.value] = await Promise.all([
       Gov.getFornecedoresSimples(),
       Gov.getContratosSimples()
     ])

@@ -142,19 +142,12 @@
             >
               <el-option v-for="x in equipes" :key="x.id" :label="x.nome" :value="String(x.id)" />
             </el-select>
-            <el-select
+            <UsuarioSelect
               v-else-if="PESSOA.includes(a.acao)"
-              v-model="a.valor"
+              :model-value="a.valor ? Number(a.valor) : undefined"
               class="flex-1"
-              filterable
-            >
-              <el-option
-                v-for="x in usuarios"
-                :key="x.id"
-                :label="x.nickname"
-                :value="String(x.id)"
-              />
-            </el-select>
+              @update:model-value="(v) => (a.valor = v == null ? '' : String(v))"
+            />
             <el-select
               v-else-if="a.acao === 'definir_categoria'"
               v-model="a.valor"
@@ -248,7 +241,8 @@
 <script lang="ts" setup>
 import * as ItsmApi from '@/api/itsm'
 import { ESCALA, PRIORIDADES } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
+import { garantirUsuarios, nomeUsuario } from '@/hooks/web/useUsuarios'
 
 defineOptions({ name: 'ItsmRegra' })
 const message = useMessage()
@@ -296,7 +290,6 @@ const loading = ref(true)
 const lista = ref<ItsmApi.Regra[]>([])
 const categorias = ref<ItsmApi.Categoria[]>([])
 const equipes = ref<ItsmApi.Equipe[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const formularios = ref<ItsmApi.Formulario[]>([])
 const dialogo = ref(false)
 const salvando = ref(false)
@@ -320,8 +313,7 @@ const valorAcao = (a: ItsmApi.AcaoRegra) => {
   const n = Number(a.valor)
   if (a.acao === 'atribuir_equipe')
     return equipes.value.find((x) => x.id === n)?.nome || '#' + a.valor
-  if (PESSOA.includes(a.acao))
-    return usuarios.value.find((x) => x.id === n)?.nickname || '#' + a.valor
+  if (PESSOA.includes(a.acao)) return nomeUsuario(n)
   if (a.acao === 'definir_categoria')
     return categorias.value.find((x) => x.id === n)?.nomeCompleto || '#' + a.valor
   if (a.acao === 'definir_tipo') return n === 1 ? 'Incidente' : 'Requisição'
@@ -334,6 +326,11 @@ const carregar = async () => {
   loading.value = true
   try {
     lista.value = await ItsmApi.getRegras()
+    garantirUsuarios(
+      lista.value.flatMap((r) =>
+        r.acoes.filter((a) => PESSOA.includes(a.acao)).map((a) => Number(a.valor))
+      )
+    )
   } finally {
     loading.value = false
   }
@@ -380,15 +377,13 @@ const testar = async () => {
 
 onMounted(async () => {
   await carregar()
-  const [c, e, u, f] = await Promise.all([
+  const [c, e, f] = await Promise.all([
     ItsmApi.getCategorias(false),
     ItsmApi.getEquipes(false),
-    UserApi.getSimpleUserList(),
     ItsmApi.getFormularios().catch(() => [])
   ])
   categorias.value = c
   equipes.value = e
-  usuarios.value = u
   formularios.value = f
 })
 </script>

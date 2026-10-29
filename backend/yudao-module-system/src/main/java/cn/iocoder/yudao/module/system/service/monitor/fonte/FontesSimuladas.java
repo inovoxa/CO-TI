@@ -8,6 +8,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
 import cn.iocoder.yudao.module.system.service.monitor.MonitorKpiService;
 import jakarta.annotation.Resource; // no branch master (JDK 8) troque por javax.annotation.Resource
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -248,8 +249,15 @@ public class FontesSimuladas implements MonitorFontes.Chamados, MonitorFontes.Li
     // ======================================================================================
     // Simulação contínua + envio pelo WebSocket
     // ======================================================================================
+    /** Logs e câmeras ainda não têm fonte real e as telas deles ficam desligadas: a simulação só roda se pedida. */
+    @Value("${coti.monitor.simulacao:false}")
+    private boolean simulacaoLigada;
+
     @Scheduled(fixedRate = 5000, initialDelay = 12000)
     public void tick() {
+        if (!simulacaoLigada) {
+            return;
+        }
         try {
             iniciar();
             if (!iniciado) {

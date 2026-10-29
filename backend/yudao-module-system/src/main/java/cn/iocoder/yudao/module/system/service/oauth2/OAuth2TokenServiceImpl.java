@@ -74,13 +74,13 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
         // 查询访问令牌
         OAuth2RefreshTokenDO refreshTokenDO = oauth2RefreshTokenMapper.selectByRefreshToken(refreshToken);
         if (refreshTokenDO == null) {
-            throw exception0(GlobalErrorCodeConstants.BAD_REQUEST.getCode(), "无效的刷新令牌");
+            throw exception0(GlobalErrorCodeConstants.BAD_REQUEST.getCode(), "Sessão inválida: entre novamente");
         }
 
         // 校验 Client 匹配
         OAuth2ClientDO clientDO = oauth2ClientService.validOAuthClientFromCache(clientId);
         if (ObjectUtil.notEqual(clientId, refreshTokenDO.getClientId())) {
-            throw exception0(GlobalErrorCodeConstants.BAD_REQUEST.getCode(), "刷新令牌的客户端编号不正确");
+            throw exception0(GlobalErrorCodeConstants.BAD_REQUEST.getCode(), "Sessão inválida: entre novamente");
         }
 
         // 移除相关的访问令牌
@@ -93,7 +93,7 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
         // 已过期的情况下，删除刷新令牌
         if (DateUtils.isExpired(refreshTokenDO.getExpiresTime())) {
             oauth2RefreshTokenMapper.deleteById(refreshTokenDO.getId());
-            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "刷新令牌已过期");
+            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "Sua sessão expirou: entre novamente");
         }
 
         // 创建访问令牌
@@ -131,10 +131,10 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
     public OAuth2AccessTokenDO checkAccessToken(String accessToken) {
         OAuth2AccessTokenDO accessTokenDO = getAccessToken(accessToken);
         if (accessTokenDO == null) {
-            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "访问令牌不存在");
+            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "Sessão inválida: entre novamente");
         }
         if (DateUtils.isExpired(accessTokenDO.getExpiresTime())) {
-            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "访问令牌已过期");
+            throw exception0(GlobalErrorCodeConstants.UNAUTHORIZED.getCode(), "Sua sessão expirou: entre novamente");
         }
         return accessTokenDO;
     }
@@ -232,7 +232,7 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
             // 注意：目前 Member 暂时不读取，可以按需实现
             return Collections.emptyMap();
         }
-        throw new IllegalArgumentException("未知用户类型：" + userType);
+        throw new IllegalArgumentException("Tipo de usuário desconhecido: " + userType);
     }
 
     private static String generateAccessToken() {

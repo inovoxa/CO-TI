@@ -5,15 +5,12 @@
         <el-option v-for="(x, k) in ACOES" :key="k" :label="x.rotulo" :value="k" />
       </el-select>
       <div class="min-w-0 flex-1">
-        <el-select
+        <UsuarioSelect
           v-if="ACOES[a.tipo]?.valor === 'agente'"
           v-model="a.valor"
           class="w-full"
-          filterable
           placeholder="Atendente"
-        >
-          <el-option v-for="u in agentes" :key="u.id" :label="u.nickname" :value="u.id" />
-        </el-select>
+        />
         <el-select
           v-else-if="ACOES[a.tipo]?.valor === 'etiquetas'"
           v-model="a.valor"
@@ -56,13 +53,13 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Atd from '@/api/atendimento'
 import { ACOES, PRIORIDADES } from '@/api/atendimento'
 
 const lista = defineModel<Atd.Acao[]>({ required: true })
 defineProps<{
   etiquetas: Atd.Etiqueta[]
-  agentes: { id: number; nickname: string }[]
 }>()
 
 const valorInicial = (tipo: string) => {

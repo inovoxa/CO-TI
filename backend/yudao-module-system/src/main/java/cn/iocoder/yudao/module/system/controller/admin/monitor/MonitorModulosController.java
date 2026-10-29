@@ -90,7 +90,7 @@ public class MonitorModulosController {
     // ---------------- Logs ----------------
     @GetMapping("/logs")
     @Operation(summary = "Busca de logs")
-    @PreAuthorize("@ss.hasPermission('system:monitor-logs:query')")
+    @PreAuthorize("@ss.hasPermission('logs:consultar')")
     public CommonResult<ListaVO<LogVO>> buscarLogs(@RequestParam(required = false) Long unidadeId,
                                                    @RequestParam(required = false) String nivel,
                                                    @RequestParam(required = false) String busca) {

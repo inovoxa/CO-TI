@@ -2,7 +2,9 @@ package cn.iocoder.yudao.framework.redis.config;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.iocoder.yudao.framework.redis.core.ExecucaoUnica;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.redisson.api.RedissonClient;
 import org.redisson.spring.starter.RedissonAutoConfigurationV2;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +35,12 @@ public class YudaoRedisAutoConfiguration {
         template.setValueSerializer(redisSerializer);
         template.setHashValueSerializer(redisSerializer);
         return template;
+    }
+
+    /** CO-TI: tarefas agendadas que rodam em uma instância só a cada vez */
+    @Bean
+    public ExecucaoUnica execucaoUnica(RedissonClient redissonClient) {
+        return new ExecucaoUnica(redissonClient);
     }
 
     public static RedisSerializer<?> buildRedisSerializer() {

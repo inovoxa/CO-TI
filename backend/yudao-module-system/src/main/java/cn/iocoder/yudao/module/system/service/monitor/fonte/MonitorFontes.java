@@ -7,11 +7,11 @@ import java.util.Map;
 /**
  * Contratos das "fontes" de cada módulo. As telas e o controller só conhecem estas interfaces.
  *
- * <p>Hoje todas são atendidas por {@link FontesSimuladas}. Para ligar uma ferramenta real, crie uma classe
- * que implemente só a interface daquele módulo e marque-a com {@code @Primary}; o restante continua simulado.
- * Exemplos: {@code GlpiChamados implements MonitorFontes.Chamados} (API REST do GLPI),
- * {@code UptimeKumaLinks implements MonitorFontes.Links} (endpoint /metrics), {@code OcsInventario},
- * {@code GraylogLogs} (API de busca), {@code FrigateCameras} (eventos via MQTT e API HTTP).
+ * <p>Chamados, links e inventário vêm dos módulos do CO-TI (classes {@code @Primary} em itsm, monitoramento e
+ * inventario). Logs e câmeras ainda são atendidos por {@link FontesSimuladas}, e por isso as telas deles ficam
+ * desativadas no menu. Para ligar uma ferramenta real, crie uma classe que implemente só a interface daquele módulo
+ * e marque-a com {@code @Primary}. Exemplos: {@code GraylogLogs} (API de busca), {@code FrigateCameras} (eventos via
+ * MQTT e API HTTP).
  *
  * <p>Parâmetro {@code unidadeId}: {@code null} = todas as unidades.
  */
@@ -32,13 +32,25 @@ public final class MonitorFontes {
         ListaVO<LinkVO> listarLinks(Long unidadeId, String filtro, int limite);
     }
 
-    /**
-     * Estado real do link principal de cada unidade, para o telão (o monitoramento implementa). Sem implementação, o
-     * telão usa o link simulado.
-     */
+    /** Link principal e serviços de cada unidade, para o telão (o monitoramento implementa). */
     public interface IndicadoresLink {
         /** unidadeId → link principal; unidade sem monitor principal aparece no ar, sem latência (não é verificada) */
         Map<Long, LinkUnidade> linksPrincipais();
+
+        /** unidadeId → monitores ativos da unidade (no ar / total); unidade sem monitores não aparece */
+        Map<Long, ServicosUnidade> servicosPorUnidade();
+    }
+
+    public record ServicosUnidade(int noAr, int total) {
+    }
+
+    /** Chamados de cada unidade, para o telão (o Service Desk implementa). */
+    public interface IndicadoresChamados {
+        /** unidadeId → chamados abertos e com SLA de solução vencido; unidade sem chamados não aparece */
+        Map<Long, ChamadosUnidade> chamadosPorUnidade();
+    }
+
+    public record ChamadosUnidade(int abertos, int slaVencido) {
     }
 
     /**

@@ -1,7 +1,7 @@
 <!-- Rota: /operacoes/inventario · Permissão: system:monitor-inventario:query -->
 <template>
   <div class="pg">
-    <MonitorHeader titulo="Inventário de equipamentos" fonte="Estações e servidores · OCS Inventory NG (API REST)">
+    <MonitorHeader titulo="Equipamentos por unidade" fonte="Resumo do Inventário, filtrado pela unidade escolhida no mapa">
       <template #acoes><el-button :loading="carregando" @click="carregar">Atualizar</el-button></template>
     </MonitorHeader>
 

@@ -135,9 +135,7 @@
             </el-select>
           </el-form-item>
           <el-form-item v-if="form.aprovacao === 'fixo'" label="Aprovador">
-            <el-select v-model="form.aprovadorId" class="w-full" filterable>
-              <el-option v-for="u in usuarios" :key="u.id" :label="u.nickname" :value="u.id" />
-            </el-select>
+            <UsuarioSelect v-model="form.aprovadorId" class="w-full" filterable />
           </el-form-item>
           <el-form-item label="Operação no AD">
             <el-select
@@ -285,9 +283,9 @@
 </template>
 
 <script lang="ts" setup>
+import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as ItsmApi from '@/api/itsm'
 import { ACOES_AD, ESCALA } from '@/api/itsm'
-import * as UserApi from '@/api/system/user'
 import FormularioRender from '../components/FormularioRender.vue'
 
 defineOptions({ name: 'ItsmFormulario' })
@@ -309,7 +307,6 @@ const loading = ref(true)
 const lista = ref<ItsmApi.Formulario[]>([])
 const busca = ref('')
 const categorias = ref<ItsmApi.Categoria[]>([])
-const usuarios = ref<UserApi.UserVO[]>([])
 const dialogo = ref(false)
 const salvando = ref(false)
 const formRef = ref()
@@ -393,10 +390,7 @@ const abrir = async (f?: ItsmApi.Formulario) => {
   previa.value = {}
   dialogo.value = true
   if (!categorias.value.length) {
-    ;[categorias.value, usuarios.value] = await Promise.all([
-      ItsmApi.getCategorias(true),
-      UserApi.getSimpleUserList()
-    ])
+    categorias.value = await ItsmApi.getCategorias(true)
   }
 }
 
