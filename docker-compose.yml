@@ -114,10 +114,35 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      CO_TI_HTTPS_PORT: ${CO_TI_HTTPS_PORT:-8443}   # porta pública do HTTPS (o HTTP redireciona para ela)
+      CO_TI_TLS_NOMES: ${CO_TI_TLS_NOMES:-}          # nomes/IPs do certificado autoassinado
     ports:
       - "${CO_TI_HTTP_PORT:-8080}:80"
+      - "${CO_TI_HTTPS_PORT:-8443}:443"
+    volumes:
+      # cert.pem (com a cadeia) e key.pem da empresa; vazio = autoassinado gerado na primeira subida
+      - ./segredos/tls:/etc/nginx/tls
     depends_on:
       - backend
+    restart: unless-stopped
+
+  # backup diário do banco e dos anexos em ./backups (copie a pasta para fora do servidor). Ver deploy/backup.
+  backup:
+    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    entrypoint: ["bash", "/backup/backup.sh"]
+    user: root
+    environment:
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_BACKUP_HORA: ${CO_TI_BACKUP_HORA:-02:30}
+      CO_TI_BACKUP_DIAS: ${CO_TI_BACKUP_DIAS:-14}
+    volumes:
+      - ./deploy/backup:/backup:ro
+      - ./backups:/backups
+      - arquivos:/arquivos
+    depends_on:
+      postgres: { condition: service_healthy }
     restart: unless-stopped
 
 volumes:

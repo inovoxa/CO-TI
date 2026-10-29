@@ -1,0 +1,42 @@
+# Mesmo domínio para o portal, a API e o WebSocket: sem CORS e com cookies/tokens só na origem do portal.
+# Modelo do nginx: na subida do contêiner, ${CO_TI_HTTPS_PORT} vira a porta pública do HTTPS (docker-compose.yml).
+
+# HTTP: só os agentes e o push do monitoramento; o resto vai para o HTTPS
+server {
+    listen 80;
+    server_name _;
+    server_tokens off;
+    client_max_body_size 50m;
+
+    include /etc/nginx/coti/agentes.conf;
+
+    location / {
+        return 301 https://$host:${CO_TI_HTTPS_PORT}$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name _;
+    server_tokens off;
+    client_max_body_size 50m;
+
+    # certificado da empresa em segredos/tls; sem ele, o contêiner gera um autoassinado (40-certificado.sh)
+    ssl_certificate /etc/nginx/tls/cert.pem;
+    ssl_certificate_key /etc/nginx/tls/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    root /usr/share/nginx/html;
+
+    include /etc/nginx/coti/agentes.conf;
+    include /etc/nginx/coti/portal.conf;
+}

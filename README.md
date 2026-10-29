@@ -22,9 +22,34 @@ cp .env.example .env        # troque todas as senhas (openssl rand -base64 32)
 docker compose up -d --build
 ```
 
-Depois abra `http://<servidor>:8080` (ou a porta de `CO_TI_HTTP_PORT`) e entre como `admin`, com a senha inicial definida. Em seguida, remova `CO_TI_ADMIN_SENHA_INICIAL` do `.env`.
+Depois abra `https://<servidor>:8443` (a porta de `CO_TI_HTTPS_PORT`) e entre como `admin`, com a senha inicial definida. Em seguida, remova `CO_TI_ADMIN_SENHA_INICIAL` do `.env`.
 
-Serviços: `postgres` (PostgreSQL 16, TimescaleDB e pgvector), `redis`, `backend` e `frontend` (nginx, que publica o portal, a API `/admin-api` e o WebSocket `/infra/ws` na mesma origem).
+Serviços: `postgres` (PostgreSQL 16, TimescaleDB e pgvector), `redis`, `backend`, `frontend` (nginx, que publica o portal, a API `/admin-api` e o WebSocket `/infra/ws` na mesma origem) e `backup`.
+
+### HTTPS
+
+O portal só abre por HTTPS (TLS 1.2 e 1.3); o HTTP (`CO_TI_HTTP_PORT`) redireciona, menos os caminhos dos agentes de
+inventário (`/ocsinventory`, `/front/inventory.php`, `/download/`) e do push do monitoramento (`/api/push/`), que
+seguem nos dois. Ponha o certificado da empresa em `segredos/tls/cert.pem` (com a cadeia) e `segredos/tls/key.pem`
+e reinicie o `frontend`. Sem ele, a primeira subida gera um **autoassinado** (2 anos) para os nomes de
+`CO_TI_TLS_NOMES`: funciona, mas o navegador avisa. Para trocar, apague os dois arquivos ou substitua-os.
+O microfone do assistente só funciona em HTTPS.
+
+### Backup
+
+O serviço `backup` faz, todo dia às `CO_TI_BACKUP_HORA` (02:30), um `pg_dump` do banco e um `.tar.gz` dos anexos em
+`./backups`, guardando `CO_TI_BACKUP_DIAS` (14) dias. O último fica descrito em `backups/ultimo.json`. **Copie a
+pasta para fora do servidor** (outro servidor, fita, nuvem) e guarde o `.env` à parte: sem a mesma
+`CO_TI_CHAVE_MESTRA`, os segredos cifrados (MFA, cofre) do backup não abrem.
+
+```bash
+docker compose run --rm backup agora                       # um backup já
+docker compose stop backend                                # restaurar (num banco vazio: volume pgdata novo)
+docker compose run --rm backup restaurar coti-AAAAMMDD-HHMM.dump arquivos-AAAAMMDD-HHMM.tar.gz
+docker compose start backend
+```
+
+Testado: restauração completa em ~1,5 min (150 mil chamados, 595 mil logs, anexos), conferindo tabela a tabela.
 
 ### Dados de demonstração
 

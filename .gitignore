@@ -12,3 +12,6 @@ segredos/
 
 # cópia dos anexos do GLPI para a importação (dados da empresa, fora do repositório)
 /importacao/
+
+# backups do banco e dos anexos (dados da empresa)
+/backups/
