@@ -197,7 +197,7 @@
   <MonitorForm
     ref="form"
     @salvo="
-      (id) => {
+      () => {
         atualizar()
         detalhe?.recarregar()
       }

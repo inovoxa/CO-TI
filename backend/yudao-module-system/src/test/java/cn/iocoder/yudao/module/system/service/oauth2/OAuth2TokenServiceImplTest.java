@@ -106,7 +106,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
 
         // 调用，并断言
         assertServiceException(() -> oauth2TokenService.refreshAccessToken(refreshToken, clientId),
-                new ErrorCode(400, "无效的刷新令牌"));
+                new ErrorCode(400, "Sessão inválida: entre novamente"));
     }
 
     @Test
@@ -124,7 +124,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
 
         // 调用，并断言
         assertServiceException(() -> oauth2TokenService.refreshAccessToken(refreshToken, clientId),
-                new ErrorCode(400, "刷新令牌的客户端编号不正确"));
+                new ErrorCode(400, "Sessão inválida: entre novamente"));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
 
         // 调用，并断言
         assertServiceException(() -> oauth2TokenService.refreshAccessToken(refreshToken, clientId),
-                new ErrorCode(401, "刷新令牌已过期"));
+                new ErrorCode(401, "Sua sessão expirou: entre novamente"));
         assertEquals(0, oauth2AccessTokenMapper.selectCount());
     }
 
@@ -215,7 +215,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     public void testCheckAccessToken_null() {
         // 调研，并断言
         assertServiceException(() -> oauth2TokenService.checkAccessToken(randomString()),
-                new ErrorCode(401, "访问令牌不存在"));
+                new ErrorCode(401, "Sessão inválida: entre novamente"));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
 
         // 调研，并断言
         assertServiceException(() -> oauth2TokenService.checkAccessToken(accessToken),
-                new ErrorCode(401, "访问令牌已过期"));
+                new ErrorCode(401, "Sua sessão expirou: entre novamente"));
     }
 
     @Test

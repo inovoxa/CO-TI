@@ -8,10 +8,12 @@
     </MonitorHeader>
 
     <div class="grid-kpi">
-      <Kpi label="Links online" :valor="`${t.online}/${base.length}`" :apoio="t.offline || t.degradado ? `${t.offline} fora · ${t.degradado} lento` : 'todos normais'"
+      <Kpi
+label="Links online" :valor="`${t.online}/${base.length}`" :apoio="t.offline || t.degradado ? `${t.offline} fora · ${t.degradado} lento` : 'todos normais'"
            :nivel="t.offline ? 'crit' : t.degradado ? 'warn' : 'ok'" :to="ir('MonitorLinks', 'MonitoramentoMonitor')" />
       <Kpi label="Disponibilidade 24 h" :valor="`${dec(t.disp, 2)}%`" apoio="média dos links principais" />
-      <Kpi label="Serviços no ar" :valor="`${int(t.servOn)}/${int(t.servTot)}`" :apoio="t.servTot - t.servOn ? `${t.servTot - t.servOn} fora do ar` : t.servTot ? 'todos no ar' : 'nenhum monitor na unidade'"
+      <Kpi
+label="Serviços no ar" :valor="`${int(t.servOn)}/${int(t.servTot)}`" :apoio="t.servTot - t.servOn ? `${t.servTot - t.servOn} fora do ar` : t.servTot ? 'todos no ar' : 'nenhum monitor na unidade'"
            :nivel="t.servOn < t.servTot ? 'warn' : t.servTot ? 'ok' : ''" :to="ir('MonitorLinks', 'MonitoramentoMonitor')" />
       <Kpi label="Chamados abertos" :valor="int(t.chamados)" :apoio="`${t.sla} com SLA vencido`" :nivel="t.sla ? 'warn' : ''" :to="ir('MonitorChamados', 'ItsmChamado')" />
     </div>

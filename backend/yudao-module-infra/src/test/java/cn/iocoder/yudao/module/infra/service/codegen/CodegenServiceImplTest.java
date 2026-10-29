@@ -211,7 +211,10 @@ public class CodegenServiceImplTest extends BaseDbUnitTest {
         CodegenUpdateReqVO updateReqVO = randomPojo(CodegenUpdateReqVO.class,
                 o -> o.getTable().setId(table.getId())
                         .setTemplateType(CodegenTemplateTypeEnum.ONE.getType())
-                        .setScene(CodegenSceneEnum.ADMIN.getScene()));
+                        .setScene(CodegenSceneEnum.ADMIN.getScene())
+                        // CO-TI: com @Pattern, o Podam deixa estes campos nulos; o updateById ignora nulos e o
+                        // banco ficaria com o valor antigo
+                        .setModuleName("system").setBusinessName("codegen").setClassName("CodegenTable"));
         CodegenColumnSaveReqVO columnVO01 = randomPojo(CodegenColumnSaveReqVO.class,
                 o -> o.setId(column01.getId()).setTableId(table.getId()));
         CodegenColumnSaveReqVO columnVO02 = randomPojo(CodegenColumnSaveReqVO.class,
