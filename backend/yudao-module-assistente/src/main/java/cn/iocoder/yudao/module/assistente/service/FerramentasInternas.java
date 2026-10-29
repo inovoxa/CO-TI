@@ -1074,7 +1074,7 @@ public class FerramentasInternas {
      * Banda vem dos logs de sessão (type:traffic, com os bytes da sessão inteira); o webfilter também traz bytes,
      * parciais, e somar os dois contaria o mesmo acesso duas vezes. Se a consulta não escolheu o tipo, escolhe aqui.
      */
-    private static void sessoesDeBanda(LogsVOs.Filtro f, String soma) {
+    static void sessoesDeBanda(LogsVOs.Filtro f, String soma) {
         if (soma == null) {
             return;
         }
