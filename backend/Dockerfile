@@ -1,5 +1,5 @@
 # Build do backend CO-TI (Spring Boot / yudao-server)
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /src
 COPY . .
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests -pl yudao-server -am
