@@ -899,6 +899,11 @@ public class ConversaService {
             v.setRemetenteId(m.getRemetenteId());
             Map<String, Object> dados = m.getDados() == null ? Map.of() : JsonUtils.parseObject(m.getDados(), new TypeReference<Map<String, Object>>() {
             });
+            if (dados.containsKey("segredo")) {
+                // senha provisória a caminho do contato: nem cifrada ela sai do servidor
+                dados = new LinkedHashMap<>(dados);
+                dados.remove("segredo");
+            }
             v.setDados(dados);
             v.setRemetente(switch (m.getRemetenteTipo()) {
                 case "agente" -> m.getRemetenteId() == null && "celular".equals(dados.get("origem")) ? "Pelo celular"

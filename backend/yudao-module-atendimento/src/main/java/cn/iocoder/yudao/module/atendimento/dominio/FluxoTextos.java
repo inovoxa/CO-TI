@@ -26,7 +26,7 @@ public final class FluxoTextos {
 
     public static final String AJUDA_COMANDOS = "A qualquer momento: *menu* volta ao início, *voltar* refaz a pergunta anterior, *cancelar* descarta o pedido e *atendente* chama uma pessoa.";
 
-    public enum Comando { MENU, VOLTAR, CANCELAR, ATENDENTE }
+    public enum Comando { MENU, VOLTAR, CANCELAR, ATENDENTE, SENHA }
 
     /** Comando global, se a mensagem for um. */
     public static Comando comando(String texto) {
@@ -36,6 +36,8 @@ public final class FluxoTextos {
             case "voltar" -> Comando.VOLTAR;
             case "cancelar", "sair" -> Comando.CANCELAR;
             case "atendente", "humano", "falar com atendente", "falar com um atendente", "pessoa" -> Comando.ATENDENTE;
+            // pedido da senha provisória de um reset/criação já executado no AD
+            case "senha", "senha provisoria", "minha senha", "ver senha", "receber senha", "enviar senha" -> Comando.SENHA;
             default -> null;
         };
     }

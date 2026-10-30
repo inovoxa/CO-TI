@@ -194,6 +194,16 @@ public class FormularioService {
     @Transactional(rollbackFor = Exception.class)
     @DataPermission(enable = false)
     public Long enviar(CatalogoVOs.EnviarReq req, Long userId) {
+        return enviar(req, userId, null, Map.of());
+    }
+
+    /**
+     * Envio com uma observação para o técnico e o aprovador (no topo da descrição e no pedido de aprovação) e dados
+     * extras para a operação no AD (ex.: {@code entrega_senha=email} no pedido feito pela tela de login).
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public Long enviar(CatalogoVOs.EnviarReq req, Long userId, String observacao, Map<String, String> extrasAd) {
         FormularioDO f = obter(req.getFormularioId());
         if (!Boolean.TRUE.equals(f.getAtivo())) {
             throw exception(FORMULARIO_NAO_EXISTE);
@@ -222,7 +232,8 @@ public class FormularioService {
 
         ChamadoVOs.CriarReq c = new ChamadoVOs.CriarReq();
         c.setTitulo(Formulario.titulo(f.getTituloModelo(), f.getNome(), respostas));
-        c.setDescricao("<p><b>Pedido pelo catálogo: " + Formulario.escaparHtml(f.getNome()) + "</b></p>"
+        c.setDescricao((observacao == null ? "" : "<p><b>⚠️ " + Formulario.escaparHtml(observacao) + "</b></p>")
+                + "<p><b>Pedido pelo catálogo: " + Formulario.escaparHtml(f.getNome()) + "</b></p>"
                 + Formulario.descricaoHtml(d, respostas));
         c.setTipo(f.getTipo());
         c.setUrgencia(f.getUrgencia());
@@ -233,13 +244,15 @@ public class FormularioService {
         respostaMapper.insert(FormularioRespostaDO.builder().formularioId(f.getId()).chamadoId(chamadoId).userId(userId)
                 .respostas(JsonUtils.toJsonString(respostas)).criadoEm(LocalDateTime.now()).build());
         if (aprovador != null) {
-            aprovacaoService.solicitar(chamadoId, List.of(aprovador), "Pedido pelo formulário \"" + f.getNome() + "\"", null);
+            aprovacaoService.solicitar(chamadoId, List.of(aprovador), "Pedido pelo formulário \"" + f.getNome() + "\""
+                    + (observacao == null ? "" : ". " + observacao), null);
         }
         if (f.getAcaoAd() != null) {
             ChamadoDO ch = chamadoMapper.selectById(chamadoId);
             boolean aguarda = ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO;
             Map<String, String> dados = new LinkedHashMap<>(respostas);
             dados.put("chamado_id", String.valueOf(chamadoId));
+            dados.putAll(extrasAd);
             // conta do AD de quem pediu, quando o formulário não pergunta (AcessoPasta concede a pasta a esse login)
             VinculoAdDO v = vinculoAdMapper.selectByUserId(userId);
             if (v != null && v.getLogin() != null) {

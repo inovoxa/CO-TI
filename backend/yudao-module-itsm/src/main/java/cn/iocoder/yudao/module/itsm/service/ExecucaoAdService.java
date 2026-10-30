@@ -11,10 +11,12 @@ import cn.iocoder.yudao.module.itsm.ad.ExecutorAd;
 import cn.iocoder.yudao.module.itsm.ad.ExecutorAdSimulado;
 import cn.iocoder.yudao.module.itsm.ad.ExecutorAdSsh;
 import cn.iocoder.yudao.module.itsm.config.ItsmProperties;
+import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ExecucaoAdDO;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ExecucaoAdMapper;
+import cn.iocoder.yudao.module.itsm.service.email.EnvioEmailService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -37,7 +39,7 @@ import static cn.iocoder.yudao.module.itsm.enums.ErrorCodeConstants.*;
  * Resposta {sucesso:false} do script (ex.: usuário não existe) vira "erro" direto: repetir não adianta.
  *
  * <p>A senha provisória nunca vai para a linha do tempo nem para o log: fica cifrada (chave-mestra) e o
- * solicitante a vê uma única vez no portal; depois disso é apagada.
+ * solicitante a recebe uma única vez, no portal ou no canal de atendimento ("SENHA"); depois disso é apagada.
  */
 @Slf4j
 @Service
@@ -59,6 +61,8 @@ public class ExecucaoAdService {
     @Resource
     @Lazy
     private ChamadoService chamadoService;
+    @Resource
+    private EnvioEmailService envioEmailService;
 
     private ExecutorAd executor;
 
@@ -167,9 +171,47 @@ public class ExecucaoAdService {
         terminar(e, "sucesso", mensagem, JsonUtils.toJsonString(r), cifrada);
         chamadoService.acompanhamentoSistema(e.getChamadoId(), null, "Resultado da automação no AD: "
                 + JsonUtils.toJsonString(r), true);
+        String porEmail = cifrada == null ? null : entregarPorEmail(e, String.valueOf(senha));
         chamadoService.solucionarSistema(e.getChamadoId(), mensagem + (cifrada == null ? ""
-                : ". A senha provisória está disponível UMA vez em \"Meus chamados\" (botão \"Ver senha provisória\"); "
-                + "no primeiro acesso será pedida a troca."));
+                : porEmail != null ? ". A senha provisória foi enviada ao e-mail pessoal informado no pedido (" + porEmail
+                + "). No primeiro acesso será pedida a troca."
+                : ". A senha provisória é entregue UMA vez a quem pediu: no WhatsApp da TI, respondendo *SENHA*, ou em "
+                + "\"Meus chamados\" (botão \"Ver senha provisória\"). No primeiro acesso será pedida a troca."));
+    }
+
+    /**
+     * Pedido feito pela tela de login ({@code entrega_senha=email}): quem pediu não está autenticado, então a senha vai
+     * para o e-mail pessoal do formulário (o aprovador viu esse endereço antes de aprovar) e sai do banco.
+     *
+     * @return o e-mail mascarado, ou null se não foi por e-mail (fica para o portal e o canal)
+     */
+    private String entregarPorEmail(ExecucaoAdDO e, String senha) {
+        Map<String, String> dados = JsonUtils.parseObject(e.getDados(), new TypeReference<Map<String, String>>() {
+        });
+        String para = dados == null ? null : dados.get("email_pessoal");
+        if (dados == null || !"email".equals(dados.get("entrega_senha")) || para == null || !para.contains("@")) {
+            return null;
+        }
+        ChamadoDO ch = chamadoMapper.selectById(e.getChamadoId());
+        if (!envioEmailService.enfileirarSenha(e.getChamadoId(), para, ch == null ? "" : ch.getTitulo(), senha)) {
+            chamadoService.acompanhamentoSistema(e.getChamadoId(), null, "O pedido veio da tela de login e a senha provisória"
+                    + " deveria ir por e-mail, mas o envio de e-mails está desligado: entregue a senha por outro meio.", true);
+            return null;
+        }
+        execucaoMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<ExecucaoAdDO>()
+                .eq(ExecucaoAdDO::getId, e.getId()).set(ExecucaoAdDO::getSenhaCifrada, null)
+                .set(ExecucaoAdDO::getSenhaVistaEm, LocalDateTime.now()));
+        String mascarado = mascararEmail(para);
+        auditoria.registrar("ad.senha_provisoria_email", null, null, Map.of("chamado", e.getChamadoId(), "acao", e.getAcao(),
+                "email", mascarado));
+        return mascarado;
+    }
+
+    /** "maria.souza@gmail.com" → "m•••••••••@gmail.com" */
+    public static String mascararEmail(String email) {
+        String s = email == null ? "" : email.strip();
+        int arroba = s.indexOf('@');
+        return arroba <= 1 ? "•••" + s.substring(Math.max(arroba, 0)) : s.charAt(0) + "•".repeat(arroba - 1) + s.substring(arroba);
     }
 
     private void falhaDeInfraestrutura(ExecucaoAdDO e, Exception ex) {

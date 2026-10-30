@@ -288,7 +288,8 @@ export const CANAIS: Record<string, { rotulo: string; icone: string }> = {
   api: { rotulo: 'API', icone: 'ep:connection' },
   whatsapp_cloud: { rotulo: 'WhatsApp (oficial)', icone: 'ep:chat-dot-round' },
   instagram: { rotulo: 'Instagram', icone: 'ep:camera' },
-  telegram: { rotulo: 'Telegram', icone: 'ep:promotion' }
+  telegram: { rotulo: 'Telegram', icone: 'ep:promotion' },
+  widget: { rotulo: 'Tela de login (Esqueci minha senha)', icone: 'ep:key' }
 }
 export const STATUS_CONVERSA = [
   { valor: 0, rotulo: 'Abertas' },

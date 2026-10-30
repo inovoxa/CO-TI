@@ -232,6 +232,21 @@ Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *F
   - a consulta mostra apenas os chamados da própria pessoa;
   - os dados pessoais ficam cifrados durante o preenchimento e aparecem mascarados no resumo; depois do envio,
     também na conversa.
+- **Senha provisória pelo canal:** quem esqueceu a senha não entra no portal. Depois do reset (ou da criação da conta)
+  no AD, o solicitante responde **SENHA** e recebe a senha ali mesmo:
+  - só ele recebe (o celular verificado é o de quem abriu o chamado), uma única vez, com registro na auditoria;
+  - no histórico do CO-TI a mensagem aparece oculta; o texto real fica cifrado só até a entrega;
+  - pedida de novo, o robô explica que já foi entregue e oferece um novo reset. Continua valendo também
+    "Ver senha provisória" em "Meus chamados".
+- **"Esqueci minha senha" na tela de login:** abre um assistente (caixa "Assistente da tela de login", canal
+  `widget`) que faz as perguntas do **1.2 Reset de senha**, uma a uma, com a mesma validação do portal:
+  - o visitante não está autenticado: o chamado sai em nome do dono do login informado, só se ele existir e estiver
+    ativo; a conversa não consulta chamados, não usa outros serviços e não entrega senha;
+  - o aprovador vê no pedido que ele veio da tela de login e para qual e-mail pessoal a senha vai;
+  - aprovado e executado no AD, a senha provisória vai **por e-mail ao e-mail pessoal** do formulário (fica cifrada
+    na fila só até o envio e é apagada do banco). Sem o envio de e-mails ligado (Service Desk → Configuração → E-mail), o chamado
+    registra que a senha precisa ser entregue por outro meio;
+  - para tirar o link da tela de login, desative essa caixa em Atendimento → Caixas de entrada.
 - **Avisos de volta** (no lugar dos workflows 13, 14 e 20 do n8n), ligados por caixa:
   - o contato recebe o andamento (acompanhamentos públicos), a solução (inclusive a da operação no AD, sem senha
     no texto) e a decisão da aprovação do chamado que abriu;
@@ -386,6 +401,15 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   `kuma.db` fictício (links de 8 unidades, sistemas, canais, manutenções e 30 dias de histórico com quedas) para testar
   a importação. Com `--pausar-ficticios`, os monitores de alvo inventado entram pausados, com o histórico; os
   "CO-TI ·" verificam os serviços do próprio docker-compose.
+- **Importar da planilha de faixas de IP:** `python ferramentas/unidades/importar_planilha.py ip_unidades.csv >
+  importar.sql` gera o SQL que troca **todos** os monitores e unidades pelos da planilha (colunas `id, faixa_ip,
+  nome_unidade, logradouro, localizacao_geografica`): uma unidade por linha, com departamento na secretaria deduzida do
+  nome, e um monitor de ping no `.1` da faixa. Faça backup antes; o modo de aplicar está no topo do script.
+- **Faixas do Docker × rede monitorada:** o Docker usa por padrão `172.17.0.0/16` (ponte `docker0`) e `172.18+` nas
+  redes do compose. Se a rede da Prefeitura usa as mesmas faixas, o ping de dentro do container não sai da máquina e
+  a unidade aparece fora do ar. A rede do CO-TI fica em `CO_TI_REDE_DOCKER` (padrão `192.168.240.0/24`); a ponte
+  padrão se muda no Docker (Docker Desktop → Settings → Docker Engine, ou `/etc/docker/daemon.json` no Linux):
+  `"bip": "192.168.241.1/24", "default-address-pools": [{"base": "192.168.242.0/23", "size": 26}]`, e reinicie o Docker.
 - **Retenção:** cada verificação fica `CO_TI_MONITORAMENTO_RETENCAO_DIAS` dias (padrão 31) no TimescaleDB; os totais
   por hora (disponibilidade de 30 dias e 1 ano) ficam 400 dias.
 - Detalhes: `docs/specs/monitoramento.md`.

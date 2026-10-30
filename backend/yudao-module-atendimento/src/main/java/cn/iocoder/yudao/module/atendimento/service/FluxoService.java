@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.atendimento.service;
 
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
@@ -16,12 +17,18 @@ import cn.iocoder.yudao.module.atendimento.enums.MensagemTipo;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoAtorDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoDO;
+import cn.iocoder.yudao.module.itsm.dal.dataobject.ExecucaoAdDO;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoAtorMapper;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.dominio.Aprovacoes;
 import cn.iocoder.yudao.module.itsm.dominio.Formulario;
 import cn.iocoder.yudao.module.itsm.enums.ChamadoStatus;
+import cn.iocoder.yudao.module.itsm.service.ChamadoService;
+import cn.iocoder.yudao.module.itsm.service.ExecucaoAdService;
 import cn.iocoder.yudao.module.itsm.service.FormularioService;
+import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
+import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
+import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginReqVO;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +52,10 @@ public class FluxoService {
 
     private static final int EXPIRA_MIN = 30;
     private static final DateTimeFormatter DIA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    /** Serviço do catálogo que a tela de login abre e a pergunta de quem terá a senha resetada */
+    private static final String CODIGO_RESET = "1.2";
+    private static final String CAMPO_LOGIN = "login_usuario_reset";
+    private static final String MENU_WEB = "1️⃣ Pedir o reset de senha\n2️⃣ Falar com um atendente";
     private static final Pattern CODIGO_IA = Pattern.compile("\\b(\\d{1,2}\\.\\d{1,2})\\b");
 
     @Resource
@@ -79,6 +90,12 @@ public class FluxoService {
     private AtendimentoProperties props;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private ChamadoService chamadoService;
+    @Resource
+    private ExecucaoAdService execucaoAdService;
+    @Resource
+    private AdminUserApi adminUserApi;
 
     /** Estado de trabalho de uma conversa (gravado em atendimento.fluxo). */
     private static final class Estado {
@@ -106,6 +123,11 @@ public class FluxoService {
 
     /** Contexto de uma rodada: a conversa, o contato e o catálogo ativo. */
     private record Contexto(ConversaDO conversa, ContatoDO contato, CaixaDO caixa, List<CatalogoVOs.FormularioCatalogo> catalogo) {
+
+        /** Assistente da tela de login: visitante sem login, só o reset de senha ({@link WidgetService}). */
+        boolean web() {
+            return WidgetService.CANAL.equals(caixa.getCanal());
+        }
     }
 
     void processar(Long conversaId) {
@@ -132,6 +154,14 @@ public class FluxoService {
         for (MensagemDO m : novas) {
             e.ultima = m.getId();
             String texto = m.getConteudo() == null ? "" : m.getConteudo().strip();
+            if (primeira && ctx.web()) {
+                primeira = false;
+                e.saidas.add(ctx.caixa().getFluxoBoasVindas() == null || ctx.caixa().getFluxoBoasVindas().isBlank()
+                        ? "Olá! Sou o assistente da equipe de TI 👋\nVou te ajudar a pedir o *reset da sua senha* (serviço "
+                        + CODIGO_RESET + " do catálogo)." : ctx.caixa().getFluxoBoasVindas().strip());
+                iniciar(e, ctx, formulario(ctx, CODIGO_RESET));
+                continue;
+            }
             if (primeira) {
                 primeira = false;
                 String boasVindas = ctx.caixa().getFluxoBoasVindas() == null || ctx.caixa().getFluxoBoasVindas().isBlank()
@@ -168,11 +198,19 @@ public class FluxoService {
             e.transferir = "o contato pediu um atendente";
             return;
         }
+        // sem senha pendente (ou no meio de um formulário), "senha" segue como texto comum
+        if (cmd == FluxoTextos.Comando.SENHA && e.formularioId == null && entregarSenha(e, ctx)) {
+            return;
+        }
         if (cmd == FluxoTextos.Comando.MENU || cmd == FluxoTextos.Comando.CANCELAR
                 || (cmd == FluxoTextos.Comando.VOLTAR && !"PERGUNTA".equals(e.etapa))) {
             boolean tinha = e.formularioId != null;
             e.reiniciar();
-            e.saidas.add((tinha ? "Pedido descartado. " : "") + "Como posso ajudar?\n\n" + FluxoTextos.MENU);
+            e.saidas.add((tinha ? "Pedido descartado. " : "") + "Como posso ajudar?\n\n" + (ctx.web() ? MENU_WEB : FluxoTextos.MENU));
+            return;
+        }
+        if (ctx.web() && !"PERGUNTA".equals(e.etapa) && !"CONFIRMAR".equals(e.etapa) && !"CORRIGIR".equals(e.etapa)) {
+            menuWeb(e, ctx, t);
             return;
         }
         switch (e.etapa) {
@@ -359,7 +397,7 @@ public class FluxoService {
             e.saidas.add("Esse serviço não está mais disponível.\n\n" + FluxoTextos.MENU);
             return;
         }
-        if (!identificado(e, ctx)) {
+        if (!ctx.web() && !identificado(e, ctx)) {
             return;
         }
         e.reiniciar();
@@ -367,7 +405,9 @@ public class FluxoService {
         e.formularioId = f.getId();
         List<Formulario.Pergunta> ps = f.getDefinicao().perguntas();
         e.saidas.add("Vamos abrir: *" + f.getCodigo() + " " + f.getNome() + "* (" + ps.size() + " perguntas"
-                + (Boolean.TRUE.equals(f.getPrecisaAprovacao()) ? "; o pedido vai para aprovação" : "") + ").\n" + FluxoTextos.AJUDA_COMANDOS);
+                + (Boolean.TRUE.equals(f.getPrecisaAprovacao()) ? "; o pedido vai para aprovação" : "") + ").\n"
+                + (ctx.web() ? "Quando o seu superior aprovar, a senha provisória chega no *e-mail pessoal* que você informar.\n" : "")
+                + FluxoTextos.AJUDA_COMANDOS);
         e.saidas.add(FluxoTextos.pergunta(ps.get(0), 1, ps.size()));
     }
 
@@ -449,19 +489,43 @@ public class FluxoService {
         CatalogoVOs.EnviarReq req = new CatalogoVOs.EnviarReq();
         req.setFormularioId(e.formularioId);
         req.setRespostas(new HashMap<>(e.respostas));
+        Long solicitante = ctx.contato().getUserId();
+        String observacao = null;
+        Map<String, String> extras = Map.of();
+        if (ctx.web()) {
+            // sem login: quem pede é a pessoa do login informado; a senha vai ao e-mail pessoal, que o aprovador confere
+            String login = e.respostas.get(CAMPO_LOGIN);
+            AdminUserRespDTO u = login == null ? null : adminUserApi.getUserByUsername(AuthLoginReqVO.contaDoLogin(login));
+            if (u == null || !CommonStatusEnum.isEnable(u.getStatus())) {
+                e.saidas.add("⚠️ Não encontrei o login *" + (login == null ? "" : login) + "* entre os usuários ativos."
+                        + "\n\nResponda *3* para corrigir o login, *2* para cancelar ou *atendente* para falar com a equipe.");
+                return;
+            }
+            solicitante = u.getId();
+            observacao = "Pedido feito na tela de login, sem autenticação: a senha provisória irá para o e-mail pessoal "
+                    + e.respostas.get("email_pessoal") + ". Confirme com o colaborador antes de aprovar.";
+            extras = Map.of("entrega_senha", "email");
+        }
         Long chamadoId;
         try {
-            chamadoId = formularioService.enviar(req, ctx.contato().getUserId());
+            chamadoId = formularioService.enviar(req, solicitante, observacao, extras);
         } catch (ServiceException ex) {
             e.saidas.add("⚠️ Não consegui abrir o chamado: " + ex.getMessage() + "\n\nResponda *3* para corrigir um campo ou *2* para cancelar.");
             return;
         }
         ChamadoDO ch = chamadoMapper.selectById(chamadoId);
         StringBuilder s = new StringBuilder("✅ Chamado *#").append(chamadoId).append("* aberto: ").append(ch.getTitulo()).append('.');
-        if (ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO) {
-            s.append("\nO pedido aguarda aprovação; você será avisado do andamento.");
+        if (ctx.web()) {
+            s.append("\n\nAgora ele vai para a aprovação do seu superior. Aprovado, a senha provisória chega no e-mail ")
+                    .append(ExecucaoAdService.mascararEmail(e.respostas.get("email_pessoal")))
+                    .append(" (confira também a caixa de spam). No primeiro acesso o sistema pede uma senha nova.")
+                    .append("\n\nPode fechar esta janela.");
+        } else {
+            if (ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO) {
+                s.append("\nO pedido aguarda aprovação; você será avisado do andamento.");
+            }
+            s.append("\n\nPara acompanhar, escolha *2* no menu. Precisa de mais alguma coisa? Envie *menu*.");
         }
-        s.append("\n\nPara acompanhar, escolha *2* no menu. Precisa de mais alguma coisa? Envie *menu*.");
         e.saidas.add(s.toString());
         e.chamadoAberto = chamadoId;
         List<Long> mascarar = new ArrayList<>(e.sensiveis);
@@ -472,7 +536,8 @@ public class FluxoService {
             if (c.getChamadoId() == null) {
                 conversaMapper.updateById(ConversaDO.builder().id(c.getId()).chamadoId(chamadoId).build());
             }
-            conversaService.atividade(c, "Pedido " + servico + " aberto pelo WhatsApp: chamado #" + chamadoId);
+            conversaService.atividade(c, "Pedido " + servico + " aberto " + (ctx.web() ? "na tela de login" : "pelo WhatsApp")
+                    + ": chamado #" + chamadoId);
             for (Long id : mascarar) {
                 mensagemMapper.updateById(MensagemDO.builder().id(id).conteudo("•••••• (dado pessoal enviado no chamado #" + chamadoId + ")")
                         .dados(JsonUtils.toJsonString(Map.of("mascarado", true))).build());
@@ -511,6 +576,47 @@ public class FluxoService {
         } catch (Exception ex) {
             log.info("[preencherEndereco][CEP {}: {}]", digitos, ex.getMessage());
         }
+    }
+
+    /**
+     * "SENHA": manda a senha provisória do chamado mais recente do contato que ainda não foi vista (reset ou criação
+     * de conta no AD). Quem esqueceu a senha não entra no portal, então ela também vai pelo canal; as regras são as do
+     * portal: só o solicitante (o celular verificado é o dele), uma única vez, com registro na auditoria. No histórico
+     * a mensagem fica mascarada; o texto real segue cifrado até a entrega ({@link EnvioService}).
+     */
+    private boolean entregarSenha(Estado e, Contexto ctx) {
+        Long userId = ctx.contato().getUserId();
+        if (userId == null) {
+            return false;
+        }
+        List<ChamadoDO> meus = chamadosDo(ctx.contato(), 50);
+        Map<Long, ExecucaoAdDO> execucoes = execucaoAdService.dosChamados(meus.stream().map(ChamadoDO::getId).toList());
+        ChamadoDO ch = meus.stream().filter(c -> execucoes.get(c.getId()) != null && execucoes.get(c.getId()).getSenhaCifrada() != null)
+                .findFirst().orElse(null);
+        if (ch == null) {
+            // já entregue há pouco: explica em vez de tratar "senha" como um pedido novo
+            ChamadoDO visto = meus.stream().filter(c -> execucoes.get(c.getId()) != null && execucoes.get(c.getId()).getSenhaVistaEm() != null
+                    && execucoes.get(c.getId()).getSenhaVistaEm().isAfter(LocalDateTime.now().minusDays(7))).findFirst().orElse(null);
+            if (visto == null) {
+                return false;
+            }
+            e.saidas.add("A senha provisória do chamado #" + visto.getId() + " já foi entregue em "
+                    + DIA.format(execucoes.get(visto.getId()).getSenhaVistaEm()) + " e, por segurança, não fica guardada."
+                    + "\n\nSe ela se perdeu, peça um novo reset: responda *1.2* ou *menu*.");
+            return true;
+        }
+        transactionTemplate.executeWithoutResult(st -> {
+            ConversaDO c = conversaMapper.selectByIdParaAtualizar(ctx.conversa().getId());
+            String senha = chamadoService.revelarSenha(ch.getId(), userId);
+            String real = "🔑 Senha provisória do chamado #" + ch.getId() + " (" + ch.getTitulo() + "):\n\n" + senha
+                    + "\n\nEla vale para um único acesso: no primeiro login o sistema pede uma senha nova."
+                    + " Por segurança, apague esta mensagem depois de usar.";
+            conversaService.saida(c, "🔑 Senha provisória do chamado #" + ch.getId() + " enviada ao contato (oculta aqui).",
+                    "robo", null, List.of(), Map.of("mascarado", true, "segredo", segredos.cifrar(real)));
+            conversaService.atividade(c, "Senha provisória do chamado #" + ch.getId() + " entregue pelo canal (uma única vez)");
+            conversaService.publicar("conversa", c.getId(), null);
+        });
+        return true;
     }
 
     // =====================================================================================================
@@ -607,6 +713,25 @@ public class FluxoService {
 
     private static List<CatalogoVOs.FormularioCatalogo> servicos(Contexto ctx, String grupo) {
         return ctx.catalogo().stream().filter(f -> grupo.equals(f.getGrupo())).toList();
+    }
+
+    private static CatalogoVOs.FormularioCatalogo formulario(Contexto ctx, String codigo) {
+        return ctx.catalogo().stream().filter(f -> codigo.equals(f.getCodigo())).findFirst().orElse(null);
+    }
+
+    /** Tela de login fora do formulário: recomeçar o reset ou chamar alguém (nada de consulta, FAQ ou outros serviços). */
+    private void menuWeb(Estado e, Contexto ctx, String t) {
+        Integer n = FluxoTextos.numero(t);
+        if ((n != null && n == 1) || CODIGO_RESET.equals(FluxoTextos.codigo(t))) {
+            iniciar(e, ctx, formulario(ctx, CODIGO_RESET));
+        } else if (n != null && n == 2) {
+            e.saidas.add("Certo! Vou chamar uma pessoa da equipe para continuar o atendimento. Só um instante.");
+            e.transferir = "o visitante da tela de login pediu um atendente";
+        } else {
+            e.etapa = "MENU";
+            e.saidas.add("Por aqui eu só cuido do reset de senha. Para outros pedidos, entre no portal ou use o WhatsApp da TI."
+                    + "\n\n" + MENU_WEB);
+        }
     }
 
     private static CatalogoVOs.FormularioCatalogo formulario(Contexto ctx, Long id) {

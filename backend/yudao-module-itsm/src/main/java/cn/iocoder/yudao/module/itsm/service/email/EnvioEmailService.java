@@ -9,15 +9,19 @@ import cn.iocoder.yudao.module.itsm.dal.dataobject.EmailSaidaDO;
 import cn.iocoder.yudao.module.itsm.dal.mysql.EmailConfigMapper;
 import cn.iocoder.yudao.module.itsm.dal.mysql.EmailSaidaMapper;
 import cn.iocoder.yudao.module.itsm.dominio.HtmlSeguro;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * Envio das notificações por SMTP, a partir da fila (itsm.email_saida). Falha de envio tenta de novo em 1, 5, 15
@@ -31,6 +35,10 @@ import java.util.Properties;
 public class EnvioEmailService {
 
     public static final String CONTEXTO_SENHA = "email-smtp";
+    /** Senha provisória mandada por e-mail: cifrada na fila até o envio */
+    static final String CONTEXTO_SEGREDO = "email-segredo";
+    /** Lugar da senha no corpo guardado (o corpo na fila nunca tem a senha) */
+    static final String MARCA_SEGREDO = "[[SENHA_PROVISORIA]]";
     private static final int[] ESPERA_MIN = {1, 5, 15, 60};
 
     @Resource
@@ -55,8 +63,18 @@ public class EnvioEmailService {
             }
             EmailSaidaDO m = emailSaidaMapper.selectById(id);
             try {
+                if (m.getCorpo() != null && m.getCorpo().contains(MARCA_SEGREDO)) {
+                    if (m.getSegredo() == null) {
+                        // a senha já foi apagada (reenvio de um e-mail entregue ou que esgotou as tentativas)
+                        emailSaidaMapper.updateById(EmailSaidaDO.builder().id(id).status("erro")
+                                .erro("A senha provisória deste e-mail não está mais guardada: peça um novo reset").build());
+                        continue;
+                    }
+                    m.setCorpo(m.getCorpo().replace(MARCA_SEGREDO, HtmlUtils.htmlEscape(cifrador.decifrar(m.getSegredo(), CONTEXTO_SEGREDO))));
+                }
                 enviar(sessao, cfg, m);
                 emailSaidaMapper.updateById(EmailSaidaDO.builder().id(id).status("enviado").enviadoEm(LocalDateTime.now()).erro(null).build());
+                apagarSegredo(m);
                 enviadas++;
             } catch (Exception e) {
                 int t = m.getTentativas() == null ? 1 : m.getTentativas();
@@ -65,6 +83,7 @@ public class EnvioEmailService {
                 EmailSaidaDO u = EmailSaidaDO.builder().id(id).erro(erro).build();
                 if (t > ESPERA_MIN.length) {
                     u.setStatus("erro");
+                    apagarSegredo(m);
                 } else {
                     u.setStatus("pendente");
                     u.setProximaTentativa(LocalDateTime.now().plusMinutes(ESPERA_MIN[t - 1]));
@@ -96,12 +115,51 @@ public class EnvioEmailService {
         PageResult<EmailSaidaDO> r = emailSaidaMapper.selectPage(p, new LambdaQueryWrapperX<EmailSaidaDO>()
                 .eqIfPresent(EmailSaidaDO::getStatus, status).eqIfPresent(EmailSaidaDO::getChamadoId, chamadoId)
                 .orderByDesc(EmailSaidaDO::getId));
-        r.getList().forEach(m -> m.setCorpo(null)); // a lista não traz o corpo
+        r.getList().forEach(m -> {
+            m.setCorpo(null); // a lista não traz o corpo
+            m.setSegredo(null);
+        });
         return r;
     }
 
     public void reenviar(Long id) {
         emailSaidaMapper.updateById(EmailSaidaDO.builder().id(id).status("pendente").tentativas(0).proximaTentativa(null).build());
+    }
+
+    /**
+     * Põe na fila o e-mail com a senha provisória de um chamado. O corpo guardado tem só a marca; a senha vai cifrada
+     * à parte, entra no envio e é apagada depois (entregue ou desistido).
+     *
+     * @return false se o envio de e-mails não está ligado (a senha então fica para o portal ou o canal)
+     */
+    public boolean enfileirarSenha(Long chamadoId, String para, String titulo, String senha) {
+        EmailConfigDO cfg = emailConfigMapper.selectById(EmailConfigDO.UNICA);
+        if (cfg == null || !Boolean.TRUE.equals(cfg.getAtivo()) || cfg.getSmtpHost() == null || cfg.getRemetenteEmail() == null) {
+            return false;
+        }
+        String corpo = "<div style=\"font-family:Arial,sans-serif;font-size:14px\">"
+                + "<p>Olá! O pedido de reset de senha (chamado #" + chamadoId + ": " + HtmlUtils.htmlEscape(titulo) + ") foi aprovado e executado.</p>"
+                + "<p>Sua senha provisória é:</p>"
+                + "<p style=\"font-family:Consolas,monospace;font-size:20px;letter-spacing:1px;padding:10px 14px;background:#f2f4f7;"
+                + "border-radius:6px;display:inline-block\">" + MARCA_SEGREDO + "</p>"
+                + "<p>Ela vale para um único acesso: no primeiro login o sistema pede uma senha nova.</p>"
+                + "<p>Se não foi você que pediu, avise a equipe de TI imediatamente.</p>"
+                + (cfg.getAssinatura() == null ? "" : "<div style=\"margin-top:16px;color:#666\">" + cfg.getAssinatura() + "</div>")
+                + "<p style=\"margin-top:20px;color:#9a9a9a;font-size:11px\">Aviso automático do CO-TI. Por segurança, apague este e-mail"
+                + " depois de usar a senha.</p></div>";
+        emailSaidaMapper.insert(EmailSaidaDO.builder().chamadoId(chamadoId).evento("senha_provisoria").para(para.trim().toLowerCase(Locale.ROOT))
+                .assunto("Sua senha provisória (chamado #" + chamadoId + ")").corpo(corpo).segredo(cifrador.cifrar(senha, CONTEXTO_SEGREDO))
+                .messageId("<coti.senha." + UUID.randomUUID().toString().replace("-", "") + "@"
+                        + NotificacaoEmailService.dominio(cfg.getRemetenteEmail()) + ">")
+                .status("pendente").tentativas(0).criadoEm(LocalDateTime.now()).build());
+        return true;
+    }
+
+    private void apagarSegredo(EmailSaidaDO m) {
+        if (m.getSegredo() != null) {
+            emailSaidaMapper.update(null, new LambdaUpdateWrapper<EmailSaidaDO>().eq(EmailSaidaDO::getId, m.getId())
+                    .set(EmailSaidaDO::getSegredo, null));
+        }
     }
 
     // ------------------------------------------------------------------ SMTP

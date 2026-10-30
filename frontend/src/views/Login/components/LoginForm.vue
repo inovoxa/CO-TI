@@ -32,7 +32,9 @@
             v-model="loginData.loginForm.username"
             :placeholder="t('login.usernamePlaceholder')"
             :prefix-icon="iconAvatar"
+            autocomplete="off"
           />
+          <div class="dica-login">O mesmo usuário da rede (ex.: nome.sobrenome)</div>
         </el-form-item>
       </el-col>
       <el-col :span="24" class="px-10px">
@@ -41,21 +43,34 @@
             v-model="loginData.loginForm.password"
             :placeholder="t('login.passwordPlaceholder')"
             :prefix-icon="iconLock"
+            autocomplete="new-password"
             show-password
             type="password"
+            @blur="capsLock = false"
+            @keydown="verCapsLock"
+            @keyup="verCapsLock"
             @keyup.enter="getCode()"
           />
+          <div v-if="capsLock" class="dica-login dica-login--alerta">
+            <Icon icon="ep:warning-filled" :size="13" /> Caps Lock ligado
+          </div>
         </el-form-item>
       </el-col>
       <el-col :span="24" class="px-10px mt-[-20px] mb-[-20px]">
         <el-form-item>
-          <el-row justify="space-between" style="width: 100%">
-            <el-col :span="12">
-              <el-checkbox v-model="loginData.loginForm.rememberMe">
-                {{ t('login.remember') }}
-              </el-checkbox>
-            </el-col>
-          </el-row>
+          <div class="w-full flex items-center justify-between">
+            <el-checkbox v-model="loginData.loginForm.rememberMe">
+              {{ t('login.remember') }}
+            </el-checkbox>
+            <el-link
+              v-if="assistente"
+              :underline="false"
+              type="primary"
+              @click="assistenteAberto = true"
+            >
+              Esqueci minha senha
+            </el-link>
+          </div>
         </el-form-item>
       </el-col>
       <el-col :span="24" class="px-10px">
@@ -75,6 +90,7 @@
       />
     </el-row>
   </el-form>
+  <AssistenteSenha v-if="assistente" v-model="assistenteAberto" />
   <!-- CO-TI: segunda etapa (verificação em duas etapas) -->
   <el-form
     v-if="mfa.desafio"
@@ -89,7 +105,10 @@
       <LoginFormTitle class="w-full" />
     </el-form-item>
     <p class="mb-16px text-[var(--el-text-color-regular)]">{{ t('coti.mfa.instrucaoLogin') }}</p>
-    <el-form-item prop="codigo" :rules="[{ required: true, message: t('coti.mfa.codigoObrigatorio') }]">
+    <el-form-item
+      prop="codigo"
+      :rules="[{ required: true, message: t('coti.mfa.codigoObrigatorio') }]"
+    >
       <el-input
         ref="campoCodigoMfa"
         v-model="mfa.codigo"
@@ -114,7 +133,9 @@
 <script lang="ts" setup>
 import { ElLoading } from 'element-plus'
 import LoginFormTitle from './LoginFormTitle.vue'
+import AssistenteSenha from './AssistenteSenha.vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
+import { assistenteDisponivel } from '@/api/atendimento/widget'
 
 import { useIcon } from '@/hooks/web/useIcon'
 
@@ -141,6 +162,14 @@ const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN && !mfa.desafio)
 
+// CO-TI: "Esqueci minha senha" abre o assistente (some se a caixa da tela de login estiver desativada)
+const assistente = ref(false)
+const assistenteAberto = ref(false)
+const capsLock = ref(false)
+const verCapsLock = (e: KeyboardEvent) => {
+  capsLock.value = !!e.getModifierState?.('CapsLock')
+}
+
 // CO-TI: login em duas etapas
 const formMfa = ref()
 const campoCodigoMfa = ref()
@@ -160,7 +189,7 @@ const loginData = reactive({
     username: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || '',
     password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || '',
     captchaVerification: '',
-    rememberMe: true // 默认记录我。如果不需要，可手动修改
+    rememberMe: false // CO-TI: computador compartilhado não guarda o usuário sem a pessoa pedir
   }
 })
 
@@ -307,6 +336,9 @@ watch(
 onMounted(() => {
   getLoginFormCache()
   getTenantByWebsite()
+  assistenteDisponivel()
+    .then((v) => (assistente.value = !!v))
+    .catch(() => (assistente.value = false))
 })
 </script>
 
@@ -314,6 +346,21 @@ onMounted(() => {
 :deep(.anticon) {
   &:hover {
     color: var(--el-color-primary) !important;
+  }
+}
+
+.dica-login {
+  display: flex;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--el-text-color-secondary);
+  align-items: center;
+  gap: 4px;
+
+  &--alerta {
+    font-weight: 500;
+    color: var(--el-color-warning);
   }
 }
 
