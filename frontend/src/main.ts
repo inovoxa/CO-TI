@@ -16,6 +16,8 @@ import { setupGlobCom } from '@/components'
 // 引入 element-plus
 import { setupElementPlus } from '@/plugins/elementPlus'
 
+// fonte da interface, servida pelo próprio portal (funciona sem internet)
+import '@fontsource-variable/inter'
 
 // 引入全局样式
 import '@/styles/index.scss'
@@ -58,7 +60,6 @@ const setupAll = async () => {
   setupGlobCom(app)
 
   setupElementPlus(app)
-
 
   setupRouter(app)
 

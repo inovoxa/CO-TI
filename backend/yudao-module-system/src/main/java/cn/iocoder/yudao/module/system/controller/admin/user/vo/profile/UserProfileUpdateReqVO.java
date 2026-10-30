@@ -5,8 +5,8 @@ import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.hibernate.validator.constraints.URL;
 
 
 @Schema(description = "管理后台 - 用户个人信息更新 Request VO")
@@ -14,12 +14,12 @@ import org.hibernate.validator.constraints.URL;
 public class UserProfileUpdateReqVO {
 
     @Schema(description = "用户昵称", example = "芋艿")
-    @Size(max = 30, message = "O nome pode ter no máximo 100 caracteres")
+    @Size(max = 30, message = "O nome pode ter no máximo 30 caracteres")
     private String nickname;
 
     @Schema(description = "用户邮箱", example = "yudao@iocoder.cn")
     @Email(message = "E-mail inválido")
-    @Size(max = 50, message = "O e-mail pode ter no máximo 128 caracteres")
+    @Size(max = 50, message = "O e-mail pode ter no máximo 50 caracteres")
     private String email;
 
     @Schema(description = "手机号码", example = "15601691300")
@@ -30,7 +30,9 @@ public class UserProfileUpdateReqVO {
     private Integer sex;
 
     @Schema(description = "角色头像", example = "https://www.iocoder.cn/1.png")
-    @URL(message = "Endereço da foto inválido")
+    // a foto enviada fica no armazenamento local, com endereço relativo (/admin-api/infra/file/...): o @URL recusava
+    @Size(max = 512, message = "Endereço da foto muito longo")
+    @Pattern(regexp = "^$|^(https?://|/admin-api/infra/file/)\\S+$", message = "Endereço da foto inválido")
     private String avatar;
 
 }

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { isDark } from '@/utils/is'
 import { useAppStore } from '@/store/modules/app'
+import { useMarcaStore } from '@/store/modules/marca'
 import { useDesign } from '@/hooks/web/useDesign'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import routerSearch from '@/components/RouterSearch/index.vue'
@@ -23,6 +24,8 @@ const setDefaultTheme = () => {
   appStore.setIsDark(isDarkTheme)
 }
 setDefaultTheme()
+// nome e logo da instância (Sistema > Identidade visual)
+useMarcaStore().carregar()
 </script>
 <template>
   <ConfigGlobal :size="currentSize">

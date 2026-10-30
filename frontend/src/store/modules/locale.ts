@@ -12,12 +12,9 @@ const elLocaleMap = {
   en: en
 }
 
-// CO-TI: idioma padrão português; um valor antigo em cache (ex.: zh-CN) volta para o padrão
+// CO-TI: só português do Brasil; um idioma antigo em cache (en, zh-CN) é ignorado
 const IDIOMA_PADRAO: LocaleType = 'pt-BR'
-const idiomaSalvo = (): LocaleType => {
-  const l = wsCache.get(CACHE_KEY.LANG)
-  return l && elLocaleMap[l] ? l : IDIOMA_PADRAO
-}
+const idiomaSalvo = (): LocaleType => IDIOMA_PADRAO
 interface LocaleState {
   currentLocale: LocaleDropdownType
   localeMap: LocaleDropdownType[]
@@ -35,10 +32,6 @@ export const useLocaleStore = defineStore('locales', {
         {
           lang: 'pt-BR',
           name: 'Português (Brasil)'
-        },
-        {
-          lang: 'en',
-          name: 'English'
         }
       ]
     }

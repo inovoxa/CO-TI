@@ -18,7 +18,8 @@ export const CACHE_KEY = {
   LAYOUT: 'layout',
   DICT_CACHE: 'dictCache',
   // 登录表单
-  LoginForm: 'loginForm',
+  // CO-TI: chave nova; o cache antigo (que vinha marcado por padrão e trazia "admin") deixa de ser lido
+  LoginForm: 'coti-login-usuario',
   TenantId: 'tenantId'
 }
 
