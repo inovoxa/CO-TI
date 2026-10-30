@@ -150,3 +150,11 @@ volumes:
   pgdata:
   redisdata:
   backendlogs:
+
+# Rede interna dos containers. Fora de 172.16.0.0/12 e de 10.0.0.0/8, que a rede da Prefeitura usa: se a faixa
+# colidir, o monitoramento não alcança as unidades daquela faixa (o ping morre dentro do Docker).
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${CO_TI_REDE_DOCKER:-192.168.240.0/24}

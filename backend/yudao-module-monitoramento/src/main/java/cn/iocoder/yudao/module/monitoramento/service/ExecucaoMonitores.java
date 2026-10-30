@@ -18,6 +18,7 @@ import cn.iocoder.yudao.module.monitoramento.service.verificador.Resultado;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Verificadores;
 import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
 import cn.iocoder.yudao.module.system.dal.mysql.monitor.MonitorUnitMapper;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,11 @@ public class ExecucaoMonitores {
     private static final Long ORIGEM_MONITORAMENTO = 6L;
     public static final String TIPO_WS = "monitoramento-batida";
     private static final long RECARREGAR_MS = 30_000;
+    /**
+     * Validade da trava de cada monitor: cobre a verificação mais lenta (tempo limite + avisos) e, se o backend cair
+     * no meio, libera o monitor em 2 minutos (com 10 minutos ele ficava parado depois de cada reinício).
+     */
+    private static final long TRAVA_S = 120;
 
     @Resource
     private MonMonitorMapper monMonitorMapper;
@@ -77,10 +83,16 @@ public class ExecucaoMonitores {
     @Resource
     private org.springframework.beans.factory.ObjectProvider<cn.iocoder.yudao.module.system.job.monitor.MonitorPushJob> telao;
 
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private ExecutorService executor;
     private final Map<Long, MonitorDO> ativos = new ConcurrentHashMap<>();
     private final Set<Long> emAndamento = ConcurrentHashMap.newKeySet();
     private volatile long carregadoEm;
+
+    @PostConstruct
+    public void iniciar() {
+        executor = Executors.newFixedThreadPool(Math.max(1, monitoramentoProperties.getParalelo()),
+                Thread.ofPlatform().name("monitoramento-", 1).daemon(true).factory());
+    }
 
     @PreDestroy
     public void parar() {
@@ -172,7 +184,7 @@ public class ExecucaoMonitores {
         RLock trava = redissonClient.getLock("coti:monitoramento:monitor:" + id);
         boolean pegou = false;
         try {
-            pegou = trava.tryLock(0, 600, TimeUnit.SECONDS);
+            pegou = trava.tryLock(0, TRAVA_S, TimeUnit.SECONDS);
             if (!pegou) {
                 return;
             }
@@ -234,7 +246,7 @@ public class ExecucaoMonitores {
     private boolean comTrava(Long id, java.util.function.Consumer<MonitorDO> acao) {
         RLock trava = redissonClient.getLock("coti:monitoramento:monitor:" + id);
         try {
-            if (!trava.tryLock(10, 600, TimeUnit.SECONDS)) {
+            if (!trava.tryLock(10, TRAVA_S, TimeUnit.SECONDS)) {
                 return false;
             }
             try {

@@ -433,6 +433,7 @@ public class MonitorService {
             MonitorVOs.Resp r = new MonitorVOs.Resp();
             r.setId(m.getId());
             r.setNome(m.getNome());
+            r.setDescricao(m.getDescricao());
             r.setTipo(m.getTipo());
             r.setAlvo(m.getAlvo());
             r.setPorta(m.getPorta());

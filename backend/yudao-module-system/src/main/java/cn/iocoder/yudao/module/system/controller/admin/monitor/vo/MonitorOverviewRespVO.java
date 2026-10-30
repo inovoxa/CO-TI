@@ -33,6 +33,8 @@ public class MonitorOverviewRespVO {
         private Long deptId;
         private String name;
         private String city;
+        /** "Rua X, 115 · Bairro" para o painel do mapa */
+        private String endereco;
         private BigDecimal latitude;
         private BigDecimal longitude;
         private UnitKpiVO kpi;

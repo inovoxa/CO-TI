@@ -19,9 +19,9 @@ label="Serviços no ar" :valor="`${int(t.servOn)}/${int(t.servTot)}`" :apoio="t.
     </div>
 
     <div class="cols">
-      <el-card shadow="never" class="card-mapa" :body-style="{ padding: '0', height: '100%' }">
+      <el-card shadow="never" class="card-mapa" :body-style="{ padding: '0' }">
         <template #header>
-          <div class="ch">Unidades no mapa <small>clique para filtrar todos os módulos</small>
+          <div class="ch">Unidades no mapa <small>clique numa unidade para ver a rede dela</small>
             <span class="leg"><i class="is-ok"></i>{{ store.contagemStatus.ok }} <i class="is-atencao"></i>{{ store.contagemStatus.atencao }} <i class="is-critico"></i>{{ store.contagemStatus.critico }}</span>
           </div>
         </template>
@@ -91,7 +91,7 @@ const abrirTelao = () => window.open(router.resolve({ name: 'MonitorTelao' }).hr
 .pg { padding: 4px; }
 .grid-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
-.card-mapa :deep(.el-card__body) { height: 460px; }
+.card-mapa :deep(.el-card__body) { height: 560px; }
 .ch {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-weight: 600;
   small { font-weight: 400; color: var(--el-text-color-secondary); }
@@ -102,7 +102,7 @@ const abrirTelao = () => window.open(router.resolve({ name: 'MonitorTelao' }).hr
   .is-ok { background: var(--el-color-success); } .is-atencao { background: var(--el-color-warning); } .is-critico { background: var(--el-color-danger); }
 }
 .feed {
-  max-height: 460px; margin: 0; padding: 0; overflow: auto; list-style: none;
+  max-height: 560px; margin: 0; padding: 0; overflow: auto; list-style: none;
   li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; padding: 7px 12px; border-left: 3px solid var(--el-border-color-light); }
   li.n-critico { border-left-color: var(--el-color-danger); }
   li.n-atencao { border-left-color: var(--el-color-warning); }
