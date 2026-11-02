@@ -8,14 +8,18 @@ import cn.iocoder.yudao.module.itsm.dal.dataobject.HistoricoDO;
 import cn.iocoder.yudao.module.itsm.service.AprovacaoService;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import cn.iocoder.yudao.module.itsm.service.FormularioService;
+import cn.iocoder.yudao.module.itsm.service.RelatorioItsmService;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,12 +38,21 @@ public class ChamadoController {
     private AprovacaoService aprovacaoService;
     @Resource
     private FormularioService formularioService;
+    @Resource
+    private RelatorioItsmService relatorioItsmService;
 
     @GetMapping("/page")
     @Operation(summary = "Fila de chamados")
     @PreAuthorize("@ss.hasPermission('itsm:chamado:query')")
     public CommonResult<PageResult<ChamadoVOs.Resp>> pagina(@Valid ChamadoVOs.PaginaReq req) {
         return success(chamadoService.pagina(req, getLoginUserId()));
+    }
+
+    @GetMapping("/exportar-excel")
+    @Operation(summary = "Fila de chamados em planilha, com os filtros da tela")
+    @PreAuthorize("@ss.hasPermission('itsm:chamado:exportar')")
+    public void exportarExcel(@Valid ChamadoVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "chamados.xlsx", relatorioItsmService.chamados(req, getLoginUserId()));
     }
 
     @GetMapping("/contagens")
@@ -172,6 +185,14 @@ public class ChamadoController {
     public CommonResult<Boolean> pedirAprovacao(@Valid @RequestBody CatalogoVOs.PedirAprovacaoReq req) {
         chamadoService.pedirAprovacao(req.getChamadoId(), req.getAprovadorIds(), req.getComentario(), getLoginUserId());
         return success(true);
+    }
+
+    @GetMapping("/aprovadores")
+    @Operation(summary = "Buscar quem pode aprovar (papel Aprovador), para os campos de escolha")
+    @PreAuthorize("@ss.hasAnyPermissions('itsm:chamado:pedir-aprovacao', 'itsm:formulario:update', 'itsm:regra:update')")
+    public CommonResult<List<Map<String, Object>>> aprovadores(@RequestParam(value = "nome", required = false) String nome) {
+        return success(aprovacaoService.buscarAprovadores(nome).stream()
+                .map(u -> Map.<String, Object>of("id", u.getId(), "nickname", u.getNickname())).toList());
     }
 
     @GetMapping("/aprovacoes")

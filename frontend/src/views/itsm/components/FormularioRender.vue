@@ -30,6 +30,7 @@
             <el-radio-group v-else-if="p.type === 'radios'" v-model="valores[p.name]">
               <el-radio v-for="v in p.values" :key="v" :value="v">{{ v }}</el-radio>
             </el-radio-group>
+            <LoginRedeSelect v-else-if="p.type === 'usuario'" v-model="valores[p.name]" />
             <el-date-picker
               v-else-if="p.type === 'date'"
               v-model="valores[p.name]"
@@ -58,6 +59,7 @@
 <script lang="ts" setup>
 import type { FormItemRule } from 'element-plus'
 import type { Definicao, Pergunta } from '@/api/itsm'
+import LoginRedeSelect from './LoginRedeSelect.vue'
 
 /** Desenha e valida um formulário do catálogo (a validação final é do servidor). */
 const props = defineProps<{ definicao: Definicao; desabilitado?: boolean }>()
@@ -90,7 +92,9 @@ const regras = computed(() => {
           required: true,
           message: 'Obrigatório',
           trigger:
-            p.type === 'select' || p.type === 'radios' || p.type === 'date' ? 'change' : 'blur'
+            p.type === 'select' || p.type === 'radios' || p.type === 'date' || p.type === 'usuario'
+              ? 'change'
+              : 'blur'
         })
       }
       const formato =

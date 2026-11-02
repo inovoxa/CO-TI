@@ -176,6 +176,8 @@ export const gb = (mb?: number | null) =>
     : `${(mb / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} GB`
 
 export const getAtivos = (params: any) => request.get({ url: '/inventario/ativo/page', params })
+export const exportarAtivos = (params: any): Promise<Blob> =>
+  request.download({ url: '/inventario/ativo/exportar-excel', params })
 export interface Opcoes {
   sistemas: { valor: string; total: number }[]
   fabricantes: { valor: string; total: number }[]

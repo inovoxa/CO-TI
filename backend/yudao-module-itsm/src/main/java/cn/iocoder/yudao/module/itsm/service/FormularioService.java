@@ -19,6 +19,8 @@ import cn.iocoder.yudao.module.itsm.dominio.Aprovacoes;
 import cn.iocoder.yudao.module.itsm.dominio.Formulario;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
+import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginReqVO;
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -109,6 +111,9 @@ public class FormularioService {
                     erros.add("Escolha o aprovador");
                 } else {
                     adminUserApi.validateUser(req.getAprovadorId());
+                    if (!aprovacaoService.podeAprovar(req.getAprovadorId())) {
+                        erros.add("A pessoa escolhida não tem o papel Aprovador");
+                    }
                 }
             }
             default -> {
@@ -210,6 +215,7 @@ public class FormularioService {
         }
         Formulario.Definicao d = definicao(f);
         Formulario.Resultado r = Formulario.validar(d, req.getRespostas());
+        conferirUsuarios(d, r);
         if (!r.valido()) {
             Map<String, String> rotulos = d.perguntas().stream()
                     .collect(Collectors.toMap(Formulario.Pergunta::name, Formulario.Pergunta::label, (a, b) -> a));
@@ -219,11 +225,27 @@ public class FormularioService {
         }
         Map<String, String> respostas = r.respostas();
         // quem aprova é resolvido antes de abrir: sem aprovador, o pedido nem é criado
+        // e só vale quem tem o papel Aprovador (e-mail digitado de um colega não aprova)
         Long aprovador = switch (f.getAprovacao()) {
-            case "gestor" -> aprovacaoService.gestorDe(userId).orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
-            case "campo" -> aprovacaoService.usuarioPorEmail(respostas.get(f.getAprovadorCampo()))
-                    .orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
-            case "fixo" -> f.getAprovadorId();
+            case "gestor" -> {
+                Long g = aprovacaoService.gestorDe(userId).orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
+                if (!aprovacaoService.podeAprovar(g)) {
+                    throw exception(APROVACAO_GESTOR_NAO_AUTORIZADO, aprovacaoService.nome(g));
+                }
+                yield g;
+            }
+            case "campo" -> {
+                String email = respostas.get(f.getAprovadorCampo());
+                // mesma mensagem para e-mail inexistente e para quem não aprova: não revela quem tem conta
+                yield aprovacaoService.usuarioPorEmail(email).filter(aprovacaoService::podeAprovar)
+                        .orElseThrow(() -> exception(APROVACAO_EMAIL_NAO_AUTORIZADO, email));
+            }
+            case "fixo" -> {
+                if (!aprovacaoService.podeAprovar(f.getAprovadorId())) {
+                    throw exception(APROVACAO_NAO_AUTORIZADO, aprovacaoService.nome(f.getAprovadorId()));
+                }
+                yield f.getAprovadorId();
+            }
             default -> null;
         };
         if (aprovador != null && aprovador.equals(userId)) {
@@ -399,6 +421,29 @@ public class FormularioService {
 
     private static String limitar(String s, int max) {
         return s.length() <= max ? s : s.substring(0, max);
+    }
+
+    /**
+     * Login de rede de uma conta ativa ("PMA\joao.silva" e "joao.silva@pma.local" viram "joao.silva"), na grafia do
+     * cadastro, ou vazio.
+     */
+    public Optional<String> loginDeRede(String digitado) {
+        String conta = AuthLoginReqVO.contaDoLogin(digitado);
+        AdminUserRespDTO u = conta == null || conta.isBlank() ? null : adminUserApi.getUserByUsername(conta);
+        return u == null || !CommonStatusEnum.isEnable(u.getStatus()) ? Optional.empty() : Optional.of(u.getUsername());
+    }
+
+    /** Perguntas "usuario": a conta precisa existir e estar ativa; a resposta fica com o login do cadastro. */
+    private void conferirUsuarios(Formulario.Definicao d, Formulario.Resultado r) {
+        for (Formulario.Pergunta p : d.perguntas()) {
+            String v = "usuario".equals(p.type()) ? r.respostas().get(p.name()) : null;
+            if (v != null) {
+                loginDeRede(v).ifPresentOrElse(login -> r.respostas().put(p.name(), login), () -> {
+                    r.respostas().remove(p.name());
+                    r.erros().put(p.name(), "Usuário de rede não encontrado ou desativado");
+                });
+            }
+        }
     }
 
 }

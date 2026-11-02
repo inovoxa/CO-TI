@@ -26,11 +26,26 @@
         <el-option v-for="c in categorias" :key="c.id" :label="c.nomeCompleto" :value="c.id" />
       </el-select>
       <el-button @click="carregar"><Icon class="mr-4px" icon="ep:refresh" /> Atualizar</el-button>
+      <el-button
+        v-hasPermi="['itsm:chamado:exportar']"
+        :disabled="!p"
+        :loading="exportando"
+        @click="exportarExcel"
+      >
+        <Icon class="mr-4px" icon="ep:download" /> Excel
+      </el-button>
+      <el-button :disabled="!p" @click="imprimir">
+        <Icon class="mr-4px" icon="ep:printer" /> PDF
+      </el-button>
     </div>
   </ContentWrap>
 
-  <div v-loading="loading">
+  <div v-loading="loading" class="painel-impressao">
     <template v-if="p">
+      <div class="cabecalho-impressao">
+        <h2>Painel do Service Desk</h2>
+        <p>{{ descricaoFiltros }}</p>
+      </div>
       <!-- números principais -->
       <div class="tiles">
         <div v-for="t in tiles" :key="t.rotulo" class="tile">
@@ -115,7 +130,7 @@
           </ContentWrap>
         </el-col>
       </el-row>
-      <ContentWrap title="Série diária (tabela)">
+      <ContentWrap class="sem-impressao" title="Série diária (tabela)">
         <el-collapse>
           <el-collapse-item title="Ver os números por dia" name="t">
             <el-table :data="p.serie" max-height="320" size="small">
@@ -135,6 +150,7 @@ import type { EChartsOption } from 'echarts'
 import { Echart } from '@/components/Echart'
 import { formatDate } from '@/utils/formatTime'
 import { useAppStore } from '@/store/modules/app'
+import download from '@/utils/download'
 import * as ItsmApi from '@/api/itsm'
 import { duracao } from '@/api/itsm'
 
@@ -182,6 +198,35 @@ const carregar = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const exportando = ref(false)
+const exportarExcel = async () => {
+  exportando.value = true
+  try {
+    const dados = await ItsmApi.exportarPainel({
+      de: periodo.value[0],
+      ate: periodo.value[1],
+      categoriaId: categoriaId.value
+    })
+    download.excel(dados, `painel-service-desk-${periodo.value[0]}-a-${periodo.value[1]}.xlsx`)
+  } finally {
+    exportando.value = false
+  }
+}
+
+const descricaoFiltros = computed(() => {
+  const data = (d?: string) => (d ? d.split('-').reverse().join('/') : '')
+  const categoria = categorias.value.find((c) => c.id === categoriaId.value)?.nomeCompleto
+  return `${data(periodo.value[0])} a ${data(periodo.value[1])} · ${categoria ?? 'Todas as categorias'}`
+})
+
+// o navegador oferece "Salvar como PDF"; a classe no body mostra só o painel enquanto imprime
+const imprimir = () => {
+  const terminar = () => document.body.classList.remove('imprimindo-painel')
+  window.addEventListener('afterprint', terminar, { once: true })
+  document.body.classList.add('imprimindo-painel')
+  window.print()
 }
 
 const fmt = (v: any, suf = '') => (v === null || v === undefined ? '—' : `${v}${suf}`)
@@ -327,5 +372,48 @@ onMounted(async () => {
 .nota {
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+.cabecalho-impressao {
+  display: none;
+}
+</style>
+
+<!-- sem scoped: precisa esconder o menu e soltar as rolagens do layout, que estão fora deste componente -->
+<style>
+@media print {
+  body.imprimindo-painel,
+  body.imprimindo-painel #app,
+  body.imprimindo-painel .el-scrollbar,
+  body.imprimindo-painel .el-scrollbar__wrap {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body.imprimindo-painel * {
+    visibility: hidden;
+  }
+  body.imprimindo-painel .painel-impressao,
+  body.imprimindo-painel .painel-impressao * {
+    visibility: visible;
+  }
+  body.imprimindo-painel .painel-impressao {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  body.imprimindo-painel .painel-impressao .cabecalho-impressao {
+    display: block;
+    margin-bottom: 12px;
+  }
+  body.imprimindo-painel .painel-impressao .sem-impressao {
+    display: none;
+  }
+  body.imprimindo-painel .painel-impressao canvas {
+    max-width: 100%;
+  }
+  body.imprimindo-painel .painel-impressao .el-card,
+  body.imprimindo-painel .painel-impressao .tile {
+    break-inside: avoid;
+  }
 }
 </style>

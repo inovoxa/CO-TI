@@ -206,7 +206,7 @@ public class FluxoService {
                 || (cmd == FluxoTextos.Comando.VOLTAR && !"PERGUNTA".equals(e.etapa))) {
             boolean tinha = e.formularioId != null;
             e.reiniciar();
-            e.saidas.add((tinha ? "Pedido descartado. " : "") + "Como posso ajudar?\n\n" + (ctx.web() ? MENU_WEB : FluxoTextos.MENU));
+            e.saidas.add((tinha ? "Pedido descartado. " : "") + "Como posso ajudar?\n\n" + menu(ctx));
             return;
         }
         if (ctx.web() && !"PERGUNTA".equals(e.etapa) && !"CONFIRMAR".equals(e.etapa) && !"CORRIGIR".equals(e.etapa)) {
@@ -394,7 +394,7 @@ public class FluxoService {
     private void iniciar(Estado e, Contexto ctx, CatalogoVOs.FormularioCatalogo f) {
         if (f == null) {
             e.reiniciar();
-            e.saidas.add("Esse serviço não está mais disponível.\n\n" + FluxoTextos.MENU);
+            e.saidas.add("Esse serviço não está mais disponível.\n\n" + menu(ctx));
             return;
         }
         if (!ctx.web() && !identificado(e, ctx)) {
@@ -415,7 +415,7 @@ public class FluxoService {
         List<Formulario.Pergunta> ps = perguntas(ctx, e);
         if (ps.isEmpty()) {
             e.reiniciar();
-            e.saidas.add("Esse serviço não está mais disponível.\n\n" + FluxoTextos.MENU);
+            e.saidas.add("Esse serviço não está mais disponível.\n\n" + menu(ctx));
             return;
         }
         if (voltar) {
@@ -433,6 +433,16 @@ public class FluxoService {
             if (erro != null) {
                 e.saidas.add("⚠️ " + erro + ". Tente de novo:\n\n" + FluxoTextos.pergunta(p, e.indice + 1, ps.size()));
                 return;
+            }
+            // na tela de login (sem identificação) não confere a conta aqui, para não servir de consulta de logins
+            if ("usuario".equals(p.type()) && !ctx.web()) {
+                Optional<String> login = formularioService.loginDeRede(valor);
+                if (login.isEmpty()) {
+                    e.saidas.add("⚠️ Não encontrei o usuário de rede *" + valor + "* (ou a conta está desativada). "
+                            + "Confira e tente de novo:\n\n" + FluxoTextos.pergunta(p, e.indice + 1, ps.size()));
+                    return;
+                }
+                valor = login.get();
             }
             e.respostas.put(p.name(), FluxoTextos.normalizado(p, valor));
             if (FluxoTextos.SENSIVEIS.contains(p.name())) {
@@ -478,7 +488,7 @@ public class FluxoService {
         }
         if (Boolean.FALSE.equals(sim)) {
             e.reiniciar();
-            e.saidas.add("Pedido cancelado. Como posso ajudar?\n\n" + FluxoTextos.MENU);
+            e.saidas.add("Pedido cancelado. Como posso ajudar?\n\n" + menu(ctx));
             return;
         }
         if (!Boolean.TRUE.equals(sim)) {
@@ -720,6 +730,11 @@ public class FluxoService {
     }
 
     /** Tela de login fora do formulário: recomeçar o reset ou chamar alguém (nada de consulta, FAQ ou outros serviços). */
+    /** Na tela de login só existem o reset e o atendente; o menu completo é dos canais com pessoa identificada. */
+    private static String menu(Contexto ctx) {
+        return ctx.web() ? MENU_WEB : FluxoTextos.MENU;
+    }
+
     private void menuWeb(Estado e, Contexto ctx, String t) {
         Integer n = FluxoTextos.numero(t);
         if ((n != null && n == 1) || CODIGO_RESET.equals(FluxoTextos.codigo(t))) {

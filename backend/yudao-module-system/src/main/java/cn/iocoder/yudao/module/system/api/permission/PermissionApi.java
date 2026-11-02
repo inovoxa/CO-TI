@@ -20,4 +20,7 @@ public interface PermissionApi extends PermissionCommonApi {
      */
     Set<Long> getUserRoleIdListByRoleIds(Collection<Long> roleIds);
 
+    /** CO-TI: pessoas que têm a permissão por algum papel ativo (sem o super administrador). */
+    Set<Long> getUserIdListByPermission(String permission);
+
 }

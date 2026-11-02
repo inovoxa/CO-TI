@@ -53,6 +53,27 @@ public class AdProperties {
      */
     private Map<String, String> gruposPerfis = new LinkedHashMap<>();
 
+    /**
+     * Grupo(s) do AD cujos membros aprovam pedidos (CN ou DN, vários separados por ";"). Dá o perfil
+     * {@value #PERFIL_APROVADOR_AD}, controlado pelo AD; o perfil "aprovador", dado à mão no portal, continua valendo.
+     */
+    private String grupoAprovadores;
+
+    public static final String PERFIL_APROVADOR_AD = "aprovador_ad";
+
+    /** {@link #gruposPerfis} mais os grupos de aprovadores. */
+    public Map<String, String> getGruposPerfisEfetivos() {
+        Map<String, String> m = new LinkedHashMap<>(gruposPerfis);
+        if (grupoAprovadores != null) {
+            for (String g : grupoAprovadores.split(";")) {
+                if (!g.isBlank()) {
+                    m.put(g.trim(), PERFIL_APROVADOR_AD);
+                }
+            }
+        }
+        return m;
+    }
+
     /** Perfil dado a quem entra pela primeira vez (código em system_role); vazio = nenhum. "common" = portal. */
     private String perfilPadrao = "common";
 

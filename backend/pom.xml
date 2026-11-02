@@ -23,6 +23,7 @@
         <module>yudao-module-monitoramento</module>
         <module>yudao-module-assistente</module>
         <module>yudao-module-logs</module>
+        <module>yudao-module-cofre</module>
     </modules>
 
     <name>${project.artifactId}</name>

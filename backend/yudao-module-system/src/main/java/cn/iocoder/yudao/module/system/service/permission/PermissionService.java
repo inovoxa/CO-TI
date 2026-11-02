@@ -109,6 +109,12 @@ public interface PermissionService {
     Set<Long> getUserRoleIdListByRoleId(Collection<Long> roleIds);
 
     /**
+     * CO-TI: pessoas que têm a permissão por algum papel ativo (o super administrador, que passa em tudo, não entra
+     * na lista).
+     */
+    Set<Long> getUserIdListByPermission(String permission);
+
+    /**
      * 获得用户拥有的角色编号集合
      *
      * @param userId 用户编号

@@ -13,7 +13,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Cifra segredos guardados no banco (segredo do TOTP; depois, o cofre de senhas) com AES-256-GCM.
+ * Cifra segredos guardados no banco (segredo do TOTP e cofre de senhas) com AES-256-GCM.
  *
  * <p>A chave-mestra vem de {@code coti.seguranca.chave-mestra} (32 bytes em Base64, gere com
  * {@code openssl rand -base64 32}) e nunca vai para o banco. O "contexto" (ex.: {@code mfa:42}) entra como dado

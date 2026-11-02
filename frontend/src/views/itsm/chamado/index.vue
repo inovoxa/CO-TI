@@ -45,6 +45,13 @@
       <el-form-item>
         <el-button @click="handleQuery"><Icon class="mr-5px" icon="ep:search" /> Buscar</el-button>
         <el-button @click="resetQuery"><Icon class="mr-5px" icon="ep:refresh" /> Limpar</el-button>
+        <el-button
+          v-hasPermi="['itsm:chamado:exportar']"
+          :loading="exportando"
+          @click="exportarExcel"
+        >
+          <Icon class="mr-5px" icon="ep:download" /> Excel
+        </el-button>
         <el-button v-hasPermi="['itsm:chamado:create']" plain type="primary" @click="formRef.open()">
           <Icon class="mr-5px" icon="ep:plus" /> Novo chamado
         </el-button>
@@ -115,6 +122,7 @@
 
 <script lang="ts" setup>
 import { dateFormatter, formatDate } from '@/utils/formatTime'
+import download from '@/utils/download'
 import * as ItsmApi from '@/api/itsm'
 import { PRIORIDADES, corPrioridade, corStatus } from '@/api/itsm'
 import ChamadoForm from './ChamadoForm.vue'
@@ -151,6 +159,19 @@ const queryParams = reactive({
 const queryFormRef = ref()
 const formRef = ref()
 const detalheRef = ref()
+
+const exportando = ref(false)
+const exportarExcel = async () => {
+  exportando.value = true
+  try {
+    download.excel(
+      await ItsmApi.exportarChamados(queryParams),
+      `chamados-${formatDate(new Date(), 'YYYY-MM-DD')}.xlsx`
+    )
+  } finally {
+    exportando.value = false
+  }
+}
 
 const nomes = (atores: ItsmApi.Ator[]) => atores.map((a) => a.nome).join(', ')
 const classeLinha = ({ row }: { row: ItsmApi.Chamado }) => (row.slaVencido ? 'linha-vencida' : '')

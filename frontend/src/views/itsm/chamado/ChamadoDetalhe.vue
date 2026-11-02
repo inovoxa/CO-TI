@@ -486,10 +486,11 @@
         <el-form-item label="Quem aprova (todos precisam aprovar)">
           <UsuarioSelect
             v-model="pedido.aprovadorIds"
+            aprovadores
             class="w-full"
             filterable
             multiple
-            placeholder="Pessoas"
+            placeholder="Pessoas com o papel Aprovador"
           />
         </el-form-item>
         <el-form-item label="O que precisa ser aprovado">

@@ -7,14 +7,18 @@ import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
 import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
+import cn.iocoder.yudao.module.inventario.service.RelatorioInventarioService;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -33,12 +37,21 @@ public class AtivoController {
     private AlertaInventarioService alertaInventarioService;
     @Resource
     private LicencaInventarioService licencaInventarioService;
+    @Resource
+    private RelatorioInventarioService relatorioInventarioService;
 
     @GetMapping("/page")
     @Operation(summary = "Lista de ativos (filtros e alertas)")
     @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
     public CommonResult<PageResult<AtivoVOs.Resp>> pagina(@Valid AtivoVOs.PaginaReq req) {
         return success(ativoService.pagina(req));
+    }
+
+    @GetMapping("/exportar-excel")
+    @Operation(summary = "Lista de ativos em planilha, com os filtros da tela")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:exportar')")
+    public void exportarExcel(@Valid AtivoVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "inventario.xlsx", relatorioInventarioService.ativos(req, getLoginUserId()));
     }
 
     @GetMapping("/opcoes")

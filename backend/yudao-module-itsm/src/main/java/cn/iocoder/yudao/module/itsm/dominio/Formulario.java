@@ -13,12 +13,17 @@ import java.util.regex.PatternSyntaxException;
  *
  * <p>Formato compatível com o formularios_definicoes.json do projeto anterior: tipos text, textarea, email,
  * number, date, select, radios, regex e location; "regex" no estilo JavaScript (/expressão/flags).
+ *
+ * <p>Tipo do CO-TI: "usuario", o login de rede de uma pessoa (no portal, lista com busca). Aqui só se confere o
+ * formato; se a conta existe, quem confere é o serviço, que tem o banco.
  */
 public final class Formulario {
 
     public static final Set<String> TIPOS = Set.of("text", "textarea", "email", "number", "date", "select", "radios",
-            "regex", "location");
+            "regex", "location", "usuario");
     private static final Pattern NOME = Pattern.compile("^[a-z][a-z0-9_]{0,63}$");
+    /** sAMAccountName (até 20 no AD, folga para UPN) ou DOMINIO\login / login@dominio, que o serviço reduz ao login. */
+    private static final Pattern LOGIN = Pattern.compile("^[\\p{L}0-9._\\-]+([\\\\@][\\p{L}0-9._\\-]+)?$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]{1,64}@[^@\\s]{1,190}\\.[^@\\s]{2,}$");
     private static final Pattern REGEX_JS = Pattern.compile("^/(.*)/([a-z]*)$", Pattern.DOTALL);
     // STRICT: 31/02 é erro (o padrão do Java "ajustaria" para 28/02)
@@ -113,6 +118,7 @@ public final class Formulario {
             case "number" -> v.matches("^-?\\d{1,15}([.,]\\d{1,6})?$") ? null : "Número inválido";
             case "date" -> data(v) == null ? "Data inválida (use dd/mm/aaaa)" : null;
             case "select", "radios" -> p.values().contains(v) ? null : "Opção inválida";
+            case "usuario" -> v.length() <= 104 && LOGIN.matcher(v).matches() ? null : "Usuário de rede inválido";
             case "regex" -> {
                 Pattern r = compilar(p.regex());
                 yield r != null && r.matcher(v).find() ? null : "Formato inválido";

@@ -144,6 +144,7 @@
             </el-select>
             <UsuarioSelect
               v-else-if="PESSOA.includes(a.acao)"
+              :aprovadores="a.acao === 'pedir_aprovacao_usuario'"
               :model-value="a.valor ? Number(a.valor) : undefined"
               class="flex-1"
               @update:model-value="(v) => (a.valor = v == null ? '' : String(v))"

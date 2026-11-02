@@ -48,6 +48,9 @@ public class ApiAccessLogInterceptor implements HandlerInterceptor {
             String requestBody = ServletUtils.getBody(request);
             if (CollUtil.isEmpty(queryString) && StrUtil.isEmpty(requestBody)) {
                 log.info("[preHandle][开始请求 URL({}) 无参数]", request.getRequestURI());
+            } else if (request.getRequestURI().contains("/cofre/")) {
+                // CO-TI: o corpo dos pedidos do cofre traz senhas e notas; o perfil coti não conta como produção
+                log.info("[preHandle][开始请求 URL({}) parâmetros omitidos]", request.getRequestURI());
             } else {
                 // CO-TI: mesmo fora de produção, nunca escrever senha e token no console
                 log.info("[preHandle][开始请求 URL({}) 参数({})]", request.getRequestURI(),

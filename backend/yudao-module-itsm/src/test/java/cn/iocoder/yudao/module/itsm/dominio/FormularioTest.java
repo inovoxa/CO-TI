@@ -78,4 +78,18 @@ class FormularioTest {
         assertNull(Formulario.compilar("/([/"));
     }
 
+    @Test
+    void usuarioDeRedeConfereSoOFormato() {
+        Definicao d = new Definicao(List.of(new Secao("Acesso", List.of(
+                new Pergunta("perfil_referencia", "Colega com o perfil", "usuario", true, null, null)))));
+        assertTrue(Formulario.validarDefinicao(d).isEmpty());
+        for (String ok : List.of("joao.silva", "PMA\\joao.silva", "joao.silva@pma.local", "jose-maria_2")) {
+            assertTrue(Formulario.validar(d, Map.of("perfil_referencia", ok)).valido(), ok);
+        }
+        for (String ruim : List.of("joao silva", "*)(cn=*", "a;b", "a\\b\\c")) {
+            assertEquals("Usuário de rede inválido", Formulario.validar(d, Map.of("perfil_referencia", ruim)).erros()
+                    .get("perfil_referencia"), ruim);
+        }
+    }
+
 }

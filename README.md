@@ -100,6 +100,7 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Login:** a senha é conferida no AD (bind). Na primeira entrada, o usuário é criado no portal. Contas com vínculo ao AD **só** entram com a senha do AD. O `admin` local continua entrando mesmo com o AD fora do ar. O usuário pode ser digitado como no Windows: `joao.silva`, `EMPRESA\joao.silva` ou `joao.silva@empresa.local`; o domínio é descartado e vale a conta (`sAMAccountName`).
 - **Estrutura:** as OUs abaixo de `CO_TI_AD_OU_RAIZ` (padrão: a base) viram departamentos debaixo do departamento `CO_TI_AD_DEPT_RAIZ_ID` (100, "Empresa").
 - **Perfis:** em `coti.ad.grupos-perfis` (`application-coti.yaml`), cada grupo do AD é mapeado para um perfil do portal (`noc`, `service_desk`, `soc`, `portaria`, `gestor_unidade`, `telao`). Os grupos aninhados também valem.
+- **Quem aprova pedidos:** só quem tem o papel **Aprovador** (dado à mão em Sistema → Usuários → Atribuir papel) ou está no grupo do AD de `CO_TI_AD_GRUPO_APROVADORES` (papel **Aprovador (grupo do AD)**, que entra e sai com a sincronização). Vale para o gestor do AD, o e-mail do superior digitado no formulário, o aprovador fixo, as regras e o pedido do técnico; e-mail de quem não é aprovador recusa o envio.
 - **Sincronização completa:** a cada 30 min (`CO_TI_AD_CRON`). Quem sumiu do AD ou foi desativado lá é desativado no portal. Se mais de 20% das contas sumirem de uma vez, a sincronização não desativa ninguém e registra um erro, porque o mais provável é um filtro mal configurado.
 - O certificado do DC precisa ser confiável. Use `CO_TI_AD_TRUSTSTORE` com a CA do AD; `ldap://` sem StartTLS é recusado.
 
@@ -474,7 +475,7 @@ Como fica:
   - Funciona com qualquer aplicativo autenticador. Recebe 10 códigos de recuperação de uso único.
   - O mesmo código não serve duas vezes. O desafio do login vale 5 minutos e 5 tentativas.
   - Quem perde o celular e os códigos: o administrador usa *Usuários → Mais → Redefinir verificação em duas etapas*.
-- **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA (e, depois, o cofre) com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular.
+- **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA e o cofre com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular e as senhas do cofre não abrem mais.
 - **Trilha de auditoria** (*Sistema → Auditoria do sistema → Trilha de auditoria*):
   - registra login, falhas, MFA, mudanças vindas do AD e a senha inicial;
   - é encadeada por SHA-256: o botão *Verificar integridade* aponta a primeira linha alterada ou removida;
@@ -489,6 +490,41 @@ Como fica:
   - senhas locais com bcrypt de custo `CO_TI_BCRYPT_CUSTO` (12); hashes antigos continuam valendo;
   - o painel `/druid` fica desligado.
 - **IP real:** o nginx sobrescreve `X-Forwarded-For` com o IP da conexão. Atrás de outro proxy, configure o módulo `realip`.
+
+## Relatórios em planilha e PDF
+
+- **Excel:** botão nas telas *Painel* (uma aba por indicador), *Chamados* e *Inventário → Ativos*. Sai com os filtros da
+  tela e o escopo de unidade do perfil, até 50 mil linhas.
+- **PDF:** botão *PDF* no *Painel*, pela impressão do navegador ("Salvar como PDF"), com os gráficos.
+- **Quem pode:** permissões `itsm:chamado:exportar` e `inventario:ativo:exportar`. Quem já consultava recebeu a permissão
+  na atualização; retire do perfil se não quiser. Cada exportação de Excel fica na trilha de auditoria.
+
+## Cofre de senhas
+
+Menu *Cofre de senhas*, para as senhas de equipamentos e sistemas da equipe de TI. Dê o papel **Cofre de senhas** a quem
+vai usar (Sistema → Usuários → Atribuir papel).
+
+- **Pastas:** cada uma tem membros, escolhidos pessoa a pessoa, com um de três papéis: vê, edita ou gerencia. Sem ser
+  membro, ninguém vê a pasta. O administrador do sistema decide os membros de qualquer pasta, mas só lê uma senha se
+  incluir a si mesmo, e essa inclusão fica na auditoria.
+- **Proteção:** senha e notas ficam cifradas com a chave-mestra (AES-256-GCM), ligadas à linha do segredo. A lista nunca
+  traz o valor. Sem a mesma `CO_TI_CHAVE_MESTRA`, um backup restaurado não abre as senhas.
+- **Ver uma senha:** exige a verificação em duas etapas ativa na conta (`CO_TI_COFRE_EXIGIR_MFA=false` desliga) e fica na
+  trilha de auditoria (`cofre.senha_vista`). A janela fecha sozinha em 60 s.
+- **Saída de alguém:** tirar a pessoa da pasta não muda as senhas que ela já conhece. Troque essas senhas; a auditoria
+  mostra quais ela viu.
+- **Ainda não tem:** histórico de versões da senha, compartilhamento por equipe ou grupo do AD e aviso de troca periódica.
+
+## Instalar no celular (PWA)
+
+O portal pode ser instalado na tela inicial do celular ou do computador, com atalhos para *Minhas aprovações* e *Meus
+chamados*: no Chrome/Edge, *Instalar app*; no Safari do iPhone, *Compartilhar → Adicionar à Tela de Início*.
+
+- **Precisa de HTTPS com certificado confiável:** com o autoassinado, o portal funciona, mas o navegador não instala.
+- **Nada de dados no aparelho:** só os arquivos estáticos do portal ficam em cache. Sem rede, aparece uma página avisando;
+  chamados e aprovações precisam de conexão.
+- **Atualização:** a versão nova chega ao abrir o portal. Se mudar `public/sw.js`, troque `VERSAO` nele.
+- **Ainda não tem:** notificação no celular. O aviso de aprovação continua por e-mail e WhatsApp.
 
 ## Idioma
 

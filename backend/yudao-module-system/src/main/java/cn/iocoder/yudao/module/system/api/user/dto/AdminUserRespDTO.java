@@ -21,6 +21,9 @@ public class AdminUserRespDTO {
      * 用户昵称
      */
     private String nickname;
+
+    /** CO-TI: login de rede */
+    private String username;
     /**
      * 帐号状态
      *

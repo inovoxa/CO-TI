@@ -13,6 +13,7 @@ import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoAtorMapper;
 import cn.iocoder.yudao.module.itsm.enums.AtorTipo;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.dominio.Aprovacoes;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
@@ -32,9 +33,14 @@ import static cn.iocoder.yudao.module.itsm.enums.ErrorCodeConstants.*;
  *
  * <p>Quem aprova: o gestor do solicitante (atributo manager do AD), uma pessoa achada pelo e-mail ou uma pessoa
  * fixa. O aprovador vê e responde em "Minhas aprovações", mesmo sem ser participante do chamado.
+ *
+ * <p>Só aprova quem tem a permissão {@link #PERMISSAO_APROVAR} (papel "Aprovador"): sem isso, bastaria o solicitante
+ * digitar o e-mail de um colega no formulário para ele aprovar o próprio reset de senha ou acesso.
  */
 @Service
 public class AprovacaoService {
+
+    public static final String PERMISSAO_APROVAR = "itsm:aprovacao:aprovar";
 
     @Resource
     private AprovacaoMapper aprovacaoMapper;
@@ -46,6 +52,8 @@ public class AprovacaoService {
     private VinculoAdMapper vinculoAdMapper;
     @Resource
     private ChamadoAtorMapper chamadoAtorMapper;
+    @Resource
+    private PermissionApi permissionApi;
     @Resource
     @Lazy
     private ChamadoService chamadoService;
@@ -82,6 +90,29 @@ public class AprovacaoService {
         return u != null && CommonStatusEnum.isEnable(u.getStatus());
     }
 
+    /** Pessoa ativa com o papel Aprovador (ou super administrador). */
+    @DataPermission(enable = false)
+    public boolean podeAprovar(Long userId) {
+        return userId != null && ativo(userId) && permissionApi.hasAnyPermissions(userId, PERMISSAO_APROVAR);
+    }
+
+    /** Aprovadores ativos cujo nome ou login contém o trecho, para os campos de escolha (no máximo 30). */
+    @DataPermission(enable = false)
+    public List<AdminUserDO> buscarAprovadores(String trecho) {
+        Set<Long> ids = permissionApi.getUserIdListByPermission(PERMISSAO_APROVAR);
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        String t = trecho == null ? "" : trecho.trim();
+        String padrao = "%" + t.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        return adminUserMapper.selectList(new LambdaQueryWrapperX<AdminUserDO>()
+                .in(AdminUserDO::getId, ids)
+                .eq(AdminUserDO::getStatus, CommonStatusEnum.ENABLE.getStatus())
+                .and(w -> w.apply("nickname ILIKE {0}", padrao).or().apply("username ILIKE {0}", padrao))
+                .orderByAsc(AdminUserDO::getNickname)
+                .last("LIMIT 30"));
+    }
+
     // ------------------------------------------------------------------ pedir e responder
 
     /**
@@ -104,6 +135,9 @@ public class AprovacaoService {
         for (Long a : new LinkedHashSet<>(aprovadores)) {
             if (!ativo(a)) {
                 throw exception(APROVACAO_APROVADOR_INVALIDO);
+            }
+            if (!podeAprovar(a)) {
+                throw exception(APROVACAO_NAO_AUTORIZADO, nome(a));
             }
             boolean pendente = existentes.stream().anyMatch(x -> x.getAprovadorId().equals(a)
                     && x.getStatus() == Aprovacoes.AGUARDANDO);
@@ -128,6 +162,10 @@ public class AprovacaoService {
         ChamadoDO c = chamadoMapper.selectByIdParaAtualizar(a.getChamadoId());
         if (a.getStatus() != Aprovacoes.AGUARDANDO) {
             throw exception(APROVACAO_JA_RESPONDIDA);
+        }
+        // o papel pode ter sido retirado depois do pedido
+        if (!podeAprovar(userId)) {
+            throw exception(APROVACAO_SEM_PERMISSAO);
         }
         a.setStatus(aprovar ? Aprovacoes.APROVADA : Aprovacoes.RECUSADA);
         a.setComentarioResposta(comentario == null ? null : comentario.trim());
@@ -220,7 +258,9 @@ public class AprovacaoService {
         }).toList();
     }
 
-    private String nome(Long userId) {
+    /** Nome para mensagens; "#id" se a pessoa não existe mais. */
+    @DataPermission(enable = false)
+    public String nome(Long userId) {
         AdminUserDO u = adminUserMapper.selectById(userId);
         return u == null ? "#" + userId : u.getNickname();
     }

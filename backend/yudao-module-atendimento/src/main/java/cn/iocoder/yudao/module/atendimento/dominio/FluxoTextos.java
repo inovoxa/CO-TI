@@ -76,6 +76,7 @@ public final class FluxoTextos {
                 }
             }
             case "email" -> s.append("\n_(e-mail)_");
+            case "usuario" -> s.append("\n_(usuário de rede, ex.: nome.sobrenome)_");
             case "number" -> s.append("\n_(só números)_");
             case "select", "radios" -> {
                 for (int i = 0; i < p.values().size(); i++) {

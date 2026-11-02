@@ -123,7 +123,7 @@
             {
               "name": "perfil_referencia",
               "label": "Login de um colega que ja possua o perfil desejado (digite o usuario de rede)",
-              "type": "text",
+              "type": "usuario",
               "required": true
             },
             {
@@ -363,7 +363,7 @@
             {
               "name": "perfil_referencia",
               "label": "Login de um colega que ja possua o perfil desejado (digite o usuario de rede)",
-              "type": "text",
+              "type": "usuario",
               "required": true
             },
             {
@@ -785,7 +785,7 @@
             {
               "name": "perfil_referencia",
               "label": "Login de um colega do novo setor que ja possua o perfil desejado (digite o usuario de rede)",
-              "type": "text",
+              "type": "usuario",
               "required": true
             },
             {

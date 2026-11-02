@@ -357,6 +357,7 @@ export interface Pergunta {
     | 'radios'
     | 'regex'
     | 'location'
+    | 'usuario'
   required: boolean
   values?: string[]
   regex?: string
@@ -506,6 +507,9 @@ export const revelarSenha = (id: number): Promise<string> =>
 // equipe técnica
 export const getAprovacoesDoChamado = (id: number): Promise<Aprovacao[]> =>
   request.get({ url: '/itsm/chamado/aprovacoes', params: { id } })
+/** Só quem tem o papel Aprovador (busca por nome ou login, no máximo 30) */
+export const buscarAprovadores = (nome: string): Promise<{ id: number; nickname: string }[]> =>
+  request.get({ url: '/itsm/chamado/aprovadores', params: { nome } })
 export const pedirAprovacao = (data: {
   chamadoId: number
   aprovadorIds: number[]
@@ -725,6 +729,16 @@ export const getPainel = (params: {
   deptId?: number
   categoriaId?: number
 }): Promise<any> => request.get({ url: '/itsm/painel', params })
+
+export const exportarPainel = (params: {
+  de: string
+  ate: string
+  deptId?: number
+  categoriaId?: number
+}): Promise<Blob> => request.download({ url: '/itsm/painel/exportar-excel', params })
+
+export const exportarChamados = (params: any): Promise<Blob> =>
+  request.download({ url: '/itsm/chamado/exportar-excel', params })
 
 // ========== problemas e mudanças ==========
 

@@ -155,16 +155,17 @@ public class AdProvisionamentoService {
     }
 
     /**
-     * Perfis mapeados em coti.ad.grupos-perfis são controlados pelo AD (entra e sai conforme o grupo);
-     * os demais perfis do usuário, dados à mão no portal, ficam como estão.
+     * Perfis mapeados em coti.ad.grupos-perfis (e coti.ad.grupo-aprovadores) são controlados pelo AD (entra e sai
+     * conforme o grupo); os demais perfis do usuário, dados à mão no portal, ficam como estão.
      */
     void sincronizarPerfis(Long userId, Set<String> gruposDn, String login) {
-        if (props.getGruposPerfis().isEmpty()) {
+        Map<String, String> mapa = props.getGruposPerfisEfetivos();
+        if (mapa.isEmpty()) {
             return;
         }
         Set<Long> gerenciados = new HashSet<>();
         Set<Long> devidos = new HashSet<>();
-        for (Map.Entry<String, String> e : props.getGruposPerfis().entrySet()) {
+        for (Map.Entry<String, String> e : mapa.entrySet()) {
             RoleDO perfil = roleMapper.selectByCode(e.getValue());
             if (perfil == null) {
                 log.warn("[sincronizarPerfis][perfil {} do mapa coti.ad.grupos-perfis não existe]", e.getValue());

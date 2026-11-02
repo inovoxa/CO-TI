@@ -123,6 +123,10 @@
               <el-radio-button value="campo">E-mail informado</el-radio-button>
               <el-radio-button value="fixo">Pessoa fixa</el-radio-button>
             </el-radio-group>
+            <div v-if="form.aprovacao !== 'nenhuma'" class="dica">
+              Em qualquer opção, só aprova quem tem o papel Aprovador (Sistema → Usuários → Atribuir
+              papel).
+            </div>
           </el-form-item>
           <el-form-item v-if="form.aprovacao === 'campo'" label="Pergunta do e-mail">
             <el-select v-model="form.aprovadorCampo" class="w-full">
@@ -135,7 +139,7 @@
             </el-select>
           </el-form-item>
           <el-form-item v-if="form.aprovacao === 'fixo'" label="Aprovador">
-            <UsuarioSelect v-model="form.aprovadorId" class="w-full" filterable />
+            <UsuarioSelect v-model="form.aprovadorId" aprovadores class="w-full" filterable />
           </el-form-item>
           <el-form-item label="Operação no AD">
             <el-select
@@ -300,7 +304,8 @@ const TIPOS = [
   { valor: 'select', rotulo: 'Lista' },
   { valor: 'radios', rotulo: 'Opções' },
   { valor: 'regex', rotulo: 'Formato (regex)' },
-  { valor: 'location', rotulo: 'Local' }
+  { valor: 'location', rotulo: 'Local' },
+  { valor: 'usuario', rotulo: 'Usuário de rede (lista de pessoas)' }
 ]
 
 const loading = ref(true)

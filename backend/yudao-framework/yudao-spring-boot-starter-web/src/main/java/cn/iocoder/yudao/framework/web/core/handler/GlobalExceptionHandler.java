@@ -381,7 +381,8 @@ public class GlobalExceptionHandler {
         errorLog.setRequestUrl(request.getRequestURI());
         Map<String, Object> requestParams = MapUtil.<String, Object>builder()
                 .put("query", ServletUtils.getParamMap(request))
-                .put("body", ServletUtils.getBody(request)).build();
+                // o corpo dos pedidos do cofre traz senhas: não pode ir para o log de erros, que fica em texto claro
+                .put("body", request.getRequestURI().contains("/cofre/") ? "(omitido)" : ServletUtils.getBody(request)).build();
         errorLog.setRequestParams(JsonUtils.toJsonString(requestParams));
         errorLog.setRequestMethod(request.getMethod());
         errorLog.setUserAgent(ServletUtils.getUserAgent(request));

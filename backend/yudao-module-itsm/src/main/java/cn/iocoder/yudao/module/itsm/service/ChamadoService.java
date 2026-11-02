@@ -370,6 +370,15 @@ public class ChamadoService {
             }
         }
         aprovadores.remove(solicitante);
+        // quem perdeu o papel Aprovador depois de a regra ser escrita é pulado, sem impedir a abertura
+        for (Iterator<Long> it = aprovadores.iterator(); it.hasNext(); ) {
+            Long a = it.next();
+            if (!aprovacaoService.podeAprovar(a)) {
+                it.remove();
+                acompanhamentoSistema(chamadoId, null, "Uma regra pediu a aprovação de " + nomePessoa(a) + ", que não "
+                        + "tem o papel Aprovador. Peça a aprovação a outra pessoa.", true);
+            }
+        }
         if (!aprovadores.isEmpty()) {
             aprovacaoService.solicitar(chamadoId, aprovadores, "Pedido por regra: " + String.join(", ", r.nomes()), null);
         }

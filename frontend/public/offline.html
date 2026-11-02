@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CO-TI sem conexão</title>
+    <style>
+      body {
+        display: flex;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, sans-serif;
+        color: #3d3d3a;
+        background: #f0f2f5;
+        text-align: center;
+      }
+      img {
+        width: 64px;
+        height: 64px;
+      }
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 20px;
+      }
+      p {
+        margin: 0 0 20px;
+      }
+      button {
+        padding: 10px 20px;
+        border: 0;
+        border-radius: 6px;
+        font-size: 16px;
+        color: #fff;
+        background: #3a6fb0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img alt="" src="/favicon.svg" />
+      <h1>Sem conexão com o CO-TI</h1>
+      <p>O portal precisa de rede. Confira a conexão, ou a VPN, e tente de novo.</p>
+      <button onclick="location.reload()">Tentar de novo</button>
+    </main>
+  </body>
+</html>
