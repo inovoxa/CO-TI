@@ -68,6 +68,7 @@ export const CONSULTAS: Record<string, string> = {
   meus_chamados: 'Meus chamados',
   buscar_base_conhecimento: 'Base de conhecimento',
   buscar_pessoas: 'Pessoas',
+  buscar_contatos: 'Ramais e telefones',
   status_links: 'Links',
   buscar_logs: 'Logs',
   contar_logs: 'Contagem de logs',

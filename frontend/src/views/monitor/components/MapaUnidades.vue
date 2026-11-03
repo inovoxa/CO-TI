@@ -65,6 +65,13 @@
                 <span>outros serviços</span>
               </div>
             </div>
+
+            <ContatosUnidade
+              class="painel__contatos"
+              :link-fora="aberta.kpi?.link === 'offline'"
+              :unidade-id="aberta.id"
+              @carregado="ajustarPopup"
+            />
           </template>
 
           <div v-if="interativo" class="painel__acoes">
@@ -87,6 +94,7 @@ import { useRouter } from 'vue-router'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { listarEquipamentos, listarLinks, type Link, type MonitorUnit } from '@/api/monitor'
+import ContatosUnidade from '@/views/itsm/telefone/ContatosUnidade.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -154,10 +162,14 @@ async function carregarPainel(id: number) {
   } finally {
     if (meu === pedido) {
       carregando.value = false
-      // o conteúdo cresceu: o Leaflet reposiciona o popup para caber no mapa
-      setTimeout(() => mapa.value?.eachLayer((c) => c instanceof L.Popup && c.update()))
+      ajustarPopup()
     }
   }
+}
+
+/** O conteúdo cresceu: o Leaflet reposiciona o popup para caber no mapa */
+function ajustarPopup() {
+  setTimeout(() => mapa.value?.eachLayer((c) => c instanceof L.Popup && c.update()))
 }
 
 function abrir(u: MonitorUnit) {
@@ -429,6 +441,14 @@ onBeforeUnmount(() => mapa.value?.remove())
   .alerta b {
     color: #b91c1c;
   }
+}
+
+.painel__contatos {
+  max-height: 180px;
+  padding-top: 8px;
+  margin-top: 10px;
+  overflow-y: auto;
+  border-top: 1px solid #e5e7eb;
 }
 
 .painel__acoes {

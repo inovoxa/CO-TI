@@ -146,6 +146,10 @@ public interface ErrorCodeConstants {
 
     // ramais e telefones 1-101-011-xxx
     ErrorCode TELEFONE_NAO_EXISTE = new ErrorCode(1_101_011_000, "Contato não encontrado na lista");
-    ErrorCode TELEFONE_SEM_NUMERO = new ErrorCode(1_101_011_001, "Informe o ramal ou o telefone");
+    ErrorCode TELEFONE_SEM_NUMERO = new ErrorCode(1_101_011_001, "Informe o ramal, o telefone ou o celular");
+    ErrorCode TELEFONE_UNIDADE_NAO_EXISTE = new ErrorCode(1_101_011_002, "Unidade não encontrada");
+    ErrorCode TELEFONE_EMERGENCIA_INCOMPLETO = new ErrorCode(1_101_011_003, "Contato de emergência precisa de unidade e celular");
+    ErrorCode TELEFONE_CELULAR_INVALIDO = new ErrorCode(1_101_011_004, "Celular inválido: use o DDD");
+    ErrorCode TELEFONE_PLANILHA_INVALIDA = new ErrorCode(1_101_011_005, "Envie uma planilha .xlsx com a coluna Nome");
 
 }

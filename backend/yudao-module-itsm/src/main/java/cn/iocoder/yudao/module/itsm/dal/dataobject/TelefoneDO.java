@@ -27,12 +27,20 @@ public class TelefoneDO extends BaseDO {
     private String nome;
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String setor;
+    /** monitor_unit.id */
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    private String unidade;
+    private Long unidadeId;
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String ramal;
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String telefone;
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private String celular;
+    private Boolean whatsapp;
+    /** Celular corporativo, que todos podem ver */
+    private Boolean celularPublico;
+    /** Procurar primeiro quando a rede da unidade cai */
+    private Boolean emergencia;
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String email;
     @TableField(updateStrategy = FieldStrategy.ALWAYS)

@@ -319,6 +319,8 @@
           </el-descriptions-item>
         </el-descriptions>
 
+        <ContatosUnidade v-if="chamado.deptId" class="mt-14px" :dept-id="chamado.deptId" />
+
         <div v-for="g in GRUPOS" :key="g.tipo" class="mt-14px">
           <div class="mb-6px flex items-center justify-between text-13px font-bold">
             {{ g.rotulo }}
@@ -544,6 +546,7 @@
 
 <script lang="ts" setup>
 import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
+import ContatosUnidade from '../telefone/ContatosUnidade.vue'
 import { ElMessageBox } from 'element-plus'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as ItsmApi from '@/api/itsm'

@@ -438,7 +438,7 @@ computadores ainda usam Windows 10 na Saúde?", "qual o status do link da UBS Ce
 chamado #123?".
 
 - **O que consulta:** inventário, alertas, licenças, chamados, problemas, mudanças, conversas, base de conhecimento,
-  pessoas, monitores, links e logs.
+  pessoas, lista de ramais e telefones, monitores, links e logs.
 - **Com quais permissões:** as de quem pergunta, incluindo o escopo de unidade.
 - **Só leitura:** ele não altera nada.
 - **Configuração:** usa o provedor de IA configurado em Atendimento → Inteligência artificial (OpenRouter, OpenAI,
@@ -517,14 +517,24 @@ vai usar (Sistema → Usuários → Atribuir papel).
 
 ## Ramais e telefones
 
-Menu *Ramais e telefones*: lista única para todas as unidades, com busca por nome, setor, unidade ou número (o telefone é
-comparado pelos dígitos, então `33011234` acha `(16) 3301-1234`). No celular, tocar no número abre a ligação.
+Menu *Ramais e telefones*: lista única para todas as unidades, com busca por nome, setor, unidade ou número (os números são
+comparados pelos dígitos, então `33011234` acha `(16) 3301-1234`). No celular, tocar no número abre a ligação.
 
+- **Ligada às unidades:** o contato aponta para uma unidade do monitoramento. Os contatos também aparecem no painel da
+  unidade, no mapa, e no detalhe do chamado (pela unidade a que o setor do chamado pertence).
+- **Link fora:** sem rede na unidade, o ramal VoIP para junto. A lista avisa, risca ramal e fixo e põe o celular e o
+  WhatsApp primeiro. O estado vem do link principal da unidade no monitoramento.
+- **Contato de emergência:** quem procurar primeiro quando a rede cai. Exige unidade e celular. Sem energia ou internet na
+  unidade, o celular só funciona pelo plano de dados, então cadastre o número antes de precisar.
 - **Quem pode:** todos os papéis que veem a base de conhecimento consultam (`itsm:telefone:query`). Service Desk e Gestão
   de TI mantêm a lista (`itsm:telefone:update`).
-- **Dados pessoais:** a lista é mantida à mão e não puxa o celular do cadastro de usuários. Quem acessa o portal vê tudo o
-  que estiver nela; só inclua número pessoal com autorização.
-- **Ainda não tem:** importação de planilha e exportação.
+- **Dados pessoais:** a lista é mantida à mão e não puxa o celular do cadastro de usuários. Ramal e fixo aparecem para todos;
+  celular e WhatsApp só para NOC, Service Desk, SOC, Gestão de TI e Atendente (`itsm:telefone:celular`), inclusive na busca
+  por número. O celular marcado como corporativo aparece para todos. Só inclua número pessoal com autorização.
+- **Planilha:** *Baixar modelo* e *Importar planilha* (.xlsx). As colunas são achadas pelo título, em qualquer ordem, e a
+  unidade precisa ter o nome igual ao da aba *Unidades* do modelo. O mesmo nome na mesma unidade atualiza o contato; a coluna
+  que não vier mantém o valor cadastrado; a linha com erro é recusada e aparece no resultado, sem parar as outras.
+- **Ainda não tem:** exportação.
 
 ## Instalar no celular (PWA)
 
