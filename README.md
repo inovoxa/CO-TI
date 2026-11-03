@@ -106,7 +106,7 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 
 ## Catálogo de serviços e automação no AD
 
-- **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (25 formulários:
+- **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (23 formulários:
   usuários e acessos, informática, saúde e telefonia). O usuário pede em *Catálogo de serviços*; o pedido vira chamado
   e passa pelas *Regras* (atribuição, categoria, urgência, pedido de aprovação).
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
@@ -218,7 +218,7 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *Fluxo do catálogo* na caixa.
 
 - **Menu:**
-  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.4);
+  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.2);
   2. consultar meus chamados;
   3. tirar uma dúvida (FAQ);
   4. falar com um atendente.
@@ -514,6 +514,17 @@ vai usar (Sistema → Usuários → Atribuir papel).
 - **Saída de alguém:** tirar a pessoa da pasta não muda as senhas que ela já conhece. Troque essas senhas; a auditoria
   mostra quais ela viu.
 - **Ainda não tem:** histórico de versões da senha, compartilhamento por equipe ou grupo do AD e aviso de troca periódica.
+
+## Ramais e telefones
+
+Menu *Ramais e telefones*: lista única para todas as unidades, com busca por nome, setor, unidade ou número (o telefone é
+comparado pelos dígitos, então `33011234` acha `(16) 3301-1234`). No celular, tocar no número abre a ligação.
+
+- **Quem pode:** todos os papéis que veem a base de conhecimento consultam (`itsm:telefone:query`). Service Desk e Gestão
+  de TI mantêm a lista (`itsm:telefone:update`).
+- **Dados pessoais:** a lista é mantida à mão e não puxa o celular do cadastro de usuários. Quem acessa o portal vê tudo o
+  que estiver nela; só inclua número pessoal com autorização.
+- **Ainda não tem:** importação de planilha e exportação.
 
 ## Instalar no celular (PWA)
 

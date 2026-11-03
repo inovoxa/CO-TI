@@ -144,4 +144,8 @@ public interface ErrorCodeConstants {
     // relatórios 1-101-010-xxx
     ErrorCode RELATORIO_GRANDE_DEMAIS = new ErrorCode(1_101_010_000, "O relatório teria {} linhas e o limite é {}. Use mais filtros e tente de novo");
 
+    // ramais e telefones 1-101-011-xxx
+    ErrorCode TELEFONE_NAO_EXISTE = new ErrorCode(1_101_011_000, "Contato não encontrado na lista");
+    ErrorCode TELEFONE_SEM_NUMERO = new ErrorCode(1_101_011_001, "Informe o ramal ou o telefone");
+
 }

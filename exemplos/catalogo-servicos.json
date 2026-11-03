@@ -668,13 +668,20 @@
               "label": "Justificativa para criacao do e-mail institucional",
               "type": "textarea",
               "required": true
+            },
+            {
+              "name": "email_superior",
+              "label": "E-mail do superior direto (quem vai aprovar)",
+              "type": "email",
+              "required": true
             }
           ]
         }
       ],
       "acao_ad": "CriarEmail",
       "titulo_modelo": "Criação de e-mail: {nome_usuario}",
-      "aprovacao": "gestor"
+      "aprovacao": "campo",
+      "aprovador_campo": "email_superior"
     },
     {
       "codigo": "1.7",
@@ -2318,7 +2325,7 @@
     {
       "codigo": "4.1",
       "nome": "Telefonia: problemas com ramal",
-      "descricao": "Problemas com ramal/linha telefonica fixa (sem audio, ruido, sem chamada, etc).",
+      "descricao": "Problemas com ramal, linha fixa ou aparelho telefônico (sem áudio, ruído, sem chamada, defeito ou troca).",
       "grupo": "Telefonia",
       "icon": "fas fa-phone-alt",
       "ticket": {
@@ -2440,254 +2447,8 @@
     },
     {
       "codigo": "4.2",
-      "nome": "Telefonia: aparelho telefônico",
-      "descricao": "Problemas com o aparelho telefonico (defeito fisico, troca, configuracao).",
-      "grupo": "Telefonia",
-      "icon": "fas fa-phone-alt",
-      "ticket": {
-        "type": 1,
-        "urgency": 2,
-        "impact": 2
-      },
-      "secoes": [
-        {
-          "perguntas": [
-            {
-              "label": "Nome do solicitante",
-              "name": "nome_solicitante",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Nome do local/unidade",
-              "name": "local",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "CEP da unidade (8 digitos)",
-              "regex": "/^[0-9]{8}$/",
-              "name": "cep",
-              "type": "regex",
-              "required": true
-            },
-            {
-              "label": "Logradouro",
-              "name": "logradouro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Numero do endereco",
-              "name": "numero",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Bairro",
-              "name": "bairro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Cidade",
-              "name": "cidade",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Telefone da unidade (pode deixar vazio)",
-              "name": "telefone",
-              "type": "text",
-              "required": false
-            },
-            {
-              "label": "Celular para contato (com DDD)",
-              "regex": "/^[0-9]{10,11}$/",
-              "name": "celular_contato",
-              "type": "regex",
-              "required": true
-            },
-            {
-              "label": "E-mail institucional para contato",
-              "name": "email_unidade",
-              "type": "email",
-              "required": true
-            },
-            {
-              "label": "Setor",
-              "name": "setor",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Ramal com defeito",
-              "name": "ramal_defeito",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Em qual sala esta a linha/ramal?",
-              "name": "sala_linha_ramal",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Descricao detalhada do problema/solicitacao",
-              "name": "descricao_solicitacao",
-              "type": "textarea",
-              "required": true
-            },
-            {
-              "label": "Prioridade",
-              "values": [
-                "baixa",
-                "media",
-                "alta",
-                "muito_alta"
-              ],
-              "name": "prioridade",
-              "type": "select",
-              "required": true
-            },
-            {
-              "label": "MAC do aparelho (se conhecido)",
-              "name": "mac_aparelho",
-              "type": "text",
-              "required": false
-            }
-          ],
-          "nome": "Dados do chamado"
-        }
-      ]
-    },
-    {
-      "codigo": "4.3",
       "nome": "Telefonia: celular e chip",
       "descricao": "Solicitacao relacionada a celular institucional, linha movel ou chip SIM.",
-      "grupo": "Telefonia",
-      "icon": "fas fa-phone-alt",
-      "ticket": {
-        "type": 1,
-        "urgency": 2,
-        "impact": 2
-      },
-      "secoes": [
-        {
-          "perguntas": [
-            {
-              "label": "Nome do solicitante",
-              "name": "nome_solicitante",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Nome do local/unidade",
-              "name": "local",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "CEP da unidade (8 digitos)",
-              "regex": "/^[0-9]{8}$/",
-              "name": "cep",
-              "type": "regex",
-              "required": true
-            },
-            {
-              "label": "Logradouro",
-              "name": "logradouro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Numero do endereco",
-              "name": "numero",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Bairro",
-              "name": "bairro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Cidade",
-              "name": "cidade",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Telefone da unidade (pode deixar vazio)",
-              "name": "telefone",
-              "type": "text",
-              "required": false
-            },
-            {
-              "label": "Celular para contato (com DDD)",
-              "regex": "/^[0-9]{10,11}$/",
-              "name": "celular_contato",
-              "type": "regex",
-              "required": true
-            },
-            {
-              "label": "E-mail institucional para contato",
-              "name": "email_unidade",
-              "type": "email",
-              "required": true
-            },
-            {
-              "label": "Setor",
-              "name": "setor",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Ramal com defeito",
-              "name": "ramal_defeito",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Em qual sala esta a linha/ramal?",
-              "name": "sala_linha_ramal",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Descricao detalhada do problema/solicitacao",
-              "name": "descricao_solicitacao",
-              "type": "textarea",
-              "required": true
-            },
-            {
-              "label": "Prioridade",
-              "values": [
-                "baixa",
-                "media",
-                "alta",
-                "muito_alta"
-              ],
-              "name": "prioridade",
-              "type": "select",
-              "required": true
-            },
-            {
-              "label": "MAC do aparelho (se conhecido)",
-              "name": "mac_aparelho",
-              "type": "text",
-              "required": false
-            }
-          ],
-          "nome": "Dados do chamado"
-        }
-      ]
-    },
-    {
-      "codigo": "4.4",
-      "nome": "Telefonia: outros",
-      "descricao": "Outros assuntos de telefonia que nao se enquadram nos itens anteriores.",
       "grupo": "Telefonia",
       "icon": "fas fa-phone-alt",
       "ticket": {
