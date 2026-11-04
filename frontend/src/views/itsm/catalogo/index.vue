@@ -21,6 +21,7 @@
           v-for="f in g.itens"
           :key="f.id"
           class="cartao"
+          :class="{ destaque: f.destaque }"
           role="button"
           tabindex="0"
           @click="abrir(f)"
@@ -35,6 +36,15 @@
               >{{ f.nome }}
             </div>
             <div class="descricao">{{ f.descricao }}</div>
+            <el-tag
+              v-if="f.destaque"
+              class="mr-4px mt-6px"
+              disable-transitions
+              effect="dark"
+              size="small"
+            >
+              destaque
+            </el-tag>
             <el-tag
               v-if="f.precisaAprovacao"
               class="mt-6px"
@@ -95,7 +105,7 @@ const formularios = ref<ItsmApi.FormularioCatalogo[]>([])
 const busca = ref('')
 const visivel = ref(false)
 const atual = ref<ItsmApi.FormularioCatalogo>()
-const respostas = ref<Record<string, string>>({})
+const respostas = ref<Record<string, any>>({})
 const formRef = ref()
 const enviando = ref(false)
 const larguraDialogo = computed(() => (window.innerWidth < 900 ? '100%' : '820px'))
@@ -173,6 +183,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.cartao.destaque {
+  background: var(--el-color-primary-light-9);
+  border: 2px solid var(--el-color-primary);
+  box-shadow: 0 0 12px var(--el-color-primary-light-3);
+}
+
 .grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

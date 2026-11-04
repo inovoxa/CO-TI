@@ -97,6 +97,7 @@ public final class CatalogoVOs {
         private Long aprovadorId;
         @Pattern(regexp = "^(Criar|Reset|Reativar|Desativar|AcessoPasta|Transferir|CriarEmail)?$")
         private String acaoAd;
+        private Boolean destaque = false;
         private Boolean ativo = true;
         @Min(0) @Max(100000)
         private Integer ordem = 0;
@@ -104,6 +105,7 @@ public final class CatalogoVOs {
 
     @Data
     public static class FormularioResp {
+        private Boolean destaque;
         private Long id;
         private String codigo;
         private String nome;
@@ -137,6 +139,7 @@ public final class CatalogoVOs {
         private String icone;
         private Formulario.Definicao definicao;
         private Boolean precisaAprovacao;
+        private Boolean destaque;
     }
 
     @Data

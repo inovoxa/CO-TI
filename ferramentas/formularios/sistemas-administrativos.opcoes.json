@@ -1,0 +1,20 @@
+{
+  "codigo": "5.1",
+  "nome": "Solicitação de Login - Sistemas Administrativos",
+  "grupo": "Sistemas administrativos",
+  "categoria": "Solicitação de login",
+  "icon": "fas fa-key",
+  "descricao": "Solicitação de acesso aos sistemas gerais da administração municipal.",
+  "titulo_modelo": "Solicitação de login - {informe_o_tipo_de_servico_desejado}",
+  "destaque": true,
+  "ordem": 1000,
+  "pergunta_sistemas": "Informe para qual(is) sistema(s)",
+  "superior": {
+    "pergunta": "Informe seu superior imediato",
+    "label": "E-mail do seu superior imediato (quem vai aprovar)"
+  },
+  "textos": {
+    "Você é estiágio(a)?": "Você é estagiário(a)?",
+    "Credeciamento e emissão de documentos presencialmente de usuários": "Credenciamento e emissão de documentos presencialmente de usuários"
+  }
+}

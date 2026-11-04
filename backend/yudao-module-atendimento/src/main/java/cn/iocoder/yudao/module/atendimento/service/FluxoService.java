@@ -143,7 +143,7 @@ public class FluxoService {
             return;
         }
         Contexto ctx = new Contexto(c, contatoMapper.selectById(c.getContatoId()), caixaMapper.selectById(c.getCaixaId()),
-                formularioService.catalogo());
+                formularioService.catalogoDoFluxo());
         Estado e = carregar(salvo);
         boolean primeira = salvo == null;
         if (!primeira && salvo.getAtualizadoEm() != null && salvo.getAtualizadoEm().isBefore(LocalDateTime.now().minusMinutes(EXPIRA_MIN))

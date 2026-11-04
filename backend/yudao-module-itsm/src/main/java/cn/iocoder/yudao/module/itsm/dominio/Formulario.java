@@ -16,11 +16,15 @@ import java.util.regex.PatternSyntaxException;
  *
  * <p>Tipo do CO-TI: "usuario", o login de rede de uma pessoa (no portal, lista com busca). Aqui só se confere o
  * formato; se a conta existe, quem confere é o serviço, que tem o banco.
+ *
+ * <p>Tipo do CO-TI: "multipla", várias opções, gravadas separadas por "; ". Uma pergunta com "visivelSe" só vale quando
+ * as condições casam: oculta, não é obrigatória e a resposta é descartada, inclusive se vier no envio.
  */
 public final class Formulario {
 
     public static final Set<String> TIPOS = Set.of("text", "textarea", "email", "number", "date", "select", "radios",
-            "regex", "location", "usuario");
+            "regex", "location", "usuario", "multipla");
+    private static final String SEPARADOR = "; ";
     private static final Pattern NOME = Pattern.compile("^[a-z][a-z0-9_]{0,63}$");
     /** sAMAccountName (até 20 no AD, folga para UPN) ou DOMINIO\login / login@dominio, que o serviço reduz ao login. */
     private static final Pattern LOGIN = Pattern.compile("^[\\p{L}0-9._\\-]+([\\\\@][\\p{L}0-9._\\-]+)?$");
@@ -32,7 +36,25 @@ public final class Formulario {
     private static final int MAX_TEXTO = 500;
     private static final int MAX_TEXTO_LONGO = 10_000;
 
-    public record Pergunta(String name, String label, String type, boolean required, List<String> values, String regex) {
+    /** Casa quando a resposta de "campo", pergunta anterior do formulário, tem um dos "valores". */
+    public record Condicao(String campo, List<String> valores) {
+    }
+
+    /**
+     * @param ajuda     texto de apoio abaixo da pergunta
+     * @param visivelSe condições (todas precisam casar); vazio = sempre visível
+     */
+    public record Pergunta(String name, String label, String type, boolean required, List<String> values, String regex,
+                           String ajuda, List<Condicao> visivelSe) {
+
+        public Pergunta(String name, String label, String type, boolean required, List<String> values, String regex) {
+            this(name, label, type, required, values, regex, null, null);
+        }
+
+        /** O fluxo do WhatsApp pergunta uma coisa de cada vez e não trata condição nem múltipla escolha. */
+        public boolean soNoPortal() {
+            return "multipla".equals(type) || (visivelSe != null && !visivelSe.isEmpty());
+        }
     }
 
     public record Secao(String nome, List<Pergunta> perguntas) {
@@ -60,6 +82,7 @@ public final class Formulario {
             return List.of("O formulário precisa de pelo menos uma seção");
         }
         Set<String> nomes = new HashSet<>();
+        Set<String> anteriores = new HashSet<>();
         for (Pergunta p : d.perguntas()) {
             if (p.name() == null || !NOME.matcher(p.name()).matches()) {
                 erros.add("Nome de pergunta inválido (use minúsculas, números e _): " + p.name());
@@ -72,9 +95,24 @@ public final class Formulario {
             if (!TIPOS.contains(p.type())) {
                 erros.add("Tipo desconhecido na pergunta " + p.name() + ": " + p.type());
             }
-            if (("select".equals(p.type()) || "radios".equals(p.type())) && (p.values() == null || p.values().isEmpty())) {
+            if (("select".equals(p.type()) || "radios".equals(p.type()) || "multipla".equals(p.type()))
+                    && (p.values() == null || p.values().isEmpty())) {
                 erros.add("A pergunta " + p.name() + " precisa de opções");
             }
+            if ("multipla".equals(p.type()) && p.values() != null && p.values().stream().anyMatch(v -> v.contains(";"))) {
+                erros.add("As opções da pergunta " + p.name() + " não podem ter ponto e vírgula");
+            }
+            if (p.visivelSe() != null) {
+                for (Condicao c : p.visivelSe()) {
+                    // só pergunta anterior: assim não há ciclo e a visibilidade se resolve em uma passada
+                    if (c == null || c.campo() == null || !anteriores.contains(c.campo())) {
+                        erros.add("A pergunta " + p.name() + " depende de uma pergunta que não vem antes dela");
+                    } else if (c.valores() == null || c.valores().isEmpty()) {
+                        erros.add("A condição da pergunta " + p.name() + " precisa de valores");
+                    }
+                }
+            }
+            anteriores.add(p.name());
             if ("regex".equals(p.type()) && compilar(p.regex()) == null) {
                 erros.add("Expressão regular inválida na pergunta " + p.name());
             }
@@ -90,8 +128,10 @@ public final class Formulario {
         Map<String, String> ok = new LinkedHashMap<>();
         Map<String, String> erros = new LinkedHashMap<>();
         for (Pergunta p : d.perguntas()) {
-            Object bruto = entrada == null ? null : entrada.get(p.name());
-            String v = bruto == null ? "" : String.valueOf(bruto).trim();
+            if (!visivel(p, ok)) {
+                continue;
+            }
+            String v = texto(entrada == null ? null : entrada.get(p.name()));
             if (v.isEmpty()) {
                 if (p.required()) {
                     erros.put(p.name(), "Obrigatório");
@@ -108,8 +148,28 @@ public final class Formulario {
         return new Resultado(ok, erros);
     }
 
+    /** Lista (vinda da tela) vira texto separado, sem itens vazios. */
+    private static String texto(Object bruto) {
+        if (bruto instanceof Collection<?> lista) {
+            return lista.stream().filter(Objects::nonNull).map(x -> String.valueOf(x).trim()).filter(x -> !x.isEmpty())
+                    .distinct().collect(java.util.stream.Collectors.joining(SEPARADOR));
+        }
+        return bruto == null ? "" : String.valueOf(bruto).trim();
+    }
+
+    /** As respostas já validadas das perguntas anteriores decidem; pergunta oculta não tem resposta, e a cadeia cai. */
+    private static boolean visivel(Pergunta p, Map<String, String> respostas) {
+        if (p.visivelSe() == null || p.visivelSe().isEmpty()) {
+            return true;
+        }
+        return p.visivelSe().stream().allMatch(c -> {
+            String r = respostas.get(c.campo());
+            return r != null && c.valores() != null && Arrays.stream(r.split(SEPARADOR)).anyMatch(c.valores()::contains);
+        });
+    }
+
     private static String erro(Pergunta p, String v) {
-        int max = "textarea".equals(p.type()) ? MAX_TEXTO_LONGO : MAX_TEXTO;
+        int max = "textarea".equals(p.type()) || "multipla".equals(p.type()) ? MAX_TEXTO_LONGO : MAX_TEXTO;
         if (v.length() > max) {
             return "Texto longo demais (máximo " + max + " caracteres)";
         }
@@ -118,6 +178,7 @@ public final class Formulario {
             case "number" -> v.matches("^-?\\d{1,15}([.,]\\d{1,6})?$") ? null : "Número inválido";
             case "date" -> data(v) == null ? "Data inválida (use dd/mm/aaaa)" : null;
             case "select", "radios" -> p.values().contains(v) ? null : "Opção inválida";
+            case "multipla" -> p.values().containsAll(Arrays.asList(v.split(SEPARADOR))) ? null : "Opção inválida";
             case "usuario" -> v.length() <= 104 && LOGIN.matcher(v).matches() ? null : "Usuário de rede inválido";
             case "regex" -> {
                 Pattern r = compilar(p.regex());

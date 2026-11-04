@@ -1,0 +1,2619 @@
+{
+ "_meta": {
+  "origem": "Exportação de formulário do GLPI 11, convertida por ferramentas/formularios/converter_glpi.js"
+ },
+ "formularios": [
+  {
+   "codigo": "5.1",
+   "nome": "Solicitação de Login - Sistemas Administrativos",
+   "descricao": "Solicitação de acesso aos sistemas gerais da administração municipal.",
+   "grupo": "Sistemas administrativos",
+   "categoria": "Solicitação de login",
+   "icon": "fas fa-key",
+   "ticket": {
+    "type": 2,
+    "urgency": 2,
+    "impact": 2
+   },
+   "titulo_modelo": "Solicitação de login - {informe_o_tipo_de_servico_desejado}",
+   "aprovacao": "campo",
+   "aprovador_campo": "email_superior",
+   "destaque": true,
+   "ordem": 1000,
+   "secoes": [
+    {
+     "nome": "Identificação do requerente",
+     "perguntas": [
+      {
+       "name": "informe_sua_matricula",
+       "label": "Informe sua matrícula",
+       "required": true,
+       "type": "number"
+      },
+      {
+       "name": "informe_seu_cpf",
+       "label": "Informe seu CPF",
+       "required": true,
+       "type": "text"
+      },
+      {
+       "name": "data_de_admissao",
+       "label": "Data de admissão",
+       "required": true,
+       "type": "date"
+      },
+      {
+       "name": "por_favor_informe_um_e_mail_alternativo_de_conta",
+       "label": "Por favor informe um e-mail alternativo de contato",
+       "required": true,
+       "type": "email",
+       "ajuda": "Se possível um e-mail pessoal não institucional"
+      },
+      {
+       "name": "informe_um_telefone_de_contato",
+       "label": "Informe um telefone de contato",
+       "required": true,
+       "type": "text",
+       "ajuda": "Preferencialmente o WhatsApp para facilitar o contato."
+      },
+      {
+       "name": "voce_e_estiagio_a",
+       "label": "Você é estagiário(a)?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Sim",
+        "Não"
+       ]
+      },
+      {
+       "name": "informe_seu_local_de_trabalho",
+       "label": "Informe seu local de trabalho",
+       "required": true,
+       "type": "location"
+      },
+      {
+       "name": "informe_qual_e_o_seu_cargo_funcao",
+       "label": "Informe qual é o seu cargo/função",
+       "required": false,
+       "type": "select",
+       "values": [
+        "Secretário Municipal",
+        "Chefe de Gabinete do Prefeito",
+        "Assessor Executivo",
+        "Subsecretário",
+        "Assessor Especial de Políticas Públicas",
+        "Assessor de Gabinete",
+        "Procurador-Geral do Município",
+        "Subprocurador-Geral",
+        "Controlador-Geral do Município",
+        "Ouvidor-Geral do Município",
+        "Comandante-Geral da Guarda Civil Municipal",
+        "Subcomandante da Guarda Civil Municipal",
+        "Corregedor da Guarda Civil Municipal",
+        "Inspetor da Guarda Civil",
+        "Inspetor de Trânsito",
+        "Chefe de Divisão",
+        "Chefe de Subdivisão",
+        "Chefe de Subdivisão Especial",
+        "Chefe de Seção",
+        "Chefe de Unidade",
+        "Chefe de Serviço",
+        "Chefe de Setor",
+        "Contador-Geral do Município",
+        "Chefe de Seção Especial",
+        "Diretor Adjunto",
+        "Coordenador de Articulação Escola-Comunidade",
+        "Coordenador de Programas Educacionais",
+        "Professor Especialista em Aperfeiçoamento Pedagógico (PEAPE)",
+        "Agente Comunitário de Saúde",
+        "Agente de Combate às Endemias",
+        "Agente de Segurança Alimentar",
+        "Agente de Trânsito",
+        "Almoxarife",
+        "Analista Ambiental",
+        "Analista de Controle Interno",
+        "Analista de Divulgação e Cerimonial",
+        "Analista de Procuradoria",
+        "Analista de Relações Internacionais",
+        "Analista de Sistemas",
+        "Analista de Suporte em Tecnologia da Informação",
+        "Antropólogo",
+        "Arquiteto Urbanista",
+        "Arquivista",
+        "Arte Educador",
+        "Assistente Administrativo",
+        "Assistente de Produção Cultural",
+        "Assistente Social",
+        "Auditor Fiscal Tributário - AFTM",
+        "Auxiliar de Cuidador Social",
+        "Auxiliar de Farmácia",
+        "Auxiliar de Serviços Públicos",
+        "Auxiliar de Saúde Bucal",
+        "Bibliotecário",
+        "Carpinteiro",
+        "Cerimonialista",
+        "Cirurgião Dentista",
+        "Cirurgião Dentista - Horista",
+        "Contador",
+        "Cuidador Social",
+        "Economista",
+        "Editor de Rádio",
+        "Editor de TV",
+        "Educador Cultural",
+        "Educador Social",
+        "Eletricista",
+        "Encanador",
+        "Enfermeiro",
+        "Enfermeiro do Trabalho",
+        "Engenheiro Agrimensor e Cartógrafo",
+        "Engenheiro Agrônomo",
+        "Engenheiro Ambiental",
+        "Engenheiro Civil",
+        "Engenheiro de Alimentos",
+        "Engenheiro de Segurança do Trabalho",
+        "Engenheiro Eletricista",
+        "Entrevistador Social",
+        "Estatístico",
+        "Farmacêutico",
+        "Fiscal do Procon",
+        "Fisioterapeuta",
+        "Fonoaudiólogo",
+        "Gerontólogo",
+        "Gestor Público - modalidade \"Administrador Público\"",
+        "Gestor Público - modalidade \"Especialista em Políticas Públicas\"",
+        "Guarda Civil Municipal",
+        "Inspetor de Obras",
+        "Inspetor de Posturas",
+        "Inspetor de Serviços Públicos",
+        "Inspetor de Vigilância em Saúde",
+        "Jornalista",
+        "Marceneiro",
+        "Mediador Cultural",
+        "Médico de Saúde Comunitária",
+        "Médico do Trabalho",
+        "Médico Especialista",
+        "Médico Especialista - Horista",
+        "Médico Generalista",
+        "Médico Generalista - Horista",
+        "Médico Veterinário",
+        "Motorista",
+        "Condutor de Veículos de Urgência",
+        "Museólogo",
+        "Nutricionista",
+        "Operador de Máquinas",
+        "Orientador Social formação continuada.",
+        "Pedagogo",
+        "Pedreiro",
+        "Pintor",
+        "Preparador Físico",
+        "Procurador Municipal",
+        "Professor de Educação Física",
+        "Programador de Sistemas de Informação",
+        "Psicólogo",
+        "Publicitário",
+        "Rádio Operador",
+        "Relações Públicas",
+        "Serralheiro",
+        "Servente de Obras",
+        "Sociólogo",
+        "Supervisor Técnico",
+        "Técnico de Enfermagem",
+        "Técnico de Enfermagem do Trabalho",
+        "Técnico de Luz, Som e Imagem",
+        "Técnico de Segurança do Trabalho",
+        "Técnico Desportivo",
+        "Técnico em Agropecuária",
+        "Técnico em Contabilidade",
+        "Técnico em Edificações",
+        "Técnico em Imobilização Ortopédica",
+        "Técnico em Informática",
+        "Técnico em Logística",
+        "Técnico em Nutrição e Dietética",
+        "Técnico em Prótese Dentária",
+        "Telefonista",
+        "Telefonista Auxiliar de Regulação Médica - TARM",
+        "Terapeuta Ocupacional",
+        "Tradutor e Intérprete de Língua Brasileira de Sinais - LIBRAS",
+        "Webdesigner",
+        "Inspetor de Bem- Estar Animal",
+        "Inspetor de Meio Ambiente e Sustentabilidade",
+        "Agente de Proteção e Defesa Civil",
+        "Biólogo",
+        "Tratador de Animais",
+        "Monitor de Esportes e Lazer",
+        "Cozinheiro",
+        "Agente de Enfermagem",
+        "Agente de Necropsia",
+        "Analista Administrativo",
+        "Assistente Administrativo de Serviço de Saúde Especializado",
+        "Assistente Administrativo de Urgência e Emergência",
+        "Assistente de Divulgação",
+        "Auxiliar de Saúde Bucal em Urgência e Emergência",
+        "Diretor de Departamento",
+        "Diretor de Divisão",
+        "Fiscal Municipal",
+        "Fisioterapeuta do NASF",
+        "Guarda Civil Municipal II",
+        "Médico do NASF - Psiquiatra",
+        "Nutricionistado NASF",
+        "Orientador Desportivo",
+        "Psicólogo doNASF",
+        "Técnico em Agrimensura",
+        "Técnico em Agronomia",
+        "Técnico em Farmácia",
+        "Técnico em laboratório",
+        "Técnico em Radiologia",
+        "Terapeuta Ocupacional do NASF",
+        "Agente Social de Serviços Públicos",
+        "Agente de Arrecadação",
+        "Monitor de Educação Física",
+        "Agente de Saúde ESF",
+        "Assistente Social ESF",
+        "Auxiliar de Saúde Bucal ESF",
+        "Cirurgião Dentista ESF",
+        "Enfermeiro ESF",
+        "Médico Clínico Geral ESF",
+        "Médico Comunitário ESF",
+        "Médico Ginecologista ESF",
+        "Médico Pediatra ESF",
+        "Profissional de Saúde do NASF",
+        "Médico do NASF",
+        "Motorista de Ambulância / Veículos p/ traslado de paciente e material biológico"
+       ],
+       "ajuda": "Conforme PCCV"
+      },
+      {
+       "name": "informe_o_tipo_de_servico_desejado",
+       "label": "Informe o tipo de serviço desejado",
+       "required": true,
+       "type": "select",
+       "values": [
+        "CRIAÇÃO DE USUÁRIO",
+        "ATUALIZAÇÃO DE ACESSO JÁ EXISTENTE",
+        "RESET DE SENHA OU REATIVAÇÃO DE USUÁRIO"
+       ]
+      },
+      {
+       "name": "email_superior",
+       "label": "E-mail do seu superior imediato (quem vai aprovar)",
+       "required": true,
+       "type": "email"
+      },
+      {
+       "name": "informe_para_qual_is_sistema_s_precisa_do_servic",
+       "label": "Informe para qual(is) sistema(s) precisa do serviço",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "1. Aplicativo de Fiscalização de Serviços Públicos-MTAPONTA",
+        "2. E-Crie – Sistema de Gestão de publicações no site institucional",
+        "3. E-Ouve – Sistema de Ouvidoria e E-SIC",
+        "4. Farmácia Fundo Social",
+        "5. Fila Araraquara (Administrador)",
+        "6. Sala do corretor (Administrador)",
+        "7. Sistema Centro de Referência da Mulher (Administrador)",
+        "8. Sistema de Administração de Cemitérios-GIAP/SICEM",
+        "9. Sistema de Agenda Municipal",
+        "10. Sistema de Acompanhamento de Obras-Prefeitura",
+        "11. Sistema de Assistência Social",
+        "12. Sistema de Chamados Técnicos-GIAP/SAC",
+        "13. Sistema de Contratos-Prefeitura",
+        "14. Sistema de Convênios",
+        "15. Sistema de Execuções Fiscais-GIAP",
+        "16. Sistema de Gestão da Guarda Municipal-SISCAD",
+        "17. Sistema de Gestão de Convênios-Prefeitura",
+        "18. Sistema de Gestão de Frotas-GIAP/SIFROT",
+        "19. Sistema de Gestão de Processos Judiciais-GIAP",
+        "20. Sistema de Gestão de Transferências Especiais (Emendas PIX)",
+        "21. Sistema de Gestão do Portal da Transparência-GIAP",
+        "22. Sistema de Gestão Patrimônio-GIAP/SICOP",
+        "23. Sistema de Habitação",
+        "24. Sistema de Informações Gerenciais-GIAP/BI",
+        "25. Sistema de Orçamento, Contabilidade e Finanças-GIAP/SIOP",
+        "26. Sistema de Processos Digitais-1DOC",
+        "27. Sistema de Processos Físicos-GIAP/SIPEX",
+        "28. Sistema de Receita e Fiscalização-GIAP/SIRF",
+        "29. Sistema de Regularização Cemitérios-Prefeitura",
+        "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP",
+        "31. Sistema Escola de Governo (Administrador)",
+        "32. Sistema Filhos do Sol",
+        "33. Sistema LGBT",
+        "34. Sistema PCD (Administrador)"
+       ],
+       "ajuda": "Selecione um ou mais sistemas"
+      }
+     ]
+    },
+    {
+     "nome": "1.Aplicativo de Fiscalização de Serviços Públicos-MTAPONTA",
+     "perguntas": [
+      {
+       "name": "informe_o_tipo_de_acesso_pretendido_ao_mtaponta",
+       "label": "Informe o tipo de acesso pretendido ao MTAPONTA",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Somente Fiscalização (App)",
+        "Somente Administrativo (Web)",
+        "Ambos"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "1. Aplicativo de Fiscalização de Serviços Públicos-MTAPONTA"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "possui_acesso_ao_sistema_sirf_giap",
+       "label": "Possui acesso ao sistema SIRF (GIAP)?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Sim",
+        "Não"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "1. Aplicativo de Fiscalização de Serviços Públicos-MTAPONTA"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_seu_usuario_no_sirf",
+       "label": "Informe o seu usuário no SIRF",
+       "required": true,
+       "type": "text",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "1. Aplicativo de Fiscalização de Serviços Públicos-MTAPONTA"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "possui_acesso_ao_sistema_sirf_giap",
+         "valores": [
+          "Sim"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "2.E-Crie – Sistema de Gestão de publicações no site institucional",
+     "perguntas": [
+      {
+       "name": "existe_um_colega_de_trabalho_do_seu_setor_que_ja",
+       "label": "Existe um colega de trabalho do seu setor que já possui os mesmos acessos no e-Crie que você precisa?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Sim",
+        "Não"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "2. E-Crie – Sistema de Gestão de publicações no site institucional"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_usuario_de_um_colega_de_trabalho_do_se",
+       "label": "Informe o usuário de um colega de trabalho do seu setor que já possui os mesmos acessos no e-Crie pretendidos para cópia",
+       "required": true,
+       "type": "usuario",
+       "ajuda": "Informe o nome completo ou login do usuário de referência.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "2. E-Crie – Sistema de Gestão de publicações no site institucional"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "existe_um_colega_de_trabalho_do_seu_setor_que_ja",
+         "valores": [
+          "Sim"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_quais_sao_as_paginas_ou_modulos_que_ira",
+       "label": "Informe quais são as páginas ou módulos que irá atualizar no e-Crie",
+       "required": true,
+       "type": "textarea",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "2. E-Crie – Sistema de Gestão de publicações no site institucional"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "existe_um_colega_de_trabalho_do_seu_setor_que_ja",
+         "valores": [
+          "Não"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "3.E-Ouve – Sistema de Ouvidoria e E-SIC",
+     "perguntas": [
+      {
+       "name": "como_deseja_solicitar_o_seu_acesso",
+       "label": "Como deseja solicitar o seu acesso?",
+       "required": true,
+       "type": "select",
+       "values": [
+        "Desejo informar o usuário de um colega de trabalho que tem os acessos que eu preciso",
+        "Desejo informar o(s) setor(es) que vou responder"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "3. E-Ouve – Sistema de Ouvidoria e E-SIC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_usuario_de_um_colega_de_trabalho_que_j",
+       "label": "Informe o usuário de um colega de trabalho que já possui os acessos ao e-Ouve pretendidos para cópia",
+       "required": true,
+       "type": "usuario",
+       "ajuda": "Informe o nome completo ou login do usuário de referência.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "3. E-Ouve – Sistema de Ouvidoria e E-SIC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "como_deseja_solicitar_o_seu_acesso",
+         "valores": [
+          "Desejo informar o usuário de um colega de trabalho que tem os acessos que eu preciso"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_para_qual_is_setor_es_voce_recebera",
+       "label": "Informe para qual(is) setor(es) você receberá",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Assistência Social",
+        "BEM ESTAR ANIMAL (É preciso identificar-se para prosseguir com a denúncia)",
+        "Comunicação",
+        "Cuidando da Nossa Morada",
+        "Cultura",
+        "DAAE",
+        "Defesa Civil",
+        "Denúncia Corrupção/Controladoria",
+        "Desenvolvimento Urbano",
+        "Direitos Humanos e Cidadania",
+        "Educação",
+        "Esporte e Lazer",
+        "FUNGOTA",
+        "Iluminação Pública",
+        "Meio Ambiente",
+        "Mobilidade Urbana, Trânsito e Transporte",
+        "Obras e Serviços",
+        "Procuradoria Geral do Município",
+        "Saúde",
+        "Secretaria de Administração",
+        "SECRETARIA DE PLANEJAMENTO E FINANÇAS",
+        "Secretaria de Segurança e Mobilidade Urbana",
+        "Secretaria Municipal de Governo",
+        "Segurança",
+        "Sugestões, Reclamações e Denúncias - Empregados e Colaboradores de empresas contratadas pelo Município",
+        "Trabalho, Desenvolvimento Econômico e Turismo"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "3. E-Ouve – Sistema de Ouvidoria e E-SIC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "como_deseja_solicitar_o_seu_acesso",
+         "valores": [
+          "Desejo informar o(s) setor(es) que vou responder"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "4.Farmácia Fundo Social",
+     "perguntas": [
+      {
+       "name": "existe_um_colega_de_trabalho_do_seu_setor_que_ja_2",
+       "label": "Existe um colega de trabalho do seu setor que já possui os mesmos acessos que você precisa para o sistema da Farmácia do Fundo Social?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Sim",
+        "Não"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "4. Farmácia Fundo Social"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "identifique_o_usuario_do_colega_de_trabalho",
+       "label": "Identifique o usuário do colega de trabalho",
+       "required": true,
+       "type": "usuario",
+       "ajuda": "Informe o nome completo ou login do usuário de referência.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "4. Farmácia Fundo Social"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "existe_um_colega_de_trabalho_do_seu_setor_que_ja_2",
+         "valores": [
+          "Sim"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_detalhadamente_quais_sao_as_atividades_q",
+       "label": "Informe detalhadamente quais são as atividades que irá executar no sistema",
+       "required": true,
+       "type": "textarea",
+       "ajuda": "Quanto mais detalhado, mais fácil será para a equipe configurar os acessos pretendidos.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "4. Farmácia Fundo Social"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "existe_um_colega_de_trabalho_do_seu_setor_que_ja_2",
+         "valores": [
+          "Não"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "7.Sistema Centro de Referência da Mulher",
+     "perguntas": [
+      {
+       "name": "informe_qual_o_perfil_de_acesso_deseja",
+       "label": "Informe qual o perfil de acesso deseja",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Administrativo",
+        "Psicologia"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "7. Sistema Centro de Referência da Mulher (Administrador)"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "8.Sistema de Administração de Cemitérios-GIAP/SICEM",
+     "perguntas": [
+      {
+       "name": "informe_um_usuario_do_seu_setor_que_ja_possui_os",
+       "label": "Informe um usuário do seu setor que já possui os acessos pretendidos no SICEM.",
+       "required": true,
+       "type": "usuario",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "8. Sistema de Administração de Cemitérios-GIAP/SICEM"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "11. Sistema de Assistência Social",
+     "perguntas": [
+      {
+       "name": "informe_qual_o_perfil_de_acesso_desejado_para_o",
+       "label": "Informe qual o perfil de acesso desejado para o Sistema da Assistência Social",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Equipe de Apoio",
+        "Técnico de Nível Superior",
+        "Técnico do CREA",
+        "Técnico PROMAIP",
+        "Administrador"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "11. Sistema de Assistência Social"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "12.Sistema de Chamados Técnicos-GIAP/SAC",
+     "perguntas": [
+      {
+       "name": "informe_para_qual_is_sistema_s_do_giap_voce_abri",
+       "label": "Informe para qual(is) sistema(s) do GIAP você abrirá chamados técnicos",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "8. Sistema de Administração de Cemitérios-GIAP/SICEM",
+        "15. Sistema de Execuções Fiscais-GIAP",
+        "18. Sistema de Gestão de Frotas-GIAP/SIFROT",
+        "19. Sistema de Gestão de Processos Judiciais-GIAP",
+        "21. Sistema de Gestão do Portal da Transparência-GIAP",
+        "22. Sistema de Gestão Patrimônio-GIAP/SICOP",
+        "24. Sistema de Informações Gerenciais-GIAP/BI",
+        "25. Sistema de Orçamento, Contabilidade e Finanças-GIAP/SIOP",
+        "27. Sistema de Processos Físicos-GIAP/SIPEX",
+        "28. Sistema de Receita e Fiscalização-GIAP/SIRF",
+        "30. Sistema de Requisição de Materiais ao Almoxarifado-GIAP"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "12. Sistema de Chamados Técnicos-GIAP/SAC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "sera_para_algum_modulo_especifico",
+       "label": "Será para algum módulo específico?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "SIM",
+        "NÃO"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "12. Sistema de Chamados Técnicos-GIAP/SAC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_nome_do_modulo",
+       "label": "Informe o nome do módulo",
+       "required": true,
+       "type": "text",
+       "ajuda": "Exemplo: Dívida Ativa, Terceiro Setor, Financeiro, Arrecadação, etc...",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "12. Sistema de Chamados Técnicos-GIAP/SAC"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        },
+        {
+         "campo": "sera_para_algum_modulo_especifico",
+         "valores": [
+          "SIM"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "15. Sistema de Execuções Fiscais-GIAP",
+     "perguntas": [
+      {
+       "name": "informe_um_usuario_do_seu_setor_que_ja_possui_os_2",
+       "label": "Informe um usuário do seu setor que já possui os mesmos acessos ao Sistema de Execuções Fiscais pretendidos",
+       "required": true,
+       "type": "usuario",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "15. Sistema de Execuções Fiscais-GIAP"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "19.Sistema de Gestão de Processos Judiciais-GIAP",
+     "perguntas": [
+      {
+       "name": "informe_o_numero_da_oab",
+       "label": "Informe o número da OAB",
+       "required": true,
+       "type": "text",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "19. Sistema de Gestão de Processos Judiciais-GIAP"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "21.Sistema de Gestão do Portal da Transparência-GIAP",
+     "perguntas": [
+      {
+       "name": "informe_aqui_o_nome_da_pagina_como_aparece_no_po",
+       "label": "Informe aqui o nome da página como aparece no Portal da Transparência ou copie o link da página que deseja ter acesso para alterar",
+       "required": true,
+       "type": "text",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "21. Sistema de Gestão do Portal da Transparência-GIAP"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "22.Sistema de Gestão Patrimônio-GIAP/SICOP",
+     "perguntas": [
+      {
+       "name": "informe_um_usuario_do_seu_setor_que_ja_possui_os_3",
+       "label": "Informe um usuário do seu setor que já possui os mesmos acessos ao Sistema de Gestão de Patrimônio pretendidos",
+       "required": true,
+       "type": "usuario",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "22. Sistema de Gestão Patrimônio-GIAP/SICOP"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "23.Sistema de Habitação",
+     "perguntas": [
+      {
+       "name": "informe_o_perfil_de_acesso_desejado_para_o_siste",
+       "label": "Informe o perfil de acesso desejado para o sistema da Habitação",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Funcionário",
+        "Assistente Social",
+        "Administrador"
+       ],
+       "ajuda": "Informe o nome completo ou login do usuário de referência.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "23. Sistema de Habitação"
+         ]
+        },
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "CRIAÇÃO DE USUÁRIO"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "25.Sistema de Orçamento, Contabilidade e Finanças-GIAP/SIOP",
+     "perguntas": [
+      {
+       "name": "informe_qual_is_modulo_s_do_sistema_voce_ira_uti",
+       "label": "Informe qual(is) módulo(s) do sistema você irá utilizar no SIOP",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Peças de Planejamento",
+        "Orçamento",
+        "Execução Financeira",
+        "Controladoria",
+        "Contabilidade",
+        "3º Setor",
+        "Programação de Pagamento",
+        "Plano Plurianual",
+        "Solicitação de Emendas Parlamentares"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "25. Sistema de Orçamento, Contabilidade e Finanças-GIAP/SIOP"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "descreva_detalhadamente_todas_as_atividades_que",
+       "label": "Descreva detalhadamente todas as atividades que irá executar no SIOP",
+       "required": true,
+       "type": "textarea",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "25. Sistema de Orçamento, Contabilidade e Finanças-GIAP/SIOP"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "26.Sistema de Processos Digitais-1DOC",
+     "perguntas": [
+      {
+       "name": "informe_qual_e_o_tipo_de_acesso_desejado_para_o",
+       "label": "Informe qual é o tipo de acesso desejado para o 1Doc",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Acesso funcional interno - Somente para tramitação de documentos recebidos pela unidade",
+        "Acesso funcional externo - Somente para protocolos de documentos particulares ao Recursos Humanos"
+       ],
+       "ajuda": "Atenção: caso a opção seja \"Acesso funcional externo - Somente para protocolos de documentos particulares ao Recursos Humanos\", a criação do usuário deverá ser feita pela Central de Atendimento Online: araraquara.1doc.com.br/atendimento .",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "atencao",
+       "label": "ATENÇÃO",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Ciente"
+       ],
+       "ajuda": "Acesso funcional externo - Somente para protocolos de documentos particulares ao Recursos Humanos\", a criação do usuário deverá ser feita pela Central de Atendimento Online: araraquara.1doc.com.br/atendimento .",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "informe_qual_e_o_tipo_de_acesso_desejado_para_o",
+         "valores": [
+          "Acesso funcional externo - Somente para protocolos de documentos particulares ao Recursos Humanos"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "a_s_unidade_s_que_deseja_ter_acesso_pertence_m_a",
+       "label": "A(s) unidade(s) que deseja ter acesso pertence(m) a qual Secretaria?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Educação",
+        "Saúde",
+        "Outra"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "informe_qual_e_o_tipo_de_acesso_desejado_para_o",
+         "valores": [
+          "Acesso funcional interno - Somente para tramitação de documentos recebidos pela unidade"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_como_deseja_solicitar_o_seu_acesso_na_1d",
+       "label": "Informe como deseja solicitar o seu acesso na 1Doc",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Quero informar a(s) unidade(s) que preciso acessar",
+        "Quero informar um usuário do meu setor que já possui o acesso para cópia"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "informe_qual_e_o_tipo_de_acesso_desejado_para_o",
+         "valores": [
+          "Acesso funcional interno - Somente para tramitação de documentos recebidos pela unidade"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_usuario_do_setor_que_ja_possui_os_mesm",
+       "label": "Informe o usuário do setor que já possui os mesmos acessos pretendidos",
+       "required": true,
+       "type": "usuario",
+       "ajuda": "Informe o nome completo ou login do usuário de referência.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_na_1d",
+         "valores": [
+          "Quero informar um usuário do meu setor que já possui o acesso para cópia"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_qual_is_unidade_s_da_secretaria_da_saude",
+       "label": "Informe qual(is) unidade(s) da Secretaria da Saúde deseja o acesso na 1Doc",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "SMS-AES - Assessoria Executiva de Saúde",
+        "SMS-CMS - Conselho Municipal de Saúde",
+        "SMS-SSAB - Subsecretaria de Atenção Básica",
+        "SMS-SSAB-DAF - Divisão de Assistência Farmacêutica",
+        "SMS-SSAB-DAF-FC - Farmácia Central DRª Clara Peckman Mendonça",
+        "SMS-SSAB-DAF-UAAF - Unidade Administrativa - Assistência Farmacêutica",
+        "SMS-SSAB-DEP - Divisão de Educação Permanente",
+        "SMS-SSAB-DESF - Divisão de Estratégia de Saúde da Família",
+        "SMS-SSAB-DESF-FUSFH - FARMÁCIA USF HORTENCIAS DR JOSE NIGRO NETO",
+        "SMS-SSAB-DESF-FUSFJPIN - FARMÁCIA USF JARDIM PINHEIROS",
+        "SMS-SSAB-DESF-FUSFLAR-II - FARMÁCIA USF LARANJEIRAS II",
+        "SMS-SSAB-DESF-FUSFVLS - FARMÁCIA USF VILA SANTANA",
+        "SMS-SSAB-DESF-SAD - Serviço de Atenção Domiciliar",
+        "SMS-SSAB-DESF-UFSID - USF IEDDA",
+        "SMS-SSAB-DESF-USFID-ESFID - ESF JARDIM IEDDA",
+        "SMS-SSAB-DESF-USFID-ESFJS - ESF JARDIM SILVESTRE",
+        "SMS-SSAB-DESF-USFAMA-III - USF ASSENTAMENTO MONTE ALEGRE III",
+        "SMS-SSAB-DESF-USFAMA-III-ESFAMA-III - ESF ASSENTAMENTO MONTE ALEGRE III",
+        "SMS-SSAB-DESF-USFAP - USF ALTOS DO PINHEIROS",
+        "SMS-SSAB-DESF-USFAP-ESFAP - ESF ALTOS DO PINHEIROS",
+        "SMS-SSAB-DESF-USFBA - USF BUENO DE ANDRADA",
+        "SMS-SSAB-DESF-USFBA-ESFBA - ESF BUENO DE ANDRADA",
+        "SMS-SSAB-DESF-USFBLVT - QUALIS USF ASSENTAMENTO BELA VISTA",
+        "SMS-SSAB-DESF-USFBLVT-ESFBLVT - ESF QUALIS BELA VISTA",
+        "SMS-SSAB-DESF-USFCZS - USF JARDIM CRUZEIRO DO SUL",
+        "SMS-SSAB-DESF-USFCZS-ESFCZS - ESF JARDIM CRUZEIRO DO SUL",
+        "SMS-SSAB-DESF-USFH - USF HORTENCIA DR JOSE NIGRO NETO",
+        "SMS-SSAB-DESF-USFH-ESFH - ESF HORTENCIA",
+        "SMS-SSAB-DESF-USFJAR - USF JARDIM ADALBERTO ROXO",
+        "SMS-SSAB-DESF-USFJAR-ESFJAR-I - ESF JD ADALBERTO ROXO EQUIPE I",
+        "SMS-SSAB-DESF-USFJAR-ESFJAR-II - ESF JD ADALBERTO ROXO EQUIPE II",
+        "SMS-SSAB-DESF-USFJB - USF JARDIM BRASIL",
+        "SMS-SSAB-DESF-USFJB-ESFJB-I - ESF JARDIM BRASIL EQUIPE I",
+        "SMS-SSAB-DESF-USFJB-ESFJB-II - ESF JARDIM BRASIL EQUIPE II",
+        "SMS-SSAB-DESF-USFJBL - USF JARDIM BRASILIA",
+        "SMS-SSAB-DESF-USFJBL-ESFJBL - ESF JARDIM BRASILIA",
+        "SMS-SSAB-DESF-USFJI - USF JARDIM INDAIA",
+        "SMS-SSAB-DESF-USFJI-ESFJI - ESF JARDIM INDAIA",
+        "SMS-SSAB-DESF-USFJI-ESFJI - II - ESF JARDIM INDAIÁ EQUIPE II",
+        "SMS-SSAB-DESF-USFJPAR - USF JARDIM PARAISO",
+        "SMS-SSAB-DESF-USFJPAR-ESFJPAR - ESF JARDIM PARAISO",
+        "SMS-SSAB-DESF-USFJPAR-ESFJPAR-II - ESF JARDIM PARAISO EQUIPE II",
+        "SMS-SSAB-DESF-USFJPIN - USF JARDIM PINHEIROS",
+        "SMS-SSAB-DESF-USFJPIN-ESFJPIN - ESF JARDIM PINHEIROS",
+        "SMS-SSAB-DESF-USFLAR - USF PARQUE DAS LARANJEIRAS",
+        "SMS-SSAB-DESF-USFLAR-ESFLAR-I - ESF LARANJEIRAS EQUIPE I",
+        "SMS-SSAB-DESF-USFLAR-ESFLAR-III - ESF LARANJEIRAS EQUIPE III",
+        "SMS-SSAB-DESF-USFLAR-NASF-I - NASF LARANJEIRAS I",
+        "SMS-SSAB-DESF-USFLAR-II - USF LARANJEIRAS II",
+        "SMS-SSAB-DESF-USFLAR-II-ESFLAR-II - ESF LARANJEIRAS EQUIPE II",
+        "SMS-SSAB-DESF-USFMAR - USF MARIVAN",
+        "SMS-SSAB-DESF-USFMAR-ESFJDI - ESF JARDIM IMPERADOR",
+        "SMS-SSAB-DESF-USFMAR-ESFMAR - ESF MARIVAN",
+        "SMS-SSAB-DESF-USFML - USF MARIA LUIZA",
+        "SMS-SSAB-DESF-USFML-ESFML-I - ESF MARIA LUIZA EQUIPE I",
+        "SMS-SSAB-DESF-USFML-ESFML-II - ESF MARIA LUIZA EQUIPE II",
+        "SMS-SSAB-DESF-USFPQSP - USF PRQ RES SAO PAULO",
+        "SMS-SSAB-DESF-USFPQSP-ESFPQSP-I - ESF USF PRQ RES SAO PAULO EQUIPE I",
+        "SMS-SSAB-DESF-USFPQSP-ESFPQSP-II - ESF USF PRQ RES SAO PAULO EQUIPE II",
+        "SMS-SSAB-DESF-USFSB - USF SAO BENTO",
+        "SMS-SSAB-DESF-USFSB-ESFSB - ESF SAO BENTO",
+        "SMS-SSAB-DESF-USFSLU-I - USF SANTA LUCIA I",
+        "SMS-SSAB-DESF-USFSLU-I -ESFSLU-I - ESF JD. SANTA LUCIA EQUIPE I",
+        "SMS-SSAB-DESF-USFSLU-II - USF SANTA LUCIA II",
+        "SMS-SSAB-DESF-USFSLU-II -ESFSLU-II - ESF JD. SANTA LUCIA EQUIPE II",
+        "SMS-SSAB-DESF-USFSLU-III - USF SANTA LUCIA III",
+        "SMS-SSAB-DESF-USFSLU-III -ESFSLU-III - ESF JD. SANTA LUCIA EQUIPE III",
+        "SMS-SSAB-DESF-USFVDS - USF VALE DO SOL",
+        "SMS-SSAB-DESF-USFVDS-EMADVDS - EMAD VALE DO SOL",
+        "SMS-SSAB-DESF-USFVDS-ESFVDS-I - ESF VALE DO SOL EQUIPE I",
+        "SMS-SSAB-DESF-USFVDS-ESFVDS-II - ESF VALE DO SOL EQUIPE II",
+        "SMS-SSAB-DESF-USFVDS-ESFVDS-III - ESF VALE DO SOL EQUIPE III",
+        "SMS-SSAB-DESF-USFVDSNT - USF VICTORIO DE SANTI",
+        "SMS-SSAB-DESF-USFVDSNT-ESFVDSNT - ESF VICTORIO DE SANTI",
+        "SMS-SSAB-DESF-USFVLB - USF VILA BIAGIONI",
+        "SMS-SSAB-DESF-USFVLB-ESFVLB - ESF VILA BIAGIONI",
+        "SMS-SSAB-DESF-USFVLS - USF VILA SANTANA",
+        "SMS-SSAB-DESF-USFVLS -ESFVLS - ESF VILA SANTANA",
+        "SMS-SSAB-DESF-USFVVRD - USF VALLE VERDE",
+        "SMS-SSAB-DESF-USFVVRD-ESFVVRD-I - ESF VALLE VERDE EQUIPE I",
+        "SMS-SSAB-DESF-USFVVRD-ESFVVRD-II - ESF VALLE VERDE EQUIPE II",
+        "SMS-SSAB-DGUBS - Divisão de Gestão das Unidades Básicas da Saúde",
+        "SMS-SSAB-DGUBS-CMSCAM - CMSC Jardim América “Dr. Marcelo Edgar Druet”",
+        "SMS-SSAB-DGUBS-CMSCCECAP - CMSC CECAP “Dr. Renato Guimarães Bastos”",
+        "SMS-SSAB-DGUBS-CMSCIGTM - CMSC Jardim Iguatemi “Enf.ªKimiko Yuta”",
+        "SMS-SSAB-DGUBS-CMSCIGTM-ECR - ECR - Equipe de Consultório na Rua Morada do Sol",
+        "SMS-SSAB-DGUBS-CMSCJP - CMSC Jardim Paulistano “Dr. Genaro Granata”",
+        "SMS-SSAB-DGUBS-CMSCSAN - CMSC Santa Angelina Dr Raphael Sorbo",
+        "SMS-SSAB-DGUBS-CMSCSD - CMSC Jardim Roberto Selmi Dei I “Dr. Ruy de Toledo”",
+        "SMS-SSAB-DGUBS-CMSCSDIV - CMSC Jardim Roberto Selmi Dei IV “Dr. Herculano Graeff”",
+        "SMS-SSAB-DGUBS-CMSCVM - CMSC Vila Melhado “Dr. Giuseppe Auphiero Sobrinho”",
+        "SMS-SSAB-DGUBS-CMSCVX - CMSC Vila Xavier João Vitor Nascimento Maurício",
+        "SMS-SSAB-DGUBS-CMSCYO - CMSC Yolanda Ópice “Dr. Francisco Oswaldo Castelucci”",
+        "SMS-SSAB-DGUBS-FCMSCSAN - Farmácia CMSC Santa Angelina Dr Raphael Sorbo",
+        "SMS-SSAB-DGUBS-FCMSCYO - Farmácia CMSC Yolanda Ópice “Dr. Francisco Oswaldo",
+        "SMS-SSAB-DGUBS-UAA - Unidade de Apoio Rede Básica",
+        "SMS-SSAB-DGUBS-URTSS - Unidade de Responsabilidade Técnica dos Serviços de Saúde",
+        "SMS-SSAB-DSB - Divisão de Saúde Bucal",
+        "SMS-SSAB-DSB-CEO - Centro de Especialidades Odontológicas",
+        "SMS-SSAB-DSB-CEO-ALM - Almoxarifado Centro de Especialidades Odontológicas",
+        "SMS-SSAB-DSB-CEO-LRPD - Laboratório Regional de Prótese Dentária",
+        "SMS-SSAB-DSB-UAGSB - Unidade Administrativa Divisão de Saúde Bucal",
+        "SMS-SSAEUE - Subsecretaria de Assistência Especializada, Urgências e Emergências",
+        "SMS-SSAEUE-DGA - Divisão de Gestão Ambulatorial",
+        "SMS-SSAEUE-DGA-ASM - Ambulatório da Saúde da Mulher",
+        "SMS-SSAEUE-DGA-CEREST - Centro de Referência do Trabalhador",
+        "SMS-SSAEUE-DGA-CEREST-AT - Apoio Técnico - Cerest",
+        "SMS-SSAEUE-DGA-NGA - Núcleo de Gestão Ambulatorial DR. Francisco Logatti (NGA3)",
+        "SMS-SSAEUE-DMFSAMU - Divisão de Manutenção de Frota do SAMU",
+        "SMS-SSAEUE-DR - Divisão de Reabilitação",
+        "SMS-SSAEUE-DR-UR - Unidade de Reabilitação",
+        "SMS-SSAEUE-DR-CEDIP - Centro de Diagnóstico e Intervenção Precoce",
+        "SMS-SSAEUE-DR-CEREAB - Centro Especializado em Reabilitação Dr. Eduardo Lauand - CISA",
+        "SMS-SSAEUE-DR-CEREAB-SARA - Centro Especializado em Reabilitação Dr. Eduardo Lauand - SARA",
+        "SMS-SSAEUE-DR-CRIA - Centro de Referência da Saúde do Idoso",
+        "SMS-SSAEUE-DR-UR-CMRA - Centro Municipal de Referência do Autismo",
+        "SMS-SSAEUE-UR-USPA - Unidade de Saúde da Pessoa com Autismo",
+        "SMS-SSAEUE-DSAMU - Divisão do SAMU",
+        "SMS-SSAEUE-DSM - Divisão de Saúde Mental",
+        "SMS-SSAEUE-DSM-CAPS-AD - Centro de Atenção Psicossocial - Álcool e Drogas",
+        "SMS-SSAEUE-DSM-CAPS-II - Centro de Atenção Psicossocial II",
+        "SMS-SSAEUE-DSM-CRASMA - Centro de Referência de Saúde Mental do Adulto",
+        "SMS-SSAEUE-DSM-CRJA - Centro de Referência do Jovem e do Adolescente",
+        "SMS-SSAEUE-DSM-EC-CAC - Espaço Crescer - Centro de Atenção à Criança",
+        "SMS-SSAEUE-UGUE - Unidade de Gestão de Urgências e Emergências",
+        "SMS-SSAEUE-UGUE-FUPA-CEN - Farmácia UPA Central",
+        "SMS-SSAEUE-UGUE-FUPA-VX - Farmácia UPA da Vila Xavier",
+        "SMS-SSAEUE-UGUE-GUPA - Unidade de Gestão das Unidades de Pronto Atendimento (UPAS)",
+        "SMS-SSAEUE-UGUE-UPA-CEN - UPA Central",
+        "SMS-SSAEUE-UGUE-UPA-SD - UPA do Selmi Dei",
+        "SMS-SSAEUE-UGUE-UPA-VX - UPA da Vila Xavier",
+        "SMS-SSAEUE-UGUE-URUDM - Unidade de Retaguarda de Urgência e Diagnóstico do Melhado",
+        "SMS-SSGAS - Subsecretaria de Gestão Administrativa da Saúde",
+        "SMS-SSGAS-DALMS - Divisão de Almoxarifado da Saúde",
+        "SMS-SSGAS-DCC - Divisão de Contratos de Convênios (Saúde)",
+        "SMS-SSGAS-DCC-UC - Unidade de Convênios (saúde)",
+        "SMS-SSGAS-DCC-USC - Unidade de Supervisão de Contratos (saúde)",
+        "SMS-SSGAS-DCL - Divisão de Compras e Licitações - Saúde",
+        "SMS-SSGAS-DCL-UNICONT-EAGC - Equipe de Agentes de Contratação (saúde)",
+        "SMS-SSGAS-DCL-UNICONT-EAPC - Equipe de Apoio à Contratação (saúde)",
+        "SMS-SSGAS-DMIS - Divisão de Manutenção da Infraestrutura da Saúde",
+        "SMS-SSGAS-DTS - Divisão de Transporte da Saúde",
+        "SMS-SSPS - Subsecretaria de Planejamento (Saúde)",
+        "SMS-SSPS-DAS - Divisão de Apoio da Saúde",
+        "SMS-SSPS-DCA - Divisão de Controle e Auditoria (saúde)",
+        "SMS-SSPS-DCA-UAA - Unidade de Auditoria Ambulatorial",
+        "SMS-SSPS-DCA-UAH - Unidade de Auditoria Hospitalar",
+        "SMS-SSPS-DCA-UOGS - Unidade de Ouvidoria Geral em Saúde",
+        "SMS-SSPS-DCA-SBUOGS - Subunidade de Ouvidoria Geral em Saúde",
+        "SMS-SSPS-DPMES - Divisão de Planejamento, Monitoramento e Estatísticas da Saúde",
+        "SMS-SSPS-DR - Divisão de Regulação",
+        "SMS-SSPS-DTIS - Divisão de Tecnologia de Informação da Saúde",
+        "SMS-SSVS - Subsecretaria de Vigilância em Saúde",
+        "SMS-SSVS-ALM - Almoxarifado",
+        "SMS-SSVS-DVAS - Divisão de Vigilância Ambiental em Saúde",
+        "SMS-SSVS-DVAS-CCZFS - Centro de Controle de Zoonoses e Fauna Sinantrópica",
+        "SMS-SSVS-DVAS-CCZFS-UCFS - Unidade de Controle de Fauna Sinantrópica",
+        "SMS-SSVS-DVAS-CCZFS-UCZ - Unidade de Controle de Zoonoses",
+        "SMS-SSVS-DVAS-UAZ - Unidade de Apoio à Zoonoses",
+        "SMS-SSVS-DVAS-EFCV - Equipe de Fiscalização - Controle de Vetores",
+        "SMS-SSVS-DVAS-UECAICV - Unidade de Expedição e Controle de Autos de Infração - Controle de Vetores",
+        "SMS-SSVS-DVAS-USCV - Unidade de Supervisores - Controle de Vetores",
+        "SMS-SSVS-DVAS-USCV-UAADMCV - Unidade de Assuntos Administrativos - Controle de Vetores",
+        "SMS-SSVS-DVEEIHA - Divisão de Vigilância Epidemiológica e Enfrentamento às IST/HIV/AIDS",
+        "SMS-SSVS-DVEEIHA-AHA - Atendimento Humano Antirrábico",
+        "SMS-SSVS-DVEEIHA-UCDE - Unidade de Controle de Doenças Endêmicas",
+        "SMS-SSVS-UPIHA - Unidade do Programa IST/HIV/AIDS",
+        "SMS-SSVS-DVS - Divisão de Vigilância Sanitária",
+        "SMS-SSVS-DVS-EFVS - Equipe de Fiscalização - Vigilância Sanitária",
+        "SMS-SSVS-DVS-ETVC - Equipe Técnica - Vigilância Sanitária",
+        "SMS-SSVS-DVS-EXP - Expediente - Vigilância Sanitária",
+        "SMS-SSVS-DVS-PROT - Protocolo - Vigilância Sanitária",
+        "SMS-SSVS-UNVS - Unidade de Notificações Vigilância em Saúde",
+        "SMS-UAPJS - Unidade de Apoio Jurídico - Saúde"
+       ],
+       "ajuda": "Atenção: Selecione uma ou mais unidades que deseja ter acesso.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "a_s_unidade_s_que_deseja_ter_acesso_pertence_m_a",
+         "valores": [
+          "Saúde"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_na_1d",
+         "valores": [
+          "Quero informar a(s) unidade(s) que preciso acessar"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_qual_is_unidade_s_da_secretaria_da_educa",
+       "label": "Informe qual(is) unidade(s) da Secretaria da Educação deseja o acesso na 1Doc",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "SME-CCACPTR - Comissão de Controle e Acompanhamento de Convênios e Programas de Transferência de Recursos",
+        "SME-CPMA - Comissão Permanente de Monitoramento e Avaliação",
+        "SME-CPS - Comissão Permanente de Seleção",
+        "SME-SSAE - Subsecretaria de Apoio da Educação",
+        "SME-SSAE-DMIE - Divisão de Manutenção da Infraestrutura Escolar",
+        "SME-SSAE-DSA - Divisão de Suprimentos e Almoxarifado",
+        "SME-SSAE-DTE - Divisão de Transporte Escolar",
+        "SME-SSGE-DTE-UATE - Unidade Administrativa Transporte Escolar",
+        "SME-SSEB - Subsecretaria de Educação Básica",
+        "SME-SSEB-DEE - Divisão de Educação Especial",
+        "SME-SSEB-DEE-UT - Unidade de Triagem",
+        "SME-SSEB-DEFEI - Divisão de Ensino Fundamental e Educação Integral",
+        "SME-SSEB-DEFEI-UCTGEFEI - Unidade da Coordenadoria Técnica da Divisão de Ensino Fundamental e Educação Integral",
+        "SME-SSEB-DEFEI-UCVEFEI - Unidade Central de Vagas Ensino Fundamental/Educação Integral",
+        "SME-SSEB-DEFEI-USEF - Unidade de Supervisores Educação Fundamental",
+        "SME-SSEB-DEFEI-USPASE - Unidade do Serviço de Psicologia e Assistência Social Escolar",
+        "SME-SSEB-DEI - Divisão de Educação Infantil",
+        "SME-SSEB-DEI-UAEPSME - Unidade de Assistência Educacional Pedagógica da Secretaria da Educação",
+        "SME-SSEB-DEI-UCTEI - Unidade de Coordenação Técnica da Educação Infantil",
+        "SME-SSEB-DEI-UCVEI - Unidade Central de Vagas Educação Infantil",
+        "SME-SSEB-DEI-USEI - Unidade de Supervisores Educação Infantil",
+        "SME-SSEB-DEJA - Divisão de Ensino de Jovens e Adultos – EJA",
+        "SME-SSEB-DEJA-CUCA - Cursinho Popular Matheus Santos - CUCA",
+        "SME-SSEB-DEJA-UCTEJA - Unidade da Coordenação Técnica de Educação de Jovens e Adultos",
+        "SME-SSEB-DMSEE - Divisão de Matrículas, Sistemas, Estatísticas Educacionais",
+        "SME-SSGE - Subsecretaria de Gestão da Educação",
+        "SME-SSGE-CPSME - Chamamento Público Secretaria Municipal da Educação",
+        "SME-SSGE-DAAE - Divisão de Abastecimento e Alimentação Escolar",
+        "SME-SSGE-DCLI - Divisão de Compras e Licitações - Educação",
+        "SME-SSGE-DCLI-UCE - Unidade de Compras da Educação",
+        "SME-SSGE-DCLI-ULE - Unidade de Licitações da Educação",
+        "SME-SSGE-DGCC - Divisão de Gestão de Contratos e Convênios - Educação",
+        "SME-SSGE-DGCC-UGCE - Unidade de Gestão de Convênios - Educação",
+        "SME-SSPED - Subsecretaria de Políticas Educacionais",
+        "SME-SSPED-COPERER - Coordenadoria de Programas Educacionais Étnico-Raciais",
+        "SME-SSPED-COPERER-UTETR - Unidade Técnica de Educação para as Relações Étnico-raciais",
+        "SME-SSPED-DDPCAE - Divisão de Desenvolvimento Pedagógico, Curricular e Avaliação Escolar",
+        "SME-SSPED-DFCDP - Divisão de Formação Continuada e Desenvolvimento Profissional",
+        "SME-SSPED-DFCDP-ATCEDEPE - Assistência Técnica CEDEPE",
+        "SME-SSPED-DFCDP-EFC - Equipe de Formação Continuada",
+        "SME-SSPED-DFCDP-EOUVE - eOuve - Educação",
+        "SME-SSPED-DFCDP-UTPAESMA - Unidade Técnica do Polo Acadêmico de Ensino Superior do Município de Araraquara",
+        "SME-SSPED-DTIMCID - Divisão da Tecnologia da Informação, Mídias, Conteúdos e Inclusão Digital",
+        "SME-SSPED-DTIMCID-USTISME - Unidade de Suporte Técnico de Informática da Secretária da Educação",
+        "SME-SSPED-UAE - Unidade de Assessoria - Educação",
+        "SME-SSPED-UAMCNCA - Unidade de Articulação Municipal do Compromisso Nacional Criança Alfabetizada",
+        "SME-UE - Unidade Escolares",
+        "SME-UE-CAEE - CAEE - Centro de Atendimento Educacaional Especializado",
+        "SME-UE-NEJA - NEJA - Núcleo de Educação de Jovens e Adultos Irmã Edith",
+        "SME-UE-UEEFI - Unidades Escolares Ensino Fundamental e Integral",
+        "SME-UE-UEEFI-CE-AGS - CE Aléscio Gonçalves dos Santos",
+        "SME-UE-UEEFI-CE-F - CE Fundecitrus",
+        "SME-UE-UEEFI-CE-IGRMS - CE Integral da EMEF Gilda Rocha Mello e Souza",
+        "SME-UE-UEEFI-CE-P - CE Piaquara",
+        "SME-UE-UEEFI-CE-R - CE Ranchinho",
+        "SME-UE-UEEFI-EMD - Escola Municipal de Dança Iracema Nogueira",
+        "SME-UE-UEEFI-EMEF-AAM - EMEF Altamira Amorim Mantese",
+        "SME-UE-UEEFI-EMEF-CRC - EMEF CAIC Rubens Cruz",
+        "SME-UE-UEEFI-EMEF-CRCCM - EMEF CAIC Ricardo Caramuru de Castro Monteiro",
+        "SME-UE-UEEFI-EMEF-ENS - EMEF Edmilson de Nola Sá",
+        "SME-UE-UEEFI-EMEF-ET - EMEF-CER Eugênio Trovatti",
+        "SME-UE-UEEFI-EMEF-GRMS - EMEF Gilda Rocha Mello e Souza",
+        "SME-UE-UEEFI-EMEF-HP - EMEF-CER Hermínio Pagotto",
+        "SME-UE-UEEFI-EMEF-HS - EMEF Henrique Scabello",
+        "SME-UE-UEEFI-EMEF-JRPC - EMEF José Roberto de Pádua Camargo",
+        "SME-UE-UEEFI-EMEF-LRSF - EMEF Luiz Roberto Salinas Fortes",
+        "SME-UE-UEEFI-EMEF-MLSP - EMEF-CER Maria de Lourdes da Silva Prado",
+        "SME-UE-UEEFI-EMEF-OFC - EMEF Olga Ferreira Campos",
+        "SME-UE-UEEFI-EMEF-RM - EMEF Rafael de Medina",
+        "SME-UE-UEEFI-EMEF-RVCLC - EMEF Ruth Villaça Correia Leite Cardoso",
+        "SME-UE-UEEFI-EMEF-WS - EMEF Waldemar Saffiotti",
+        "SME-UE-UEEI - Unidades Escolares Educação Infantil",
+        "SME-UE-UEEI-CER-ACL - Cer Antônio Custódio de Lima",
+        "SME-UE-UEEI-CER-AFM - Cer Amélia Favero Manini",
+        "SME-UE-UEEI-CER-AL - CER Angelo Lorenzetti",
+        "SME-UE-UEEI-CER-ALA - Cer Adelina Leite Amaral",
+        "SME-UE-UEEI-CER-ALD - Cer Anunciata Lia David",
+        "SME-UE-UEEI-CER-ATPL - Cer Antônio Tavares Pereira Lima",
+        "SME-UE-UEEI-CER-AWC - Cer Alvaro Waldemar Colino",
+        "SME-UE-UEEI-CER-CG - Cer Carmelita Garcez I",
+        "SME-UE-UEEI-CER-CG 2 - CER Carmelita Garcez II",
+        "SME-UE-UEEI-CER-CGR - Cer Cyro Guedes Ramos",
+        "SME-UE-UEEI-CER-CM - Cer Clodoaldo Medina",
+        "SME-UE-UEEI-CER-CSM - Cer Concheta Smirne Mendonça",
+        "SME-UE-UEEI-CER-DCB - Cer Dona Cotinha de Barros",
+        "SME-UE-UEEI-CER-EBC - CER Eduardo Borges Coelho",
+        "SME-UE-UEEI-CER-EBTP - Cer Eunice Bonilha Toledo Piza",
+        "SME-UE-UEEI-CER-EPF - Cer Eudóxia Pinto Ferraz",
+        "SME-UE-UEEI-CER-EVQ - Cer Eloá do Vale Quadros",
+        "SME-UE-UEEI-CER-HCL - Cer Honorina Comelli Lia",
+        "SME-UE-UEEI-CER-HNPP - CER Hellé Nice Pinto Passos",
+        "SME-UE-UEEI-CER-JAAG - Cer José Alfredo do Amaral Gurgel",
+        "SME-UE-UEEI-CER-JAV - Cer José do Amaral Velosa",
+        "SME-UE-UEEI-CER-JBB - Cer Judith de Barros Batelli",
+        "SME-UE-UEEI-CER-JEC - Cer José Enio Casalechi",
+        "SME-UE-UEEI-CER-JFS - CER Jacomina Felipi Sambiase",
+        "SME-UE-UEEI-CER-JFS 2 - CER Jacomina Felipi Sambiase II",
+        "SME-UE-UEEI-CER-JP - Cer José Pizani",
+        "SME-UE-UEEI-CER-LACP - Cer Lourdes Apparecida Carvalho Prada",
+        "SME-UE-UEEI-CER-LMB - Cer Leonor Mendes de Barros",
+        "SME-UE-UEEI-CER-LRA - Cer Leatrice Rodrigues Affonso",
+        "SME-UE-UEEI-CER-MAAB - Cer Maria Aparecida de Azevedo Bozutti",
+        "SME-UE-UEEI-CER-MBF - Cer Maria Barcarolla Filié",
+        "SME-UE-UEEI-CER-MEMM - CER Maria Enaura Malavolta Magalhães",
+        "SME-UE-UEEI-CER-MGFS - Cer Maria da Glória Fonseca Simões",
+        "SME-UE-UEEI-CER-MJPP - CER Maria José Pahin da Porciúncula",
+        "SME-UE-UEEI-CER-MLT - Cer Marialice Lia Tedde",
+        "SME-UE-UEEI-CER-MM - CER Madre Maurina",
+        "SME-UE-UEEI-CER-MPM - CER Maria Pradelli Malara",
+        "SME-UE-UEEI-CER-MRLB - Cer Maria Renata Lupo Bó",
+        "SME-UE-UEEI-CER-PBP - Cer Padre Bernardo Plate",
+        "SME-UE-UEEI-CER-PMC - Cer Padre Mario Cavaretti",
+        "SME-UE-UEEI-CER-RBZ - Cer Rosa Broglio Zanin",
+        "SME-UE-UEEI-CER-RC - CER Rubens Cruz I",
+        "SME-UE-UEEI-CER-RC 2 - Cer Rubens Cruz II",
+        "SME-UE-UEEI-CER-RCCM - CER Ricardo Caramuru de Castro Monteiro",
+        "SME-UE-UEEI-CER-RRS - Cer Rosa Ribeiro Stringuetti",
+        "SME-UE-UEEI-CER-VPC - CER Valdizar Pinto do Carmo",
+        "SME-UE-UEEI-CER-WAT - CER Waldyr Alceu Trigo",
+        "SME-UE-UEEI-CER-ZMP - Cer Zilda Martins Pierre"
+       ],
+       "ajuda": "Atenção: informe o nome da unidade exatamente como está cadastrada na 1Doc, incluindo as siglas.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "a_s_unidade_s_que_deseja_ter_acesso_pertence_m_a",
+         "valores": [
+          "Educação"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_na_1d",
+         "valores": [
+          "Quero informar a(s) unidade(s) que preciso acessar"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_qual_is_unidade_s_deseja_o_acesso_na_1do",
+       "label": "Informe qual(is) unidade(s) deseja o acesso na 1Doc",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "GPREF - Gabinete do Prefeito Municipal",
+        "GPREF-AEPREF - Assessoria Executiva do Prefeito",
+        "GPREF-CI - Controle Interno",
+        "CGM - Gabinete do Controlador Geral do Município",
+        "CGM-CILGPDPE - Comitê de Implementação da LGPD no Poder Executivo",
+        "CGM-CT - Corpo Técnico da Controladoria Geral do Município",
+        "GPREF-MSTUR - Morada do Sol Turismo S/A",
+        "SESP-CFCUCETAF - Comissão de Fiscalização da Concessão de Uso do Complexo Esportivo e Turístico Arena da Fonte",
+        "GPREFEX - Gabinete da Vice-Prefeita",
+        "CGAB - Gabinete Chefe de Gabinete",
+        "CGAB-AECG - Assessoria Executiva da Chefia de Gabinete",
+        "CGAB-AECG-DSA - Divisão de Suporte Administrativo da Chefia de Gabinete",
+        "CGAB-PADCG - PAD - Chefia de Gabinete",
+        "CGAB-SSDC - Subsecretaria de Defesa Civil",
+        "CGAB-SSDC-DDC - Divisão de Defesa Civil",
+        "CGAB-SSDC-DDC-UADMDCIV - Unidade Administrativa da Defesa Civil",
+        "CGAB-UACG - Unidade Administrativa da Chefia de Gabinete",
+        "CMA - Câmara Municipal de Araraquara",
+        "FS - Gabinete do Presidente do Fundo Social de Solidariedade do Município",
+        "FS-DSFSS - Divisão de Suporte ao Fundo Social de Solidariedade",
+        "FS-DSFSS-FSOL - Farmácia Solidária",
+        "FUNDART - Fundação de Arte e Cultura",
+        "FUNDART -CC - Conselho Curador",
+        "FUNDART-CF - Conselho Fiscal",
+        "FUNDART-DE - Diretoria Executiva",
+        "FUNDESPORT - Fundação de Amparo ao Esporte (FUNDESPORT) - Diretoria Executiva",
+        "FUNDESPORT - ACM - Fundesport - Assessoria de Comunicação e Marketing",
+        "FUNDESPORT - AD - Fundesport - Adiantamentos",
+        "FUNDESPORT - CL - Fundesport - Compras e Licitação",
+        "FUNDESPORT - DCRC - Divisão de Captação de Recursos e Convênios - FUNDESPORT",
+        "FUNDESPORT - TES - Fundesport - Tesouraria",
+        "FUNDESPORT - UCA - Unidade de Cadastro de Atletas - Fundesport",
+        "FUNDESPORT-DPEAD - Divisão de Projetos Esportivos de Alto Desempenho",
+        "FUNDESPORT-DTPE - Diretoria Técnica de Projetos Esportivos",
+        "GPREF-MM - Gabinete do Mediador Municipal",
+        "GPREF-MM-SSGC - Subsecretaria de Governança Comunitária",
+        "GPREF-MM-SSGC-CCM - Casa dos Conselhos Municipais",
+        "GPREF-MM-SSGCC-DPC - Divisão da Participação Comunitária",
+        "GPREF-OUV - Ouvidoria Geral do Município",
+        "PGM - Gabinete do Procurador Geral do Município",
+        "PGM - CAMT - Comissão de Análise de Multas - Transação",
+        "PGM--SAT - Subunidade de Análise da Transação",
+        "PGM-SGDA - Subprocuradoria Geral de Dívida Ativa",
+        "PGM-SGDA-UDA - Unidade de Dívida Ativa",
+        "PGM-SGDA-UDA-URIN - Unidade Remissão Inicial",
+        "PGM-UDA-UADA - Unidade Administrativa da Dívida Ativa",
+        "PGM-SUB-ADM - Subprocuradoria Geral de Assuntos Administrativos",
+        "PGM-SUB-ADM-UGSA - Subunidade de Gestão - Subprocuradoria Geral de Assuntos Administrativos",
+        "PGM-SUB-CON - Subprocuradoria Geral de Contencioso",
+        "PGM-SUB-EST - Subprocuradoria Geral de Assuntos Estratégicos",
+        "PGM-SUB-EST-UASEST - Unidade de Análise Subprocuradoria de Assuntos Estratégicos",
+        "PGM-SUB-EST-UATJ - Unidade de Auxílio Técnico-Jurídico - Sub. Assuntos Estratégicos",
+        "PGM-SUB-FISC - Subprocuradoria Geral Fiscal e Tributária",
+        "PGM-SUB-FISC-AT - Atendimento Tributário",
+        "PGM-SUB-FISC-UAJT - Unidade de Apoio Jurídico - Tributário",
+        "PGM-SUB-FISC-UAS - Unidade de Análise Socioeconômica",
+        "PGM-SUB-FISC-UASSFT - Unidade de Apoio Administrativo - Subprocuradoria Fiscal e Tributária",
+        "PGM-SUB-FISC-UATJ - Unidade de Arrecadação Tributária e Judicial",
+        "PGM-SUB-FISC-UEF - Unidade de Execuções Fiscais",
+        "PGM-SUB-FISC-UJT - Unidade Jurídica Tributária",
+        "PGM-SUB-FUN - Subprocuradoria Geral de Assuntos Funcionais",
+        "PGM-UACDA - Unidade de Atendimento ao Cidadão da Dívida Ativa",
+        "PGM-UAJDA - Unidade de Apoio Jurídico da Dívida Ativa",
+        "PGM-UASP - Unidade de Assistentes Periciais",
+        "PGM-UAT - Unidade Administrativa de Triagem",
+        "PGM-UMP - Unidade de assuntos MP",
+        "PGM-UN-AP - Analistas Procuradoria",
+        "PGM-UNIPAD - UNIDADE DE PAD",
+        "PGM-UNISIND - Unidade de Sindicância",
+        "PGM-UTCE - Unidade de Assuntos TCE",
+        "SAAB - Gabinete do Secretário de Agricultura e Abastecimento",
+        "SAAB-SSASA - Subsecretaria de Abastecimento e Segurança Alimentar",
+        "SAAB-SSASA-DGAB - Divisão de Gestão do Abastecimento",
+        "SAAB-SSASA-DSAL - Divisão de Segurança Alimentar",
+        "SAAB-SSPA - Subsecretaria de Promoção da Agricultura",
+        "SAAB-SSPA-DGPAF - Divisão de Gestão de Programas de Agricultura Familiar",
+        "SAAB-SSPA-DSSIM - Divisão de Suporte dos Serviços de Inspeção Municipal",
+        "SADM - Gabinete do Secretario de Administração",
+        "SADM-CAJE - Comissão de Apuração de Jornada Extraodinária",
+        "SADM-CASUBDT - Comissão de Análise de Solicitações de Uso de Bens e de Disponibilização de Transporte",
+        "SADM-CMCAD - Comissão Municipal de Combate ao Assédio e à Discriminação",
+        "SADM-JAM - Junta de Alistamento Militar",
+        "SADM-SSEMG - Subsecretaria da Escola Municipal de Governo",
+        "SADM-CEEG-UAAE - Unidade de Assuntos Administrativos e Educacionais",
+        "SADM-SSEMG-UAAE-SUAF - Subunidade de Atividades de Formação",
+        "SADM-SSEMG-UAAE-SUAPS - Subunidade de Apoio à Pesquisa e Soluções",
+        "SADM-SSEMG-DAC - Diretoria Acadêmico Científica",
+        "SADM-SSLCC - Subsecretaria de Licitações, Compras e Contratos",
+        "SADM-SSLCC-DCOMPG - Divisão de Compras Geral - Administração",
+        "SADM-SSLCC-DCONTG - Divisão de Contratos Geral - Administração",
+        "SADM-SSLCC-DLICG - Divisão de Licitações Geral - Administração",
+        "SADM-SSLS - Subsecretaria de Logística e Suprimentos",
+        "SADM-SSLS-DGS - Divisão de Gestão de Suprimentos",
+        "SADM-SSLS-DL - Divisão de Logística",
+        "SADM-SSRH - Subsecretaria de Recursos Humanos",
+        "SADM-SSRH-DCMRL - Divisão de Conciliação e Mediação nas Relações Laborais",
+        "SADM-SSRH-DDRH-UAPD - Unidade de Análise de Pedidos de Desincompatibilização",
+        "SADM-SSRH-DDRHADE - Divisão de Desenvolvimento de Recursos Humanos e Avaliação de Desempenho da Educação",
+        "SADM-SSRH-DGFP - Divisão de Gestão de Folha de Pagamento",
+        "SADM-SSRH-DGRHE - Divisão de Gestão de Recursos Humanos da Educação - RH Educação",
+        "SADM-SSRH-DGRHE-UADGRHE - Unidade de Apoio da Divisão de Gestão de Recursos Humanos da Educação",
+        "SADM-SSRH-DGRHE-CAA - Comissão de Avaliação de Acúmulos - RH Educação",
+        "SADM-SSRH-DGRHE-UASE - Unidade de Admissões - Secretaria da Educação - RH Educação",
+        "SADM-SSRH-DGRHE-UCA - Unidade de Cadastro de Alunos - RH Educação",
+        "SADM-SSRH-DGRHE-UPAR - Unidade de Processo de Atribuição e Remoção - RH Educação",
+        "SADM-SSRH-DGRHE-UPP - Unidade de ponto pessoal - RH Educação",
+        "SADM-SSRH-DGRHE-UPPHE - Unidade de Pontos Pessoal - Horas Extras - RH Educação",
+        "SADM-SSRH-DGRHG - Divisão de Gestão de Recursos Humanos Geral",
+        "SADM-SSRH-DGRHG-ADMRH - Gestão Administrativa RH",
+        "SADM-SSRH-DGRHG-ACAABONADA - Folga Abonada/Ajuste de Ponto (RH Central)",
+        "SADM-SSRH-DGRHG-ACF - Anotações - Currículo Funcional",
+        "SADM-SSRH-DGRHG-APSC - Rescisão (RH Central)",
+        "SADM-SSRH-DGRHG-CPL - Concursos (RH Central)",
+        "SADM-SSRH-DGRHG-CPPS - Concurso Público/Processo Seletivo",
+        "SADM-SSRH-DGRHG-FLRH - Gestão Folha de Pagamento RH",
+        "SADM-SSRH-DGRHG-JMOS - Afastamentos/E-Social/Folga Eleitoral (RH Central)",
+        "SADM-SSRH-DGRHG-LFLS - Contratação/Auxílio Plano de Sáude/Processos Trabalhistas (RH Central)",
+        "SADM-SSRH-DGRHG-MCP - Concursos (RH Central)**",
+        "SADM-SSRH-DGRHG-MCSP - Estagiários/Contratação (RH Central)",
+        "SADM-SSRH-DGRHG-MSC - Férias/Plano de Saúde",
+        "SADM-SSRH-DGRHG-NGM - Vale Transporte/E- Social/Audesp (RH Central)",
+        "SADM-SSRH-DGRHG-PMG - Unidade Vale Transporte/Folga Abonada (RH Central)",
+        "SADM-SSRH-DGRHG-RCFS - Concursos (RH Central)*",
+        "SADM-SSRH-DGRHG-RDA - Benefícios (RH Central)",
+        "SADM-SSRH-DGRHG-TLAP - Ajustes de Ponto/Processo Trabalhista (RH Central)",
+        "SADM-SSRH-DGRHG-UAP-MCB - Unidade de Ajustes de Ponto",
+        "SADM-SSRH-DGRHG-UARPT-DAG - Processo Trabalhista/Atualização de Cadastro (RH Central)",
+        "SADM-SSRH-DGRHG-UARPT-DVP - Trabalhistas/Férias/Plano de Saúde (RH Central)",
+        "SADM-SSRH-DGRHG-UARPT-EZN - Processos Trabalhistas/Declarações (RH Central)*",
+        "SADM-SSRH-DGRHG-UR-ALBM - Unidade de Rescisão (RH Central)",
+        "SADM-SSRH-DGRHG-WRA - Controle e Ajustes de Ponto (RH Central)",
+        "SADM-SSRH-DGRHS - Divisão de Gestão de Recursos Humanos da Saúde",
+        "SADM-SSRH-DGRHS-RHSAUDE - RH SAÚDE",
+        "SADM-SSRH-RHCENTRAL - RH Central",
+        "SADM-SSRH-SESMT - Serviço Especializado em Engenharia de Segurança e Medicina do Trabalho",
+        "SADM-SSRH-SESMT-UACI - SESMT - Unidade de Atestados/CAT/INSS",
+        "SADM-SSRH-SESMT-UASO - SESMT - Unidade ASO",
+        "SADM-SSRH-SESMT-UEM - SESMT - Unidade de Equipe Multidisciplinar",
+        "SADM-SSRH-SESMT-UES - Unidade de Enfermagem SESMT",
+        "SADM-SSRH-SESMT-UMS - Unidade Médica SESMT",
+        "SADM-SSRH-SESMT-UPT - SESMT-Unidade de Processos Trabalhistas",
+        "SADM-SSRH-SESMT-UT - SESMT - Unidade de Terapia",
+        "SADM-SSSA - Subsecretaria de Serviços Administrativos",
+        "SADM-SSSA-APM - Arquivo Público Municipal",
+        "SADM-SSSA-DAC - Divisão de Atendimento ao Cidadão",
+        "SADM-SSSA-DAC-PABA - Posto de Atendimento de Bueno de Andrada",
+        "SADM-SSSA-DAC-PAJRSD - Posto de Atendimento do Jardim Roberto Selmi Dei",
+        "SADM-SSSA-DAC-UAPAJRSD - Unidade Administrativa do Posto de Atendimento do Jardim Roberto Selmi Dei",
+        "SADM-SSSA-DAC-PAVX - Posto de Atendimento da Vila Xavier",
+        "SADM-SSSA-PAVX-UADM - Unidade Administrativa do Posto de Atendimento da Vila Xavier",
+        "SADM-SSSA-DGP - Divisão de Gestão Patrimonial",
+        "SADM-SSSA-DSA - Divisão de Serviços de Apoio",
+        "SADM-SSSA-DSA-UNIPROT - Unidade de Protocolos",
+        "UNIPROT-SADM - Administração",
+        "UNIPROT-SASMU - Trânsito",
+        "UNIPROT-SME - Educação",
+        "UNIPROT-SMS - Saúde",
+        "SASMU - Gabinete do Secretário de Assuntos de Segurança e Mobilidade Urbana",
+        "SASMU - SSTMU - Subsecretaria de Trânsito e Mobilidade Urbana",
+        "SASMU-SSTMU-DMPV - Divisão de Mobilidade e Projetos Viários",
+        "SASMU-SSTMU-DMPV-UDE - Unidade de Dados e Estatísticas",
+        "SASMU-SSTMU-DMPV-UETRAN - Unidade de Educação no trânsito",
+        "SASMU-SSTMU-DMPV-UPPVET - Unidade de Projetos e Planejamento Viário",
+        "SASMU-SSTMU-DMPV-UPVPC - Unidade de Projetos Viários e Planejamento Cicloviário",
+        "SASMU-SSTMU-DSER - Divisão de Sinalização e Estacionamento Rotativo",
+        "SASMU-SSTMU-DSER-USVH - Unidade de Sinalização Vertical e Horizontal",
+        "SASMU-SSTMU-DSER-USVH-USS - Unidade de Sinalização Semafórica",
+        "SASMU - UACEST - Unidade de Análise de Credenciais de Estacionamento",
+        "SASMU-COIGCM - Centro de Operações de Inteligência da Guarda Municipal",
+        "SASMU-COMSEG - COMSEG - Conselho Municipal de Segurança",
+        "SASMU-SSAS - Subsecretaria de Assuntos de Segurança",
+        "SASMU-SSAS-CGCM - Comando da Guarda Civil Municipal",
+        "SASMU-SSAS-CGCM-SCGCM - Subcomando da Guarda Civil Municipal",
+        "SASMU-SSAS-CGCM-UADMGCM - Unidade Administrativa Comando da Guarda",
+        "SASMU-SSAS-CGCM-UFCGM - Unidade de Frotas",
+        "SASMU-SSAS-CORGCM - Corregedoria da Guarda Civil Municipal",
+        "SASMU-SSAS-DGMT - Divisão de Gestão de Multas de Trânsito",
+        "SASMU-SSAS-DGMT-JARI - Junta de Recursos de Infrações de Trânsito",
+        "SASMU-SSAS-DOFT - Divisão de Operação e Fiscalização de Trânsito",
+        "SASMU-SSAS-UGPSEP - Unidade de Gestão de Programas de Segurança Pública",
+        "SASMU-SSAS-UIFS - Unidade de Integração das Forças de Segurança",
+        "SASMU-SSAS-UPST - Unidade de Prestação de Serviços Trânsito",
+        "SASMU-SSTPT - Subsecretaria de Transporte Pedágio e Terminais",
+        "SASMU-SSTPT-DCTC - Divisão de Concessão e Transporte Complementar",
+        "SASMU-SSTPT-DCTC-UGCTU - Unidade de Gestão de Concessão de Transporte Urbano",
+        "SASMU-SSTPT-DCTC-UGTC - Unidade de Gestão de Transporte Complementar",
+        "SASMU-UTMU - Unidade de Trânsito e Mobilidade Urbana (extinto)",
+        "SASMU-SSTPT-DTP - Divisão de Terminais e Pedágio",
+        "SASMU-SSTPT-DTP-UGP - Unidade de Gestão de Pedágio",
+        "SASMU-SSTPT-DTP-UGT - Unidade de Gestão de Terminais",
+        "SASMU-UASASMU - Unidade Administrativa Secretaria dos Assuntos de Segurança e Mobilidade Urbana",
+        "SCOM - Gabinete do Secretario de Comunicação",
+        "SCOM-AEC - Assessoria Executiva de Comunicação",
+        "SCOM-DAEC - Divisão Administrativa e de Comunicação",
+        "SCOM-SSJP - Subsecretaria de Jornalismo e Publicidade",
+        "SCOM-SSJP-DCE - Divisão de Cerimonial e Eventos",
+        "SCOM-SSJP-DP - Divisão de Publicidade",
+        "SDE - Gabinete do Secretario do Desenvolvimento Econômico",
+        "SDE-SSDET - Subsecretaria de Desenvolvimento Econômico e Turismo",
+        "SDE-SSDET-DFPAE - Divisão de Fiscalização de Posturas das Atividades Econômicas",
+        "SDE-SSDET-DFPAE-UFPDE - Unidade de Fiscalização de Posturas no Desenvolvimento Econômico",
+        "SDE-SSDET-DSE - Divisão da Sala do Empreendedor",
+        "SDE-SSDET-SE-ASE - Administrativo - Sala do empreendedor",
+        "SDE-SSDET-SE-FISCSE - Fiscalização - Sala do Empreendedor",
+        "SDE-SSDET-SE-JARSE - Junta de Apreciação de Recursos - Sala do Empreendedor",
+        "SDE-SSDET-DT - Divisão de Turismo",
+        "SDE-SSDET-IEII - Incubadora de Empresas e Investimento de Impacto",
+        "SDE-SSDET-INCRA - INCRA",
+        "SDE-SSDET-UFCDE - Unidade de Fiscalização Contratual - Desenvolvimento Econômico",
+        "SDE-SSDET-UGP - Unidade de Gestão Pública",
+        "SDE-SSTECS - Subsecretaria do Trabalho e da Economia Criativa e Solidária",
+        "SDE-SSTECS-DPECS - Divisão de Promoção da Economia Criativa e Solidária",
+        "SDE-SSTECS-DPECS-EC - Economia Criativa",
+        "SDE-SSTECS-DPECS-IPECS - Incubadora Pública de Economia Criativa e Solidária",
+        "SDE-SSTECS-DPECS-QR - Quilombo Rosa",
+        "SDE-SSTECS-DQP - Divisão de Qualificação Profissional",
+        "SDE-SSTECS-DQP-BP - Banco do Povo",
+        "SDE-SSTECS-DQP-CEAT - Centro de Atendimento ao Trabalhador",
+        "SDE-SSTECS-DQP-EK - Espaço Kaparaó",
+        "SDHC - Gabinete do Secretário de Direitos Humanos e Cidadania",
+        "SDHC-SSDC - Subsecretaria de Defesa do Consumidor",
+        "SDHC-SSDC-DGPROCON - Divisão de Gestão do PROCON",
+        "SDHC-SSDC-DGPROCON-UPROCON - Unidade PROCON Araraquara",
+        "SDHC-SSPDDH - Subsecretaria de Promoção e Defesa dos Direitos Humanos",
+        "SDHC-DSA - Divisão de Suporte Administrativo",
+        "SDHC-SSPDDH-AEPCA - Assessoria Especial de Políticas para a Criança e Adolescente",
+        "SDHC-SSPDDH-AEPD - Assessoria Especial de Políticas Para Pessoas com Deficiência",
+        "SDHC-SSPDDH-AEPJUV - Assessoria Especial de Políticas para a Juventude",
+        "SDHC-SSPDDH-AEPLGBTQIA - Assessoria Especial de Políticas LGBTQIA+",
+        "SDHC-SSPDDH-AEPPI - Assessoria Especial de Políticas para a Pessoa Idosa",
+        "SDHC-SSPDDH-CRRLGBTQIA - Centro de Referência e Resistência LGBTQIA+",
+        "SDHC-SSPDDH-DGCJPF-CJUV - Divisão de Gestão do Centro de Juventude e Programa Filhos do Sol *",
+        "SDHC-SSPDDH-DGCJPF-PFS - Programa Filhos do Sol",
+        "SDHC-SSPDDH-AEPIM - Assessoria Especial de Políticas para Imigrantes",
+        "SDHC-SSPDDH-CAPLGBTQIA - Casa de Acolhimento à População LGBTQIA+",
+        "SDHC-SSPM - Subsecretaria de Políticas para as Mulheres",
+        "SDHC-SSPDDH-DSPM - Divisão de Suporte às Políticas das Mulheres",
+        "SDHC-SSPM -CMP - Casa da Mulher Paulista",
+        "SDHC-SSPM-CA - Casa Abrigo",
+        "SDHC-SSPM-CM - Casa das Margaridas",
+        "SDHC-SSPM-CRM - Centro de Referência da Mulher",
+        "SDHC-SSPPER - Subsecretaria de Políticas Públicas Étnico Raciais",
+        "SDHC-SSPPER-CRAF - Centro de Referência Afro",
+        "SDHC-SSPPER-CSPAB - Casa SP Afro Brasil",
+        "SDS - Gabinete do Secretário de Desenvolvimento Social",
+        "SDS-SSGAF - Subsecretaria de Gestão Administrativa e Financeira",
+        "SDS-SSGAF-DGAP - Divisão de Gestão Administrativa e Parcerias",
+        "SDS-SSGAF-DGAP-UP - Unidade de Parcerias",
+        "SDS-SSGAF-DGAP-UP-SAMPC - Subunidade de Avaliação, Monitoramento e Prestação de Contas",
+        "SDS-SSGAF-DGAP-UP-SPS - Subunidade de Processos de Seleção",
+        "SDS-SSGAF-DVSCU - Divisão de Vigilância Socioassistencial e Cadastro Único",
+        "SDS-SSGAF-DVSCU-UCU - Unidade Cadastro Único",
+        "SDS-SSGAF-DVSCU-UPS - Unidade Programas Sociais",
+        "SDS-SSGAF-DVSCU-UVS - Unidade Vigilância Socioassistencial",
+        "SDS-SSGAF-UASSGAF - Unidade Administrativa da Subsecretaria de Gestão Administrativa e Finaceira",
+        "SDS-SSPS - Subsecretaria de Proteção Social",
+        "SDS-SSPS-DPSB - Divisão de Proteção Social Básica",
+        "SDS-SSPS-DPSB-CRASCCP - CRAS CECAP",
+        "SDS-SSPS-DPSB-CRASCEN - CRAS Central",
+        "SDS-SSPS-DPSB-CRASCZS - CRAS CRUZEIRO DO SUL",
+        "SDS-SSPS-DPSB-CRASHTC - CRAS HORTÊNCIAS",
+        "SDS-SSPS-DPSB-CRASMLZA - CRAS MARIA LUIZA",
+        "SDS-SSPS-DPSB-CRASPQSP - CRAS PARQUE SÃO PAULO",
+        "SDS-SSPS-DPSB-CRASSLMD - CRAS SELMI DEI",
+        "SDS-SSPS-DPSB-CRASSR - CRAS SÃO RAFAEL",
+        "SDS-SSPS-DPSB-CRASVDS - CRAS VALE DO SOL",
+        "SDS-SSPS-DPSB-CRASVVRD - CRAS VALLE VERDE",
+        "SDS-SSPS-DPSB-CRASYOL - CRAS YOLANDA ÓPICE",
+        "SDS-SSPS-DPSB-UGD - Unidade de Gestão de Documentos",
+        "SDS-SSPS-DPSE - Divisão de Proteção Social Especial",
+        "SDS-SSPS-DPSE-CAAK - Casa de Acolhida Assad Kan",
+        "SDS-SSPS-DPSE-CAAK-ETCA - Unidade da Equipe Técnica - Casa de Acolhida",
+        "SDS-SSPS-DPSE-CDI - Centro Dia do Idoso",
+        "SDS-SSPS-DPSE-CREAS - Centro de Referência Especializado de Assistência Social",
+        "SDS-SSPS-DPSE-CREAS-ACI - Unidade de Acolhimento Institucional",
+        "SDS-SSPS-DPSE-CREAS-SAEFI - Serviço de Atendimento Especializado a Famílias e Indivíduos",
+        "SDS-SSPS-DPSE-CREAS-UMSE - Unidade de Medidas Socioeducativas",
+        "SDS-SSPS-DPSE-CREPSR - CENTRO DE REFERÊNCIA ESPECIALIZADO PARA A POPULAÇÃO EM SITUAÇÃO DE RUA",
+        "SDS-SSPS-DPSE-CTCA - Câmara Técnica de Crianças e Adolescentes",
+        "SDS-SSPS-DPSE-PNC - Projeto Novos Caminhos",
+        "SDS-SSPS-DPSE-PROMAIP - Programa Municipal de Acolhimento Institucional Provisório",
+        "SDS-SSPS-DPSE-RF - Recanto Feliz",
+        "SDS-SSPS-DPSE-URESI - Unidade de Residência Inclusiva",
+        "SDS-SSPS-DPSE-VLD - Vila Dignidade",
+        "SDU - Gabinete do Secretario de Desenvolvimento Urbano",
+        "GRAPROARA - SDU-GPR",
+        "PDDPA - Comissão de Revisão do Plano Diretor de Desenvolvimento e Política Ambiental de Araraquara",
+        "SDU-GAAP - Gestão Administrativa de Aprovação de Projetos",
+        "RF - SDU-GAAP-TRANSMISSAOSISOBRAS",
+        "SDU-GAAP-UAAP - Unidade Administrativa de Aprovação de Projetos",
+        "SDU-GAAP-UTAP - Unidade de Triagem de Aprovação de Projetos",
+        "SDU-SSHAB - Subsecretaria de Habitação",
+        "SDU-SSHAB-DCGS - Divisão de Cadastro e Gestão Socioeconômica",
+        "SDU-SSHAB-DCGS-UCGS - Unidade de Cadastro e Gestão Socioeconômica",
+        "SDU-SSHAB-UACM - Unidade Administrativa de Cadastro Socioeconômico",
+        "SDU-SSHAB-DPH - Divisão de Projetos Habitacionais",
+        "SDU-SSOP - Subsecretaria de Obras Particulares",
+        "SDU-SSOP-DAPE - Divisão de Aprovação de Projetos de Edificações",
+        "LC1018 - SDU-SSOP-DAPE-URI-1018",
+        "SDU-SSOP-DAPE-C5899-UARET - Contrato 5899-2023 - Unidade de Análise das Regularizações - Empresa Terceirizada",
+        "SDU-SSOP-DAPE-UAP - Unidade de Análise de Projetos",
+        "ESTAG - SDU-SSOP-DAPE-UAP-EST",
+        "SDU-SSOP-DAPE-URI - Unidade de Regularização de Imóveis",
+        "URI-IND - SDU-SSOP-DAPE-URI-INDEFERIDOS",
+        "SDU-SSOP-DFOP - Divisão de Fiscalização de Obras Particulares",
+        "DFOP-01 - SDU-SSOP-DFOP- Região 01",
+        "DFOP-04 - SDU-SSOP-DFOP-Região 04",
+        "DFOP-05 - SDU-SSOP-DFOP- Região 05",
+        "SDU-SSPU - Subsecretaria de Planejamento Urbano",
+        "SDU-SSPU-DPCPS - Divisão de Projetos e Controle do Parcelamento do Solo",
+        "SDU-SSPU-DPCPS-UAPDA - Unidade de Análise de Projetos de Desmembramento e Anexação",
+        "SDU-SSPU-DPCPS-UEPT - Unidade de Elaboração de Projetos Topográficos",
+        "SDU-SSPU-DPDU - Divisão de Projetos de Desenvolvimento Urbano",
+        "SDU-SSPU-DPDU-UPU - Unidade Projetos Urbanos",
+        "SDU-SSPU-DSIG - Divisão Sistemas de Informação Geográfica",
+        "SDU-SSPU-UAIM - Unidade de Avaliação de Imóveis",
+        "SDU-UADSDE - Unidade de Análise de Demandas - SDE",
+        "SDU-UAP-MP - Unidade de Análise de Processos MP - SDU",
+        "SDU-UGC - Unidade de Gestão de Contrapartidas",
+        "SDU-URPD - Unidade de Revisão do Plano Diretor",
+        "SESP - Gabinete do Secretário de Esporte e Lazer",
+        "SESP-SSEL - Subsecretaria de Esporte e Lazer",
+        "SESP-SSEL-DASBE - Divisão de Atividades de Saúde e Bem-Estar",
+        "SESP-SSEL-DEE - Divisão de Eventos Esportivos",
+        "SESP-SSEL-DFE - Divisão de Formação Esportiva",
+        "SESP-SSPE - Subsecretaria de Planejamento no Esporte",
+        "SESP-SSPE-DGAC - Divisão de Gestão Administrativa e de Contratos",
+        "SESP-SSPE-DGAC-FGC - Fiscalização e Gestão de Contrato",
+        "SESP-SSPE-DGAC-UAGC - Unidade Administrativa Gestão de Contratos - Esportes",
+        "SESP-SSPE-DGIE - Divisão de Gestão da Infraestrutura Esportiva",
+        "SESP-SSPE-DGIE-UCAAF - Unidade Complexo Aquático Arena da Fonte",
+        "SESP-SSPE-DGIE-UGP - Unidade Ginásio da Pista",
+        "SESP-SSPE-DGIE-UPB - Unidade Parque do Botânico",
+        "SESP-SSPE-DGIE-UPP - Unidade Parque do Pinheirinho",
+        "SFP - Gabinete do Secretario da Fazenda e Planejamento",
+        "SFP-CGF - Comitê de Gestão Fiscal",
+        "SFP-GCGM - Gabinete do Contador Geral do Município",
+        "SFP-GCGM-DECODS - Divisão de Execução e Controle Orçamentário Social",
+        "SFP-GCGM-DECOE - Divisão de Execução e Controle Orçamentário Educação",
+        "SFP-GCGM - UNIDADE EXTINTA",
+        "SFP-GCGM-DECOG - Divisão de Execução e Controle Orçamentário Geral",
+        "SFP-GCGM-DECOS - Divisão de Execução e Controle Orçamentário Saúde",
+        "SFP-GCGM-DECOS-UGCS - Unidade de Gestão Contábil Saúde",
+        "SFP-GCGM-DGCG - Divisão de Gestão Contábil Geral",
+        "SFP-GCGM-DGCG-UAPLIC - Unidade Plano de Aplicação",
+        "SFP-GCGM-DGCG-UPC - Unidade Prestação de Contas",
+        "SFP-GCGM-DPOG - Divisão de Planejamento Orçamentário Geral",
+        "SFP-SSAT - Subsecretaria de Administração Tributária",
+        "SFP-SSAT-DFT - Divisão de Fiscalização Tributária",
+        "SFP-SSAT-DFT-UFT - Unidade de Fiscalização Tributária",
+        "SFP-SSAT-DRI - Divisão de Rendas Imobiliárias",
+        "AI - ALIENAÇÃO DE IMOVIES",
+        "SFP-SSAT-DRI-UACI-IPTU - Unidade de Atualização Cadastral de Imóveis - link carnê de IPTU",
+        "SFP-SSAT-DRI-UCR - Unidade de Cadastramentos DRI - Rotina",
+        "SFP-SSAT-DRI-UI - Unidade de Isenções IPTU",
+        "SFP-SSAT-DRI-ULPH - Unidade de Lançamento Predial/Habite-se",
+        "SFP-SSAT-DRM - Divisão de Rendas Mobiliárias",
+        "SFP-SSAT-UJRF - Unidade da Junta de Recursos Fiscais",
+        "SFP-SSPGF - Subsecretaria de Planejamento e Gestão Financeira",
+        "SFP-SSPGF-DGFE - Divisão de Gestão Financeira Educação",
+        "SFP-SSPGF-DGFG - Divisão de Gestão Financeira Geral",
+        "SFP-SSPGF-DGFS - Divisão de Gestão Financeira Saúde",
+        "SFP-SSPGF-DPF - Divisão de Planejamento Financeiro",
+        "SFP-SSRM - Subsecretaria de Receita Municipal",
+        "SFP-SSRM-DCA - Divisão de Controle e Arrecadação",
+        "SFP-SSRM-CADA - Comitê de Acompanhamento da Dívida Ativa",
+        "SGOV - Gabinete do Secretario de Governo",
+        "SGOV-AEG - Assessoria Executiva de Governo",
+        "SJUS - Gabinete do Secretario de Justiça, Modernização e Relações Institucionais(Extinto)",
+        "CTAPMICI - Comissão Técnica de Avaliação - PMI Cidades Inteligentes",
+        "SGOV-AEPE - Assessoria Executiva de Projetos Estratégicos",
+        "SGOV-CEP - Comissão de Ética Pública do Poder Executivo Municipal",
+        "SGOV-CMGP - Comitê Municipal de Governança Pública",
+        "SGOV-SSALAO - Subsecretaria de Assuntos Legislativos e Atos Oficiais",
+        "SGOV-SSALAO-DAL - Divisão de Assuntos Legislativos",
+        "SGOV-SSALAO-DAO - Divisão de Atos Oficiais",
+        "SGOV-SSRI - Subsecretaria de Relações Intergovernamentais",
+        "SGOV-SSRI-DCR - Divisão de Captação de Recursos",
+        "SGOV-SSRI-DGC - Divisão de Gestão de Convênios",
+        "SGOV-SSRI-UATTSVC - Unidade de Acompanhamento de Trabalho Técnico Social Vinculado à Convênio",
+        "SGOV-SSTI - Subsecretaria de Tecnologia da Informação",
+        "SGOV-SSTI-DGITIC - Divisão de Gestão da Infraestrutura da Tecnologia da Informação e Comunicação",
+        "SGOV-SSTI-DGITIC-UGR - Unidade de Gestão de Redes",
+        "SGOV-SSTI-DGITIC-UPSLGTI - Unidade Prestadores de Serviço - LGTI",
+        "SGOV-SSTI-DIDSIC - Divisão de Inovação e Desenvolvimento de Sistemas de Informação e Comunicação",
+        "SGOV-SSTI-DIDSIC-UADS - Unidade de Análise de Desenvolvimento de Sistemas",
+        "SGOV-SSTI-DIDSIC-UGPD - Unidade de Gestão de Sistemas de Processos Digitais",
+        "SMA - Gabinete do Secretario de Meio Ambiente",
+        "SMA-JURAMA - JURAMA - Câmara Temática da Secretaria Municipal do Meio Ambiente e Sustentabilidade",
+        "SMA-SIND20330 - SIND 2033026",
+        "SMA-SPQGA - Subsecretaria de Projetos, Qualidade e Gestão Ambiental",
+        "SMA-SPQGA-DPMB - Divisão de Planejamento, Monitoramento e Biodiversidade",
+        "SMA-SPQGA-DPMB-UCPB - Unidade de Conservação Parque do Basalto",
+        "SMA-SPQGA-DPMB-UPAM - Unidade de Planejamento Ambiental",
+        "SMA-SPQGA-DPMB-UPM - Unidade de Planejamento e Monitoramento",
+        "SMA-SPQGA-DRFU-DPMB-UBM - Unidade de Biodiversidade e Monitoramento",
+        "SMA-SPQGA-UVERDE - Unidade de IPTU Verde",
+        "UDVERDE - Unidade de Distribuição IPTU Verde",
+        "SMA-SSPQGA-DEA - Divisão de Educação Ambiental",
+        "SMA-SPQGA-DEA-UEA - Unidade de Educação Ambiental",
+        "SMA-SSBEA - Subsecretaria de Bem-Estar Animal",
+        "CGAB-SSBEA-DSBEA - Divisão de Suporte ao Bem-Estar Animal",
+        "SMA-SSDCA - Subsecretaria de Defesa e Controle Ambiental",
+        "OPAC - Operação Árvores Complexas",
+        "SMA-SSDCA-DFLA - Divisão de Fiscalização e Licenciamento Ambiental",
+        "SMA-SSDCA-DFLA-SDFA - Subdivisão de Fiscalização Ambiental",
+        "SMA-SSDCA-DFLA-UFA - Unidade de Fiscalização Ambiental",
+        "SMA-SSDCA-DFLA-UNA - Unidade Notificação Ambiental",
+        "SMA-SSDCA-DFLA-UGFLA - Unidade de Gestão - Fiscalização e Licenciamento Ambiental",
+        "SMA-SSDCA-DFLA-ULA - Unidade de Licenciamento Ambiental",
+        "SMA-SSDCA-DFLA-OE - Operação Estiagem",
+        "SMA-SSDCA-DRFU - Divisão de Regulação de Floresta Urbana",
+        "SMA-SSDCA-DRFU-UCAB - Unidade de Conservação e Arborização",
+        "SMA-SSDCA-DRFU-UDSA - Unidade de Distribuição de Serviços Arborização",
+        "SMA-SSDCA-DRFU-UPIFU - Unidade Processo Inicial Floresta Urbana",
+        "SMA-SSDCA-DRFU-UR - Unidade Regulatória",
+        "SMA-UASMA - Unidade Administrativa SMA",
+        "SMA-UASMA-OUVAMB - OUVIDORIA AMBIENTAL",
+        "SMC - Gabinete do Secretario da Cultura",
+        "COMPPHARA - COMPPHARA",
+        "SMC-SSAPH - Subsecretaria de Acervos e Patrimônio Histórico",
+        "SMC-SSAPH-DDHMB - Divisão de Documentação Histórica, Museus e Bibliotecas",
+        "SMC-SSAPH-DDHMB-ACRH - Acervo Histórico",
+        "SMC-SSAPH-DDHMB-BBM - Biblioteca Municipal",
+        "SMC-SSAPH-DDHMB-MAPA - Museu De Arqueologia e Paleontologia de Araraquara",
+        "SMC-SSAPH-DDHMB-MFEA - Museu do Futebol e Esportes de Araraquara",
+        "SMC-SSAPH-DDHMB-MFFAA - Museu Ferroviário “Francisco Aureliano De Araújo”",
+        "SMC-SSAPH-DDHMB-MHPVP - Museu Histórico e Pedagógico Voluntários da Pátria",
+        "SMC-SSAPH-DDHMB-MISMJT - Museu da Imagem e do Som Maestro José Tescari",
+        "SMC-SSAPH-DGAPH - Divisão da Gestão de Acervos e Patrimônio Histórico",
+        "SMC-SSGC - Subsecretaria de Gestão Cultural",
+        "SMC-SSGC-DEC - Divisão Educativa da Cultura",
+        "SMC-SSGC-DEC-CAOJL - Centro de Artes e Oficios Judith Lauand",
+        "SMC-SSGC-DGA - Divisão de Gestão Administrativa",
+        "SMC-SSGC-DSAF-CA - CEU das Artes",
+        "SMC-SSGC-TMA - Teatro Municipal de Araraquara",
+        "SMC-SSGC-DEVC - Divisão de Eventos Culturais",
+        "SME - Gabinete do Secretário da Educação",
+        "SMS - Gabinete do Secretario da Saúde",
+        "SOSP - Gabinete do Secretario de Obras e Serviços Públicos",
+        "CTAPMICM - PMI - CREMATÓRIO MUNICIPAL",
+        "SOSP-SSOP - Subsecretaria de Obras Públicas",
+        "SOSP-SSOP-DDREN - Divisão de Drenagens",
+        "SOSP-SSOP-DDREN-UC - Unidade Centralizado - Divisão de Drenagens",
+        "SOSP-SSOP-DFO - Divisão de Fiscalização de Obras",
+        "SOSP-SSOP-DIEIP - Divisão de Instalação Elétrica e Iluminação Pública",
+        "SOSP-SSOP-DMPP - Divisão de Manutenção de Próprios Públicos",
+        "SOSP-SSOP-DOEP - Divisão de Obras e Edificações Públicas",
+        "SOSP-SSOP-DOV - Divisão de Obras Viárias",
+        "SOSP-SSOP-DOV-UC - Unidade Centralizado - Divisão de Obras Viárias",
+        "SOSP-SSOP-DOV-UPC - Unidade Pavimentação - Centralizado",
+        "SOSP-SSSP - Subsecretaria de Serviços Públicos",
+        "SOSP-SSSP-DAC - Divisão de Administração de Cemitérios",
+        "SOSP-SSSP-DAC-UACEM - Unidade de Administração de Cemitérios",
+        "SOSP-SSSP-DFSP - Divisão de Fiscalização de Serviços Públicos",
+        "SOSP-JURAMA - JURAMA - Câmara Temática da Secretaria Municipal de Obras e Serviços Públicos",
+        "SOSP-SSSP-DFSP-UAFSP - Unidade Administrativa Fiscalização de Serviços Públicos",
+        "SOSP-SSSP-DFSP-UFSP - Unidade de Fiscalização - Fiscalização de Serviços Públicos",
+        "SOSP-SSSP-DFSP-UTDFSP - Unidade de Triagem - Divisão de Fiscalização de Serviços Públicos",
+        "SOSP-SSSP-DMAVPP - Divisão de Manutenção de Áreas Verdes de Próprios Públicos",
+        "SOSP-SSSP-DSP - Divisão de Serviços Públicos",
+        "SOSP-SSSP-DSP-UASP - Unidade Administrativa de Serviços Públicos"
+       ],
+       "ajuda": "Atenção: informe o nome da unidade exatamente como está cadastrada na 1Doc, incluindo as siglas.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "26. Sistema de Processos Digitais-1DOC"
+         ]
+        },
+        {
+         "campo": "a_s_unidade_s_que_deseja_ter_acesso_pertence_m_a",
+         "valores": [
+          "Outra"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_na_1d",
+         "valores": [
+          "Quero informar a(s) unidade(s) que preciso acessar"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "27.Sistema de Processos Físicos-GIAP/SIPEX",
+     "perguntas": [
+      {
+       "name": "informe_como_deseja_solicitar_o_seu_acesso_ao_si",
+       "label": "Informe como deseja solicitar o seu acesso ao SIPEX",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Quero informar a(s) unidade(s) que preciso acessar",
+        "Quero informar um usuário do meu setor que já possui o acesso para cópia"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "27. Sistema de Processos Físicos-GIAP/SIPEX"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_o_usuario_do_setor_que_ja_possui_os_mesm_2",
+       "label": "Informe o usuário do setor que já possui os mesmos acessos pretendidos",
+       "required": true,
+       "type": "usuario",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "27. Sistema de Processos Físicos-GIAP/SIPEX"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_ao_si",
+         "valores": [
+          "Quero informar um usuário do meu setor que já possui o acesso para cópia"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_qual_is_unidade_s_deseja_o_acesso",
+       "label": "Informe qual(is) unidade(s) deseja o acesso",
+       "required": true,
+       "type": "textarea",
+       "ajuda": "Atenção: Informe o nome da unidade exatamente como está cadastrada no SIPEX, incluindo o código.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "27. Sistema de Processos Físicos-GIAP/SIPEX"
+         ]
+        },
+        {
+         "campo": "informe_como_deseja_solicitar_o_seu_acesso_ao_si",
+         "valores": [
+          "Quero informar a(s) unidade(s) que preciso acessar"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "28.Sistema de Receita e Fiscalização-GIAP/SIRF",
+     "perguntas": [
+      {
+       "name": "informe_o_usuario_do_seu_setor_que_ja_possui_os",
+       "label": "Informe o usuário do seu setor que já possui os acessos pretendidos para serem copiados",
+       "required": true,
+       "type": "usuario",
+       "ajuda": "Atenção: informe o login ou nome completo do usuário de referência que possui os acessos pretendidos.",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "28. Sistema de Receita e Fiscalização-GIAP/SIRF"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "29.Sistema de Regularização Cemitérios-Prefeitura",
+     "perguntas": [
+      {
+       "name": "informe_quais_atividades_vai_executar_no_sistema",
+       "label": "Informe quais atividades vai executar no sistema",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Acessar tela solicitação",
+        "Alterar o andamento do cadastro",
+        "Alterar o andamento do recadastramento sem mudar o status de pendente",
+        "Alterar túmulo",
+        "Alterar publicação",
+        "Efetuar novos cadastros",
+        "Alterar dados pessoais",
+        "Acessar tela protocolo cancelado",
+        "Cancelar Protocolo"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "29. Sistema de Regularização Cemitérios-Prefeitura"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "30.Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP",
+     "perguntas": [
+      {
+       "name": "qual_o_tipo_de_acesso_voce_precisa_para_o_sicom",
+       "label": "Qual o tipo de acesso você precisa para o SICOM?",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Acesso para rotinas administrativas (solicitação de compras/requisição de materiais)",
+        "Acesso para agentes de contratação",
+        "Acesso para servidores que trabalham em almoxarifado"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_qual_is_tipo_s_de_atividade_s_ira_execut",
+       "label": "Informe qual(is) tipo(s) de atividade(s) irá executar no sistema de Compras/Almoxarifado",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Vou requisitar materiais ao almoxarifado",
+        "Vou fazer solicitações de compras"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP"
+         ]
+        },
+        {
+         "campo": "qual_o_tipo_de_acesso_voce_precisa_para_o_sicom",
+         "valores": [
+          "Acesso para rotinas administrativas (solicitação de compras/requisição de materiais)"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_para_qual_is_unidade_s_realizara_solicit",
+       "label": "Informe para qual(is) unidade(s) realizará solicitações de compras.",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "19.2.4 COORDENADORIA EXECUTIVA DAS OBRAS PÚBLICAS",
+        "SME 9.10.1 EDUCAÇÃO INFANTIL",
+        "10.01.20 CONSELHO TUTELAR",
+        "99.10.01.6 CRAS MARIA LUIZA",
+        "99.10.03 PROGRAMAS - SEC. ASS. DESEN. SOCIAL",
+        "10.01.1.2.1 FUNDO MUNICIPAL DE ASSISTENCIA SOCIAL",
+        "13.2.5 PARQUE MUNICIPAL DE ESPORTES, LAZER E CULTURA \"OCTAVIANO DE ARRUDA CAMPOS\" - PINHEIRINHO",
+        "SMS.8.1.9 COORDENADORIA EXECUTIVA DE ASSUNTOS ADMINISTRATIVOS",
+        "SMS.8.1.14 GERENCIA DE CONVÊNIOS",
+        "SMS.8.1.15 GERÊNCIA DE EDUCAÇÃO PERMANENTE",
+        "SMS.8.1.21 GERÊNCIA DE RECURSOS HUMANOS",
+        "SMS. 8.1 FUNDO MUNICIPAL DE SAÚDE",
+        "SME 9.10.5 ALIMENTAÇÃO ESCOLAR",
+        "SME 9.10.4 FUNDEB - FUNDO DESENVOLVIMENTO DA EDUCAÇÃO BÁSICA",
+        "19.2.1 GERÊNCIA DE EDIFICAÇÃO E MANUTENÇÃO DE OBRAS PÚLICAS",
+        "SMS. 8.48 UPA NEFALIA DE OLIVEIRA LAUAR",
+        "6.2.1 SERVIÇO MILITAR",
+        "12.3.8 MUSEU FERROVIARIO \"FRANCISCO AURELIANO DE ARAÚJO\"",
+        "SME 9.1.3.2.32 CER ADELINA LEITE AMARAL ( VILA VICENTINA)",
+        "SME 9.1.3.2.38 CER ALVARO WALDEMAR COLINO (JD. DAS ESTAÇÕES)",
+        "SME 9.1.3.2.15 CER ANGELO LORENZETTI ( ALTOS DOS PINHEIROS II)",
+        "SME 9.1.3.2.36 CER LEONOR MENDES DE BARROS (CENTRO)",
+        "SME 9.01.3.3.22 CE RUBENS CRUZ (RANCHINHO) - JD.ACLIMACAO",
+        "SME 9.1.3.2.60 EDUCAÇÃO INTEGRAL DA EMEF GILDA (VILA HARMONIA)",
+        "SME 9.1.3.3.7 EMEF WALDEMAR SAFFIOTI (CRUZEIRO DO SUL)",
+        "SME 9. 1.3.3.21 EMEF VEREADOR EDMILSON DE NOLA DE SÁ",
+        "18.2.1 GERÊNCIA DE SISTEMAS DE INFORMAÇÃO GEOGRÁFICA",
+        "18.2.2 GERÊNCIA DE APROVAÇÃO DE PROJETOS DE EDIFICAÇÕES",
+        "18.2.3 GERÊNCIA DE FISCALIZAÇÃO DE EDIFICAÇÕES",
+        "18.3.1 GERÊNCIA DE APROVAÇÃO DE PROJETOS DE PARCELAMENTO DO SOLO",
+        "18.3.2 GERÊNCIA DE PROJETOS URBANOS",
+        "SMS.8.4.10 GERENCIA DE AMBULATORIOS DE ESPECIALIDADES E UNIDADES DE DIAGNOSTICO",
+        "SMS.8.3.17 GERÊNCIA DE SAÚDE BUCAL",
+        "SMS.8.3.32 USF. JD. MARIA LUIZA - DRÂª NEUSA MARIA AFFINI DICENZO",
+        "SMS.8.3.18 GERÊNCIA DO PROGRAMA ESTRATÉGIA DA FAMÍLIA",
+        "SMS.8.3.3 ALMOXARIFADO MATERIAL ODONTOLOGICO",
+        "SMS.8.3.24 USF. INDAIA \"DR. TATSUKO SAKIMA \"",
+        "SMS.8.3.19 SAD - Serviço de Atendimento Domiciliar",
+        "SMS.8.6.13 GERÊNCIA DE RECURSOS HUMANOS - SAÚDE",
+        "SMS.8.3.43 USF. VILA SANTANA",
+        "SMS.8.3.42 USF. VALE DO SOL",
+        "SMS.8.6.4 GERENCIA MEDICA DA UNIDADE DE PRONTO ATENDIMENTO II",
+        "SMS.8.2.7 GERÊNCIA DE VIGILÂNCIA SANITÁRIA",
+        "SMS.8.3.13 CMSC YOLANDA OPICE - DR. FRANCISCO OSWALDO CASTELUCCI",
+        "SMS.8.6.10 UPA VILA XAVIER - UNIDADE DE PRONTO ATENDIMENTO",
+        "SMS.8.4.3 CISA - CENTRO INTEGRADO DE SAÚDE AUDITIVA",
+        "SMS.8.3.5 CMSC JARDIM AMERICA DR. MARCELO EDGAR DRUET",
+        "SMS.8.2.8 GERÊNCIA DE ZOONOSES",
+        "SMS.8.3.34 USF. JD. PINHEIROS",
+        "SMS.8.3.37 USF. JD. SANTA LUCIA - DR. ALDO CARIANI - EQ. II",
+        "SMS.8.3.9 CMSC JARDIM ROBERTO SELMI DEI IV - DR. HERCULANO GRAEFF",
+        "SMS 8.3.2313 COMBATE AO CORONAVÍRUS - COVID-19",
+        "SMS.8.3.36 USF. JD. SANTA LUCIA - DR. ALDO CARIANI - EQ. I",
+        "SMS.8.4.15 PISCINA DE HIDROTERAPIA IZABEL S CARMAGNANI",
+        "4.1 PROCURADORIA GERAL DO MUNICIPIO",
+        "18.2 SUBSECRETARIA DE PLANEJAMENTO URBANO",
+        "99.10.01.40.2328 FUNDO MUNICIPAL DE ASSISTÊNCIA SOCIAL - PARCERIA OSC-PS BÁSICA - SCFV SERV CONVIV. FORTAL.DE VÍNCULOS - CENTRO ESPÍRITA EURÍPEDES BARSANULFO",
+        "99.10.01.7 CRAS PARQUE SAO PAULO",
+        "99.10.01.9.1 CENTRO POP",
+        "10.01.21 VILA DIGNIDADE SERVIÇO DE ACOLHIMENTO PARA PESSOAS IDOSAS",
+        "13.2.4 GINÁSIO DE ESPORTE CASTELO BRANCO - GIGANTÃO",
+        "SMS.8.1.12 GERÊNCIA DA CENTRAL DE REGULAÇÃO",
+        "12.2.9 PALACETE DAS ROSAS \" PAULO ARRUDA CORREA DA SILVA \"",
+        "SME 9.1.3.2.14 CER AMELIA FAVERO MANINI (JD. AGUA BRANCA)",
+        "SME 9.1.3.2.41 CER EUGENIO TROVATTI - BUENO DE ANDRADA",
+        "SME 9.1.3.2.17 CER HONORINA COMELLI LIA (IMPERADOR)",
+        "SME 9.06 C.E.R. PROFESSOR JOSÉ ÊNIO CASALECCHI",
+        "SME 9.1.3.2.46 CER LEATRICE RODRIGUES AFFONSO (PQ GRAMADO II)",
+        "SME 9.04 C.E.R. LOURDES APARECIDA CARVALHO PRADA",
+        "SME 9.1.3.2.42 CER MARIA DA GLORIA FONSECA SIMOES (MARIA LUIZA)",
+        "SME 9.1.3.2.27 CER PROF MARIA ENAURA MALAVOLTA MAGALHAES (VALE DO SOL)",
+        "SME 9.05 CER MARIA ENAURA MALAVOLTA MAGALHÃES",
+        "SME 9.1.3.2.24 CER MARIA PRADELLI MALARA (SELMI DEI I)",
+        "SME 9.1.3.3.6 EMEF CAIC ENG. RICARDO C.C.MONTEIRO (VALE DO SOL)",
+        "SMS.8.3.16 GERÊNCIA DE ASSISTÊNCIA FARMACÊUTICA",
+        "SME 9.1.3.2.43 CER PROF ZILDA MARTINS PIERRE (PARAISO)",
+        "SME 9.1.3.3.19 EMEF ALTAMIRA AMORIM MANTESE (SELMI DEI III)",
+        "SME 9.1.3.3.2 EMEF PROF. OLGA FERREIRA CAMPOS (UNIVERSAL)",
+        "SME 9.01.3.2.1 CE PIAQUARA - PROF. LECTICIA VITTA FILPI (VILA XAVIER)",
+        "SME 9.01.3 CENTRO DE ATENDIMENTO EDUCACIONAL ESPECIALIZADO - INFANTIL MARISA GOES WANDERLEY",
+        "18.5 FUNDO MUNICIPAL DE DESENVOLVIMENTO URBANO",
+        "19.2.2 GERÊNCIA DE OBRAS E SERVIÇOS DE TRÂNSITO E TRANSPORTES",
+        "18.4.1 GERÊNCIA DE PROJETOS HABITACIONAIS",
+        "12.2.5 COORDENADORIA EXECUTIVA DE CULTURA",
+        "13.2.3 GERÊNCIA DE EXECUÇÃO ORÇAMENTÁRIA E FINANCEIRA, PRÓPRIOS, LICITAÇÕES, CONTRATOS E CONVÊNIOS - SEC. ESPORTE E LAZER",
+        "SMS.8.1.16 GERÊNCIA DE GESTÃO CONTÁBIL, FINANCEIRA, EXECUÇÃO E CONTROLE ORÇAMENTÁRIO",
+        "SMS.8.1.13 GERÊNCIA DE COMPRAS E LICITAÇÕES - SAÚDE",
+        "SMS.8.1.22 UAC AMBULATORIAL",
+        "SMS.8.1.20 GERÊNCIA DE PLANEJAMENTO",
+        "SME 9.02 ENSINO FUNDAMENTAL",
+        "19.2.5 GERÊNCIA DE FISCALIZAÇÃO DE OBRAS",
+        "13.1.1 SECRETARIA DO ESPORTE E LAZER",
+        "10.01 IGD - BOLSA FAMILIA",
+        "SME 9.1.3.2.35 CER ANUNCIATA LIA DAVID (HORTENSIAS)",
+        "SME 9.1.3.2.20 CER CARMELITA GARCEZ - UNIDADE I (SÃO JOSE)",
+        "SME 9.1.3.2.39 CER.CARMELITA GARCEZ - UNIDADE II (SÃO JOSE)",
+        "SME 9.01 C.E.R. PREFEITO CLODOALDO MEDINA",
+        "SME 9.1.3.2.28 CER DONA COTINHA DE BARROS (JD BRASIL)",
+        "SME 9.1.3.2.19 CER JACOMINA FILIPPI SAMBIASE ( JD. UNIVERSAL)",
+        "SME 9.1.3.2.45 CER JOSE ALFREDO AMARAL GURGEL (ADALBERTO ROXO)",
+        "SME 9.1.3.2.21 CER JUDITH DE BARROS BATELLI (SELMI DEI III)",
+        "SME 9.1.3.2.5 CER MARIA JOSE PAHIN DA PORCIUNCULA (IGUATEMI)",
+        "SME 9.1.3.2.30 CER MARIA RENATA LUPO BO (CECAP)",
+        "SME 9.1.3.2.4 CER CAIC RICARDO C.C.MONTEIRO (VALE DOS SOL)",
+        "SME 9.1.3.2.23 CER ROSA BROLHIO ZANIN (IEDDA)",
+        "SME 9.1.3.2.31 CER ROSA RIBEIRO STRINGUETTI (JD AMERICA)",
+        "SMS.8.5.3 CENTRO DE ESPECIALIDADE ODONTOLOGICA",
+        "SME 9.07 CER WALDYR ALCEU TRIGO - ASSENTAM. BELA VISTA",
+        "SME 9.1.3.3.5 EMEF PROF. HENRIQUE SCABELLO (HORTENSIAS)",
+        "SME 9.1.3.3.14 EMEF HERMINIO PAGOTTO - ASSENT. BELA VISTA",
+        "SME 9.1.3.3.3 EMEF PROF. JOSE ROBERTO PADUA CAMARGO (JD. DOM PEDRO I)",
+        "SME 9.1.3.3.12 EMEF RAFAEL DE MEDINA (MARTINEZ)",
+        "SME 9.01.5 CENTRO EDUCAÇÃO - EDUCAÇÃO INTEGRAL",
+        "SME 9.1.5.4.2 NGSAT - NUCLEO DE GESTAO DE SUPRIMENTOS ALMOXARIFADO E TRANSPORTE",
+        "SME 9.1.3.2.3 CENTRO EDUCACAO INFANTIL MEIMEI",
+        "SME 9.10 POLO ACADÊMICO DE ENSINO SUPERIOR A DISTÂNCIA",
+        "SMS.8.4.11 GERÊNCIA DE REABILITAÇÃO",
+        "SMS.8.3.26 USF. JD PARAISO",
+        "SMS.8.4.19 Saída para Unidades de Saúde - Geral",
+        "SMS.8.2.9 GERÊNCIA DO PROGRAMA DST/AIDS",
+        "SMS.8.3.29 USF. JD. BRASIL",
+        "SMS.8.2.1 ALMOXARIFADO DST/AIDS",
+        "SMS.8.3.11 CMSC VILA MELHADO - DR. GIUSEPPE AUPHIERO SOBRINHO",
+        "SMS.8.6.11 Unidade de Retaguarda de Urgência e Diagnóstico do Melhado",
+        "3.2.1 COORDENADORIA EXECUTIVA DE COMUNICAÇÃO",
+        "99.10.01.8 CRAS VALE DO SOL",
+        "99.10.01.5 CRAS HORTENSIAS",
+        "SMS.8.1.17 GERÊNCIA DE INFORMAÇÃO E TECNOLOGIA",
+        "SMS.8.1.3 ALMOXARIFADO DE MATERIAIS MEDICO",
+        "SMS.8.1.24 GERÊNCIA DE TRANSPORTE",
+        "19.2.3 GERÊNCIA DE OBRAS VIÁRIAS E DRENAGENS",
+        "13.2.6 MUSEU DO FUTEBOL E DOS ESPORTES DE ARARAQUARA",
+        "SME 9.1.3.2.29 CER ANTONIO CUSTODIO DE LIMA ( VITORIO DE SANTI )",
+        "SME 9.1.3.2.26 CER ANTONIO TAVARES PEREIRA LIMA (JD. PINHEIROS)",
+        "SME 9.1.3.2.13 CER CONCHETA SMIRNE MENDONCA (QUITANDINHA)",
+        "SME 9.1.3.2.11 CER EDUARDO BORGES COELHO (MORUMBI)",
+        "SME 9.1.3.3.16 EMEF EUGENIO TROVATTI - BUENO DE ANDRADA",
+        "SME 9.1.3.2.9 CER EUNICE BONILHA TOLEDO PIZA (JD. BRASILIA)",
+        "SME 9.1.3.2.6 CER IRMA MAURINA - ASSENT. MONTE ALEGRE",
+        "SME 9.1.3.2.40 CER JOSE DO AMARAL VELOSA (PAULISTANO)",
+        "SME 9.1.3.2.8 CER MARIA BARCAROLLA FILLIE (MELHADO)",
+        "SME 9.1.3.2.37 CER MARIALICE LIA TEDDE (CRUZEIRO DO SUL)",
+        "SME 9.1.3.2.22 CER PADRE BERNARDO PLATE (SANTA LUCIA)",
+        "SME 9.1.3.2.33 CER PADRE MARIO CAVARETTI FILHO (ALTOS DOS PINHEIROS I )",
+        "SME 9.1.3.2.44 CER CAIC RUBENS CRUZ II (SELMI DEI III)",
+        "1.4 FUNDO SOCIAL DE SOLIDARIEDADE",
+        "SME 9.1.3.3.9 EMEF RUTH VILLAÇA CORREIA LEITE CARDOSO (MARIA LUIZA)",
+        "SME 9.01.3.2.2 CE ALESCIO GONÇALVES DOS SANTOS (PINHEIROS)",
+        "SME 9.1.3.3.1 EMD - ESCOLA MUNICIPAL DE DANCA IRACEMA NOGUEIRA",
+        "SME 9.01.02 ADMINISTRAÇÃO DAS UNIDADES ESCOLARES",
+        "SMS.8.6.1 COORDENADORIA EXECUTIVA DE URGÊNCIA E EMERGÊNCIA",
+        "SMS.8.5.4 CENTRO DE REFERÊNCIA DO TRABALHADOR",
+        "SMS.8.6.8 UPA CENTRAL - UNIDADE DE PRONTO ATENDIMENTO",
+        "SMS.8.3.31 USF. JD. IEDDA - DR. NICOLINO LIA",
+        "SMS.8.3.7 CMSC JARDIM PAULISTANO DR. GENARO GRANATA",
+        "SMS.8.4.5 CRASMA - CENTRO DE REFERÊNCIA DE SAÚDE MENTAL DO ADULTO",
+        "SMS.8.3.15 GERÊNCIA DAS UNIDADES BÁSICAS DE SAÚDE",
+        "SMS.8.5.2 CAPS/AD - CENTRO DE ATENÇÃO PSICOSSOCIAL - ÁLCOOL E DROGAS",
+        "SMS.8.5.6 COORDENADORIA EXECUTIVA DE AVALIAÇÃO E CONTROLE",
+        "SMS.8.6.2 GERÊNCIA DO SAMU",
+        "SMS.8.2.10 HOSPITAL DE CAMPANHA -ATEND. DENGUE",
+        "SMS.8.4.13 NGA 3 - JUDICIAL",
+        "SMS.8.6.6 GERENCIA TECNICA DA UNIDADE DE PRONTO ATENDIMENTO II",
+        "SMS.8.4.17 UMED - UNIDADE MÉDICA DE DIAGNÓSTICO",
+        "SMS.8.3.12 CMSC VILA XAVIER - JOAO VITOR NASCIMENTO MAURICIO",
+        "SMS.8.3.2 ACADEMIA DE SAUDE - VALE DO SOL",
+        "SMS.8.6.5 GERENCIA TECNICA DA UNIDADE DE PRONTO ATENDIMENTO",
+        "SMS.8.6.12 HOSPITAL DE CAMPANHA COVID-19",
+        "SMS.8.3.27 USF. JD. ADALBERTO ROXO",
+        "SMS.8.4.4 COORDENADORIA EXECUTIVA DE ASSISTÊNCIA ESPECIALIZADA",
+        "SMS.8.4.7 CRJA - CENTRO DE REFERÊNCIA DO JOVEM E DO ADOLESCENTE",
+        "SMS.8.5.1 CAPS II - CENTRO DE ATENÇÃO PSICOSSOCIAL II",
+        "SMS.8.3.6 CMSC JARDIM IGUATEMI - ENF.ª KIMIKOYUTA",
+        "SMS.8.6.9 UPA DO SELMI DEI VALLE VERDE - UNIDADE DE PRONTO ATENDIMENTO",
+        "SMS.8.3.8 CMSC JARDIM ROBERTO SELMI DEI I - DR. RUY DE TOLEDO",
+        "SMS.8.3.22 USF. BUENO DE ANDRADA - DR. NILO RODRIGUES DA SILVA",
+        "SMS.8.6.3 GERENCIA MEDICA DA UNIDADE DE PRONTO ATENDIMENTO",
+        "SMS.8.4.9 FARMÁCIA DE PSIQUIATRIA/NEUROLOGIA E CENTRAL",
+        "SMS.8.3.30 USF. JD. DAS HORTENSIAS - DR. JOSE NIGRO NETO",
+        "SMS.8.2.11 SESA - SERVIÇO ESPECIAL DE SAUDE DE ARARAQUARA",
+        "SMS.8.2.6 GERÊNCIA DE VIGILÂNCIA EPIDEMIOLÓGICA",
+        "SMS.8.4.18 CER - Centro Especializado em Reabilitação",
+        "SMS.8.3.21 USF. BELA VISTA - DR. ELIAS ZAKAIB",
+        "SMS.8.4.16 SARA - SERVIÇO DE ATENÇÃO EM REABILITAÇÃO DE ARARAQUARA",
+        "SMS.8.2.5 GERENCIA DE VIGILANCIA AMBIENTAL EM SAUDE",
+        "SMS.8.3.44 USF VICTORIO DE SANTI",
+        "SMS.8.3.23 USF. CRUZEIRO DO SUL - FARM. CRISTOVAO COLOMBO",
+        "SMS.8.2.3 COORDENADORIA EXECUTIVA DE VIGILÂNCIA EM SAÚDE",
+        "SMS.8.4.6 CRIA - CENTRO DE REFERÊNCIA DO IDOSO DE ARARAQUARA",
+        "SMS.8.3.28 USF. JD. BIAGIONI",
+        "SMS.8.4.2 CDIP - CENTRO DE DIAGNÓSTICO E INTERVENÇÃO PRECOCE",
+        "SMS.8.3.45 USF. VALLE VERDE",
+        "SMS.8.4.14 NÚCLEO DE GESTÃO ASSISTENCIAL - NGA 3",
+        "SMS.8.3.10 CMSC SANTA ANGELINA - RAFAEL SORBO",
+        "SMS.8.3.40 USF. PQ. DAS LARANJEIRAS II ''JOAO FRANCISCO ALVES''",
+        "SMS.8.3.20 USF. ALTOS DO PINHEIROS",
+        "SMS.8.3.25 USF. JD BRASILIA",
+        "SMS.8.5.5 CLINICA E LABORATORIO DE PROTESE DENTARIA",
+        "SMS.8.3.14 COORDENADORIA EXECUTIVA DE ATENÇÃO BÁSICA",
+        "12.3.4 COORD EXECUTIVA DE ACERVOS E PATRIMÔNIO HISTÓRICO",
+        "20.1 FUNDO MUNICIPAL DOS DIREITOS DA CRIANÇA E DO ADOLESCENTE",
+        "21.1 FUNDO MUNICIPAL DO IDOSO",
+        "5.1 CONTROLADORIA GERAL DO MUNICÍPIO",
+        "13.1 GABINETE DO SECRETÁRIO - SEC. ESPORTE E LAZER",
+        "SMS.8.1.23 UAC HOSPITALAR",
+        "SMS.8.1.18 GERENCIA DE MANUTENCAO DE PROPRIOS SAUDE",
+        "SMS.8.1.19 GERENCIA DE OUVIDORIA",
+        "SMS.8.1.1 ALMOXARIFADO CENTRAL DE MEDICAMENTOS",
+        "SMS.8.1.8 CONSELHO MUNICIPAL DE SAUDE",
+        "SMS.8.1.2 ALMOXARIFADO DA SAUDE",
+        "SMS.8.1.5 ALMOXARIFADO MATERIAL DE ESCRITORIO",
+        "SMS.8.1.6 ALMOXARIFADO PROCESSO JUDICIAL",
+        "SMS.8.1.4 ALMOXARIFADO DRS III",
+        "SMS.8.1.11 GABINETE DO SECRETARIO - SECRETARIA DA SAUDE",
+        "SME 9.10.3 DESENVOLVIMENTO DE PROJETOS ESPECIAIS",
+        "SME 9.08 CERS (CENTROS DE EDUCAÇÃO E RECREAÇÃO)",
+        "SME 9.09 EMEFS (ESCOLAS MUNICIPAIS DE EDUCAÇÃO FUNDAMENTAL)",
+        "SME 9.1.3.2.12 CER CYRO GUEDES RAMOS (SANTA ANGELINA)",
+        "SME 9.1.3.2.18 CER ELOA DO VALLE QUADROS (VILA XAVIER)",
+        "SME 9.1.3.2.10 CER EUDOXIA PINTO FERRAZ (PQ SÃO PAULO)",
+        "SME 9.1.3.2.16 CER JOSE PIZANI (YOLANDA OPICE)",
+        "SME 9.1.3.3.4 EMEF MARIA DE LOURDES SILVA PRADO - ASSENT. MONTE ALEGRE",
+        "SME 9.1.3.2.7 CER MARIA APARECIDA DE AZEVEDO BOZUTTI (INDAIA)",
+        "SME 9.1.3.2.25 CER CAIC RUBENS CRUZ I (SELMI DEI III)",
+        "SMS.8.6.7 SAMU",
+        "SME 9.1.3.3.8 EMEF CAIC RUBENS CRUZ (SELMI DEI III)",
+        "2.0 GABINETE DO PREFEITO",
+        "SME 9.1.3.3.20 EMEF GILDA ROCHA MELLO E SOUZA (JD INDAIA)",
+        "SME 9.1.3.3.11 EMEF LUIZ ROBERTO SALINAS FORTES (PARAISO)",
+        "SME 9.1.3.3.15 NEJA - NUCLEO DE EDUCACAO DE JOVENS E ADULTOS",
+        "SME 9.01.3.3.21 CE FUNDECITRUS (MELHADO)",
+        "SME 9.01.4 CENTRO DE ATENDIMENTO EDUCACIONAL ESPECIALIZADO-FUNDAMENTAL",
+        "SME 9.11 SECRETARIA DA EDUCACAO",
+        "18.4.2 GERÊNCIA DO CADASTRO E GESTÃO SÓCIO-ECONÔMICA",
+        "SMS.8.3.41 USF. PQ. RES. SAO PAULO - GUSTAVO DE MORAES JR",
+        "SMS.8.3.4 CMS CECAP",
+        "SMS.8.3.39 USF. PQ. DAS LARANJEIRAS ''DR. WILSON ANTUNES PEREIRA''",
+        "SMS.8.3.33 USF. JD. MARIVAN",
+        "SMS.8.4.12 GERÊNCIA DE SAÚDE MENTAL",
+        "SMS.8.2.4 GERÊNCIA DE CONTROLE DE VETORES",
+        "SMS.8.4.8 ESPACO CRESCER - CENTRO DE ATENCAO A CRIANCA",
+        "SMS.8.4.1 AMBULATÓRIO DE SAÚDE DA MULHER",
+        "SMS.8.2.2 CENTRO DE TESTAGEM E ACONSELHAMENTO",
+        "SMS.8.3.1 ACADEMIA DE SAUDE - CRUZEIRO DO SUL",
+        "SMS.8.3.38 USF. JD. SANTA LUCIA - DR. ALDO CARIANI - EQ. III",
+        "12.3.3 BIBLIOTECA PÚBLICA MUNICIPAL \"MÁRIO DE ANDRADE\"E BIBLIOTECA INFANTIL \"MONTEIRO LOBATO\"",
+        "13.2.7 CENTRO E ESPORTES E ARTES UNIFICADOS \"VEREADORA DEODATA LEOPOLDINA DO AMARAL\"",
+        "12.2.13 TEATRO WALLACE LEAL VALENTIN RODRIGUES\"",
+        "12.2.11 TEATRO DE ARENA \"BENEDITO DE OLIVEIRA\"",
+        "12.3.9 MUSEU HISTORICO E PEDAGOGICO \"VOLUNTARIOS DA PATRIA\"E CECRAD - CENTRO DE RECUPER.",
+        "12.3.2 ARQUIVO PÚBLICO HISTÓRICO \"PROF. RODOLPHO TELAROLLI\"",
+        "12.2.7 FUNDO MUNICIPAL DE CULTURA",
+        "1.6.2 COORDENADORIA EXECUTIVA DE GOVERNANÇA",
+        "12.2.3 CENTRO DE ARTES E OFICIOS \"JUDITH LAUAND\"",
+        "12.2.8 OFICINAS CULTURAIS MUNICIPAIS",
+        "12.2.2 CASA DA CULTURA \"LUIZ ANTONIOO MARTINEZ CORREA\"",
+        "12.2.12 TEATRO MUNICIPAL \"PREF. CLODOALDO MEDINA\"",
+        "SME 9.01.4.2.1 CEDEPE",
+        "12.3.5 MAPA - MUSEU DE ARQUEOLOGIA E PALEONTOLOGIA DE ARARAQUARA \"MAESTRO J.TESCARI\"",
+        "6.2.2 FUMABOM -FUNDO MUNICIPAL DE MANUTENÇÃO DO CORPO DE BOMBEIROS",
+        "12.2.6 DIFUSÃO EM ARTE E CULTURA E EVENTOS",
+        "12.3.6 MIS - MUSEU DA IMAGEM E DO SOM \"MAESTRO JOSÉ TESCARI\"",
+        "2.2.2 COORDENADORIA EXECUTIVA DE ARTICULAÇÃO INTERGOVERNAMENTAL",
+        "SME 9 CER HELLÉ NICE PINTO PASSOS",
+        "SME 9.01.5.4.1 ALMOXARIFADO DA EDUCACAO - NGSAT",
+        "7.3 SUBSECRETARIA DE PLANEJAMENTO E GESTÃO FINANCEIRA",
+        "6.2 SUBSECRETARIA DE SERVIÇOS ADMINISTRATIVOS",
+        "11.2 SUBSECRETARIA DE POLÍTICAS PÚBLICAS ÉTNICO RACIAIS",
+        "11.4 SUBSECRETARIA DE POLÍTICAS PARA AS MULHERES",
+        "11.8 FUNDO MUNICIPAL DE DEFESA DO CONSUMIDOR",
+        "18.4 SUBSECRETARIA DE HABITAÇÃO",
+        "19.2 SUBSECRETARIA DE OBRAS PÚBLICAS",
+        "12.2 SUBSECRETARIA DE GESTÃO CULTURAL",
+        "17.3 SUBSECRETARIA DE PROJETOS, QUALIDADE E GESTÃO AMBIENTAL",
+        "10.01.19.2 CRAS CENTRAL",
+        "17.1 GABINETE DO SECRETARIO DE MEIO AMBIENTE",
+        "10.01.1.3 FUNDO MUNICIPAL DE ASSISTÊNCIA SOCIAL",
+        "6.6 SUBSECRETARIA DE COMPRAS, LICITAÇÕES E CONTRATOS",
+        "1.2 OUVIDORIA GERAL DO MUNICIPIO",
+        "11.3 SUBSECRETARIA DE PROMOÇÃO E DEFESA DOS DIREITOS HUMANOS",
+        "11.7 FUNDO MUNICIPAL DOS DIREITOS DA PESSOA COM DEFICIÊNCIA",
+        "19.3 SUBSECRETARIA DE SERVIÇOS PÚBLICOS",
+        "13.3 SUBSECRETARIA DE PLANEJAMENTO NO ESPORTE",
+        "15.2 SUBSECRETARIA DE DESENVOLVIMENTO ECONÔMICO E DO TURISMO",
+        "15.3 SUBSECRETARIA DO TRABALHO E DA ECONOMIA CRIATIVA E SOLIDÁRIA",
+        "15.4 FUNDO MUNICIPAL DE DESENVOLVIMENTO ECONÔMICO",
+        "11.5 SUBSECRETARIA DE DEFESA DO CONSUMIDOR",
+        "11.6 FUNDO MUNICIPAL DA IGUALDADE RACIAL E DE COMBATE AO RACISMO DE ARARAQUARA - FUMIRCRA",
+        "15.6 FUNDO MUNICIPAL DO TRABALHO",
+        "16.3 SUBSECRETARIA DE ABASTECIMENTO E SEGURANÇA ALIMENTAR",
+        "3.2 SUBSECRETARIA DE JORNALISMO E PUBLICIDADE",
+        "17.2 SUBSECRETARIA DE DEFESA E CONTROLE AMBIENTAL",
+        "12.3 SUBSECRETARIA DE ACERVOS E PATRIMÔNIO HISTÓRICO",
+        "13.2 SUBSECRETARIA DE ESPORTE E LAZER",
+        "6.3 SUBSECRETARIA DE SUBSECRETARIA DE LOGÍSTICA E SUPRIMENTOS",
+        "6.4 SUBSECRETARIA DE RECURSOS HUMANOS",
+        "6.5 SUBSECRETARIA DA ESCOLA MUNICIPAL DE GOVERNO",
+        "2.4 SUBSECRETARIA DE TECNOLOGIA DA INFORMAÇÃO",
+        "17.5 FUNDO MUNICIPAL DE DESENVOLVIMENTO AMBIENTAL",
+        "2.2 SUBSECRETARIA DE RELAÇÕES INTERGOVERNAMENTAIS",
+        "2.3 SUBSECRETARIA DE ASSUNTOS LEGISLATIVOS E ATOS OFICIAIS",
+        "1.6 SUBSECRETARIA DA GOVERNANÇA COMUNITÁRIA",
+        "7.2 SUBSECRETARIA DE PLANEJAMENTO E ORÇAMENTO",
+        "7.4 SUBSECRETARIA DE ADMINISTRAÇÃO TRIBUTÁRIA",
+        "14.2 SUBSECRETARIA DE ASSUNTOS DE SEGURANÇA",
+        "14.3 SUBSECRETARIA DE TRÂNSITO E MOBILIDADE URBANA",
+        "14.4 SUBSECRETARIA DE TRANSPORTE, PEDÁGIO E TERMINAIS",
+        "10.01.16.1 CRAS SÃO RAFAEL",
+        "10.01.18.1 CRAS VALLE VERDE",
+        "10.01.1.2 CRAS CRUZEIRO DO SUL",
+        "10.01.10.1 CASA DE ACOLHIDA",
+        "10.01.12.1 PROMAIP",
+        "10.01.3.1 CRAS YOLANDA OPICE",
+        "10.01.6.1 CRAS MARIA LUIZA",
+        "10.01.9.2 CENTRO POP",
+        "1.3 SUBSECRETARIA DE DEFESA CIVIL",
+        "1.1 CHEFIA DE GABINETE",
+        "10.01.13.3 RECANTO FELIZ",
+        "3.1 GABINETE DO SECRETARIO DE COMUNICAÇÃO",
+        "14.1 GABINETE DO SECRETARIO DO ASSUNTOS DE SEGURANÇA E MOBILIDADE URBANA",
+        "11.1 GABINETE DO SECRETARIO DE DIREITOS HUMANOS E CIDADANIA",
+        "17.4 SUBSECRETARIA DE BEM-ESTAR ANIMAL",
+        "18.3 SUBSECRETARIA DE OBRAS PARTICULARES",
+        "16.2 SUBSECRETARIA DE PROMOÇÃO DA AGRICULTURA",
+        "10.01.19 CENTRO DIA DO IDOSO",
+        "10.01.11.1 CREAS GIRASSOIS",
+        "10.01.2.1 CRAS SELMI DEY",
+        "10.01.4.1 CRAS CECAP",
+        "10.01.5.2 CRAS HORTENSIAS",
+        "10.01.7.1 CRAS PARQUE SAO PAULO",
+        "10.01.8.1 CRAS VALE DO SOL",
+        "SME 9.01.5.2.2 ALIMENTAÇÃO ESCOLAR",
+        "99.SMSP.1.1.4 GERENCIA DE CEMITERIOS",
+        "SMS.8.3.46 USF São Bento",
+        "SME 9.3.2.4.48 CER VALDIZAR PINTO DO CARMO - JD. IBIRAS",
+        "7.1 GABINETE DO SECRETÁRIO DE FAZENDA E PLANEJAMENTO",
+        "SME 9.03 CER JACOMINA FILIPPI SAMBIASI - UNIDADE II",
+        "SME 9.3.2.4 CER HELLE NICE PINTO PASSOS (JD SAO RAFAEL)",
+        "10.02 IGD - SUAS",
+        "10.04 PROGRAMAS - SEC. ASS. DESEN. SOCIAL",
+        "2.1.1 GABINETE DO SECRETARIO DE GOVERNO",
+        "99.SME.1.2 COORDENADORIA EXECUTIVA DE GESTÃO",
+        "99.SME.1.5.2 GERENCIA DE GESTAO ALIMENTAR",
+        "99.SME.1.5.1 GERENCIA DE GESTAO DE TRANSPORTE ESCOLAR",
+        "SME 9.01.3.4.2 ALMOXARIFADO DA EDUCACAO",
+        "99.SME.1.4.1 GERENCIA DE TECNOLOGIA EDUCACIONAL E INCLUSAO DIGITAL",
+        "99.CE AABB ASSOCIAÇÃO ATLETICA BANCO DO BRASIL",
+        "99.SMADM.1.3.4.1 ALMOXARIFADO CENTRAL"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP"
+         ]
+        },
+        {
+         "campo": "qual_o_tipo_de_acesso_voce_precisa_para_o_sicom",
+         "valores": [
+          "Acesso para rotinas administrativas (solicitação de compras/requisição de materiais)"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_para_qual_perfil_precisa_de_acesso_de_ag",
+       "label": "Informe para qual perfil precisa de acesso de Agente de Contratação",
+       "required": true,
+       "type": "radios",
+       "values": [
+        "Compras",
+        "Contratos",
+        "Licitações"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP"
+         ]
+        },
+        {
+         "campo": "qual_o_tipo_de_acesso_voce_precisa_para_o_sicom",
+         "valores": [
+          "Acesso para agentes de contratação"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "informe_em_qual_unidade_de_almoxarifado_voce_tra",
+       "label": "Informe em qual unidade de almoxarifado você trabalha",
+       "required": true,
+       "type": "text",
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "30. Sistema de Compras e Requisição de Materiais ao Almoxarifado-GIAP"
+         ]
+        },
+        {
+         "campo": "qual_o_tipo_de_acesso_voce_precisa_para_o_sicom",
+         "valores": [
+          "Acesso para servidores que trabalham em almoxarifado"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "34. Sistema PCD (Administrador)",
+     "perguntas": [
+      {
+       "name": "informe_quais_serao_as_atividades_realizadas_no",
+       "label": "Informe quais serão as atividades realizadas no sistema da PCD",
+       "required": true,
+       "type": "multipla",
+       "values": [
+        "Credenciamento e emissão de documentos presencialmente de usuários",
+        "Administração do transporte porta-a-porta",
+        "Auditoria médica"
+       ],
+       "visivelSe": [
+        {
+         "campo": "informe_para_qual_is_sistema_s_precisa_do_servic",
+         "valores": [
+          "34. Sistema PCD (Administrador)"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "nome": "Justificativa",
+     "perguntas": [
+      {
+       "name": "informe_detalhadamente_quais_sao_as_atualizacoes",
+       "label": "Informe detalhadamente quais são as atualizações a serem realizadas",
+       "required": true,
+       "type": "textarea",
+       "ajuda": "Atenção: Atualização de acessos não será realizada nos casos de TRANSFERÊNCIA DE SETOR.",
+       "visivelSe": [
+        {
+         "campo": "informe_o_tipo_de_servico_desejado",
+         "valores": [
+          "ATUALIZAÇÃO DE ACESSO JÁ EXISTENTE"
+         ]
+        }
+       ]
+      },
+      {
+       "name": "justifique_sua_solicitacao",
+       "label": "Justifique sua solicitação",
+       "required": true,
+       "type": "textarea",
+       "ajuda": "Justifique detalhadamente a necessidade do acesso ao(s) sistema(s) solicitado(s)."
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

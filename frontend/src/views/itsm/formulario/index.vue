@@ -164,6 +164,10 @@
             <el-col :span="12"
               ><el-form-item label="Ativo"><el-switch v-model="form.ativo" /></el-form-item
             ></el-col>
+            <el-col :span="12"
+              ><el-form-item label="Destaque no catálogo"
+                ><el-switch v-model="form.destaque" /></el-form-item
+            ></el-col>
           </el-row>
 
           <el-divider content-position="left">Perguntas</el-divider>
@@ -196,7 +200,7 @@
                 ><Icon icon="ep:delete"
               /></el-button>
               <el-input
-                v-if="p.type === 'select' || p.type === 'radios'"
+                v-if="p.type === 'select' || p.type === 'radios' || p.type === 'multipla'"
                 :model-value="(p.values || []).join('\n')"
                 class="w-full"
                 placeholder="Uma opção por linha"
@@ -303,6 +307,7 @@ const TIPOS = [
   { valor: 'date', rotulo: 'Data' },
   { valor: 'select', rotulo: 'Lista' },
   { valor: 'radios', rotulo: 'Opções' },
+  { valor: 'multipla', rotulo: 'Múltipla escolha' },
   { valor: 'regex', rotulo: 'Formato (regex)' },
   { valor: 'location', rotulo: 'Local' },
   { valor: 'usuario', rotulo: 'Usuário de rede (lista de pessoas)' }

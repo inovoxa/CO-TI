@@ -2447,66 +2447,42 @@
     },
     {
       "codigo": "4.2",
-      "nome": "Telefonia: celular e chip",
-      "descricao": "Solicitacao relacionada a celular institucional, linha movel ou chip SIM.",
+      "nome": "Telefonia: celular e chip corporativo",
+      "descricao": "Retirada, devolução, troca e manutenção de celular e chip corporativos, perda, furto ou roubo e bloqueio de linha.",
       "grupo": "Telefonia",
       "icon": "fas fa-phone-alt",
       "ticket": {
-        "type": 1,
+        "type": 2,
         "urgency": 2,
         "impact": 2
       },
       "secoes": [
         {
+          "nome": "Servidor responsável",
           "perguntas": [
             {
-              "label": "Nome do solicitante",
               "name": "nome_solicitante",
+              "label": "Nome do servidor",
               "type": "text",
               "required": true
             },
             {
-              "label": "Nome do local/unidade",
+              "name": "matricula",
+              "label": "Matrícula",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "setor",
+              "label": "Setor",
+              "type": "text",
+              "required": true
+            },
+            {
               "name": "local",
+              "label": "Nome do local/unidade",
               "type": "text",
               "required": true
-            },
-            {
-              "label": "CEP da unidade (8 digitos)",
-              "regex": "/^[0-9]{8}$/",
-              "name": "cep",
-              "type": "regex",
-              "required": true
-            },
-            {
-              "label": "Logradouro",
-              "name": "logradouro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Numero do endereco",
-              "name": "numero",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Bairro",
-              "name": "bairro",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Cidade",
-              "name": "cidade",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Telefone da unidade (pode deixar vazio)",
-              "name": "telefone",
-              "type": "text",
-              "required": false
             },
             {
               "label": "Celular para contato (com DDD)",
@@ -2516,57 +2492,63 @@
               "required": true
             },
             {
-              "label": "E-mail institucional para contato",
               "name": "email_unidade",
+              "label": "E-mail institucional para contato",
               "type": "email",
               "required": true
-            },
+            }
+          ]
+        },
+        {
+          "nome": "Solicitação",
+          "perguntas": [
             {
-              "label": "Setor",
-              "name": "setor",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Ramal com defeito",
-              "name": "ramal_defeito",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Em qual sala esta a linha/ramal?",
-              "name": "sala_linha_ramal",
-              "type": "text",
-              "required": true
-            },
-            {
-              "label": "Descricao detalhada do problema/solicitacao",
-              "name": "descricao_solicitacao",
-              "type": "textarea",
-              "required": true
-            },
-            {
-              "label": "Prioridade",
-              "values": [
-                "baixa",
-                "media",
-                "alta",
-                "muito_alta"
-              ],
-              "name": "prioridade",
+              "name": "tipo_solicitacao",
+              "label": "O que você precisa?",
               "type": "select",
-              "required": true
+              "required": true,
+              "values": [
+                "Retirada de celular e chip",
+                "Retirada só do celular",
+                "Retirada só do chip",
+                "Devolução de celular e/ou chip",
+                "Troca de aparelho",
+                "Manutenção ou defeito no aparelho",
+                "Troca ou segunda via do chip",
+                "Perda, furto ou roubo",
+                "Bloqueio ou desbloqueio de linha",
+                "Transferência para outro responsável",
+                "Outros"
+              ]
             },
             {
-              "label": "MAC do aparelho (se conhecido)",
-              "name": "mac_aparelho",
+              "name": "numero_linha",
+              "label": "Número da linha com DDD (se já tiver)",
               "type": "text",
               "required": false
+            },
+            {
+              "name": "imei_patrimonio",
+              "label": "IMEI ou patrimônio do aparelho (se houver)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "boletim_ocorrencia",
+              "label": "Número do boletim de ocorrência (em caso de furto ou roubo)",
+              "type": "text",
+              "required": false
+            },
+            {
+              "name": "descricao_solicitacao",
+              "label": "Descreva o pedido (motivo, defeito ou o que aconteceu)",
+              "type": "textarea",
+              "required": true
             }
-          ],
-          "nome": "Dados do chamado"
+          ]
         }
-      ]
+      ],
+      "titulo_modelo": "Celular corporativo: {tipo_solicitacao}"
     }
   ]
 }

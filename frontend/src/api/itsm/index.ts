@@ -358,9 +358,12 @@ export interface Pergunta {
     | 'regex'
     | 'location'
     | 'usuario'
+    | 'multipla'
   required: boolean
   values?: string[]
   regex?: string
+  ajuda?: string
+  visivelSe?: { campo: string; valores: string[] }[]
 }
 
 export interface Secao {
@@ -381,10 +384,12 @@ export interface FormularioCatalogo {
   icone?: string
   definicao: Definicao
   precisaAprovacao: boolean
+  destaque?: boolean
 }
 
 export interface Formulario {
   id?: number
+  destaque?: boolean
   codigo?: string
   nome: string
   descricao?: string

@@ -6,8 +6,8 @@
     label-position="top"
     :disabled="desabilitado"
   >
-    <template v-for="(s, i) in definicao.secoes" :key="i">
-      <div v-if="definicao.secoes.length > 1 || s.nome" class="secao">{{ s.nome }}</div>
+    <template v-for="(s, i) in secoesVisiveis" :key="i">
+      <div v-if="secoesVisiveis.length > 1 || s.nome" class="secao">{{ s.nome }}</div>
       <el-row :gutter="16">
         <el-col v-for="p in s.perguntas" :key="p.name" :md="larga(p) ? 24 : 12" :span="24">
           <el-form-item :label="p.label" :prop="p.name">
@@ -24,6 +24,25 @@
               class="w-full"
               clearable
               filterable
+            >
+              <el-option v-for="v in p.values" :key="v" :label="v" :value="v" />
+            </el-select>
+            <el-checkbox-group
+              v-else-if="p.type === 'multipla' && (p.values || []).length <= 8"
+              v-model="valores[p.name]"
+            >
+              <el-checkbox v-for="v in p.values" :key="v" :label="v" :value="v" />
+            </el-checkbox-group>
+            <el-select
+              v-else-if="p.type === 'multipla'"
+              v-model="valores[p.name]"
+              class="w-full"
+              clearable
+              collapse-tags
+              collapse-tags-tooltip
+              filterable
+              :max-collapse-tags="5"
+              multiple
             >
               <el-option v-for="v in p.values" :key="v" :label="v" :value="v" />
             </el-select>
@@ -49,6 +68,7 @@
               :placeholder="p.type === 'location' ? 'Local ou unidade' : undefined"
               maxlength="500"
             />
+            <div v-if="p.ajuda" class="ajuda">{{ p.ajuda }}</div>
           </el-form-item>
         </el-col>
       </el-row>
@@ -63,7 +83,7 @@ import LoginRedeSelect from './LoginRedeSelect.vue'
 
 /** Desenha e valida um formulário do catálogo (a validação final é do servidor). */
 const props = defineProps<{ definicao: Definicao; desabilitado?: boolean }>()
-const valores = defineModel<Record<string, string>>({ required: true })
+const valores = defineModel<Record<string, any>>({ required: true })
 const formRef = ref()
 
 const EMAIL = /^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$/
@@ -80,7 +100,28 @@ const expressao = (r?: string): RegExp | null => {
   }
 }
 
-const larga = (p: Pergunta) => p.type === 'textarea' || p.type === 'radios' || p.label.length > 60
+const larga = (p: Pergunta) =>
+  p.type === 'textarea' || p.type === 'radios' || p.type === 'multipla' || p.label.length > 60
+
+/** Mesma regra do servidor: a resposta de uma pergunta oculta não conta, e o que depende dela também some. */
+const secoesVisiveis = computed(() => {
+  const respondidas: Record<string, string[]> = {}
+  return props.definicao.secoes
+    .map((s) => ({
+      ...s,
+      perguntas: s.perguntas.filter((p) => {
+        const ok = (p.visivelSe || []).every((c) =>
+          (respondidas[c.campo] || []).some((r) => c.valores.includes(r))
+        )
+        if (ok) {
+          const v = valores.value[p.name]
+          respondidas[p.name] = Array.isArray(v) ? v : v ? [String(v)] : []
+        }
+        return ok
+      })
+    }))
+    .filter((s) => s.perguntas.length > 0)
+})
 
 const regras = computed(() => {
   const r: Record<string, FormItemRule[]> = {}
@@ -91,8 +132,13 @@ const regras = computed(() => {
         lista.push({
           required: true,
           message: 'Obrigatório',
+          ...(p.type === 'multipla' ? { type: 'array' as const } : {}),
           trigger:
-            p.type === 'select' || p.type === 'radios' || p.type === 'date' || p.type === 'usuario'
+            p.type === 'select' ||
+            p.type === 'radios' ||
+            p.type === 'date' ||
+            p.type === 'usuario' ||
+            p.type === 'multipla'
               ? 'change'
               : 'blur'
         })
@@ -136,6 +182,14 @@ defineExpose({ validar, limpar })
 </script>
 
 <style scoped>
+.ajuda {
+  width: 100%;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--el-text-color-secondary);
+}
+
 .secao {
   margin: 4px 0 12px;
   padding-bottom: 6px;

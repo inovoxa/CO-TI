@@ -89,6 +89,7 @@ public class FormularioService {
             AdminUserRespDTO u = pessoas.get(f.getAprovadorId());
             r.setAprovador(u == null ? null : u.getNickname());
             r.setAcaoAd(f.getAcaoAd());
+            r.setDestaque(f.getDestaque());
             r.setAtivo(f.getAtivo());
             r.setOrdem(f.getOrdem());
             return r;
@@ -147,7 +148,7 @@ public class FormularioService {
                 .aprovacao(req.getAprovacao()).aprovadorCampo("campo".equals(req.getAprovacao()) ? req.getAprovadorCampo() : null)
                 .aprovadorId("fixo".equals(req.getAprovacao()) ? req.getAprovadorId() : null)
                 .acaoAd(req.getAcaoAd() == null || req.getAcaoAd().isBlank() ? null : req.getAcaoAd())
-                .ativo(req.getAtivo()).ordem(req.getOrdem()).build();
+                .destaque(Boolean.TRUE.equals(req.getDestaque())).ativo(req.getAtivo()).ordem(req.getOrdem()).build();
         if (req.getId() == null) {
             formularioMapper.insert(f);
         } else {
@@ -188,8 +189,15 @@ public class FormularioService {
                     c.setIcone(f.getIcone());
                     c.setDefinicao(definicao(f));
                     c.setPrecisaAprovacao(!"nenhuma".equals(f.getAprovacao()));
+                    c.setDestaque(f.getDestaque());
                     return c;
                 }).toList();
+    }
+
+    /** O fluxo do WhatsApp não mostra formulário com condições ou múltipla escolha: esses ficam só no portal. */
+    public List<CatalogoVOs.FormularioCatalogo> catalogoDoFluxo() {
+        return catalogo().stream()
+                .filter(f -> f.getDefinicao().perguntas().stream().noneMatch(Formulario.Pergunta::soNoPortal)).toList();
     }
 
     /**
@@ -342,6 +350,7 @@ public class FormularioService {
                 s.setAprovacao(Optional.ofNullable(texto(m.get("aprovacao"))).orElse("nenhuma"));
                 s.setAprovadorCampo(texto(m.get("aprovador_campo")));
                 s.setAcaoAd(texto(m.get("acao_ad")));
+                s.setDestaque(Boolean.parseBoolean(texto(m.get("destaque"))));
                 s.setOrdem(m.get("ordem") != null ? inteiro(m.get("ordem"), ordem) : ordem);
                 s.setDefinicao(JsonUtils.parseObject(JsonUtils.toJsonString(Map.of("secoes", m.get("secoes"))),
                         Formulario.Definicao.class));

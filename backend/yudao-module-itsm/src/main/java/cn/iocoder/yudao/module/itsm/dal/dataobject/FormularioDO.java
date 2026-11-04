@@ -43,6 +43,8 @@ public class FormularioDO extends BaseDO {
     private Long aprovadorId;
     /** Criar | Reset | Reativar | Desativar | AcessoPasta | Transferir | CriarEmail */
     private String acaoAd;
+    /** Aparece com realce no catálogo */
+    private Boolean destaque;
     private Boolean ativo;
     private Integer ordem;
 

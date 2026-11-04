@@ -132,6 +132,10 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (23 formulários:
   usuários e acessos, informática, saúde e telefonia). O usuário pede em *Catálogo de serviços*; o pedido vira chamado
   e passa pelas *Regras* (atribuição, categoria, urgência, pedido de aprovação).
+- **Sistemas administrativos:** `exemplos/formulario-sistemas-administrativos.json` tem o formulário 5.1, de Araraquara:
+  importe só nesse órgão. Ele fica em destaque no catálogo, abre um único chamado com todos os sistemas escolhidos e não
+  aparece no chat, porque usa perguntas condicionais e múltipla escolha. Para converter outra exportação do GLPI 11, veja
+  `ferramentas/formularios/converter_glpi.js`.
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
   O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
 - **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,
