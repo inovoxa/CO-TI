@@ -152,4 +152,8 @@ public interface ErrorCodeConstants {
     ErrorCode TELEFONE_CELULAR_INVALIDO = new ErrorCode(1_101_011_004, "Celular inválido: use o DDD");
     ErrorCode TELEFONE_PLANILHA_INVALIDA = new ErrorCode(1_101_011_005, "Envie uma planilha .xlsx com a coluna Nome");
 
+    // ========== Estoque GTI 1-101-012-000 ==========
+    ErrorCode ESTOQUE_ITEM_NAO_EXISTE = new ErrorCode(1_101_012_000, "Item não encontrado no estoque");
+    ErrorCode ESTOQUE_INVALIDO = new ErrorCode(1_101_012_001, "{}");
+
 }

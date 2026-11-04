@@ -1,0 +1,337 @@
+{
+  "formularios": [
+    {
+      "codigo": "6.1",
+      "nome": "Iluminação e elétrica",
+      "descricao": "Lâmpada, tomada, disjuntor ou falta de energia. Risco imediato (fogo, choque, gás ou desabamento): saia do local e acione os Bombeiros (193) antes de abrir o pedido.",
+      "grupo": "Manutenção predial",
+      "categoria": "Iluminação e elétrica",
+      "icon": "ep:sunny",
+      "ticket": {
+        "type": 2,
+        "urgency": 3,
+        "impact": 3
+      },
+      "titulo_modelo": "Iluminação e elétrica: {problema} - {local}",
+      "ordem": 600,
+      "secoes": [
+        {
+          "nome": "Onde é o problema",
+          "perguntas": [
+            {
+              "name": "nome_solicitante",
+              "label": "Seu nome",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local",
+              "label": "Nome do local/unidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local_exato",
+              "label": "Sala, andar ou ponto de referência",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "celular_contato",
+              "label": "Celular para contato (com DDD)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            }
+          ]
+        },
+        {
+          "nome": "O que aconteceu",
+          "perguntas": [
+            {
+              "name": "problema",
+              "label": "O que você precisa?",
+              "type": "select",
+              "required": true,
+              "values": [
+                "Lâmpada queimada",
+                "Tomada ou interruptor com defeito",
+                "Disjuntor desarmando",
+                "Falta de energia no local",
+                "Fio exposto ou cheiro de queimado",
+                "Outros"
+              ]
+            },
+            {
+              "name": "risco",
+              "label": "Há risco para as pessoas ou o local está sem poder funcionar?",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "Não",
+                "Sim"
+              ]
+            },
+            {
+              "name": "descricao_solicitacao",
+              "label": "Descreva o pedido",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "6.2",
+      "nome": "Ar-condicionado",
+      "descricao": "Defeito, limpeza ou instalação de ar-condicionado. Risco imediato (fogo, choque, gás ou desabamento): saia do local e acione os Bombeiros (193) antes de abrir o pedido.",
+      "grupo": "Manutenção predial",
+      "categoria": "Ar-condicionado",
+      "icon": "ep:wind-power",
+      "ticket": {
+        "type": 2,
+        "urgency": 3,
+        "impact": 3
+      },
+      "titulo_modelo": "Ar-condicionado: {problema} - {local}",
+      "ordem": 601,
+      "secoes": [
+        {
+          "nome": "Onde é o problema",
+          "perguntas": [
+            {
+              "name": "nome_solicitante",
+              "label": "Seu nome",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local",
+              "label": "Nome do local/unidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local_exato",
+              "label": "Sala, andar ou ponto de referência",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "celular_contato",
+              "label": "Celular para contato (com DDD)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            }
+          ]
+        },
+        {
+          "nome": "O que aconteceu",
+          "perguntas": [
+            {
+              "name": "problema",
+              "label": "O que você precisa?",
+              "type": "select",
+              "required": true,
+              "values": [
+                "Não liga",
+                "Não gela",
+                "Vazando água",
+                "Barulho anormal",
+                "Limpeza ou manutenção preventiva",
+                "Instalação ou remoção",
+                "Outros"
+              ]
+            },
+            {
+              "name": "risco",
+              "label": "Há risco para as pessoas ou o local está sem poder funcionar?",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "Não",
+                "Sim"
+              ]
+            },
+            {
+              "name": "descricao_solicitacao",
+              "label": "Descreva o pedido",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "6.3",
+      "nome": "Extintores e segurança",
+      "descricao": "Extintor, sinalização, alarme, hidrante e saídas de emergência. Risco imediato (fogo, choque, gás ou desabamento): saia do local e acione os Bombeiros (193) antes de abrir o pedido.",
+      "grupo": "Manutenção predial",
+      "categoria": "Extintores e segurança",
+      "icon": "ep:warning",
+      "ticket": {
+        "type": 2,
+        "urgency": 3,
+        "impact": 3
+      },
+      "titulo_modelo": "Extintores e segurança: {problema} - {local}",
+      "ordem": 602,
+      "secoes": [
+        {
+          "nome": "Onde é o problema",
+          "perguntas": [
+            {
+              "name": "nome_solicitante",
+              "label": "Seu nome",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local",
+              "label": "Nome do local/unidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local_exato",
+              "label": "Sala, andar ou ponto de referência",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "celular_contato",
+              "label": "Celular para contato (com DDD)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            }
+          ]
+        },
+        {
+          "nome": "O que aconteceu",
+          "perguntas": [
+            {
+              "name": "problema",
+              "label": "O que você precisa?",
+              "type": "select",
+              "required": true,
+              "values": [
+                "Extintor vencido ou faltando",
+                "Extintor usado ou descarregado",
+                "Sinalização de emergência",
+                "Alarme de incêndio",
+                "Hidrante ou mangueira",
+                "Saída de emergência obstruída",
+                "Outros"
+              ]
+            },
+            {
+              "name": "risco",
+              "label": "Há risco para as pessoas ou o local está sem poder funcionar?",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "Não",
+                "Sim"
+              ]
+            },
+            {
+              "name": "descricao_solicitacao",
+              "label": "Descreva o pedido",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "6.4",
+      "nome": "Outros serviços prediais",
+      "descricao": "Hidráulica, porta, janela, telhado, pintura, limpeza, poda e o que não se encaixar nos outros. Risco imediato (fogo, choque, gás ou desabamento): saia do local e acione os Bombeiros (193) antes de abrir o pedido.",
+      "grupo": "Manutenção predial",
+      "categoria": "Outros serviços prediais",
+      "icon": "ep:office-building",
+      "ticket": {
+        "type": 2,
+        "urgency": 3,
+        "impact": 3
+      },
+      "titulo_modelo": "Outros serviços prediais: {problema} - {local}",
+      "ordem": 603,
+      "secoes": [
+        {
+          "nome": "Onde é o problema",
+          "perguntas": [
+            {
+              "name": "nome_solicitante",
+              "label": "Seu nome",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local",
+              "label": "Nome do local/unidade",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "local_exato",
+              "label": "Sala, andar ou ponto de referência",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "celular_contato",
+              "label": "Celular para contato (com DDD)",
+              "type": "regex",
+              "required": true,
+              "regex": "/^[0-9]{10,11}$/"
+            }
+          ]
+        },
+        {
+          "nome": "O que aconteceu",
+          "perguntas": [
+            {
+              "name": "problema",
+              "label": "O que você precisa?",
+              "type": "select",
+              "required": true,
+              "values": [
+                "Vazamento ou entupimento",
+                "Falta de água",
+                "Porta, fechadura ou janela",
+                "Telhado, infiltração ou mofo",
+                "Piso, parede ou pintura",
+                "Limpeza ou retirada de entulho",
+                "Poda ou jardinagem",
+                "Dedetização ou controle de pragas",
+                "Outros"
+              ]
+            },
+            {
+              "name": "risco",
+              "label": "Há risco para as pessoas ou o local está sem poder funcionar?",
+              "type": "radios",
+              "required": true,
+              "values": [
+                "Não",
+                "Sim"
+              ]
+            },
+            {
+              "name": "descricao_solicitacao",
+              "label": "Descreva o pedido",
+              "type": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

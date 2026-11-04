@@ -136,6 +136,13 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
   importe só nesse órgão. Ele fica em destaque no catálogo, abre um único chamado com todos os sistemas escolhidos e não
   aparece no chat, porque usa perguntas condicionais e múltipla escolha. Para converter outra exportação do GLPI 11, veja
   `ferramentas/formularios/converter_glpi.js`.
+- **Manutenção predial:** os formulários 6.1 a 6.4 (iluminação e elétrica, ar-condicionado, extintores e segurança,
+  outros serviços) entram sozinhos na atualização e abrem o chamado para a equipe *Manutenção predial*. Inclua as pessoas
+  nessa equipe em *Service Desk → Equipes*; até lá, ninguém é avisado.
+- **Estoque GTI** (menu próprio, para Service Desk e Gestão de TI): celulares, chips, HDs, monitores e outros, cada peça
+  com identificação, ou memórias e cabos só pela quantidade. Guarda compra, nota, valor e garantia do item novo e quem
+  usava o usado. A situação e o saldo só mudam por retirada, devolução, manutenção, retorno, entrada ou baixa, e tudo
+  fica no histórico do item. Item não se apaga: sai por baixa.
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
   O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
 - **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,
@@ -245,7 +252,7 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *Fluxo do catálogo* na caixa.
 
 - **Menu:**
-  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.2);
+  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.2 e 6.1–6.4);
   2. consultar meus chamados;
   3. tirar uma dúvida (FAQ);
   4. falar com um atendente.
