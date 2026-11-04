@@ -194,6 +194,12 @@ public class FormularioService {
                 }).toList();
     }
 
+    /** Os que o fluxo não mostra: ele avisa que existem e indica o portal. */
+    public List<CatalogoVOs.FormularioCatalogo> catalogoSoNoPortal() {
+        return catalogo().stream()
+                .filter(f -> f.getDefinicao().perguntas().stream().anyMatch(Formulario.Pergunta::soNoPortal)).toList();
+    }
+
     /** O fluxo do WhatsApp não mostra formulário com condições ou múltipla escolha: esses ficam só no portal. */
     public List<CatalogoVOs.FormularioCatalogo> catalogoDoFluxo() {
         return catalogo().stream()

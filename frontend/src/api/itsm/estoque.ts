@@ -39,6 +39,13 @@ export interface Movimento {
   pessoa?: string
   destino?: string
   motivo?: string
+  itemId?: number
+  item?: string
+  identificador?: string
+  linha?: string
+  patrimonio?: string
+  tipoItem?: string
+  chamadoId?: number
   registradoPor?: string
   quando: string
 }
@@ -67,6 +74,12 @@ export const movimentar = (data: {
   pessoa?: string
   destino?: string
   motivo?: string
+  chamadoId?: number
 }) => request.post({ url: '/itsm/estoque/movimentar', data })
+export const getDoChamado = (chamadoId: number): Promise<Movimento[]> =>
+  request.get({ url: '/itsm/estoque/do-chamado', params: { chamadoId } })
+export const getRelatorio = (params: any): Promise<Item[]> =>
+  request.get({ url: '/itsm/estoque/relatorio', params })
+export const exportar = (params: any) => request.download({ url: '/itsm/estoque/exportar', params })
 export const getHistorico = (itemId: number): Promise<Movimento[]> =>
   request.get({ url: '/itsm/estoque/historico', params: { itemId } })

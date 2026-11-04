@@ -320,6 +320,7 @@
         </el-descriptions>
 
         <ContatosUnidade v-if="chamado.deptId" class="mt-14px" :dept-id="chamado.deptId" />
+        <EstoqueDoChamado v-if="veEstoque" class="mt-14px" :chamado-id="chamado.id" />
 
         <div v-for="g in GRUPOS" :key="g.tipo" class="mt-14px">
           <div class="mb-6px flex items-center justify-between text-13px font-bold">
@@ -547,6 +548,7 @@
 <script lang="ts" setup>
 import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import ContatosUnidade from '../telefone/ContatosUnidade.vue'
+import EstoqueDoChamado from '../estoque/EstoqueDoChamado.vue'
 import { ElMessageBox } from 'element-plus'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as ItsmApi from '@/api/itsm'
@@ -809,6 +811,7 @@ const incluirAtor = async () => {
 
 // ---------- equipamentos (inventário) ----------
 const veInventario = checkPermi(['inventario:ativo:query'])
+const veEstoque = checkPermi(['itsm:estoque:query'])
 const podeEditar = checkPermi(['itsm:chamado:update'])
 const equip = reactive({
   lista: [] as InvApi.Ativo[],

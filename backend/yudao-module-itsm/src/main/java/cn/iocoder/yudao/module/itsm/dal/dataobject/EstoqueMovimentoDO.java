@@ -28,6 +28,8 @@ public class EstoqueMovimentoDO extends BaseDO {
     private String pessoa;
     private String destino;
     private String motivo;
+    /** Chamado que originou o movimento */
+    private Long chamadoId;
     /** Quem registrou */
     private Long userId;
     private LocalDateTime quando;

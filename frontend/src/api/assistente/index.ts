@@ -69,6 +69,7 @@ export const CONSULTAS: Record<string, string> = {
   buscar_base_conhecimento: 'Base de conhecimento',
   buscar_pessoas: 'Pessoas',
   buscar_contatos: 'Ramais e telefones',
+  buscar_estoque: 'Estoque GTI',
   status_links: 'Links',
   buscar_logs: 'Logs',
   contar_logs: 'Contagem de logs',

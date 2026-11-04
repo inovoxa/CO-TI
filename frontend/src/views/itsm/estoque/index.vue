@@ -54,7 +54,10 @@
         <el-option label="Usado" value="usado" />
       </el-select>
       <el-checkbox v-model="q.baixo" @change="buscar">Estoque baixo</el-checkbox>
+      <el-checkbox v-model="q.garantia" @change="buscar">Garantia vencendo (90 dias)</el-checkbox>
       <div class="flex-1"></div>
+      <el-button plain @click="baixarPlanilha"><Icon class="mr-4px" icon="ep:download" /> Excel</el-button>
+      <el-button plain @click="imprimirLista"><Icon class="mr-4px" icon="ep:printer" /> PDF</el-button>
       <el-button v-hasPermi="['itsm:estoque:update']" plain @click="abrirTipo">
         <Icon class="mr-4px" icon="ep:collection-tag" /> Novo tipo
       </el-button>
@@ -285,6 +288,9 @@
       <el-form-item :label="pedeMotivo ? 'Motivo' : 'Observação'" :required="pedeMotivo">
         <el-input v-model="mov.motivo" maxlength="500" type="textarea" />
       </el-form-item>
+      <el-form-item label="Número do chamado (opcional)">
+        <el-input-number v-model="mov.chamadoId" :controls="false" :min="1" class="!w-160px" />
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button :loading="salvando" type="primary" @click="confirmarMovimento"
@@ -294,7 +300,7 @@
     </template>
   </Dialog>
 
-  <Dialog v-model="hist.visivel" :title="`Histórico: ${hist.item?.descricao}`" width="760px">
+  <Dialog v-model="hist.visivel" :title="`Histórico: ${hist.item?.descricao}`" width="1040px">
     <el-table v-loading="hist.loading" :data="hist.lista">
       <el-table-column label="Quando" width="150">
         <template #default="{ row }">{{ dataHora(row.quando) }}</template>
@@ -309,7 +315,21 @@
         </template>
       </el-table-column>
       <el-table-column label="Motivo" min-width="160" prop="motivo" />
+      <el-table-column label="Chamado" width="95">
+        <template #default="{ row }">{{ row.chamadoId ? `#${row.chamadoId}` : '' }}</template>
+      </el-table-column>
       <el-table-column label="Registrado por" prop="registradoPor" width="130" />
+      <el-table-column fixed="right" label="" width="70">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.tipo === 'retirada' || row.tipo === 'devolucao'"
+            link
+            type="primary"
+            @click="imprimirTermo(row)"
+            >Termo</el-button
+          >
+        </template>
+      </el-table-column>
     </el-table>
   </Dialog>
 
@@ -337,7 +357,9 @@
 
 <script lang="ts" setup>
 import type { FormRules } from 'element-plus'
+import download from '@/utils/download'
 import * as Api from '@/api/itsm/estoque'
+import { imprimirHtml, termoHtml, relatorioHtml } from './impressao'
 
 /** Estoque da GTI: situação e saldo só mudam por movimento, que fica no histórico do item. */
 defineOptions({ name: 'ItsmEstoque' })
@@ -372,16 +394,25 @@ const q = reactive<any>({
   tipoId: undefined,
   situacao: undefined,
   condicao: undefined,
-  baixo: false
+  baixo: false,
+  garantia: false
 })
 
 const data = (d?: string) => (d ? d.split('-').reverse().join('/') : '')
 const dataHora = (d: any) => (d ? new Date(d).toLocaleString('pt-BR').slice(0, 17) : '')
 
+const filtros = () => {
+  const { garantia, ...resto } = q
+  return { ...resto, baixo: q.baixo || undefined, garantiaDias: garantia ? 90 : undefined }
+}
+const baixarPlanilha = async () => download.excel(await Api.exportar(filtros()), 'estoque-gti.xlsx')
+const imprimirLista = async () => imprimirHtml(relatorioHtml(await Api.getRelatorio(filtros())))
+const imprimirTermo = (m: Api.Movimento) => imprimirHtml(termoHtml(m))
+
 const carregar = async () => {
   loading.value = true
   try {
-    const r = await Api.getPagina({ ...q, baixo: q.baixo || undefined })
+    const r = await Api.getPagina(filtros())
     lista.value = r.list
     total.value = r.total
   } finally {
@@ -448,6 +479,7 @@ const mov = reactive<{
   pessoa: string
   destino: string
   motivo: string
+  chamadoId?: number
 }>({ visivel: false, tipo: 'retirada', quantidade: 1, pessoa: '', destino: '', motivo: '' })
 const pedePessoa = computed(
   () =>
@@ -462,7 +494,8 @@ const abrirMovimento = (i: Api.Item, tipoMov: string) => {
     quantidade: 1,
     pessoa: '',
     destino: '',
-    motivo: ''
+    motivo: '',
+    chamadoId: undefined
   })
 }
 const confirmarMovimento = async () => {
@@ -474,7 +507,8 @@ const confirmarMovimento = async () => {
       quantidade: mov.quantidade,
       pessoa: mov.pessoa,
       destino: mov.destino,
-      motivo: mov.motivo
+      motivo: mov.motivo,
+      chamadoId: mov.chamadoId
     })
     mov.visivel = false
     message.success('Movimento registrado')

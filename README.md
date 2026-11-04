@@ -142,7 +142,9 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Estoque GTI** (menu próprio, para Service Desk e Gestão de TI): celulares, chips, HDs, monitores e outros, cada peça
   com identificação, ou memórias e cabos só pela quantidade. Guarda compra, nota, valor e garantia do item novo e quem
   usava o usado. A situação e o saldo só mudam por retirada, devolução, manutenção, retorno, entrada ou baixa, e tudo
-  fica no histórico do item. Item não se apaga: sai por baixa.
+  fica no histórico do item. Item não se apaga: sai por baixa. O movimento pode ser ligado a um chamado, gera o termo de
+  responsabilidade para imprimir ou salvar em PDF e a lista sai em Excel e PDF. Retirada do 4.2 pede aprovação do gestor
+  (regra *Retirada de celular corporativo*); sem gestor no AD, o chamado abre com um aviso para pedir à mão.
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
   O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
 - **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,

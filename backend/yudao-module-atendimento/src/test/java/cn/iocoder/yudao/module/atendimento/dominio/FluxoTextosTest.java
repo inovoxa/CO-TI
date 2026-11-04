@@ -18,6 +18,13 @@ class FluxoTextosTest {
     private static final Formulario.Pergunta PROC = new Formulario.Pergunta("numero_processo", "Processo", "text", false, List.of(), null);
 
     @Test
+    void servicoSoDoPortal() {
+        assertEquals("", FluxoTextos.soNoPortal(List.of(), "https://ti.org"));
+        assertEquals("Pelo portal: https://ti.org/catalogo\n- 5.1 Login", FluxoTextos.soNoPortal(List.of("5.1 Login"), "https://ti.org/"));
+        assertEquals("Pelo portal (Catálogo de serviços)\n- 5.1 Login", FluxoTextos.soNoPortal(List.of("5.1 Login"), " "));
+    }
+
+    @Test
     void comandos() {
         assertEquals(FluxoTextos.Comando.MENU, FluxoTextos.comando(" Menu "));
         assertEquals(FluxoTextos.Comando.MENU, FluxoTextos.comando("0"));

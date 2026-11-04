@@ -2,16 +2,19 @@ package cn.iocoder.yudao.module.itsm.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.EstoqueVOs;
 import cn.iocoder.yudao.module.itsm.service.EstoqueService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -67,6 +70,27 @@ public class EstoqueController {
     public CommonResult<Boolean> movimentar(@Valid @RequestBody EstoqueVOs.MovimentarReq req) {
         estoqueService.movimentar(req, getLoginUserId());
         return success(true);
+    }
+
+    @GetMapping("/do-chamado")
+    @Operation(summary = "Movimentos ligados a um chamado")
+    @PreAuthorize("@ss.hasPermission('itsm:estoque:query')")
+    public CommonResult<List<EstoqueVOs.MovimentoResp>> doChamado(@RequestParam("chamadoId") Long chamadoId) {
+        return success(estoqueService.doChamado(chamadoId));
+    }
+
+    @GetMapping("/relatorio")
+    @Operation(summary = "Tudo o que o filtro alcança, para imprimir ou salvar em PDF")
+    @PreAuthorize("@ss.hasPermission('itsm:estoque:query')")
+    public CommonResult<List<EstoqueVOs.ItemResp>> relatorio(@Valid EstoqueVOs.PaginaReq req) {
+        return success(estoqueService.relatorio(req));
+    }
+
+    @GetMapping("/exportar")
+    @Operation(summary = "Planilha com tudo o que o filtro alcança")
+    @PreAuthorize("@ss.hasPermission('itsm:estoque:query')")
+    public void exportar(@Valid EstoqueVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "estoque-gti.xlsx", estoqueService.planilha(req));
     }
 
     @GetMapping("/historico")

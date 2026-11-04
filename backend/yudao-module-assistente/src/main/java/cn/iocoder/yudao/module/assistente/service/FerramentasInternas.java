@@ -30,6 +30,8 @@ import cn.iocoder.yudao.module.itsm.controller.admin.vo.KbVOs;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.TelefoneVOs;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import cn.iocoder.yudao.module.itsm.service.KbService;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.EstoqueVOs;
+import cn.iocoder.yudao.module.itsm.service.EstoqueService;
 import cn.iocoder.yudao.module.itsm.service.TelefoneService;
 import cn.iocoder.yudao.module.itsm.service.gov.LicencaService;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
@@ -111,6 +113,8 @@ public class FerramentasInternas {
     private PainelLogsService painelLogsService;
     @Resource
     private TelefoneService telefoneService;
+    @Resource
+    private EstoqueService estoqueService;
 
     /** Uma ferramenta: nome, o que faz, parâmetros (JSON Schema), permissões (qualquer uma serve; vazio = todos). */
     private record Ferramenta(String nome, String descricao, Map<String, Object> parametros, String[] permissoes,
@@ -231,6 +235,15 @@ public class FerramentasInternas {
                         p("so_emergencia", "boolean", "true para trazer só os contatos de emergência"),
                         p("limite", "integer", "Padrão 15, máximo 40")),
                 new String[]{"itsm:telefone:query"}, this::buscarContatos);
+        registrar("buscar_estoque", "Estoque da GTI: celulares, chips, memórias, HDs, monitores e outros itens guardados ou entregues,"
+                        + " com situação, saldo, com quem está e garantia. Use para saber o que há disponível ou quem está com um item.",
+                props(p("busca", "string", "Descrição, IMEI, linha, patrimônio ou nome de quem está com o item"),
+                        p("tipo", "string", "Nome (ou parte) do tipo, por exemplo Celular"),
+                        p("situacao", "string", "disponivel | em_uso | manutencao | baixado"),
+                        p("estoque_baixo", "boolean", "true para trazer só os itens no mínimo ou abaixo"),
+                        p("garantia_dias", "integer", "Só os com garantia terminando nestes dias"),
+                        p("limite", "integer", "Padrão 20, máximo 50")),
+                new String[]{"itsm:estoque:query"}, this::buscarEstoque);
         registrar("status_links", "Links e serviços monitorados no Centro de Operações: estado, latência e disponibilidade.",
                 props(p("filtro", "string", "todos (padrão) | down | lento | ou parte do nome"), p("limite", "integer", "Padrão 30, máximo 80")),
                 new String[]{"system:monitor-links:query"}, this::links);
@@ -829,6 +842,45 @@ public class FerramentasInternas {
     }
 
     /** Passa pelo serviço da lista, que já esconde o celular restrito de quem não pode vê-lo. */
+    private Object buscarEstoque(Contexto c) {
+        EstoqueVOs.PaginaReq req = new EstoqueVOs.PaginaReq();
+        req.setPageNo(1);
+        Integer limite = c.inteiro("limite");
+        req.setPageSize(Math.max(1, Math.min(50, limite == null ? 20 : limite)));
+        req.setBusca(c.texto("busca"));
+        req.setSituacao(c.texto("situacao"));
+        req.setBaixo(Boolean.parseBoolean(String.valueOf(c.args().get("estoque_baixo"))) ? Boolean.TRUE : null);
+        Integer dias = c.inteiro("garantia_dias");
+        req.setGarantiaDias(dias != null && dias > 0 ? Math.min(dias, 3650) : null);
+        String tipo = c.texto("tipo");
+        if (tipo != null) {
+            String q = semAcento(tipo);
+            List<EstoqueVOs.Tipo> achados = estoqueService.tipos().stream().filter(t -> semAcento(t.getNome()).contains(q)).toList();
+            if (achados.isEmpty()) {
+                return Map.of("itens", List.of(), "aviso", "tipo não encontrado: " + tipo);
+            }
+            req.setTipoId(achados.get(0).getId());
+        }
+        var pagina = estoqueService.pagina(req);
+        return Map.of("total", pagina.getTotal(), "itens", pagina.getList().stream().map(i -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("tipo", i.getTipo());
+            m.put("descricao", i.getDescricao());
+            m.put("condicao", i.getCondicao());
+            m.put("situacao", i.getSituacao());
+            m.put("saldo", i.getQuantidade());
+            m.put("estoque_baixo", i.getBaixo());
+            m.put("identificador", i.getIdentificador());
+            m.put("linha", i.getLinha());
+            m.put("patrimonio", i.getPatrimonio());
+            m.put("com_quem_esta", i.getResponsavel());
+            m.put("destino", i.getDestino());
+            m.put("usado_por", i.getUsadoPor());
+            m.put("garantia_ate", i.getGarantiaAte() == null ? null : i.getGarantiaAte().toString());
+            return m;
+        }).toList());
+    }
+
     private Object buscarContatos(Contexto c) {
         String busca = c.texto("busca"), unidade = c.texto("unidade");
         boolean soEmergencia = Boolean.parseBoolean(String.valueOf(c.args().get("so_emergencia")));

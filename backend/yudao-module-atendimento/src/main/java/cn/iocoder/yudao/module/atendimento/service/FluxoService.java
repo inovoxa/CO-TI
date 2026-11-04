@@ -315,6 +315,11 @@ public class FluxoService {
             s.append("\n").append(i + 1).append(") ").append(grupos.get(i));
         }
         s.append("\n\nOu digite o código do serviço (ex.: 2.1).");
+        String portal = FluxoTextos.soNoPortal(formularioService.catalogoSoNoPortal().stream()
+                .map(f -> f.getCodigo() + " " + f.getNome()).toList(), props.getUrlPublica());
+        if (!portal.isEmpty()) {
+            s.append("\n\n").append(portal);
+        }
         e.etapa = "GRUPOS";
         e.saidas.add(s.toString());
     }
@@ -378,6 +383,22 @@ public class FluxoService {
             }
         }
         if (f == null) {
+            // pode ser um serviço que só o portal atende: melhor indicar o caminho do que dizer que não entendeu
+            List<CatalogoVOs.FormularioCatalogo> portal = formularioService.catalogoSoNoPortal();
+            List<Map.Entry<CatalogoVOs.FormularioCatalogo, Double>> notas = Relevancia.pontuar(t, portal.stream()
+                    .map(x -> new Relevancia.Candidato<>(x, x.getNome(), x.getGrupo() + " " + (x.getDescricao() == null ? "" : x.getDescricao())))
+                    .toList());
+            String codigo = FluxoTextos.codigo(t);
+            Optional<CatalogoVOs.FormularioCatalogo> achado = portal.stream().filter(x -> x.getCodigo() != null && x.getCodigo().equals(codigo)).findFirst();
+            if (achado.isEmpty() && !notas.isEmpty() && notas.get(0).getValue() > 0) {
+                achado = Optional.of(notas.get(0).getKey());
+            }
+            if (achado.isPresent()) {
+                e.etapa = "MENU";
+                e.saidas.add(FluxoTextos.soNoPortal(List.of(achado.get().getCodigo() + " " + achado.get().getNome()), props.getUrlPublica())
+                        + "\n\nPosso ajudar com mais alguma coisa?\n\n" + FluxoTextos.MENU);
+                return;
+            }
             e.etapa = "MENU";
             e.saidas.add("Não entendi bem. Escolha uma opção:\n\n" + FluxoTextos.MENU);
             return;

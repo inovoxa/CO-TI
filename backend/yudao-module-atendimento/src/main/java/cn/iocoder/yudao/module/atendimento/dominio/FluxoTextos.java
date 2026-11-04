@@ -61,6 +61,16 @@ public final class FluxoTextos {
     }
 
     /** Código de serviço do catálogo ("2.1", "2.11"), se a mensagem for só isso. */
+    /** Serviços que só o portal atende: o chat não trata perguntas condicionais nem múltipla escolha. */
+    public static String soNoPortal(List<String> servicos, String urlPublica) {
+        if (servicos.isEmpty()) {
+            return "";
+        }
+        String base = urlPublica == null ? "" : urlPublica.trim().replaceAll("/+$", "");
+        return "Pelo portal" + (base.isEmpty() ? " (Catálogo de serviços)" : ": " + base + "/catalogo") + "\n"
+                + servicos.stream().map(s -> "- " + s).collect(java.util.stream.Collectors.joining("\n"));
+    }
+
     public static String codigo(String texto) {
         String t = texto == null ? "" : texto.strip();
         return t.matches("\\d{1,2}\\.\\d{1,2}") ? t : null;

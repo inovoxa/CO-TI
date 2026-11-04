@@ -37,6 +37,10 @@ public final class EstoqueVOs {
         private String condicao;
         /** Só os que estão no mínimo ou abaixo */
         private Boolean baixo;
+        /** Só os com garantia terminando nestes dias (a contar de hoje) */
+        @Min(1)
+        @Max(3650)
+        private Integer garantiaDias;
     }
 
     @Data
@@ -120,11 +124,20 @@ public final class EstoqueVOs {
         private String destino;
         @Size(max = 500)
         private String motivo;
+        private Long chamadoId;
     }
 
     @Data
     public static class MovimentoResp {
         private Long id;
+        private Long itemId;
+        /** Dados do item, para o termo e para a lista do chamado */
+        private String item;
+        private String identificador;
+        private String linha;
+        private String patrimonio;
+        private String tipoItem;
+        private Long chamadoId;
         private String tipo;
         private Integer quantidade;
         private String pessoa;

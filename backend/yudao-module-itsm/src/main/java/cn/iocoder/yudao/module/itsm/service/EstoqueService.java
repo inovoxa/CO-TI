@@ -1,11 +1,13 @@
 package cn.iocoder.yudao.module.itsm.service;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.EstoqueVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.EstoqueItemDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.EstoqueMovimentoDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.EstoqueTipoDO;
+import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.dal.mysql.EstoqueMappers;
 import cn.iocoder.yudao.module.itsm.dominio.Estoque;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
@@ -16,6 +18,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -39,6 +42,8 @@ public class EstoqueService {
     private EstoqueMappers.Movimento movimentoMapper;
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private ChamadoMapper chamadoMapper;
 
     // ------------------------------------------------------------------ tipos
 
@@ -78,6 +83,37 @@ public class EstoqueService {
     // ------------------------------------------------------------------ itens
 
     public PageResult<EstoqueVOs.ItemResp> pagina(EstoqueVOs.PaginaReq req) {
+        PageResult<EstoqueItemDO> p = itemMapper.selectPage(req, filtro(req));
+        Map<Long, EstoqueTipoDO> tipos = mapaTipos();
+        return new PageResult<>(p.getList().stream().map(i -> converter(i, tipos)).toList(), p.getTotal());
+    }
+
+    /** Tudo o que o filtro alcança, para o relatório. */
+    public List<EstoqueVOs.ItemResp> relatorio(EstoqueVOs.PaginaReq req) {
+        Map<Long, EstoqueTipoDO> tipos = mapaTipos();
+        return itemMapper.selectList(filtro(req)).stream().map(i -> converter(i, tipos)).toList();
+    }
+
+    public List<Planilha.Aba> planilha(EstoqueVOs.PaginaReq req) {
+        List<List<Object>> linhas = relatorio(req).stream().<List<Object>>map(i -> Arrays.asList(i.getTipo(), i.getDescricao(),
+                i.getIdentificador(), i.getLinha(), i.getPatrimonio(), "novo".equals(i.getCondicao()) ? "Novo" : "Usado",
+                rotuloSituacao(i.getSituacao()), i.getQuantidade(), i.getResponsavel(), i.getDestino(), i.getDataCompra(),
+                i.getFornecedor(), i.getNotaFiscal(), i.getValor(), i.getGarantiaAte(), i.getUsadoPor(), i.getObservacao())).toList();
+        return List.of(new Planilha.Aba("Estoque", List.of("Tipo", "Descrição", "IMEI/ICCID/Série", "Linha", "Patrimônio", "Condição",
+                "Situação", "Quantidade", "Com quem está", "Setor/Unidade", "Compra", "Fornecedor", "Nota fiscal", "Valor (R$)",
+                "Garantia até", "Usado por", "Observação"), linhas));
+    }
+
+    private static String rotuloSituacao(String s) {
+        return switch (s) {
+            case Estoque.DISPONIVEL -> "Disponível";
+            case Estoque.EM_USO -> "Em uso";
+            case Estoque.MANUTENCAO -> "Em manutenção";
+            default -> "Baixado";
+        };
+    }
+
+    private LambdaQueryWrapperX<EstoqueItemDO> filtro(EstoqueVOs.PaginaReq req) {
         LambdaQueryWrapperX<EstoqueItemDO> q = new LambdaQueryWrapperX<EstoqueItemDO>()
                 .eqIfPresent(EstoqueItemDO::getTipoId, req.getTipoId())
                 .eqIfPresent(EstoqueItemDO::getSituacao, vazioNulo(req.getSituacao()))
@@ -92,10 +128,11 @@ public class EstoqueService {
             q.gt(EstoqueItemDO::getMinimo, 0).ne(EstoqueItemDO::getSituacao, Estoque.BAIXADO)
                     .apply("quantidade <= minimo");
         }
-        q.orderByDesc(EstoqueItemDO::getId);
-        PageResult<EstoqueItemDO> p = itemMapper.selectPage(req, q);
-        Map<Long, EstoqueTipoDO> tipos = mapaTipos();
-        return new PageResult<>(p.getList().stream().map(i -> converter(i, tipos)).toList(), p.getTotal());
+        if (req.getGarantiaDias() != null) {
+            q.between(EstoqueItemDO::getGarantiaAte, LocalDate.now(), LocalDate.now().plusDays(req.getGarantiaDias()))
+                    .ne(EstoqueItemDO::getSituacao, Estoque.BAIXADO);
+        }
+        return q.orderByDesc(EstoqueItemDO::getId);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -127,7 +164,7 @@ public class EstoqueService {
             i.setQuantidade(saldo);
             itemMapper.insert(i);
             if (saldo > 0) {
-                registrar(i.getId(), Estoque.ENTRADA, saldo, null, null, novo ? "Cadastro: item novo" : "Cadastro: item usado", userId);
+                registrar(i.getId(), Estoque.ENTRADA, saldo, null, null, novo ? "Cadastro: item novo" : "Cadastro: item usado", userId, null);
             }
             return i.getId();
         } catch (DuplicateKeyException e) {
@@ -142,6 +179,9 @@ public class EstoqueService {
         EstoqueItemDO i = itemMapper.selectByIdParaAtualizar(req.getItemId());
         if (i == null) {
             throw exception(ESTOQUE_ITEM_NAO_EXISTE);
+        }
+        if (req.getChamadoId() != null && chamadoMapper.selectById(req.getChamadoId()) == null) {
+            throw exception(ESTOQUE_INVALIDO, "Chamado não encontrado");
         }
         String controle = obterTipo(i.getTipoId()).getControle();
         String pessoa = vazioNulo(req.getPessoa());
@@ -166,19 +206,44 @@ public class EstoqueService {
             }
         }
         itemMapper.update(null, u);
-        registrar(i.getId(), movimento, req.getQuantidade(), quem, vazioNulo(req.getDestino()), vazioNulo(req.getMotivo()), userId);
+        registrar(i.getId(), movimento, req.getQuantidade(), quem, vazioNulo(req.getDestino()), vazioNulo(req.getMotivo()), userId,
+                req.getChamadoId());
+    }
+
+    /** Movimentos ligados a um chamado. */
+    public List<EstoqueVOs.MovimentoResp> doChamado(Long chamadoId) {
+        return converterMovimentos(movimentoMapper.selectList(new LambdaQueryWrapperX<EstoqueMovimentoDO>()
+                .eq(EstoqueMovimentoDO::getChamadoId, chamadoId)
+                .orderByDesc(EstoqueMovimentoDO::getQuando).orderByDesc(EstoqueMovimentoDO::getId)));
     }
 
     public List<EstoqueVOs.MovimentoResp> historico(Long itemId) {
         obterItem(itemId);
-        List<EstoqueMovimentoDO> l = movimentoMapper.selectList(new LambdaQueryWrapperX<EstoqueMovimentoDO>()
+        return converterMovimentos(movimentoMapper.selectList(new LambdaQueryWrapperX<EstoqueMovimentoDO>()
                 .eq(EstoqueMovimentoDO::getItemId, itemId)
-                .orderByDesc(EstoqueMovimentoDO::getQuando).orderByDesc(EstoqueMovimentoDO::getId));
+                .orderByDesc(EstoqueMovimentoDO::getQuando).orderByDesc(EstoqueMovimentoDO::getId)));
+    }
+
+    private List<EstoqueVOs.MovimentoResp> converterMovimentos(List<EstoqueMovimentoDO> l) {
+        Map<Long, EstoqueItemDO> itens = l.isEmpty() ? Map.of() : itemMapper.selectByIds(l.stream().map(EstoqueMovimentoDO::getItemId)
+                .collect(Collectors.toSet())).stream().collect(Collectors.toMap(EstoqueItemDO::getId, Function.identity()));
+        Map<Long, EstoqueTipoDO> tipos = mapaTipos();
         Map<Long, AdminUserRespDTO> pessoas = adminUserApi.getUserMap(l.stream().map(EstoqueMovimentoDO::getUserId)
                 .filter(Objects::nonNull).collect(Collectors.toSet()));
         return l.stream().map(m -> {
             EstoqueVOs.MovimentoResp r = new EstoqueVOs.MovimentoResp();
             r.setId(m.getId());
+            r.setItemId(m.getItemId());
+            r.setChamadoId(m.getChamadoId());
+            EstoqueItemDO i = itens.get(m.getItemId());
+            if (i != null) {
+                r.setItem(i.getDescricao());
+                r.setIdentificador(i.getIdentificador());
+                r.setLinha(i.getLinha());
+                r.setPatrimonio(i.getPatrimonio());
+                EstoqueTipoDO t = tipos.get(i.getTipoId());
+                r.setTipoItem(t == null ? null : t.getNome());
+            }
             r.setTipo(m.getTipo());
             r.setQuantidade(m.getQuantidade());
             r.setPessoa(m.getPessoa());
@@ -221,9 +286,10 @@ public class EstoqueService {
 
     // ------------------------------------------------------------------ internos
 
-    private void registrar(Long itemId, String tipo, int quantidade, String pessoa, String destino, String motivo, Long userId) {
+    private void registrar(Long itemId, String tipo, int quantidade, String pessoa, String destino, String motivo, Long userId,
+                           Long chamadoId) {
         movimentoMapper.insert(EstoqueMovimentoDO.builder().itemId(itemId).tipo(tipo).quantidade(quantidade).pessoa(pessoa)
-                .destino(destino).motivo(motivo).userId(userId).quando(LocalDateTime.now()).build());
+                .destino(destino).motivo(motivo).chamadoId(chamadoId).userId(userId).quando(LocalDateTime.now()).build());
     }
 
     private EstoqueTipoDO obterTipo(Long id) {
