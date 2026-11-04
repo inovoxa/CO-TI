@@ -24,6 +24,7 @@
         <module>yudao-module-assistente</module>
         <module>yudao-module-logs</module>
         <module>yudao-module-cofre</module>
+        <module>yudao-module-chat</module>
     </modules>
 
     <name>${project.artifactId}</name>

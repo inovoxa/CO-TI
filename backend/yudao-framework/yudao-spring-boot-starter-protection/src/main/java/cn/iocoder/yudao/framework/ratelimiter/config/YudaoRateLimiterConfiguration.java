@@ -33,6 +33,11 @@ public class YudaoRateLimiterConfiguration {
     }
 
     @Bean
+    public cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.PessoaRateLimiterKeyResolver pessoaRateLimiterKeyResolver() {
+        return new cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.PessoaRateLimiterKeyResolver();
+    }
+
+    @Bean
     public UserRateLimiterKeyResolver userRateLimiterKeyResolver() {
         return new UserRateLimiterKeyResolver();
     }

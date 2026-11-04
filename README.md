@@ -620,6 +620,22 @@ Testes do módulo de identidade (servidor LDAP em memória com a forma de um AD)
 cd backend && mvn test -pl yudao-module-identidade
 ```
 
+## Chat interno
+
+Menu *Chat* e botão no cabeçalho, com o contador de não lidas. Todo servidor com login pode conversar com outro e criar
+grupos. Quem cria é o administrador do grupo, e quem entra depois só vê as mensagens a partir daí.
+
+- **Recursos:** conversas diretas e grupos, não lidas, quem está online, respostas, @menções em grupos, edição, busca nas
+  conversas da pessoa, anexos de até 25 MB e aviso no navegador.
+- **Entrega:** cada mensagem é gravada antes de ser avisada e tem um número sequencial. Ao reconectar, a tela busca o que
+  faltou, e reenviar não duplica.
+- **Privacidade:** não há criptografia de ponta a ponta, e quem administra o servidor consegue ler o banco. Mensagem apagada ou
+  editada some da tela, mas o texto anterior fica guardado para apuração. Nada é apagado automaticamente; defina a retenção
+  com o jurídico e o encarregado da LGPD do órgão.
+- **Anexos:** só imagens, PDF, Office, texto e ZIP; o conteúdo precisa combinar com a extensão, e só quem participa da conversa
+  baixa. Ficam em `arquivos/chat`, no mesmo volume dos anexos, e entram no backup.
+- **Mais de um backend:** use `CO_TI_WS_SENDER=redis`.
+
 ## Licença
 
 O núcleo é GPLv3 (`LICENSE`). O código de terceiros e as partes portadas estão listados em `NOTICE`. Para as atualizações do RuoYi e do frontend, veja `UPSTREAM.md`.
