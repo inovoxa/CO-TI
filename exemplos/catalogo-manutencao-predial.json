@@ -13,7 +13,7 @@
         "impact": 3
       },
       "titulo_modelo": "Iluminação e elétrica: {problema} - {local}",
-      "ordem": 600,
+      "ordem": 1100,
       "secoes": [
         {
           "nome": "Onde é o problema",
@@ -95,7 +95,7 @@
         "impact": 3
       },
       "titulo_modelo": "Ar-condicionado: {problema} - {local}",
-      "ordem": 601,
+      "ordem": 1101,
       "secoes": [
         {
           "nome": "Onde é o problema",
@@ -178,7 +178,7 @@
         "impact": 3
       },
       "titulo_modelo": "Extintores e segurança: {problema} - {local}",
-      "ordem": 602,
+      "ordem": 1102,
       "secoes": [
         {
           "nome": "Onde é o problema",
@@ -261,7 +261,7 @@
         "impact": 3
       },
       "titulo_modelo": "Outros serviços prediais: {problema} - {local}",
-      "ordem": 603,
+      "ordem": 1103,
       "secoes": [
         {
           "nome": "Onde é o problema",
