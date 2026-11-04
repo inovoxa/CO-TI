@@ -16,5 +16,6 @@ COPY nginx/default.conf.template /etc/nginx/templates/
 COPY --chmod=755 nginx/40-certificado.sh /docker-entrypoint.d/
 # só a porta do HTTPS entra no modelo; $host, $uri etc. ficam para o nginx
 ENV NGINX_ENVSUBST_FILTER=^CO_TI_ CO_TI_HTTPS_PORT=443
-RUN rm -f /etc/nginx/conf.d/default.conf
+# o log padrão grava o endereço completo, com tokens; vale só o formato de default.conf.template
+RUN rm -f /etc/nginx/conf.d/default.conf && sed -i '/access_log/d' /etc/nginx/nginx.conf
 EXPOSE 80 443

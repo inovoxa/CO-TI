@@ -9,6 +9,8 @@ import LockDialog from './components/LockDialog.vue'
 import LockPage from './components/LockPage.vue'
 import { useLockStore } from '@/store/modules/lock'
 import { checkPermi } from '@/utils/permission'
+import { fecharMonitorSocket } from '@/hooks/web/useMonitorSocket'
+import { encerrarChat } from '@/views/chat/useChat'
 
 defineOptions({ name: 'UserInfo' })
 
@@ -42,6 +44,9 @@ const loginOut = async () => {
       cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
+    // antes de sair: a conexão em tempo real é da pessoa que está saindo
+    encerrarChat()
+    fecharMonitorSocket()
     await userStore.loginOut()
     tagsViewStore.delAllViews()
     replace('/login?redirect=/index')

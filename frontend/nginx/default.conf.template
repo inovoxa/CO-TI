@@ -2,6 +2,14 @@
 # Modelo do nginx: na subida do contêiner, ${CO_TI_HTTPS_PORT} vira a porta pública do HTTPS (docker-compose.yml).
 
 # HTTP: só os agentes e o push do monitoramento; o resto vai para o HTTPS
+# Tokens vão no endereço em alguns pedidos (WebSocket e renovação de sessão) e não podem ficar no log.
+map $request $pedido_sem_token {
+    default $request;
+    "~^(?<antes>.*[?&](?:token|accessToken|refreshToken)=)[^& ]*(?<depois>.*)$" "${antes}***${depois}";
+}
+log_format coti '$remote_addr - $remote_user [$time_local] "$pedido_sem_token" $status $body_bytes_sent "$http_referer" "$http_user_agent"';
+access_log /var/log/nginx/access.log coti;
+
 server {
     listen 80;
     server_name _;
