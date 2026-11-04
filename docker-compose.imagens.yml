@@ -1,0 +1,169 @@
+# CO-TI no servidor do órgão, com imagens prontas: o servidor não recebe o repositório nem acesso ao GitHub.
+# As imagens vêm de deploy/imagens/gerar-imagens.sh, por registro privado ou por arquivo (docker load).
+# No Coolify, use o card "Docker Compose" (sem Git). Fora dele: docker compose -f docker-compose.imagens.yml up -d
+# Não ponha domínio no serviço frontend: ele faz o próprio HTTPS e o HTTP dele redireciona, o que daria loop atrás do proxy.
+# Acesso: https://ENDERECO:${CO_TI_HTTPS_PORT}. Para atualizar, troque CO_TI_VERSAO. Variáveis: veja .env.example.
+#
+# É o docker-compose.coolify.yml com image no lugar de build; ao mudar variáveis ou serviços em um arquivo, mude nos outros.
+
+
+services:
+  postgres:
+    # PostgreSQL 16 com TimescaleDB e pgvector na mesma imagem (banco único do CO-TI)
+    image: ${CO_TI_REGISTRO:-ghcr.io/inovoxa}/co-ti-postgres:${CO_TI_VERSAO:?defina CO_TI_VERSAO}
+    environment:
+      POSTGRES_DB: coti
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      PGTZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      POSTGRES_USER: coti
+      POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD}
+      CO_TI_DB_APP_PASSWORD: ${CO_TI_DB_APP_PASSWORD:?defina CO_TI_DB_APP_PASSWORD}
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coti -d coti"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--requirepass", "${CO_TI_REDIS_PASSWORD:?defina CO_TI_REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+    restart: unless-stopped
+
+  backend:
+    image: ${CO_TI_REGISTRO:-ghcr.io/inovoxa}/co-ti-backend:${CO_TI_VERSAO:?defina CO_TI_VERSAO}
+    environment:
+      # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=${CO_TI_FUSO:-America/Sao_Paulo}
+      CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
+      # a aplicação conecta como coti_app (só DML); o Flyway usa o dono (coti)
+      CO_TI_DB_USER: coti_app
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_APP_PASSWORD}
+      CO_TI_FLYWAY_USER: coti
+      CO_TI_FLYWAY_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_REDIS_HOST: redis
+      CO_TI_REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+      CO_TI_ADMIN_MONITOR_PASSWORD: ${CO_TI_ADMIN_MONITOR_PASSWORD:?defina CO_TI_ADMIN_MONITOR_PASSWORD}
+      CO_TI_CAPTCHA: ${CO_TI_CAPTCHA:-true}
+      CO_TI_ADMIN_SENHA_INICIAL: ${CO_TI_ADMIN_SENHA_INICIAL:-}
+      CO_TI_CHAVE_MESTRA: ${CO_TI_CHAVE_MESTRA:?defina CO_TI_CHAVE_MESTRA (openssl rand -base64 32)}
+      CO_TI_MFA_EMISSOR: ${CO_TI_MFA_EMISSOR:-CO-TI}
+      CO_TI_COFRE_EXIGIR_MFA: ${CO_TI_COFRE_EXIGIR_MFA:-true}
+      CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
+      CO_TI_AD_URL: ${CO_TI_AD_URL:-}
+      CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}
+      CO_TI_AD_BIND_SENHA: ${CO_TI_AD_BIND_SENHA:-}
+      CO_TI_AD_BASE_USUARIOS: ${CO_TI_AD_BASE_USUARIOS:-}
+      CO_TI_AD_GRUPO_APROVADORES: ${CO_TI_AD_GRUPO_APROVADORES:-}
+      CO_TI_AD_EXECUCAO: ${CO_TI_AD_EXECUCAO:-desligado}
+      CO_TI_AD_SSH_HOST: ${CO_TI_AD_SSH_HOST:-}
+      CO_TI_AD_SSH_PORTA: ${CO_TI_AD_SSH_PORTA:-22}
+      CO_TI_AD_SSH_USUARIO: ${CO_TI_AD_SSH_USUARIO:-}
+      CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
+      CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
+      CO_TI_URL_PUBLICA: ${CO_TI_URL_PUBLICA:-}
+      # só em teste: apontam os canais para simuladores (padrão = APIs oficiais)
+      CO_TI_META_GRAPH_URL: ${CO_TI_META_GRAPH_URL:-https://graph.facebook.com/v23.0}
+      CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
+      CO_TI_TELEGRAM_URL: ${CO_TI_TELEGRAM_URL:-https://api.telegram.org}
+      CO_TI_VIACEP_URL: ${CO_TI_VIACEP_URL-https://viacep.com.br/ws}
+      # inventário: redes de onde os agentes podem mandar e senha HTTP Basic opcional
+      CO_TI_INVENTARIO_REDES: ${CO_TI_INVENTARIO_REDES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}
+      CO_TI_INVENTARIO_USUARIO: ${CO_TI_INVENTARIO_USUARIO:-}
+      CO_TI_INVENTARIO_SENHA: ${CO_TI_INVENTARIO_SENHA:-}
+      CO_TI_INVENTARIO_IPDISCOVER: ${CO_TI_INVENTARIO_IPDISCOVER:-true}
+      CO_TI_INVENTARIO_IPDISCOVER_REDES: ${CO_TI_INVENTARIO_IPDISCOVER_REDES:-}
+      CO_TI_INVENTARIO_SNMP_MS: ${CO_TI_INVENTARIO_SNMP_MS:-21600000}
+      # monitoramento: retenção e busca de endereço das unidades (vazio = desligado, para rede sem internet)
+      CO_TI_MONITORAMENTO_RETENCAO_DIAS: ${CO_TI_MONITORAMENTO_RETENCAO_DIAS:-31}
+      CO_TI_GEOCODIFICACAO_URL: ${CO_TI_GEOCODIFICACAO_URL-https://nominatim.openstreetmap.org/search}
+      CO_TI_GEOCODIFICACAO_CONTATO: ${CO_TI_GEOCODIFICACAO_CONTATO:-}
+      # retenção dos registros técnicos (dias; 0 = guardar para sempre), rotinas em paralelo e custo do hash de senha
+      CO_TI_RETENCAO_LOG_OPERACOES_DIAS: ${CO_TI_RETENCAO_LOG_OPERACOES_DIAS:-730}
+      CO_TI_RETENCAO_LOG_ACESSO_DIAS: ${CO_TI_RETENCAO_LOG_ACESSO_DIAS:-365}
+      CO_TI_RETENCAO_LOG_API_DIAS: ${CO_TI_RETENCAO_LOG_API_DIAS:-30}
+      CO_TI_RETENCAO_LOG_ERROS_DIAS: ${CO_TI_RETENCAO_LOG_ERROS_DIAS:-90}
+      CO_TI_AGENDADOR_THREADS: ${CO_TI_AGENDADOR_THREADS:-8}
+      CO_TI_BCRYPT_CUSTO: ${CO_TI_BCRYPT_CUSTO:-12}
+      CO_TI_WS_SENDER: ${CO_TI_WS_SENDER:-local}
+      CO_TI_LOGS_RECEPCAO: ${CO_TI_LOGS_RECEPCAO:-true}
+      CO_TI_LOGS_PERMITIDOS: ${CO_TI_LOGS_PERMITIDOS:-}
+      CO_TI_LOGS_RETENCAO_DIAS: ${CO_TI_LOGS_RETENCAO_DIAS:-30}
+      CO_TI_SYSLOG_PORTA: ${CO_TI_SYSLOG_PORTA:-514}
+      CO_TI_GELF_PORTA: ${CO_TI_GELF_PORTA:-12201}
+      # importação do GLPI: copie a pasta files/ do GLPI para o volume importacao (só leitura no contêiner)
+      CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
+    ports:
+      # logs: Syslog (FortiGate, servidores, NXLog) e GELF (Windows via NXLog/Winlogbeat)
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/udp"
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/tcp"
+      - "${CO_TI_GELF_PORTA:-12201}:12201/udp"
+    volumes:
+      - backendlogs:/app/logs
+      - arquivos:/app/arquivos
+      - segredos:/run/segredos:ro
+      - importacao:/importacao:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  frontend:
+    image: ${CO_TI_REGISTRO:-ghcr.io/inovoxa}/co-ti-frontend:${CO_TI_VERSAO:?defina CO_TI_VERSAO}
+    environment:
+      CO_TI_HTTPS_PORT: ${CO_TI_HTTPS_PORT:-8443}   # porta pública do HTTPS (o HTTP redireciona para ela)
+      CO_TI_TLS_NOMES: ${CO_TI_TLS_NOMES:-}          # nomes/IPs do certificado autoassinado
+    ports:
+      - "${CO_TI_HTTP_PORT:-8081}:80"
+      - "${CO_TI_HTTPS_PORT:-8443}:443"
+    volumes:
+      # cert.pem (com a cadeia) e key.pem da empresa; vazio = autoassinado gerado na primeira subida
+      - tls:/etc/nginx/tls
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # backup diário do banco e dos anexos no volume backups (copie para fora do servidor).
+  backup:
+    image: ${CO_TI_REGISTRO:-ghcr.io/inovoxa}/co-ti-postgres:${CO_TI_VERSAO:?defina CO_TI_VERSAO}
+    entrypoint: ["bash", "/backup/backup.sh"]
+    user: root
+    environment:
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_BACKUP_HORA: ${CO_TI_BACKUP_HORA:-02:30}
+      CO_TI_BACKUP_DIAS: ${CO_TI_BACKUP_DIAS:-14}
+    volumes:
+      - backups:/backups
+      - arquivos:/arquivos
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  arquivos:
+  pgdata:
+  redisdata:
+  backendlogs:
+  backups:
+  segredos:
+  importacao:
+  tls:
+
+# Rede interna dos containers. Fora de 172.16.0.0/12 e de 10.0.0.0/8, que a rede da Prefeitura usa: se a faixa
+# colidir, o monitoramento não alcança as unidades daquela faixa (o ping morre dentro do Docker).
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${CO_TI_REDE_DOCKER:-192.168.240.0/24}

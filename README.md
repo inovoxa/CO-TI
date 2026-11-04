@@ -26,6 +26,29 @@ Depois abra `https://<servidor>:8443` (a porta de `CO_TI_HTTPS_PORT`) e entre co
 
 Serviços: `postgres` (PostgreSQL 16, TimescaleDB e pgvector), `redis`, `backend`, `frontend` (nginx, que publica o portal, a API `/admin-api` e o WebSocket `/infra/ws` na mesma origem) e `backup`.
 
+### Instalar no servidor do órgão, com imagens prontas
+
+Cada órgão tem a própria instalação. Com `docker-compose.imagens.yml`, o servidor recebe só as imagens: nem o
+repositório nem acesso ao GitHub.
+
+```bash
+# na sua máquina, com o commit da versão feito
+deploy/imagens/gerar-imagens.sh --versao 1.0.0 --publicar       # registro privado (docker login antes), ou
+deploy/imagens/gerar-imagens.sh --versao 1.0.0 --exportar saida # arquivo para levar ao servidor
+
+# no servidor, com docker-compose.imagens.yml e o .env na mesma pasta
+docker load -i co-ti-1.0.0.tar.gz                               # só se veio por arquivo
+docker compose -f docker-compose.imagens.yml --env-file .env up -d
+```
+
+No `.env`, além das variáveis de sempre, defina `CO_TI_VERSAO` e, se usar outro registro, `CO_TI_REGISTRO`. Para
+atualizar, gere uma versão nova, troque `CO_TI_VERSAO` e rode o `up -d` de novo.
+
+- **Backups e certificados:** ficam nos volumes `backups` e `tls`, não em pastas do servidor.
+- **Credencial do registro:** use uma conta só de leitura, porque quem administra o servidor consegue vê-la.
+- **Código-fonte:** entregar as imagens ao órgão é distribuir o software. Pela GPLv3, o código correspondente tem de
+  ser oferecido a ele. O commit de cada versão está no rótulo `org.opencontainers.image.revision` das imagens.
+
 ### HTTPS
 
 O portal só abre por HTTPS (TLS 1.2 e 1.3); o HTTP (`CO_TI_HTTP_PORT`) redireciona, menos os caminhos dos agentes de
