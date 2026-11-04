@@ -277,8 +277,12 @@ public class ChamadoService {
         CategoriaDO categoria = c.getCategoriaId() == null ? null : cadastros.obterCategoria(c.getCategoriaId());
         // atribuição pela categoria (GLPI: técnico/grupo responsável da categoria) quando ninguém foi escolhido
         if (categoria != null && tecnicos.isEmpty() && equipes.isEmpty()) {
-            Optional.ofNullable(categoria.getTecnicoId()).ifPresent(tecnicos::add);
-            Optional.ofNullable(categoria.getEquipeId()).ifPresent(equipes::add);
+            // sem responsável próprio, vale o da categoria acima (a área do catálogo)
+            for (CategoriaDO cat = categoria; cat != null && tecnicos.isEmpty() && equipes.isEmpty();
+                 cat = cat.getParentId() == null || cat.getParentId() == 0 ? null : cadastros.obterCategoria(cat.getParentId())) {
+                Optional.ofNullable(cat.getTecnicoId()).ifPresent(tecnicos::add);
+                Optional.ofNullable(cat.getEquipeId()).ifPresent(equipes::add);
+            }
         }
         CicloChamado.abrir(c, agora, !tecnicos.isEmpty() || !equipes.isEmpty());
         slaService.aplicarNaAbertura(c);

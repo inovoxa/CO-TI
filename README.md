@@ -145,6 +145,10 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
   fica no histórico do item. Item não se apaga: sai por baixa. O movimento pode ser ligado a um chamado, gera o termo de
   responsabilidade para imprimir ou salvar em PDF e a lista sai em Excel e PDF. Retirada do 4.2 pede aprovação do gestor
   (regra *Retirada de celular corporativo*); sem gestor no AD, o chamado abre com um aviso para pedir à mão.
+- **Técnico por área:** o perfil *Técnico* só vê os chamados atribuídos a ele, às equipes de que faz parte ou registrados
+  por ele, em todas as telas, no painel, no Excel e no assistente. Cada área do catálogo tem uma equipe; inclua os técnicos
+  em *Service Desk → Equipes*. Quem precisa ver tudo, como a triagem, usa um perfil com a permissão *Ver chamados de todas as
+  equipes* (os perfis que já existiam a receberam). Chamado sem equipe, como o aberto sem categoria, fica com esses perfis.
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
   O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
 - **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,
