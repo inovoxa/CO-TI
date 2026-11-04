@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -43,6 +45,8 @@ public class SinoChamadoService {
             Map.entry("reaberto", "reaberto"), Map.entry("solucao-recusada", "reaberto"),
             Map.entry("pendente", "pendente"), Map.entry("aprovacao-solicitada", "aprovacao"),
             Map.entry("aprovado", "aprovado"), Map.entry("recusado", "recusado"), Map.entry("escalonado", "escalonado"));
+
+    private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @Resource
     private ChamadoMapper chamadoMapper;
@@ -86,6 +90,10 @@ public class SinoChamadoService {
         if (e.userId() != null) {
             destinos.remove(e.userId());
         }
+        enviar(c, modelo, destinos, Map.of());
+    }
+
+    private void enviar(ChamadoDO c, String modelo, Map<Long, String> destinos, Map<String, Object> extras) {
         if (destinos.isEmpty()) {
             return;
         }
@@ -101,6 +109,7 @@ public class SinoChamadoService {
             params.put("chamado", c.getId());
             params.put("titulo", titulo);
             params.put("papel", papel);
+            params.putAll(extras);
             notifySendService.sendSingleNotifyToAdmin(id, "coti_chamado_" + modelo, params);
             try {
                 webSocketSenderApi.sendObject(UserTypeEnum.ADMIN.getValue(), id, "sino", Map.of("chamado", c.getId()));
@@ -109,6 +118,13 @@ public class SinoChamadoService {
                 log.warn("[avisar][tempo real para {}: {}]", id, ex.getMessage());
             }
         });
+    }
+
+    /** Prazo perto de vencer: para os técnicos e as equipes do chamado. */
+    public void avisarSla(ChamadoDO c, String modelo, LocalDateTime prazo) {
+        Map<Long, String> d = new LinkedHashMap<>();
+        tecnicos(chamadoAtorMapper.selectList(ChamadoAtorDO::getChamadoId, c.getId()), d);
+        enviar(c, modelo, d, Map.of("hora", prazo.format(HORA)));
     }
 
     /** Pessoa → papel, que define para onde o aviso leva. Técnico prevalece, para abrir a visão completa. */

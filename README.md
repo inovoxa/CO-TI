@@ -620,6 +620,13 @@ Testes do módulo de identidade (servidor LDAP em memória com a forma de um AD)
 cd backend && mvn test -pl yudao-module-identidade
 ```
 
+## Sino
+
+Avisa no portal, sem depender de e-mail: chamado novo, atribuído, andamento, solução, fechado, reaberto, pendente, escalonado,
+aprovação pendente, aprovado e recusado. Andamento privado só vai para os técnicos. Os técnicos e as equipes do chamado
+também recebem um aviso quando o prazo de SLA entra na última hora (`coti.itsm.sla-aviso-minutos`, padrão 60), uma vez por
+prazo; chamado já vencido na atualização não gera aviso.
+
 ## Chat interno
 
 Menu *Chat* e botão no cabeçalho, com o contador de não lidas. Todo servidor com login pode conversar com outro e criar
