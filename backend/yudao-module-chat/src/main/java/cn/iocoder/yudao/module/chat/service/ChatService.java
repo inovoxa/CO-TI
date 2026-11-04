@@ -57,6 +57,8 @@ public class ChatService {
     @Resource
     private ChatMappers.Anexo chatAnexoMapper;
     @Resource
+    private ChatMappers.Ausencia chatAusenciaMapper;
+    @Resource
     private AdminUserMapper adminUserMapper;
     @Resource
     private DeptApi deptApi;
@@ -121,6 +123,63 @@ public class ChatService {
             log.warn("[online][{}]", e.getMessage());
             return Set.of();
         }
+    }
+
+    // ------------------------------------------------------------------ resposta automática
+
+    public ChatVOs.Ausencia ausencia(Long userId) {
+        ChatAusenciaDO a = chatAusenciaMapper.selectOne(ChatAusenciaDO::getUserId, userId);
+        ChatVOs.Ausencia r = new ChatVOs.Ausencia();
+        r.setAtiva(a != null && Boolean.TRUE.equals(a.getAtiva()));
+        if (a != null) {
+            r.setMensagem(a.getMensagem());
+            r.setInicio(a.getInicio());
+            r.setFim(a.getFim());
+        }
+        return r;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void salvarAusencia(ChatVOs.Ausencia req, Long userId) {
+        String mensagem = req.getMensagem() == null ? "" : req.getMensagem().strip();
+        if (Boolean.TRUE.equals(req.getAtiva()) && mensagem.isEmpty()) {
+            throw exception(MENSAGEM_INVALIDA, "Escreva a mensagem da resposta automática");
+        }
+        if (req.getInicio() != null && req.getFim() != null && req.getFim().isBefore(req.getInicio())) {
+            throw exception(MENSAGEM_INVALIDA, "A data final vem antes da inicial");
+        }
+        ChatAusenciaDO a = chatAusenciaMapper.selectOne(ChatAusenciaDO::getUserId, userId);
+        ChatAusenciaDO novo = ChatAusenciaDO.builder().userId(userId).ativa(req.getAtiva()).mensagem(mensagem)
+                .inicio(req.getInicio()).fim(req.getFim()).build();
+        if (a == null) {
+            chatAusenciaMapper.insert(novo);
+        } else {
+            novo.setId(a.getId());
+            chatAusenciaMapper.updateById(novo);
+        }
+    }
+
+    /**
+     * Só em conversa direta, e no máximo uma vez a cada 24 h por conversa, para não encher a conversa de quem manda várias
+     * mensagens. Resposta automática não dispara outra: dois ausentes não ficam se respondendo.
+     */
+    private void responderAusente(ChatConversaDO c, Long remetente) {
+        if (!ChatConversaDO.DIRETA.equals(c.getTipo())) {
+            return;
+        }
+        Long outro = membrosIds(c.getId()).stream().filter(u -> !u.equals(remetente)).findFirst().orElse(null);
+        ChatAusenciaDO a = outro == null ? null : chatAusenciaMapper.selectOne(ChatAusenciaDO::getUserId, outro);
+        if (a == null || !ChatRegras.ausenciaVale(a.getAtiva(), a.getInicio(), a.getFim(), LocalDate.now())) {
+            return;
+        }
+        boolean recente = chatMensagemMapper.selectCount(new LambdaQueryWrapperX<ChatMensagemDO>().eq(ChatMensagemDO::getConversaId, c.getId())
+                .eq(ChatMensagemDO::getRemetenteId, outro).eq(ChatMensagemDO::getTipo, ChatMensagemDO.AUTO)
+                .gt(ChatMensagemDO::getCreateTime, LocalDateTime.now().minusHours(24))) > 0;
+        if (recente) {
+            return;
+        }
+        ChatMensagemDO m = gravar(c, outro, ChatMensagemDO.AUTO, a.getMensagem(), null, List.of(), null);
+        eventos.publishEvent(new ChatTempoReal.Evento("chat-mensagem", converterMensagens(List.of(m)).get(0), membrosIds(c.getId())));
     }
 
     // ------------------------------------------------------------------ conversas
@@ -297,6 +356,7 @@ public class ChatService {
         chatParticipanteMapper.marcarLida(c.getId(), userId, m.getSeq());
         ChatVOs.MensagemResp resp = converterMensagens(List.of(m)).get(0);
         eventos.publishEvent(new ChatTempoReal.Evento("chat-mensagem", resp, membros));
+        responderAusente(c, userId);
         return resp;
     }
 
@@ -539,6 +599,10 @@ public class ChatService {
         Set<Long> pessoas = todos.stream().map(ChatParticipanteDO::getUserId).collect(Collectors.toSet());
         Map<Long, AdminUserDO> us = usuarios(pessoas);
         Set<Long> online = online(pessoas);
+        Map<Long, ChatAusenciaDO> ausencias = chatAusenciaMapper.selectList(new LambdaQueryWrapperX<ChatAusenciaDO>()
+                        .in(ChatAusenciaDO::getUserId, pessoas).eq(ChatAusenciaDO::getAtiva, true)).stream()
+                .filter(a -> ChatRegras.ausenciaVale(a.getAtiva(), a.getInicio(), a.getFim(), LocalDate.now()))
+                .collect(Collectors.toMap(ChatAusenciaDO::getUserId, Function.identity()));
         return cs.stream().map(c -> {
             ChatVOs.ConversaResp r = new ChatVOs.ConversaResp();
             ChatParticipanteDO eu = minhas.get(c.getId());
@@ -560,6 +624,9 @@ public class ChatService {
                     r.setNome(u == null ? "Pessoa removida" : u.getNickname());
                     r.setAvatar(u == null ? null : u.getAvatar());
                     r.setOnline(online.contains(o.getUserId()));
+                    ChatAusenciaDO aus = ausencias.get(o.getUserId());
+                    r.setAusente(aus != null);
+                    r.setAusenteAte(aus == null ? null : aus.getFim());
                 });
             }
             ChatMensagemDO ult = ultimas.get(c.getId());

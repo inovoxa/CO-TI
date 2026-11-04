@@ -23,6 +23,8 @@ export interface Conversa {
   avatar?: string
   outroId?: number
   online?: boolean
+  ausente?: boolean
+  ausenteAte?: string
   papel: 'admin' | 'membro'
   naoLidas: number
   ultimaSeq: number
@@ -47,7 +49,7 @@ export interface Mensagem {
   remetenteId: number
   remetente: string
   avatar?: string
-  tipo: 'texto' | 'sistema'
+  tipo: 'texto' | 'sistema' | 'auto'
   conteudo?: string
   apagada: boolean
   editada: boolean
@@ -58,6 +60,13 @@ export interface Mensagem {
   criadaEm: number
 }
 
+export interface Ausencia {
+  ativa: boolean
+  mensagem?: string
+  inicio?: string
+  fim?: string
+}
+
 export interface Achado {
   mensagem: Mensagem
   conversa: string
@@ -65,6 +74,8 @@ export interface Achado {
 
 export const getPessoas = (busca: string): Promise<Pessoa[]> =>
   request.get({ url: '/chat/pessoas', params: { busca } })
+export const getAusencia = (): Promise<Ausencia> => request.get({ url: '/chat/ausencia' })
+export const salvarAusencia = (data: Ausencia) => request.post({ url: '/chat/ausencia', data })
 export const presenca = () => request.post({ url: '/chat/presenca' })
 export const getConversas = (): Promise<Conversa[]> => request.get({ url: '/chat/conversas' })
 export const getConversa = (id: number): Promise<Conversa> =>

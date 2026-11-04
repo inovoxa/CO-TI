@@ -84,6 +84,11 @@ public final class ChatRegras {
         return true;
     }
 
+    /** A resposta automática vale de hoje em diante dentro do período; datas vazias não limitam. */
+    public static boolean ausenciaVale(Boolean ativa, java.time.LocalDate inicio, java.time.LocalDate fim, java.time.LocalDate hoje) {
+        return Boolean.TRUE.equals(ativa) && (inicio == null || !hoje.isBefore(inicio)) && (fim == null || !hoje.isAfter(fim));
+    }
+
     /** Lista gravada na coluna de menções. */
     public static String juntar(Iterable<Long> ids) {
         StringBuilder s = new StringBuilder();

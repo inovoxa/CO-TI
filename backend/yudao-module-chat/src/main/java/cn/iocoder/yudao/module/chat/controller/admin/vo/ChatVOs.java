@@ -82,6 +82,18 @@ public final class ChatVOs {
     }
 
     @Data
+    public static class Ausencia {
+        @NotNull
+        private Boolean ativa;
+        @Size(max = 500, message = "A mensagem pode ter até 500 caracteres")
+        private String mensagem;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
+        private java.time.LocalDate inicio;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
+        private java.time.LocalDate fim;
+    }
+
+    @Data
     public static class Pessoa {
         private Long id;
         private String nome;
@@ -108,6 +120,10 @@ public final class ChatVOs {
         /** Na conversa direta, a outra pessoa */
         private Long outroId;
         private Boolean online;
+        /** Na conversa direta: a outra pessoa está com a resposta automática valendo */
+        private Boolean ausente;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
+        private java.time.LocalDate ausenteAte;
         private String papel;
         private Long naoLidas;
         private Long ultimaSeq;

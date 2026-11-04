@@ -51,6 +51,21 @@ public class ChatController {
         return success(true);
     }
 
+    @GetMapping("/ausencia")
+    @Operation(summary = "Minha resposta automática")
+    @PreAuthorize(USAR)
+    public CommonResult<ChatVOs.Ausencia> ausencia() {
+        return success(chatService.ausencia(getLoginUserId()));
+    }
+
+    @PostMapping("/ausencia")
+    @Operation(summary = "Liga, desliga ou altera a resposta automática")
+    @PreAuthorize(USAR)
+    public CommonResult<Boolean> salvarAusencia(@Valid @RequestBody ChatVOs.Ausencia req) {
+        chatService.salvarAusencia(req, getLoginUserId());
+        return success(true);
+    }
+
     @GetMapping("/conversas")
     @Operation(summary = "Minhas conversas, da mais recente para a mais antiga")
     @PreAuthorize(USAR)

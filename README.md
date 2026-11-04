@@ -636,6 +636,12 @@ grupos. Quem cria é o administrador do grupo, e quem entra depois só vê as me
   baixa. Ficam em `arquivos/chat`, no mesmo volume dos anexos, e entram no backup.
 - **Mais de um backend:** use `CO_TI_WS_SENDER=redis`.
 
+## Acesso rápido
+
+Menu *Acesso rápido* e opção no menu da foto de perfil. Links do órgão, que todos veem e o administrador cadastra, e links
+pessoais, até 10 por pessoa, que só o dono vê. Para delegar os links públicos, inclua *Gerenciar links públicos* em outro perfil.
+Só endereços http e https são aceitos, inclusive de sistemas internos; os links abrem em outra aba.
+
 ## Licença
 
 O núcleo é GPLv3 (`LICENSE`). O código de terceiros e as partes portadas estão listados em `NOTICE`. Para as atualizações do RuoYi e do frontend, veja `UPSTREAM.md`.

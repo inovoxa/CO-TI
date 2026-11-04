@@ -4,7 +4,7 @@
     <el-card shadow="never" class="boas-vindas">
       <div class="bv">
         <el-avatar :src="avatar" :size="56">
-          <img src="@/assets/imgs/avatar.gif" alt="" />
+          <img src="@/assets/imgs/avatar-padrao.svg" alt="" />
         </el-avatar>
         <div class="bv__texto">
           <h2>{{ saudacao }}, {{ username }}</h2>

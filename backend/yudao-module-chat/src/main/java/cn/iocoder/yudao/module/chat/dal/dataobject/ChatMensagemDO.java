@@ -20,6 +20,7 @@ public class ChatMensagemDO extends BaseDO {
 
     public static final String TEXTO = "texto";
     public static final String SISTEMA = "sistema";
+    public static final String AUTO = "auto";
 
     @TableId
     private Long id;

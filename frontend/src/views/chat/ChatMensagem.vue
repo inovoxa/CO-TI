@@ -3,7 +3,8 @@
   <div v-else class="linha" :class="{ minha }" :data-seq="m.seq">
     <el-avatar v-if="!minha" :size="30" :src="m.avatar">{{ inicial }}</el-avatar>
     <div class="balao" :class="{ falhou: m.falhou }">
-      <div v-if="!minha && grupo" class="autor">{{ m.remetente }}</div>
+      <div v-if="m.tipo === 'auto'" class="automatica"><Icon class="mr-2px" icon="ep:timer" />Resposta automática</div>
+      <div v-else-if="!minha && grupo" class="autor">{{ m.remetente }}</div>
       <div v-if="m.resposta" class="citacao">
         <b>{{ m.resposta.remetente }}</b>
         <div>{{ m.resposta.trecho }}</div>
@@ -39,7 +40,7 @@
         </template>
       </div>
     </div>
-    <el-dropdown v-if="!m.apagada && !m.enviando && !m.falhou" class="acoes" trigger="click" @command="(c: string) => $emit(c as any, m)">
+    <el-dropdown v-if="m.tipo === 'texto' && !m.apagada && !m.enviando && !m.falhou" class="acoes" trigger="click" @command="(c: string) => $emit(c as any, m)">
       <el-button link><Icon icon="ep:more-filled" /></el-button>
       <template #dropdown>
         <el-dropdown-menu>
@@ -131,6 +132,12 @@ const baixar = async (a: Api.Anexo) => {
 
 .balao.falhou {
   outline: 1px solid var(--el-color-danger);
+}
+
+.automatica {
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .autor {

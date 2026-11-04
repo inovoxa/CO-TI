@@ -47,6 +47,10 @@ public final class ChatMappers {
     }
 
     @Mapper
+    public interface Ausencia extends BaseMapperX<ChatAusenciaDO> {
+    }
+
+    @Mapper
     public interface Historico extends BaseMapperX<ChatMensagemHistoricoDO> {
     }
 

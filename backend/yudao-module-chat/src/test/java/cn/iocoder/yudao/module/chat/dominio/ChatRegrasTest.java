@@ -51,6 +51,17 @@ class ChatRegrasTest {
     }
 
     @Test
+    void ausenciaRespeitaOPeriodo() {
+        java.time.LocalDate hoje = java.time.LocalDate.of(2026, 11, 4);
+        assertTrue(ChatRegras.ausenciaVale(true, null, null, hoje));
+        assertTrue(ChatRegras.ausenciaVale(true, hoje, hoje, hoje));
+        assertFalse(ChatRegras.ausenciaVale(false, null, null, hoje));
+        assertFalse(ChatRegras.ausenciaVale(true, hoje.plusDays(1), null, hoje));
+        assertFalse(ChatRegras.ausenciaVale(true, null, hoje.minusDays(1), hoje));
+        assertFalse(ChatRegras.ausenciaVale(null, null, null, hoje));
+    }
+
+    @Test
     void mencoesIdaEVolta() {
         assertEquals("1,2", ChatRegras.juntar(List.of(1L, 2L)));
         assertNull(ChatRegras.juntar(List.of()));

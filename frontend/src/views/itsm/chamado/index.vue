@@ -212,6 +212,11 @@ onMounted(async () => {
   const id = Number(route.query.id)
   if (id) detalheRef.value.open(id)
 })
+// a tela fica em cache entre as abas: o aviso do sino também precisa abrir o chamado
+watch(
+  () => route.query.id,
+  (v) => v && route.path.endsWith('/chamados') && detalheRef.value?.open(Number(v))
+)
 </script>
 
 <style scoped>

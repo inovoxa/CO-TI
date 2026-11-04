@@ -56,7 +56,12 @@
           <div class="min-w-0">
             <div class="font-bold">{{ atual.nome }}</div>
             <div class="text-12px text-[var(--el-text-color-secondary)]">
-              <template v-if="atual.tipo === 'direta'">{{ atual.online ? 'Online' : 'Fora do chat' }}</template>
+              <template v-if="atual.tipo === 'direta'">
+                {{ atual.online ? 'Online' : 'Fora do chat' }}
+                <el-tag v-if="atual.ausente" class="ml-4px" size="small" type="warning">
+                  Ausente{{ atual.ausenteAte ? ` até ${dataBr(atual.ausenteAte)}` : '' }}
+                </el-tag>
+              </template>
               <template v-else>{{ atual.membros?.length }} pessoas</template>
             </div>
           </div>
@@ -104,6 +109,15 @@
             <el-upload :auto-upload="false" :disabled="!!editando" :on-change="aoEscolherArquivo" :show-file-list="false" multiple>
               <el-button :disabled="!!editando" :loading="subindo" title="Anexar"><Icon icon="ep:paperclip" /></el-button>
             </el-upload>
+            <ChatEmojis @escolher="inserirEmoji" />
+            <el-button
+              :type="ausencia.dados.ativa ? 'warning' : undefined"
+              :plain="ausencia.dados.ativa"
+              title="Resposta automática (férias ou ausência)"
+              @click="abrirAusencia"
+            >
+              <Icon icon="ep:timer" />
+            </el-button>
             <el-input
               ref="campo"
               v-model="texto"
@@ -142,6 +156,38 @@
       </el-scrollbar>
       <template v-if="nova.tipo === 'grupo'" #footer>
         <el-button :disabled="!nova.nome.trim() || !nova.escolhidos.length" type="primary" @click="criarGrupo">Criar grupo</el-button>
+      </template>
+    </Dialog>
+
+    <Dialog v-model="ausencia.visivel" title="Resposta automática" width="480px">
+      <el-form label-position="top">
+        <el-form-item label="Responder automaticamente">
+          <el-switch v-model="ausencia.dados.ativa" />
+        </el-form-item>
+        <el-form-item label="Mensagem">
+          <el-input
+            v-model="ausencia.dados.mensagem"
+            maxlength="500"
+            placeholder="Ex.: Estou de férias até 20/11. Para assuntos urgentes, fale com a equipe do Service Desk."
+            show-word-limit
+            type="textarea"
+          />
+        </el-form-item>
+        <div class="flex gap-10px">
+          <el-form-item class="flex-1" label="De (opcional)">
+            <el-date-picker v-model="ausencia.dados.inicio" class="!w-full" format="DD/MM/YYYY" type="date" value-format="YYYY-MM-DD" />
+          </el-form-item>
+          <el-form-item class="flex-1" label="Até (opcional)">
+            <el-date-picker v-model="ausencia.dados.fim" class="!w-full" format="DD/MM/YYYY" type="date" value-format="YYYY-MM-DD" />
+          </el-form-item>
+        </div>
+        <div class="text-12px text-[var(--el-text-color-secondary)]">
+          Vale em conversas diretas, com no máximo uma resposta a cada 24 horas por conversa. Com data final, desliga sozinha.
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button type="primary" @click="salvarAusencia">Salvar</el-button>
+        <el-button @click="ausencia.visivel = false">Cancelar</el-button>
       </template>
     </Dialog>
 
@@ -202,6 +248,7 @@ import { useUserStore } from '@/store/modules/user'
 import { useMonitorSocket } from '@/hooks/web/useMonitorSocket'
 import { atualizarNaoLidas, iniciarChat, useChat } from './useChat'
 import ChatMensagem from './ChatMensagem.vue'
+import ChatEmojis from './ChatEmojis.vue'
 
 /** A tela confia no número sequencial: a mensagem nova entra pelo WebSocket e, se faltar alguma, ela é buscada. */
 defineOptions({ name: 'Chat' })
@@ -434,6 +481,31 @@ const aoEscolherArquivo = async (f: any) => {
   }
 }
 
+const dataBr = (d: string) => d.split('-').reverse().join('/')
+
+/** Entra onde o cursor está, não no fim do texto. */
+const inserirEmoji = (e: string) => {
+  const area: HTMLTextAreaElement | undefined = campo.value?.textarea
+  const ini = area?.selectionStart ?? texto.value.length
+  const fim = area?.selectionEnd ?? texto.value.length
+  texto.value = texto.value.slice(0, ini) + e + texto.value.slice(fim)
+  nextTick(() => {
+    area?.focus()
+    area?.setSelectionRange(ini + e.length, ini + e.length)
+  })
+}
+
+const ausencia = reactive<{ visivel: boolean; dados: Api.Ausencia }>({ visivel: false, dados: { ativa: false } })
+const abrirAusencia = async () => {
+  ausencia.dados = await Api.getAusencia()
+  ausencia.visivel = true
+}
+const salvarAusencia = async () => {
+  await Api.salvarAusencia(ausencia.dados)
+  ausencia.visivel = false
+  message.success(ausencia.dados.ativa ? 'Resposta automática ligada' : 'Resposta automática desligada')
+}
+
 const aoDigitar = () => {
   const m = texto.value.match(/@([^\s@]*)$/)
   if (!m || atual.value?.tipo !== 'grupo') {
@@ -572,6 +644,7 @@ const aoVoltarATela = () => {
 }
 onMounted(async () => {
   iniciarChat()
+  Api.getAusencia().then((a) => (ausencia.dados = a)).catch(() => {})
   document.addEventListener('visibilitychange', aoVoltarATela)
   await carregarConversas()
 })
