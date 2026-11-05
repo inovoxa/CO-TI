@@ -649,6 +649,68 @@ Menu *Acesso rápido* e opção no menu da foto de perfil. Links do órgão, que
 pessoais, até 10 por pessoa, que só o dono vê. Para delegar os links públicos, inclua *Gerenciar links públicos* em outro perfil.
 Só endereços http e https são aceitos, inclusive de sistemas internos; os links abrem em outra aba.
 
+## Infraestrutura
+
+Menu só do administrador.
+
+- **Visão geral:** quanto cada área ocupa, quanto cresce por dia e a previsão até o espaço acabar, com aviso no sino em 80% e 90%.
+  Os prazos de retenção e os limites ficam na mesma tela e valem sobre as variáveis de ambiente.
+  - Quando o servidor informa um disco maior que o real, como no Docker Desktop, defina o *Espaço reservado ao CO-TI*
+    (`CO_TI_DISCO_LIMITE_GB`).
+  - Os logs centralizados têm teto próprio (`CO_TI_LOGS_LIMITE_GB`, padrão 50): acima dele, os dias mais antigos saem antes do
+    prazo, sempre preservando 7.
+  - Os logs de arquivo do backend têm teto de 1 GB.
+  - As verificações do monitoramento são comprimidas depois de 2 dias.
+- **Rotinas:** última execução, duração e último erro de cada rotina agendada, inclusive das que só escrevem o erro no log.
+- **Formulários:** a mesma tela de antes, agora aqui.
+- **Integrações:** entradas por webhook, chaves de API e webhooks de saída.
+
+O conteúdo das requisições não vai mais para o log: só o endereço. Para depurar, suba com `LOGGING_LEVEL_CN_IOCODER_YUDAO=debug`;
+mesmo assim, o conteúdo do cofre nunca aparece.
+
+### Desligamento vindo do RH
+
+O sistema do RH chama `POST /admin-api/integracao/entrada/<código>`, e o CO-TI:
+
+1. identifica a pessoa no AD;
+2. abre o chamado do formulário **1.4 Desativação de usuário**, sem aprovação;
+3. bloqueia a conta;
+4. desativa a conta no portal e derruba as sessões;
+5. fecha o chamado.
+
+**Autenticação:** cabeçalhos `X-COTI-Timestamp` (segundos desde 1970) e `X-COTI-Signature`, que é o HMAC-SHA256 em hexadecimal de
+`timestamp.corpo`, com o segredo mostrado ao criar a entrada. Pedidos com mais de 5 minutos são recusados. Para sistemas que não
+assinam, há o token fixo (`Authorization: Bearer`), que exige a lista de IPs.
+
+**Travas:**
+- A entrada nasce em **simulação**, que só registra o que faria. Depois, passa para **com confirmação**, em que um técnico confirma
+  em *Execuções no AD*, e por fim para **automático**.
+- Sem uma conta única para o identificador, com conta protegida (`admin`, grupos e logins da lista) ou com nome divergente, o chamado
+  vai para a equipe e o AD não é tocado.
+- Acima do limite diário de bloqueios automáticos (padrão 5), os próximos esperam confirmação, e o administrador é avisado.
+- Data de efetivação futura agenda o bloqueio. Um aviso com a situação de cancelamento, como uma readmissão, cancela o que ainda
+  não rodou.
+- Evento repetido não abre outro chamado.
+
+**Dados pessoais:** o conteúdo recebido fica cifrado com a chave-mestra e é apagado depois de 90 dias. CPF e data de nascimento não
+entram no chamado. Use *Testar* na tela, com um JSON de exemplo, antes de ligar.
+
+**Script do AD:** atualize o `Executar_AD_Automatico.ps1` no servidor Windows. O pedido automático usa `somente_login=true`, que
+busca só o login exato (sem `Name -eq`), e a resposta traz os grupos removidos e as pendências.
+
+### API e webhooks de saída
+
+- **Chaves de API:** dão acesso a `POST /admin-api/integracao/v1/chamados` (formulário + respostas, com `Idempotency-Key`) e a
+  `GET /admin-api/integracao/v1/chamados/<id>`, com `Authorization: Bearer coti_...`.
+  - Cada chave só vê os chamados que abriu e faz até 120 pedidos por minuto.
+  - Valem a validação e a aprovação normais, e formulários com operação no AD ficam de fora.
+  - A chave aparece uma vez; só o hash fica guardado.
+- **Webhooks de saída:** avisam quando um chamado é aberto, atribuído, solucionado, fechado ou reaberto, com a mesma assinatura das
+  entradas.
+  - O aviso traz só o número, a situação e a categoria.
+  - Falha tenta de novo em 1, 5, 15 e 60 minutos.
+  - O próprio servidor e os endereços locais de enlace, como o serviço de metadados das nuvens, são recusados.
+
 ## Licença
 
 O núcleo é GPLv3 (`LICENSE`). O código de terceiros e as partes portadas estão listados em `NOTICE`. Para as atualizações do RuoYi e do frontend, veja `UPSTREAM.md`.

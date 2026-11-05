@@ -70,6 +70,15 @@ class AdDiretorioTest {
     }
 
     @Test
+    void buscaPorAtributoDizQuantasContasAcharam() {
+        assertEquals(1, diretorio.buscarPorAtributo("sAMAccountName", "ana.souza").size());
+        assertEquals(0, diretorio.buscarPorAtributo("sAMAccountName", "ninguem").size());
+        // caractere especial não vira curinga
+        assertEquals(0, diretorio.buscarPorAtributo("sAMAccountName", "*").size());
+        assertThrows(IllegalArgumentException.class, () -> diretorio.buscarPorAtributo("userPassword", "x"));
+    }
+
+    @Test
     void autenticaComSenhaCorretaELeAsOus() {
         AdUsuario ana = diretorio.autenticar("ana.souza", "Senha#Forte2026").orElseThrow();
         assertEquals("Ana Souza", ana.getNome());

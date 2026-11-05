@@ -481,6 +481,7 @@ export const ACOES_AD = [
 
 export const STATUS_EXECUCAO: Record<string, { rotulo: string; cor: string }> = {
   aguardando_aprovacao: { rotulo: 'Aguardando aprovação', cor: 'warning' },
+  aguardando_confirmacao: { rotulo: 'Aguardando confirmação', cor: 'warning' },
   pronta: { rotulo: 'Na fila', cor: 'primary' },
   executando: { rotulo: 'Executando', cor: 'primary' },
   sucesso: { rotulo: 'Concluída', cor: 'success' },
@@ -550,6 +551,8 @@ export const testarRegras = (
   request.post({ url: '/itsm/regra/testar', data: { fatos } })
 export const getExecucoes = (params: any) => request.get({ url: '/itsm/execucao/page', params })
 export const getModoAd = (): Promise<string> => request.get({ url: '/itsm/execucao/modo' })
+export const confirmarExecucao = (id: number) =>
+  request.post({ url: '/itsm/execucao/confirmar', params: { id } })
 export const repetirExecucao = (id: number) =>
   request.post({ url: '/itsm/execucao/repetir', params: { id } })
 export const cancelarExecucao = (id: number, motivo?: string) =>

@@ -84,6 +84,15 @@
       <el-table-column align="center" label="Ações" width="150">
         <template #default="{ row }">
           <el-button
+            v-if="row.status === 'aguardando_confirmacao'"
+            v-hasPermi="['itsm:execucao:update']"
+            link
+            type="primary"
+            @click="confirmar(row)"
+          >
+            Confirmar
+          </el-button>
+          <el-button
             v-if="row.status === 'erro' || row.status === 'cancelada'"
             v-hasPermi="['itsm:execucao:update']"
             link
@@ -93,7 +102,7 @@
             Repetir
           </el-button>
           <el-button
-            v-if="['erro', 'pronta', 'aguardando_aprovacao'].includes(row.status)"
+            v-if="['erro', 'pronta', 'aguardando_aprovacao', 'aguardando_confirmacao'].includes(row.status)"
             v-hasPermi="['itsm:execucao:update']"
             link
             type="danger"
@@ -147,6 +156,13 @@ const carregar = async () => {
 const buscar = () => {
   query.pageNo = 1
   carregar()
+}
+
+const confirmar = async (e: ItsmApi.Execucao) => {
+  await message.confirm(`Confirmar a operação do chamado #${e.chamadoId}? A conta será bloqueada no AD.`)
+  await ItsmApi.confirmarExecucao(e.id)
+  message.success('Confirmada')
+  await carregar()
 }
 
 const repetir = async (e: ItsmApi.Execucao) => {

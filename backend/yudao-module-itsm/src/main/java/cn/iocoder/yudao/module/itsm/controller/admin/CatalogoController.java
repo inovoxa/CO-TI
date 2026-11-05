@@ -138,6 +138,14 @@ public class CatalogoController {
         return success(true);
     }
 
+    @PostMapping("/execucao/confirmar")
+    @Operation(summary = "Confirmar uma operação pedida por integração")
+    @PreAuthorize("@ss.hasPermission('itsm:execucao:update')")
+    public CommonResult<Boolean> confirmar(@RequestParam("id") Long id) {
+        execucaoAdService.confirmar(id, cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId());
+        return success(true);
+    }
+
     @PostMapping("/execucao/cancelar")
     @Operation(summary = "Cancelar uma execução (o técnico fará a operação manualmente)")
     @PreAuthorize("@ss.hasPermission('itsm:execucao:update')")

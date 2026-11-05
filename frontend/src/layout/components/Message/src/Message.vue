@@ -28,6 +28,7 @@ const getList = async () => {
 /** Papel gravado no aviso: técnico abre a fila, aprovador as aprovações e os demais os próprios chamados. */
 const destino = (item: any) => {
   const p = item.templateParams || {}
+  if (typeof p.link === 'string' && p.link.startsWith('/')) return { path: p.link }
   if (!p.chamado) return null
   if (p.papel === 'tecnico') return { path: '/servicedesk/chamados', query: { id: String(p.chamado) } }
   if (p.papel === 'aprovador') return { path: '/aprovacoes' }

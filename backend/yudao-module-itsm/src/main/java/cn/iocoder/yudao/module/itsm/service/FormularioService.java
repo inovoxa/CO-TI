@@ -303,6 +303,64 @@ public class FormularioService {
         return chamadoId;
     }
 
+    /** O que uma integração pede além de abrir o chamado. */
+    public record PedidoAd(String login, boolean aguardaConfirmacao, LocalDateTime executarEm) {
+    }
+
+    /**
+     * Abre o chamado de um formulário em nome de outro sistema. Não pede aprovação: quem configurou a integração decidiu que aquela
+     * origem autoriza o pedido, e a observação registra isso. Só valem os campos enviados; valor inválido é descartado e citado na
+     * observação, porque um celular mal formatado não pode impedir o bloqueio de um desligado.
+     *
+     * @param pedido operação no AD; vazio = só abre o chamado para a equipe
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public Long enviarDeIntegracao(Long formularioId, Map<String, String> entrada, Long solicitanteId, String observacao, PedidoAd pedido) {
+        FormularioDO f = obter(formularioId);
+        if (!Boolean.TRUE.equals(f.getAtivo())) {
+            throw exception(FORMULARIO_NAO_EXISTE);
+        }
+        Formulario.Definicao d = Formulario.semObrigatorios(definicao(f));
+        Map<String, String> validas = new LinkedHashMap<>(entrada);
+        Formulario.Resultado r = Formulario.validar(d, validas);
+        String obs = observacao;
+        if (!r.valido()) {
+            obs += " Campos inválidos e descartados: " + String.join(", ", new TreeSet<>(r.erros().keySet())) + ".";
+            r.erros().keySet().forEach(validas::remove);
+            r = Formulario.validar(d, validas);
+        }
+        Map<String, String> respostas = r.respostas();
+
+        ChamadoVOs.CriarReq c = new ChamadoVOs.CriarReq();
+        c.setTitulo(Formulario.titulo(f.getTituloModelo(), f.getNome(), respostas));
+        c.setDescricao("<p><b>⚠️ " + Formulario.escaparHtml(obs) + "</b></p><p><b>Pedido pelo catálogo: "
+                + Formulario.escaparHtml(f.getNome()) + "</b></p>" + Formulario.descricaoHtml(d, respostas));
+        c.setTipo(f.getTipo());
+        c.setUrgencia(f.getUrgencia());
+        c.setImpacto(f.getImpacto());
+        c.setCategoriaId(f.getCategoriaId());
+        Long chamadoId = chamadoService.criar(c, solicitanteId, f.getId());
+        respostaMapper.insert(FormularioRespostaDO.builder().formularioId(f.getId()).chamadoId(chamadoId).userId(solicitanteId)
+                .respostas(JsonUtils.toJsonString(respostas)).criadoEm(LocalDateTime.now()).build());
+        if (pedido == null || f.getAcaoAd() == null) {
+            return chamadoId;
+        }
+        Map<String, String> dados = new LinkedHashMap<>(respostas);
+        dados.put("chamado_id", String.valueOf(chamadoId));
+        dados.put("somente_login", "true");
+        ChamadoDO ch = chamadoMapper.selectById(chamadoId);
+        // uma regra do catálogo ainda pode exigir aprovação: ela prevalece
+        String status = ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO ? "aguardando_aprovacao"
+                : pedido.aguardaConfirmacao() ? "aguardando_confirmacao" : "pronta";
+        execucaoAdService.criarDeIntegracao(chamadoId, f.getAcaoAd(), dados, status, pedido.executarEm());
+        if ("desligado".equals(execucaoAdService.modo())) {
+            chamadoService.acompanhamentoSistema(chamadoId, null, "A automação no AD está desligada neste servidor: execute a operação \""
+                    + f.getAcaoAd() + "\" manualmente e registre a solução.", true);
+        }
+        return chamadoId;
+    }
+
     /** Respostas do formulário que abriu o chamado (para a equipe técnica). */
     public Map<String, String> respostasDoChamado(Long chamadoId) {
         FormularioRespostaDO r = respostaMapper.selectOne(FormularioRespostaDO::getChamadoId, chamadoId);

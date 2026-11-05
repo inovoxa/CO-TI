@@ -204,7 +204,7 @@ public class AdProvisionamentoService {
     }
 
     /** A chave do mapa pode ser o DN completo do grupo ou só o CN. */
-    static boolean pertenceAoGrupo(Set<String> gruposDn, String chave) {
+    public static boolean pertenceAoGrupo(Set<String> gruposDn, String chave) {
         for (String dn : gruposDn) {
             if (dn.equalsIgnoreCase(chave)) {
                 return true;

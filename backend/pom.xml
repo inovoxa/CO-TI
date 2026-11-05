@@ -26,6 +26,7 @@
         <module>yudao-module-cofre</module>
         <module>yudao-module-chat</module>
         <module>yudao-module-acesso</module>
+        <module>yudao-module-infraestrutura</module>
     </modules>
 
     <name>${project.artifactId}</name>

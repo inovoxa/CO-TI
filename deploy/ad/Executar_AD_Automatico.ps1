@@ -760,9 +760,13 @@ function Executar-DesativarUsuario {
     }
     Assert-IdentificadorSeguro $login 'login_usuario_desativar' -PermitirEspaco
 
+    # Pedido automático (integração): só o login exato vale. Nome igual nunca pode bloquear outra pessoa.
+    $somenteLogin = "$($dados.somente_login)" -eq 'true'
+    $filtroBusca = if ($somenteLogin) { "SamAccountName -eq '$login'" } else { "SamAccountName -eq '$login' -or Name -eq '$login'" }
+
     $usuario = $null
     try {
-        $usuario = Get-ADUser -Filter "SamAccountName -eq '$login' -or Name -eq '$login'" `
+        $usuario = Get-ADUser -Filter $filtroBusca `
             -Properties SamAccountName, Name, MemberOf, DistinguishedName, Enabled `
             -ErrorAction Stop | Select-Object -First 1
     } catch {
@@ -790,13 +794,18 @@ function Executar-DesativarUsuario {
     # 2. Desativar
     Disable-ADAccount -Identity $usuario.SamAccountName
 
-    # 3. Remover grupos (exceto Domain Users)
+    # 3. Remover grupos (exceto Domain Users), guardando quais eram: a resposta fica no chamado e serve de base para reativar
+    $gruposRemovidos = @()
+    $pendencias = @()
     foreach ($grupo in $usuario.MemberOf) {
         if ($grupo -notlike "*CN=Domain Users*") {
             try {
                 Remove-ADGroupMember -Identity $grupo -Members $usuario.SamAccountName `
                     -Confirm:$false -ErrorAction Stop
-            } catch { }
+                $gruposRemovidos += $grupo
+            } catch {
+                $pendencias += "Grupo não removido: $grupo"
+            }
         }
     }
 
@@ -807,14 +816,23 @@ function Executar-DesativarUsuario {
     # 5. Mover para OU Desativados
     $ouDesativados = [string]$Cfg.OuDesativados
     try {
-        Move-ADObject -Identity $usuario.DistinguishedName -TargetPath $ouDesativados
-    } catch { }
+        Move-ADObject -Identity $usuario.DistinguishedName -TargetPath $ouDesativados -ErrorAction Stop
+    } catch {
+        $pendencias += "Conta não movida para a OU de desativados."
+    }
 
+    $mensagem = if ($pendencias.Count -eq 0) {
+        "Usuario '$($usuario.SamAccountName)' desativado, grupos removidos e movido para OU Desativados."
+    } else {
+        "Usuario '$($usuario.SamAccountName)' desativado, com pendencias: $($pendencias -join '; ')"
+    }
     Retornar-Json @{
-        sucesso   = $true
-        acao_real = "desativado"
-        login     = $usuario.SamAccountName
-        mensagem  = "Usuario '$($usuario.SamAccountName)' desativado, grupos removidos e movido para OU Desativados."
+        sucesso          = $true
+        acao_real        = "desativado"
+        login            = $usuario.SamAccountName
+        grupos_removidos = $gruposRemovidos
+        pendencias       = $pendencias
+        mensagem         = $mensagem
     }
 }
 

@@ -256,6 +256,12 @@ public final class Formulario {
         return sb.toString();
     }
 
+    /** A mesma definição sem campos obrigatórios: pedido de outro sistema traz só o que aquele sistema conhece. */
+    public static Definicao semObrigatorios(Definicao d) {
+        return new Definicao(d.secoes().stream().map(s -> new Secao(s.nome(), s.perguntas().stream()
+                .map(p -> new Pergunta(p.name(), p.label(), p.type(), false, p.values(), p.regex(), p.ajuda(), p.visivelSe())).toList())).toList());
+    }
+
     /** Escapa texto para entrar em HTML. */
     public static String escaparHtml(String s) {
         return escapar(s);

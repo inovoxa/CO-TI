@@ -95,6 +95,8 @@ services:
       CO_TI_LOGS_RECEPCAO: ${CO_TI_LOGS_RECEPCAO:-true}
       CO_TI_LOGS_PERMITIDOS: ${CO_TI_LOGS_PERMITIDOS:-}
       CO_TI_LOGS_RETENCAO_DIAS: ${CO_TI_LOGS_RETENCAO_DIAS:-30}
+      CO_TI_LOGS_LIMITE_GB: ${CO_TI_LOGS_LIMITE_GB:-50}
+      CO_TI_DISCO_LIMITE_GB: ${CO_TI_DISCO_LIMITE_GB:-0}
       CO_TI_SYSLOG_PORTA: ${CO_TI_SYSLOG_PORTA:-514}
       CO_TI_GELF_PORTA: ${CO_TI_GELF_PORTA:-12201}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)

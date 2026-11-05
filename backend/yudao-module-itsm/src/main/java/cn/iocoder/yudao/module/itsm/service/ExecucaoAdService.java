@@ -17,6 +17,10 @@ import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ChamadoMapper;
 import cn.iocoder.yudao.module.itsm.dal.mysql.ExecucaoAdMapper;
 import cn.iocoder.yudao.module.itsm.service.email.EnvioEmailService;
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
+import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -35,6 +39,7 @@ import static cn.iocoder.yudao.module.itsm.enums.ErrorCodeConstants.*;
  * Operações no AD pedidas por formulário: fila, execução, resultado no chamado e a senha provisória.
  *
  * <p>Ciclo: aguardando_aprovacao → (aprovado) pronta → executando → sucesso | erro; recusada; cancelada.
+ * Pedido de integração: aguardando_confirmacao → (um técnico confirma) pronta, ou direto pronta, podendo ter data futura.
  * Falha de infraestrutura (rede/SSH) volta para "pronta" com nova tentativa em 1, 5 e 15 minutos.
  * Resposta {sucesso:false} do script (ex.: usuário não existe) vira "erro" direto: repetir não adianta.
  *
@@ -63,6 +68,10 @@ public class ExecucaoAdService {
     private ChamadoService chamadoService;
     @Resource
     private EnvioEmailService envioEmailService;
+    @Resource
+    private AdminUserMapper adminUserMapper;
+    @Resource
+    private AdminUserService adminUserService;
 
     private ExecutorAd executor;
 
@@ -92,6 +101,47 @@ public class ExecucaoAdService {
     public void criar(Long chamadoId, String acao, Map<String, String> dados, boolean aguardaAprovacao) {
         execucaoMapper.insert(ExecucaoAdDO.builder().chamadoId(chamadoId).acao(acao).dados(JsonUtils.toJsonString(dados))
                 .status(aguardaAprovacao ? "aguardando_aprovacao" : "pronta").tentativas(0).criadoEm(LocalDateTime.now()).build());
+    }
+
+    /**
+     * Pedido de integração. No sucesso, o chamado fecha sozinho.
+     *
+     * @param status     pronta | aguardando_confirmacao | aguardando_aprovacao
+     * @param executarEm data futura para rodar; vazio = assim que possível
+     */
+    public void criarDeIntegracao(Long chamadoId, String acao, Map<String, String> dados, String status, LocalDateTime executarEm) {
+        execucaoMapper.insert(ExecucaoAdDO.builder().chamadoId(chamadoId).acao(acao).dados(JsonUtils.toJsonString(dados))
+                .status(status).tentativas(0).proximaTentativa(executarEm).fecharAoConcluir(true).criadoEm(LocalDateTime.now()).build());
+    }
+
+    /** Um técnico confirma o pedido que estava esperando. */
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmar(Long id, Long userId) {
+        ExecucaoAdDO e = obter(id);
+        if (!"aguardando_confirmacao".equals(e.getStatus())) {
+            throw exception(EXECUCAO_ESTADO_INVALIDO);
+        }
+        execucaoMapper.updateById(ExecucaoAdDO.builder().id(id).status("pronta").build());
+        auditoria.registrar("ad.execucao_confirmada", userId, null, Map.of("execucao", id, "chamado", e.getChamadoId()));
+        chamadoService.acompanhamentoSistema(e.getChamadoId(), userId, "Operação no AD confirmada.", true);
+    }
+
+    /**
+     * Cancela o pedido da integração que ainda não rodou (ex.: readmissão antes da data).
+     *
+     * @return false se a operação já rodou ou está rodando
+     */
+    @DataPermission(enable = false)
+    public boolean cancelarDeIntegracao(Long chamadoId, String motivo) {
+        ExecucaoAdDO e = execucaoMapper.selectByChamadoId(chamadoId);
+        if (e == null || !Set.of("pronta", "aguardando_confirmacao", "aguardando_aprovacao").contains(e.getStatus())) {
+            return false;
+        }
+        execucaoMapper.updateById(ExecucaoAdDO.builder().id(e.getId()).status("cancelada").mensagem(motivo).build());
+        chamadoService.acompanhamentoSistema(e.getChamadoId(), null, motivo, true);
+        chamadoService.solucionarSistema(e.getChamadoId(), motivo);
+        chamadoService.fecharAutomatico(e.getChamadoId());
+        return true;
     }
 
     public void liberar(Long chamadoId) {
@@ -171,12 +221,34 @@ public class ExecucaoAdService {
         terminar(e, "sucesso", mensagem, JsonUtils.toJsonString(r), cifrada);
         chamadoService.acompanhamentoSistema(e.getChamadoId(), null, "Resultado da automação no AD: "
                 + JsonUtils.toJsonString(r), true);
+        if (Boolean.TRUE.equals(e.getFecharAoConcluir())) {
+            desativarNoPortal(r.get("login"), e.getChamadoId());
+            chamadoService.solucionarSistema(e.getChamadoId(), mensagem);
+            chamadoService.fecharAutomatico(e.getChamadoId());
+            return;
+        }
         String porEmail = cifrada == null ? null : entregarPorEmail(e, String.valueOf(senha));
         chamadoService.solucionarSistema(e.getChamadoId(), mensagem + (cifrada == null ? ""
                 : porEmail != null ? ". A senha provisória foi enviada ao e-mail pessoal informado no pedido (" + porEmail
                 + "). No primeiro acesso será pedida a troca."
                 : ". A senha provisória é entregue UMA vez a quem pediu: no WhatsApp da TI, respondendo *SENHA*, ou em "
                 + "\"Meus chamados\" (botão \"Ver senha provisória\"). No primeiro acesso será pedida a troca."));
+    }
+
+    /** Encerra na hora o acesso ao portal; a sincronização com o AD só veria a conta desativada depois. */
+    private void desativarNoPortal(Object login, Long chamadoId) {
+        AdminUserDO u = login == null ? null : adminUserMapper.selectByUsername(String.valueOf(login));
+        if (u == null || !CommonStatusEnum.isEnable(u.getStatus())) {
+            return;
+        }
+        try {
+            adminUserService.updateUserStatus(u.getId(), CommonStatusEnum.DISABLE.getStatus());
+            auditoria.registrar("ad.usuario_desativado", u.getId(), u.getUsername(), Map.of("motivo", "integração", "chamado", chamadoId));
+        } catch (RuntimeException ex) {
+            log.error("[desativarNoPortal][conta {} do chamado {}: {}]", u.getUsername(), chamadoId, ex.getMessage());
+            chamadoService.acompanhamentoSistema(chamadoId, null, "A conta foi bloqueada no AD, mas não foi possível desativá-la no portal: "
+                    + "um técnico precisa verificar.", true);
+        }
     }
 
     /**
