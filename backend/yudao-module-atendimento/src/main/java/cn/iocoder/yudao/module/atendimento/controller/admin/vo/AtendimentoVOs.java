@@ -442,6 +442,12 @@ public final class AtendimentoVOs {
         /** Vazio = o primeiro provedor ativo pela prioridade */
         private Long provedorAssistenteId;
         private Long provedorCopilotoId;
+        private Long provedorAssistenteReservaId;
+        private Long provedorCopilotoReservaId;
+        /** Assistente IA do portal */
+        private Boolean internoAtivo = false;
+        private Long provedorInternoId;
+        private Long provedorInternoReservaId;
         // só na resposta
         private List<IaProvedor> provedores = new ArrayList<>();
         private List<Map<String, Object>> tipos = new ArrayList<>();

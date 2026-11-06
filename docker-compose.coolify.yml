@@ -42,6 +42,9 @@ services:
 
   backend:
     build: ./backend
+    # Ollama ou outra IA instalada no próprio servidor: http://host.docker.internal:11434/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
       TZ: ${CO_TI_FUSO:-America/Sao_Paulo}

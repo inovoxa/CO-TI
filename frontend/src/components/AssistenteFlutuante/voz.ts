@@ -33,7 +33,7 @@ export const motivoSemVoz = (voz?: Api.Voz) => {
     return 'O navegador só libera o microfone em endereço seguro: abra o CO-TI por https (ou em localhost no próprio servidor).'
   }
   if (!voz?.transcricao && !Reconhecimento) {
-    return 'Este navegador não reconhece fala e o servidor não tem transcrição: configure um modelo de áudio em Atendimento → Inteligência artificial, ou use Chrome/Edge.'
+    return 'Este navegador não reconhece fala e o servidor não tem transcrição: configure um modelo de áudio em Infraestrutura → Inteligência artificial, ou use Chrome/Edge.'
   }
   return 'Microfone indisponível neste navegador.'
 }

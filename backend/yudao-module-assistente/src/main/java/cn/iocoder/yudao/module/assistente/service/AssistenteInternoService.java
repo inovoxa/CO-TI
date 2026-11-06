@@ -83,8 +83,8 @@ public class AssistenteInternoService {
     // ======================================================================================= perguntar
 
     public AssistenteVOs.Resposta perguntar(AssistenteVOs.PerguntaReq req, Long userId) {
-        if (!iaService.ativo()) {
-            throw exception(IA_INDISPONIVEL, "a inteligência artificial está desligada ou sem provedor ativo (Atendimento → Inteligência artificial)");
+        if (!iaService.ativoInterno()) {
+            throw exception(IA_INDISPONIVEL, "a inteligência artificial está desligada ou sem provedor ativo (Infraestrutura → Inteligência artificial)");
         }
         String texto = req.getTexto().strip();
         AssistenteSessaoDO sessao = req.getSessaoId() == null ? null : sessaoDaPessoa(req.getSessaoId(), userId);
@@ -138,20 +138,20 @@ public class AssistenteInternoService {
 
     public AssistenteVOs.Voz voz() {
         AssistenteVOs.Voz v = new AssistenteVOs.Voz();
-        v.setIa(iaService.ativo());
-        v.setTranscricao(iaService.transcreve());
+        v.setIa(iaService.ativoInterno());
+        v.setTranscricao(iaService.transcreve(IaService.INTERNO));
         return v;
     }
 
     /** Fala gravada no navegador → texto, pelo provedor de IA com modelo de transcrição. O áudio não é guardado. */
     public String transcrever(byte[] audio, String nome, String tipo) {
-        if (!iaService.transcreve()) {
-            throw exception(IA_INDISPONIVEL, "nenhum provedor de IA com modelo de transcrição (Atendimento → Inteligência artificial)");
+        if (!iaService.transcreve(IaService.INTERNO)) {
+            throw exception(IA_INDISPONIVEL, "nenhum provedor de IA com modelo de transcrição (Infraestrutura → Inteligência artificial)");
         }
         if (audio.length == 0 || audio.length > AUDIO_MAXIMO) {
             throw exception(AUDIO_INVALIDO);
         }
-        String texto = iaService.transcrever(audio, nome == null || nome.isBlank() ? "fala.webm" : nome, tipo, null);
+        String texto = iaService.transcrever(audio, nome == null || nome.isBlank() ? "fala.webm" : nome, tipo, null, IaService.INTERNO);
         if (texto == null) {
             throw exception(IA_INDISPONIVEL, "a transcrição falhou; tente de novo ou digite");
         }

@@ -301,12 +301,17 @@ Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *F
 
 Regras completas em `docs/specs/atendimento-ia.md` (reimplementação própria; nada da pasta `enterprise/` do Chatwoot).
 
-- **Vários provedores** (*Atendimento → Configuração → Inteligência artificial*):
+- **Vários provedores** (*Infraestrutura → Inteligência artificial*):
   - OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, Mistral, Ollama local ou outro compatível com a
     API da OpenAI.
   - Cada um tem modelo, chave (cifrada), temperatura, limite e prioridade, e um botão de teste.
-  - O assistente e o copiloto têm cada um o seu provedor principal. Se ele falhar, os outros ativos respondem pela
-    ordem de prioridade.
+  - Cada uso tem o seu provedor principal e uma reserva opcional: o **Assistente IA** do portal, o **robô** do atendimento
+    e o **copiloto**. O Assistente IA e o Atendimento ligam e desligam à parte e, com o principal escolhido, um nunca usa
+    a credencial do outro. Sem principal, os provedores ativos respondem pela ordem de prioridade.
+  - **IA local com Ollama no próprio servidor:** tipo *Ollama*, endereço `http://host.docker.internal:11434/v1`, que o
+    docker-compose já resolve, e chave em branco. A chave só é necessária se houver um proxy na frente que exija uma.
+    Em outra máquina, use o IP dela e suba o Ollama com `OLLAMA_HOST=0.0.0.0`. O modelo precisa aceitar ferramentas
+    (*tools*), por exemplo `qwen2.5:7b` ou `llama3.1:8b`.
   - A tela mostra o uso (chamadas, erros e tokens) dos últimos 30 dias por provedor.
 - **Assistente na caixa:**
   - A conversa nova fica com ele (pendente) e as respostas usam só os artigos FAQ da base de conhecimento.
@@ -481,7 +486,7 @@ chamado #123?".
   pessoas, lista de ramais e telefones, monitores, links e logs.
 - **Com quais permissões:** as de quem pergunta, incluindo o escopo de unidade.
 - **Só leitura:** ele não altera nada.
-- **Configuração:** usa o provedor de IA configurado em Atendimento → Inteligência artificial (OpenRouter, OpenAI,
+- **Configuração:** usa o provedor de IA escolhido para o Assistente em Infraestrutura → Inteligência artificial (OpenRouter, OpenAI,
   Ollama local etc.).
 - Detalhes: `docs/specs/assistente-interno.md`.
 

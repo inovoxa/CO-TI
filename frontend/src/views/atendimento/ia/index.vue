@@ -1,36 +1,30 @@
 <template>
   <ContentWrap v-loading="loading">
     <template v-if="cfg">
-      <el-form inline>
-        <el-form-item label="Inteligência artificial">
-          <el-switch v-model="geral.ativo" @change="salvarGeral" />
-        </el-form-item>
-        <el-form-item label="Assistente usa">
-          <el-select
-            v-model="geral.provedorAssistenteId"
-            class="!w-240px"
-            clearable
-            placeholder="o primeiro ativo da lista"
-            @change="salvarGeral"
-          >
-            <el-option v-for="p in cfg.provedores" :key="p.id" :label="p.nome" :value="p.id!" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Copiloto usa">
-          <el-select
-            v-model="geral.provedorCopilotoId"
-            class="!w-240px"
-            clearable
-            placeholder="o primeiro ativo da lista"
-            @change="salvarGeral"
-          >
-            <el-option v-for="p in cfg.provedores" :key="p.id" :label="p.nome" :value="p.id!" />
-          </el-select>
-        </el-form-item>
-      </el-form>
+      <div v-for="u in USOS" :key="u.titulo" class="uso">
+        <div class="uso-topo">
+          <b>{{ u.titulo }}</b>
+          <el-switch v-model="geral[u.ligado]" :active-text="geral[u.ligado] ? 'Ligado' : 'Desligado'" @change="salvarGeral" />
+          <span class="dica">{{ u.ajuda }}</span>
+        </div>
+        <el-form inline>
+          <template v-for="c in u.campos" :key="c.principal">
+            <el-form-item :label="`${c.rotulo}: principal`">
+              <el-select v-model="geral[c.principal]" class="!w-220px" clearable placeholder="qualquer ativo, pela prioridade" @change="salvarGeral">
+                <el-option v-for="p in cfg.provedores" :key="p.id" :label="p.nome" :value="p.id!" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="reserva">
+              <el-select v-model="geral[c.reserva]" :disabled="!geral[c.principal]" class="!w-200px" clearable placeholder="nenhuma" @change="salvarGeral">
+                <el-option v-for="p in cfg.provedores.filter((x) => x.id !== geral[c.principal])" :key="p.id" :label="p.nome" :value="p.id!" />
+              </el-select>
+            </el-form-item>
+          </template>
+        </el-form>
+      </div>
       <div class="dica"
-        >Se o provedor principal falhar, os outros ativos são tentados na ordem da prioridade (menor
-        primeiro). Regras em docs/specs/atendimento-ia.md.</div
+        >Com o principal escolhido, só ele e a reserva são usados: o Assistente e o Atendimento nunca usam a credencial um do
+        outro. Sem principal, os provedores ativos são tentados pela prioridade (menor primeiro).</div
       >
     </template>
   </ContentWrap>
@@ -60,18 +54,13 @@
             >
           </template>
           <span v-else class="dica">não testado</span>
-          <el-tag
-            v-if="row.id === cfg?.provedorAssistenteId"
-            class="ml-4px"
-            disable-transitions
-            size="small"
-            >assistente</el-tag
+          <el-tag v-if="row.id === cfg?.provedorInternoId" class="ml-4px" disable-transitions size="small" type="success"
+            >Assistente IA</el-tag
           >
-          <el-tag
-            v-if="row.id === cfg?.provedorCopilotoId"
-            class="ml-4px"
-            disable-transitions
-            size="small"
+          <el-tag v-if="row.id === cfg?.provedorAssistenteId" class="ml-4px" disable-transitions size="small"
+            >robô do atendimento</el-tag
+          >
+          <el-tag v-if="row.id === cfg?.provedorCopilotoId" class="ml-4px" disable-transitions size="small"
             >copiloto</el-tag
           >
         </template>
@@ -119,6 +108,10 @@
       <el-form-item label="Endereço">
         <el-input v-model="form.dados.baseUrl" :placeholder="tipoAtual?.baseUrl || 'https://...'" />
         <div class="dica">Em branco: o endereço padrão do tipo.</div>
+        <div v-if="form.dados.tipo === 'ollama'" class="dica"
+          >Ollama no próprio servidor: <code>http://host.docker.internal:11434/v1</code>. Em outra máquina, use o IP dela, e o
+          Ollama precisa escutar na rede (<code>OLLAMA_HOST=0.0.0.0</code>).</div
+        >
       </el-form-item>
       <el-form-item label="Chave de API">
         <el-input
@@ -133,6 +126,10 @@
           show-password
           type="password"
         />
+        <div v-if="form.dados.tipo === 'ollama'" class="dica"
+          >O Ollama não pede chave. Informe só se ele estiver atrás de um proxy que exige uma (vai como
+          <code>Authorization: Bearer</code>).</div
+        >
       </el-form-item>
       <el-form-item label="Modelo" prop="modelo">
         <el-input
@@ -188,7 +185,9 @@ const regras = {
   modelo: [{ required: true, message: 'Informe o modelo', trigger: 'blur' }]
 }
 const FINALIDADES: Record<string, string> = {
-  assistente: 'Assistente',
+  interno: 'Assistente IA',
+  assistente: 'Robô do atendimento',
+  transcricao: 'Transcrição',
   sugerir: 'Sugerir resposta',
   resumir: 'Resumir',
   reescrever: 'Reescrever',
@@ -197,11 +196,27 @@ const FINALIDADES: Record<string, string> = {
 
 const loading = ref(true)
 const cfg = ref<Atd.IaConfig>()
-const geral = reactive({
-  ativo: false,
-  provedorAssistenteId: undefined as number | undefined,
-  provedorCopilotoId: undefined as number | undefined
-})
+type Geral = Record<string, any>
+const geral = reactive<Geral>({ ativo: false, internoAtivo: false })
+const CAMPOS_GERAL = ['ativo', 'internoAtivo', 'provedorInternoId', 'provedorInternoReservaId', 'provedorAssistenteId',
+  'provedorAssistenteReservaId', 'provedorCopilotoId', 'provedorCopilotoReservaId']
+const USOS = [
+  {
+    titulo: 'Assistente IA (portal)',
+    ligado: 'internoAtivo',
+    ajuda: 'O assistente que os servidores usam no portal.',
+    campos: [{ rotulo: 'Usa', principal: 'provedorInternoId', reserva: 'provedorInternoReservaId' }]
+  },
+  {
+    titulo: 'Atendimento',
+    ligado: 'ativo',
+    ajuda: 'O robô dos canais (WhatsApp, Instagram, Telegram) e o copiloto dos atendentes.',
+    campos: [
+      { rotulo: 'Robô', principal: 'provedorAssistenteId', reserva: 'provedorAssistenteReservaId' },
+      { rotulo: 'Copiloto', principal: 'provedorCopilotoId', reserva: 'provedorCopilotoReservaId' }
+    ]
+  }
+]
 const testando = ref<number>()
 const formRef = ref()
 const form = reactive({ visivel: false, dados: {} as Atd.IaProvedor })
@@ -210,9 +225,7 @@ const rotuloTipo = (c: string) => cfg.value?.tipos.find((t) => t.codigo === c)?.
 
 const aplicar = (c: Atd.IaConfig) => {
   cfg.value = c
-  geral.ativo = c.ativo
-  geral.provedorAssistenteId = c.provedorAssistenteId
-  geral.provedorCopilotoId = c.provedorCopilotoId
+  CAMPOS_GERAL.forEach((k) => (geral[k] = (c as any)[k] ?? (k.endsWith('tivo') ? false : undefined)))
 }
 
 const carregar = async () => {
@@ -226,8 +239,8 @@ const carregar = async () => {
 
 const salvarGeral = async () => {
   try {
-    aplicar(await Atd.salvarIaConfig({ ...geral }))
-    message.success(geral.ativo ? 'IA ligada' : 'Configuração gravada')
+    aplicar(await Atd.salvarIaConfig({ ...geral } as any))
+    message.success('Configuração gravada')
   } catch {
     await carregar()
   }
@@ -286,6 +299,18 @@ onMounted(carregar)
 </script>
 
 <style scoped>
+.uso {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.uso-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .dica {
   font-size: 12px;
   color: var(--el-text-color-secondary);

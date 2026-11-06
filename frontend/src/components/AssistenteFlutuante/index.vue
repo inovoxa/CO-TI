@@ -59,7 +59,7 @@
             class="mt-12px"
             :closable="false"
             show-icon
-            title="A IA está desligada ou sem provedor: configure em Atendimento → Inteligência artificial."
+            title="A IA está desligada ou sem provedor: configure em Infraestrutura → Inteligência artificial."
             type="warning"
           />
         </div>

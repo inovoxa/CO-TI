@@ -27,7 +27,8 @@ public final class ProvedoresIa {
                 new Tipo("groq", "Groq", "https://api.groq.com/openai/v1", true, "llama-3.3-70b-versatile"),
                 new Tipo("deepseek", "DeepSeek", "https://api.deepseek.com/v1", true, "deepseek-chat"),
                 new Tipo("mistral", "Mistral", "https://api.mistral.ai/v1", true, "mistral-small-latest"),
-                new Tipo("ollama", "Ollama (local)", "http://ollama:11434/v1", false, "llama3.1"),
+                // no mesmo servidor: o docker-compose faz host.docker.internal apontar para a máquina
+                new Tipo("ollama", "Ollama (local)", "http://host.docker.internal:11434/v1", false, "qwen2.5:7b"),
                 new Tipo("compativel", "Outro compatível com OpenAI (vLLM, LM Studio, proxy)", "", false, "")}) {
             TIPOS.put(t.codigo(), t);
         }

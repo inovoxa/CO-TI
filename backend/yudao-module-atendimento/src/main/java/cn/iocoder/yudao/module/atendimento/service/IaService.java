@@ -29,8 +29,10 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 import static cn.iocoder.yudao.module.atendimento.enums.ErrorCodeConstants.*;
 
 /**
- * Provedores de IA (vários, docs/specs/atendimento-ia.md). Cada uso (assistente, copiloto) tem um principal; se ele
- * falhar, os outros provedores ativos são tentados na ordem de prioridade. Cada tentativa fica em {@code ia_uso}.
+ * Provedores de IA (vários, docs/specs/atendimento-ia.md). Cada uso tem o seu principal e uma reserva opcional: o robô do
+ * atendimento ("assistente"), o copiloto e o Assistente IA do portal ("interno"), que liga e desliga à parte. Com principal
+ * definido, só ele e a reserva são tentados, e um uso nunca cai na credencial do outro. Sem principal, os provedores ativos são
+ * tentados pela prioridade, como antes. Cada tentativa fica em {@code ia_uso}.
  */
 @Slf4j
 @Service
@@ -38,6 +40,7 @@ public class IaService {
 
     private static final Duration LIMITE = Duration.ofSeconds(90);
     private static final Set<String> COPILOTO = Set.of("sugerir", "resumir", "reescrever");
+    public static final String INTERNO = "interno";
 
     @Resource
     private IaMapper iaMapper;
@@ -62,10 +65,20 @@ public class IaService {
     public record Resposta(String conteudo, List<Chamada> chamadas, Map<String, Object> mensagemBruta, Long provedorId) {
     }
 
-    /** IA ligada e com pelo menos um provedor utilizável. */
+    /** IA do atendimento ligada e com pelo menos um provedor utilizável. */
     public boolean ativo() {
         IaConfigDO c = iaMapper.selectById(IaConfigDO.ID);
-        return c != null && Boolean.TRUE.equals(c.getAtivo()) && iaProvedorMapper.emOrdem().stream().anyMatch(IaService::utilizavel);
+        return c != null && Boolean.TRUE.equals(c.getAtivo()) && !ordem(c, "assistente").isEmpty();
+    }
+
+    /** Assistente IA do portal ligado e com provedor utilizável. */
+    public boolean ativoInterno() {
+        IaConfigDO c = iaMapper.selectById(IaConfigDO.ID);
+        return c != null && Boolean.TRUE.equals(c.getInternoAtivo()) && !ordem(c, INTERNO).isEmpty();
+    }
+
+    private boolean ativoPara(String finalidade) {
+        return INTERNO.equals(finalidade) ? ativoInterno() : ativo();
     }
 
     private static boolean utilizavel(IaProvedorDO p) {
@@ -73,14 +86,34 @@ public class IaService {
         return Boolean.TRUE.equals(p.getAtivo()) && p.getModelo() != null && (p.getChave() != null || t == null || !t.exigeChave());
     }
 
-    /** Ordem das tentativas: o principal do uso e depois os outros ativos pela prioridade. */
     List<IaProvedorDO> ordem(String finalidade) {
-        IaConfigDO c = iaMapper.selectById(IaConfigDO.ID);
-        Long principal = "assistente".equals(finalidade) ? c.getProvedorAssistenteId() : COPILOTO.contains(finalidade) ? c.getProvedorCopilotoId() : null;
+        return ordem(iaMapper.selectById(IaConfigDO.ID), finalidade);
+    }
+
+    /** Ordem das tentativas: o principal e a reserva do uso; sem principal, todos os ativos pela prioridade. */
+    private List<IaProvedorDO> ordem(IaConfigDO c, String finalidade) {
+        Long principal;
+        Long reserva;
+        if (INTERNO.equals(finalidade)) {
+            principal = c.getProvedorInternoId();
+            reserva = c.getProvedorInternoReservaId();
+        } else if (COPILOTO.contains(finalidade)) {
+            principal = c.getProvedorCopilotoId();
+            reserva = c.getProvedorCopilotoReservaId();
+        } else if ("assistente".equals(finalidade) || "transcricao".equals(finalidade)) {
+            principal = c.getProvedorAssistenteId();
+            reserva = c.getProvedorAssistenteReservaId();
+        } else {
+            principal = null;
+            reserva = null;
+        }
         List<IaProvedorDO> todos = iaProvedorMapper.emOrdem().stream().filter(IaService::utilizavel).toList();
+        if (principal == null) {
+            return todos;
+        }
         List<IaProvedorDO> out = new ArrayList<>();
         todos.stream().filter(p -> p.getId().equals(principal)).findFirst().ifPresent(out::add);
-        todos.stream().filter(p -> !p.getId().equals(principal)).forEach(out::add);
+        todos.stream().filter(p -> p.getId().equals(reserva) && !p.getId().equals(principal)).findFirst().ifPresent(out::add);
         return out;
     }
 
@@ -92,7 +125,7 @@ public class IaService {
      */
     public Resposta conversar(List<Map<String, Object>> mensagens, List<Map<String, Object>> ferramentas, String finalidade,
                               Long conversaId, Long userId) {
-        if (!ativo()) {
+        if (!ativoPara(finalidade)) {
             throw new IllegalStateException("a inteligência artificial está desligada ou sem provedor ativo");
         }
         List<IaProvedorDO> ordem = ordem(finalidade);
@@ -180,7 +213,12 @@ public class IaService {
 
     /** Há provedor ativo com modelo de transcrição (e a IA está ligada)? */
     public boolean transcreve() {
-        return ativo() && iaProvedorMapper.emOrdem().stream().anyMatch(p -> utilizavel(p) && p.getModeloAudio() != null);
+        return transcreve("assistente");
+    }
+
+    /** @param uso "assistente" (atendimento) ou {@link #INTERNO} */
+    public boolean transcreve(String uso) {
+        return ativoPara(uso) && ordem(uso).stream().anyMatch(p -> p.getModeloAudio() != null);
     }
 
     /**
@@ -190,10 +228,15 @@ public class IaService {
      * @return o texto, ou null se nenhum conseguiu
      */
     public String transcrever(byte[] audio, String nome, String tipo, Long conversaId) {
-        if (!ativo()) {
+        return transcrever(audio, nome, tipo, conversaId, "assistente");
+    }
+
+    /** @param uso "assistente" (atendimento) ou {@link #INTERNO}: cada um transcreve com os próprios provedores */
+    public String transcrever(byte[] audio, String nome, String tipo, Long conversaId, String usoIa) {
+        if (!ativoPara(usoIa)) {
             return null;
         }
-        for (IaProvedorDO p : ordem("assistente")) {
+        for (IaProvedorDO p : ordem(usoIa)) {
             if (p.getModeloAudio() == null) {
                 continue;
             }
@@ -236,6 +279,11 @@ public class IaService {
         v.setAtivo(c.getAtivo());
         v.setProvedorAssistenteId(c.getProvedorAssistenteId());
         v.setProvedorCopilotoId(c.getProvedorCopilotoId());
+        v.setProvedorAssistenteReservaId(c.getProvedorAssistenteReservaId());
+        v.setProvedorCopilotoReservaId(c.getProvedorCopilotoReservaId());
+        v.setInternoAtivo(c.getInternoAtivo());
+        v.setProvedorInternoId(c.getProvedorInternoId());
+        v.setProvedorInternoReservaId(c.getProvedorInternoReservaId());
         Map<Long, String> nomes = new HashMap<>();
         for (IaProvedorDO p : iaProvedorMapper.emOrdem()) {
             nomes.put(p.getId(), p.getNome());
@@ -273,21 +321,33 @@ public class IaService {
 
     /** Chave geral e principais de cada uso. */
     public AtendimentoVOs.IaConfig salvarConfig(AtendimentoVOs.IaConfig req, Long userId) {
-        for (Long id : Arrays.asList(req.getProvedorAssistenteId(), req.getProvedorCopilotoId())) {
+        for (Long id : Arrays.asList(req.getProvedorAssistenteId(), req.getProvedorCopilotoId(), req.getProvedorAssistenteReservaId(),
+                req.getProvedorCopilotoReservaId(), req.getProvedorInternoId(), req.getProvedorInternoReservaId())) {
             if (id != null && iaProvedorMapper.selectById(id) == null) {
                 throw exception(ACAO_INVALIDA, "Provedor de IA não encontrado");
             }
         }
         boolean ativo = Boolean.TRUE.equals(req.getAtivo());
-        if (ativo && iaProvedorMapper.emOrdem().stream().noneMatch(IaService::utilizavel)) {
+        boolean internoAtivo = Boolean.TRUE.equals(req.getInternoAtivo());
+        if ((ativo || internoAtivo) && iaProvedorMapper.emOrdem().stream().noneMatch(IaService::utilizavel)) {
             throw exception(ACAO_INVALIDA, "Para ligar a IA, cadastre ao menos um provedor ativo, com modelo e chave");
         }
         iaMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<IaConfigDO>()
                 .eq(IaConfigDO::getId, IaConfigDO.ID).set(IaConfigDO::getAtivo, ativo)
                 .set(IaConfigDO::getProvedorAssistenteId, req.getProvedorAssistenteId())
-                .set(IaConfigDO::getProvedorCopilotoId, req.getProvedorCopilotoId()));
-        auditoria.registrar("atendimento.ia_configurada", userId, null, Map.of("ativo", ativo,
-                "assistente", String.valueOf(req.getProvedorAssistenteId()), "copiloto", String.valueOf(req.getProvedorCopilotoId())));
+                .set(IaConfigDO::getProvedorCopilotoId, req.getProvedorCopilotoId())
+                .set(IaConfigDO::getProvedorAssistenteReservaId, req.getProvedorAssistenteReservaId())
+                .set(IaConfigDO::getProvedorCopilotoReservaId, req.getProvedorCopilotoReservaId())
+                .set(IaConfigDO::getInternoAtivo, internoAtivo)
+                .set(IaConfigDO::getProvedorInternoId, req.getProvedorInternoId())
+                .set(IaConfigDO::getProvedorInternoReservaId, req.getProvedorInternoReservaId()));
+        Map<String, Object> auditado = new LinkedHashMap<>();
+        auditado.put("ativo", ativo);
+        auditado.put("assistente", String.valueOf(req.getProvedorAssistenteId()));
+        auditado.put("copiloto", String.valueOf(req.getProvedorCopilotoId()));
+        auditado.put("internoAtivo", internoAtivo);
+        auditado.put("interno", String.valueOf(req.getProvedorInternoId()));
+        auditoria.registrar("atendimento.ia_configurada", userId, null, auditado);
         return obter();
     }
 

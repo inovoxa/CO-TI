@@ -215,6 +215,11 @@ export interface IaConfig {
   ativo: boolean
   provedorAssistenteId?: number
   provedorCopilotoId?: number
+  provedorAssistenteReservaId?: number
+  provedorCopilotoReservaId?: number
+  internoAtivo: boolean
+  provedorInternoId?: number
+  provedorInternoReservaId?: number
   provedores: IaProvedor[]
   tipos: {
     codigo: string
