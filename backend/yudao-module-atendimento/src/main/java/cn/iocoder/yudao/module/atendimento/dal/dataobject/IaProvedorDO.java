@@ -33,6 +33,8 @@ public class IaProvedorDO extends BaseDO {
     private String modeloAudio;
     private BigDecimal temperatura;
     private Integer maxTokens;
+    /** Pede ao modelo que responda sem raciocinar antes (reasoning_effort = "none") */
+    private Boolean semRaciocinio;
     private Boolean ativo;
     /** Menor primeiro: ordem da reserva quando o principal falha */
     private Integer prioridade;

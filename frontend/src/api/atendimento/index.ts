@@ -204,6 +204,8 @@ export interface IaProvedor {
   modeloAudio?: string
   temperatura?: number
   maxTokens?: number
+  /** responder sem raciocinar antes (reasoning_effort = "none") */
+  semRaciocinio?: boolean
   ativo: boolean
   prioridade: number
   chaveDefinida?: boolean

@@ -149,6 +149,9 @@ public class IaService {
         corpo.put("messages", mensagens);
         corpo.put("temperature", p.getTemperatura() == null ? 0.3 : p.getTemperatura().doubleValue());
         corpo.put("max_tokens", p.getMaxTokens() == null ? 800 : p.getMaxTokens());
+        if (Boolean.TRUE.equals(p.getSemRaciocinio())) {
+            corpo.put("reasoning_effort", "none");
+        }
         if (ferramentas != null && !ferramentas.isEmpty()) {
             corpo.put("tools", ferramentas);
             corpo.put("tool_choice", "auto");
@@ -297,6 +300,7 @@ public class IaService {
             x.setModeloAudio(p.getModeloAudio());
             x.setTemperatura(p.getTemperatura());
             x.setMaxTokens(p.getMaxTokens());
+            x.setSemRaciocinio(Boolean.TRUE.equals(p.getSemRaciocinio()));
             x.setAtivo(p.getAtivo());
             x.setPrioridade(p.getPrioridade());
             x.setTestadoEm(p.getTestadoEm());
@@ -381,7 +385,8 @@ public class IaService {
                 || !Objects.equals(req.getModelo().strip(), atual.getModelo());
         IaProvedorDO p = IaProvedorDO.builder().id(req.getId()).nome(req.getNome().strip()).tipo(tipo.codigo()).baseUrl(url).chave(chave)
                 .modelo(req.getModelo().strip()).modeloAudio(ContatoService.vazio(req.getModeloAudio())).temperatura(req.getTemperatura() == null ? BigDecimal.valueOf(0.3) : req.getTemperatura())
-                .maxTokens(req.getMaxTokens() == null ? 800 : req.getMaxTokens()).ativo(!Boolean.FALSE.equals(req.getAtivo()))
+                .maxTokens(req.getMaxTokens() == null ? 800 : req.getMaxTokens())
+                .semRaciocinio(Boolean.TRUE.equals(req.getSemRaciocinio())).ativo(!Boolean.FALSE.equals(req.getAtivo()))
                 .prioridade(req.getPrioridade() == null ? 0 : req.getPrioridade()).build();
         if (atual == null) {
             iaProvedorMapper.insert(p);
@@ -395,7 +400,7 @@ public class IaService {
             }
         }
         auditoria.registrar("atendimento.ia_provedor_salvo", userId, null, Map.of("provedor", p.getId(), "nome", p.getNome(),
-                "tipo", p.getTipo(), "baseUrl", url, "modelo", p.getModelo(), "chaveTrocada", req.getChave() != null && !req.getChave().isBlank()));
+                "tipo", p.getTipo(), "baseUrl", url, "modelo", p.getModelo(), "semRaciocinio", p.getSemRaciocinio(), "chaveTrocada", req.getChave() != null && !req.getChave().isBlank()));
         return p.getId();
     }
 

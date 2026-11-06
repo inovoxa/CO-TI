@@ -110,7 +110,9 @@
         <div class="dica">Em branco: o endereço padrão do tipo.</div>
         <div v-if="form.dados.tipo === 'ollama'" class="dica"
           >Ollama no próprio servidor: <code>http://host.docker.internal:11434/v1</code>. Em outra máquina, use o IP dela, e o
-          Ollama precisa escutar na rede (<code>OLLAMA_HOST=0.0.0.0</code>).</div
+          Ollama precisa escutar na rede (<code>OLLAMA_HOST=0.0.0.0</code>). Ollama instalado como serviço no Coolify: ligue
+          "Connect To Predefined Network" nele e no CO-TI e use o nome do contêiner, ex.:
+          <code>http://ollama-api-xxxx:11434/v1</code>.</div
         >
       </el-form-item>
       <el-form-item label="Chave de API">
@@ -161,6 +163,14 @@
       </el-form-item>
       <el-form-item label="Tokens da resposta">
         <el-input-number v-model="form.dados.maxTokens" :max="8000" :min="50" :step="100" />
+      </el-form-item>
+      <el-form-item label="Desligar raciocínio">
+        <el-switch v-model="form.dados.semRaciocinio" />
+        <div class="dica"
+          >Para modelos que "pensam" antes de responder (Qwen3.5, DeepSeek-R1, GPT-OSS): responde direto, mais rápido
+          e sem gastar os tokens da resposta no raciocínio. Use com Ollama ou OpenRouter; se o Testar der erro,
+          o modelo ou o provedor não aceita a opção e ela deve ficar desligada.</div
+        >
       </el-form-item>
       <el-form-item label="Prioridade">
         <el-input-number v-model="form.dados.prioridade" :max="999" :min="0" />
@@ -256,6 +266,7 @@ const abrir = (p?: Atd.IaProvedor) => {
         modelo: '',
         temperatura: 0.3,
         maxTokens: 800,
+        semRaciocinio: false,
         ativo: true,
         prioridade: (cfg.value?.provedores.length || 0) * 10
       }
@@ -265,7 +276,11 @@ const abrir = (p?: Atd.IaProvedor) => {
 const trocarTipo = () => {
   const t = tipoAtual.value
   if (!t) return
-  if (!form.dados.id) form.dados.nome = t.rotulo
+  if (!form.dados.id) {
+    form.dados.nome = t.rotulo
+    // modelo local, quase sempre sem placa de vídeo: o raciocínio só atrasa
+    form.dados.semRaciocinio = t.codigo === 'ollama'
+  }
   form.dados.baseUrl = ''
 }
 
