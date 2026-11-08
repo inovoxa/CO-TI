@@ -1,5 +1,5 @@
 # Build do frontend CO-TI (Vue 3 + Element Plus) servido pelo nginx
-FROM node:22.12.0-alpine AS build
+FROM node:26.12.1-alpine AS build
 WORKDIR /src
 RUN npm install -g pnpm@10.18.3
 COPY package.json pnpm-lock.yaml ./
