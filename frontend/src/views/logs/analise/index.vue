@@ -16,7 +16,7 @@
                   <el-option v-for="m in Api.MEDIDAS" :key="m.valor" :label="`Medir: ${m.rotulo}`" :value="m.valor" />
                 </el-select>
                 <el-button size="small" @click="carregar"><Icon icon="ep:refresh" /></el-button>
-                <el-button size="small" type="success" @click="abrirNaBusca">
+                <el-button size="small" type="success" @click="abrirNaBusca()">
                   <Icon class="mr-4px" icon="ep:search" />Abrir na busca
                 </el-button>
               </div>

@@ -244,7 +244,7 @@
             :before-upload="anexar"
             :show-file-list="false"
             action="#"
-            :http-request="() => {}"
+            :http-request="semEnvio"
           >
             <el-button link size="small"
               ><Icon class="mr-2px" icon="ep:paperclip" />Anexar</el-button
@@ -498,6 +498,8 @@ const usarResposta = (r: Atd.RespostaPronta) => {
   campo.value?.focus()
 }
 
+// o envio é feito no anexar (before-upload); o el-upload não manda nada sozinho
+const semEnvio = () => Promise.resolve()
 const anexar = async (arquivo: File) => {
   if (arquivo.size > 16 * 1024 * 1024) {
     message.warning('Arquivo maior que 16 MB')

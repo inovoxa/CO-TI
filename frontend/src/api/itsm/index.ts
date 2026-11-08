@@ -843,7 +843,12 @@ export const TIPOS_MUDANCA = [
 export const statusItil = (objeto: ObjetoItil) =>
   objeto === 'problema' ? STATUS_PROBLEMA : STATUS_MUDANCA
 export const corStatusItil = (objeto: ObjetoItil, s: number) =>
-  statusItil(objeto).find((x) => x.valor === s)?.cor || 'info'
+  (statusItil(objeto).find((x) => x.valor === s)?.cor || 'info') as
+    | 'primary'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'info'
 
 const u = (objeto: ObjetoItil, acao: string) => `/itsm/${objeto}/${acao}`
 

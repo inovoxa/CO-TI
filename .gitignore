@@ -15,3 +15,6 @@ segredos/
 
 # backups do banco e dos anexos (dados da empresa)
 /backups/
+
+# store do pnpm quando o install roda com a pasta montada num contêiner
+.pnpm-store/
