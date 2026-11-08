@@ -7,6 +7,14 @@
       <el-button v-hasPermi="['itsm:formulario:update']" plain @click="importacao.visivel = true">
         <Icon class="mr-5px" icon="ep:upload" /> Importar
       </el-button>
+      <el-button
+        v-hasPermi="['itsm:formulario:query']"
+        :loading="exportando"
+        plain
+        @click="exportar"
+      >
+        <Icon class="mr-5px" icon="ep:download" /> Exportar
+      </el-button>
       <el-input v-model="busca" class="!w-260px" clearable placeholder="Buscar" />
     </div>
   </ContentWrap>
@@ -295,6 +303,7 @@ import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as ItsmApi from '@/api/itsm'
 import { ACOES_AD, ESCALA } from '@/api/itsm'
 import FormularioRender from '../components/FormularioRender.vue'
+import download from '@/utils/download'
 
 defineOptions({ name: 'ItsmFormulario' })
 const message = useMessage()
@@ -441,6 +450,18 @@ const importar = async () => {
     await carregar()
   } finally {
     importacao.enviando = false
+  }
+}
+
+const exportando = ref(false)
+const exportar = async () => {
+  exportando.value = true
+  try {
+    const dados = await ItsmApi.exportarFormularios()
+    download.json(new Blob([JSON.stringify(dados, null, 2)]), 'formularios_definicoes.json')
+    message.success(`${dados.formularios.length} formulários exportados`)
+  } finally {
+    exportando.value = false
   }
 }
 

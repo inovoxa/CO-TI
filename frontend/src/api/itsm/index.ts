@@ -529,6 +529,8 @@ export const salvarFormulario = (data: Formulario): Promise<number> =>
   request.post({ url: '/itsm/formulario/save', data })
 export const excluirFormulario = (id: number) =>
   request.delete({ url: '/itsm/formulario/delete', params: { id } })
+export const exportarFormularios = (): Promise<{ formularios: unknown[] }> =>
+  request.get({ url: '/itsm/formulario/exportar' })
 export const importarFormularios = (arquivo: File, criarCategorias: boolean) =>
   request.upload({
     url: '/itsm/formulario/importar',

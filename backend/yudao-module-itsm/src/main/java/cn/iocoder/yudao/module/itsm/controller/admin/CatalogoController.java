@@ -63,6 +63,13 @@ public class CatalogoController {
         return success(true);
     }
 
+    @GetMapping("/formulario/exportar")
+    @Operation(summary = "Exportar formulários no formato aceito pela importação")
+    @PreAuthorize("@ss.hasPermission('itsm:formulario:query')")
+    public CommonResult<Map<String, Object>> exportar() {
+        return success(formularioService.exportar());
+    }
+
     @PostMapping("/formulario/importar")
     @Operation(summary = "Importar formulários (formato formularios_definicoes.json); atualiza pelo código")
     @PreAuthorize("@ss.hasPermission('itsm:formulario:update')")

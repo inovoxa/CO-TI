@@ -418,12 +418,34 @@ public class FormularioService {
                 s.setOrdem(m.get("ordem") != null ? inteiro(m.get("ordem"), ordem) : ordem);
                 s.setDefinicao(JsonUtils.parseObject(JsonUtils.toJsonString(Map.of("secoes", m.get("secoes"))),
                         Formulario.Definicao.class));
-                s.setCategoriaId(categoria(Optional.ofNullable(texto(m.get("categoria"))).orElse(nome), s.getGrupo(),
-                        criarCategorias, resp));
+                if (!"".equals(m.get("categoria"))) {
+                    s.setCategoriaId(categoria(Optional.ofNullable(texto(m.get("categoria"))).orElse(nome), s.getGrupo(),
+                            texto(m.get("categoria_completa")), criarCategorias, resp));
+                }
                 FormularioDO existente = codigo == null ? null : formularioMapper.selectOne(FormularioDO::getCodigo, codigo);
                 if (existente != null) {
                     s.setId(existente.getId());
                     s.setAtivo(existente.getAtivo());
+                }
+                if (existente == null && m.get("ativo") != null) {
+                    s.setAtivo(Boolean.parseBoolean(texto(m.get("ativo"))));
+                }
+                if ("fixo".equals(s.getAprovacao())) {
+                    String login = texto(m.get("aprovador_username"));
+                    Long aprovadorId = aprovadorPorLogin(login);
+                    if (aprovadorId != null) {
+                        s.setAprovadorId(aprovadorId);
+                    } else if (existente != null) {
+                        // nunca deixa um formulário em uso sem a aprovação que ele já tinha
+                        s.setAprovacao(existente.getAprovacao());
+                        s.setAprovadorCampo(existente.getAprovadorCampo());
+                        s.setAprovadorId(existente.getAprovadorId());
+                        resp.getAvisos().add(nome + ": aprovador \"" + login + "\" não encontrado; mantida a aprovação atual");
+                    } else {
+                        s.setAprovacao("nenhuma");
+                        s.setAtivo(false);
+                        resp.getAvisos().add(nome + ": aprovador \"" + login + "\" não encontrado; importado inativo e sem aprovador, defina um antes de ativar");
+                    }
                 }
                 salvar(s);
                 if (existente != null) {
@@ -440,9 +462,9 @@ public class FormularioService {
         return resp;
     }
 
-    private Long categoria(String nome, String grupo, boolean criar, CatalogoVOs.ImportacaoResp resp) {
+    private Long categoria(String nome, String grupo, String caminho, boolean criar, CatalogoVOs.ImportacaoResp resp) {
         List<CategoriaDO> todas = cadastros.listarCategorias(false, false);
-        String completo = grupo + " > " + nome;
+        String completo = caminho != null ? caminho : grupo + " > " + nome;
         Optional<CategoriaDO> achou = todas.stream().filter(c -> c.getNomeCompleto().equalsIgnoreCase(completo)).findFirst();
         if (achou.isEmpty()) {
             achou = todas.stream().filter(c -> c.getNome().equalsIgnoreCase(nome)).findFirst();
@@ -466,7 +488,49 @@ public class FormularioService {
         return cadastros.salvarCategoria(c);
     }
 
+    /**
+     * Catálogo no formato que {@link #importar} aceita, para levar os formulários de uma instalação para outra. O
+     * aprovador fixo vai pelo login, porque o id do usuário muda entre instalações.
+     */
+    public Map<String, Object> exportar() {
+        List<CatalogoVOs.FormularioResp> formularios = listar();
+        Map<Long, AdminUserRespDTO> pessoas = adminUserApi.getUserMap(formularios.stream()
+                .map(CatalogoVOs.FormularioResp::getAprovadorId).filter(Objects::nonNull).collect(Collectors.toSet()));
+        List<Map<String, Object>> itens = new ArrayList<>();
+        for (CatalogoVOs.FormularioResp f : formularios) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("codigo", f.getCodigo());
+            m.put("nome", f.getNome());
+            m.put("descricao", f.getDescricao());
+            m.put("grupo", f.getGrupo());
+            m.put("icon", f.getIcone());
+            // vazia = formulário sem categoria (sem a chave, a importação criaria uma com o nome do formulário)
+            String caminho = f.getCategoria();
+            m.put("categoria", caminho == null ? "" : caminho.replaceFirst("^.* > ", ""));
+            m.put("categoria_completa", caminho);
+            m.put("ticket", Map.of("type", f.getTipo(), "urgency", f.getUrgencia(), "impact", f.getImpacto()));
+            m.put("titulo_modelo", f.getTituloModelo());
+            m.put("aprovacao", f.getAprovacao());
+            m.put("aprovador_campo", f.getAprovadorCampo());
+            AdminUserRespDTO aprovador = pessoas.get(f.getAprovadorId());
+            m.put("aprovador_username", aprovador == null ? null : aprovador.getUsername());
+            m.put("acao_ad", f.getAcaoAd());
+            m.put("destaque", Boolean.TRUE.equals(f.getDestaque()));
+            m.put("ativo", f.getAtivo());
+            m.put("ordem", f.getOrdem());
+            m.put("secoes", f.getDefinicao().secoes());
+            itens.add(m);
+        }
+        return Map.of("formularios", itens);
+    }
+
     // ------------------------------------------------------------------ internos
+
+    /** Id do usuário com esse login que pode aprovar; null se não houver nesta instalação. */
+    private Long aprovadorPorLogin(String login) {
+        AdminUserRespDTO u = login == null ? null : adminUserApi.getUserByUsername(login);
+        return u != null && aprovacaoService.podeAprovar(u.getId()) ? u.getId() : null;
+    }
 
     public FormularioDO obter(Long id) {
         FormularioDO f = id == null ? null : formularioMapper.selectById(id);
