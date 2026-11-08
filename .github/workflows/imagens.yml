@@ -48,7 +48,7 @@ jobs:
         with:
           # no workflow_run, o commit que o CI testou (não o último do main)
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
