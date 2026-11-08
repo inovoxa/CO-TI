@@ -1,0 +1,148 @@
+# CO-TI no Coolify (atrás do Traefik, que faz o HTTPS com Let's Encrypt). Cópia do docker-compose.yml com só o que
+# muda: o frontend não publica portas no host e serve tudo em HTTP na 80 (deploy/coolify/nginx.conf.template).
+# Mantenha em sincronia com o docker-compose.yml. No Coolify: build pack "Docker Compose", arquivo
+# /docker-compose.coolify.yml, "Preserve Repository" ligado (os bind mounts ./deploy/... vêm do repositório) e o
+# domínio no serviço frontend, porta 80. Segredos nas variáveis de ambiente do Coolify (ver .env.example).
+
+services:
+  postgres:
+    # PostgreSQL 16 com TimescaleDB e pgvector na mesma imagem (banco único do CO-TI)
+    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    environment:
+      POSTGRES_DB: coti
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      PGTZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      POSTGRES_USER: coti
+      POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD no .env}
+      CO_TI_DB_APP_PASSWORD: ${CO_TI_DB_APP_PASSWORD:?defina CO_TI_DB_APP_PASSWORD no .env}
+    volumes:
+      - pgdata:/home/postgres/pgdata/data
+      - ./deploy/postgres/050_papel_aplicacao.sh:/docker-entrypoint-initdb.d/050_papel_aplicacao.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coti -d coti"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--requirepass", "${CO_TI_REDIS_PASSWORD:?defina CO_TI_REDIS_PASSWORD no .env}", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=${CO_TI_FUSO:-America/Sao_Paulo}
+      CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
+      # a aplicação conecta como coti_app (só DML); o Flyway usa o dono (coti)
+      CO_TI_DB_USER: coti_app
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_APP_PASSWORD}
+      CO_TI_FLYWAY_USER: coti
+      CO_TI_FLYWAY_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_REDIS_HOST: redis
+      CO_TI_REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+      CO_TI_ADMIN_MONITOR_PASSWORD: ${CO_TI_ADMIN_MONITOR_PASSWORD:?defina CO_TI_ADMIN_MONITOR_PASSWORD no .env}
+      CO_TI_CAPTCHA: ${CO_TI_CAPTCHA:-true}
+      CO_TI_ADMIN_SENHA_INICIAL: ${CO_TI_ADMIN_SENHA_INICIAL:-}
+      CO_TI_CHAVE_MESTRA: ${CO_TI_CHAVE_MESTRA:?defina CO_TI_CHAVE_MESTRA no .env (openssl rand -base64 32)}
+      CO_TI_MFA_EMISSOR: ${CO_TI_MFA_EMISSOR:-CO-TI}
+      CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
+      CO_TI_AD_URL: ${CO_TI_AD_URL:-}
+      CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}
+      CO_TI_AD_BIND_SENHA: ${CO_TI_AD_BIND_SENHA:-}
+      CO_TI_AD_BASE_USUARIOS: ${CO_TI_AD_BASE_USUARIOS:-}
+      CO_TI_AD_EXECUCAO: ${CO_TI_AD_EXECUCAO:-desligado}
+      CO_TI_AD_SSH_HOST: ${CO_TI_AD_SSH_HOST:-}
+      CO_TI_AD_SSH_PORTA: ${CO_TI_AD_SSH_PORTA:-22}
+      CO_TI_AD_SSH_USUARIO: ${CO_TI_AD_SSH_USUARIO:-}
+      CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
+      CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
+      CO_TI_URL_PUBLICA: ${CO_TI_URL_PUBLICA:-}
+      # só em teste: apontam os canais para simuladores (padrão = APIs oficiais)
+      CO_TI_META_GRAPH_URL: ${CO_TI_META_GRAPH_URL:-https://graph.facebook.com/v23.0}
+      CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
+      CO_TI_TELEGRAM_URL: ${CO_TI_TELEGRAM_URL:-https://api.telegram.org}
+      CO_TI_VIACEP_URL: ${CO_TI_VIACEP_URL-https://viacep.com.br/ws}
+      # inventário: redes de onde os agentes podem mandar e senha HTTP Basic opcional
+      CO_TI_INVENTARIO_REDES: ${CO_TI_INVENTARIO_REDES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}
+      CO_TI_INVENTARIO_USUARIO: ${CO_TI_INVENTARIO_USUARIO:-}
+      CO_TI_INVENTARIO_SENHA: ${CO_TI_INVENTARIO_SENHA:-}
+      CO_TI_INVENTARIO_IPDISCOVER: ${CO_TI_INVENTARIO_IPDISCOVER:-true}
+      CO_TI_INVENTARIO_IPDISCOVER_REDES: ${CO_TI_INVENTARIO_IPDISCOVER_REDES:-}
+      CO_TI_INVENTARIO_SNMP_MS: ${CO_TI_INVENTARIO_SNMP_MS:-21600000}
+      # monitoramento: retenção e busca de endereço das unidades (vazio = desligado, para rede sem internet)
+      CO_TI_MONITORAMENTO_RETENCAO_DIAS: ${CO_TI_MONITORAMENTO_RETENCAO_DIAS:-31}
+      CO_TI_GEOCODIFICACAO_URL: ${CO_TI_GEOCODIFICACAO_URL-https://nominatim.openstreetmap.org/search}
+      CO_TI_GEOCODIFICACAO_CONTATO: ${CO_TI_GEOCODIFICACAO_CONTATO:-}
+      # retenção dos registros técnicos (dias; 0 = guardar para sempre), rotinas em paralelo e custo do hash de senha
+      CO_TI_RETENCAO_LOG_OPERACOES_DIAS: ${CO_TI_RETENCAO_LOG_OPERACOES_DIAS:-730}
+      CO_TI_RETENCAO_LOG_ACESSO_DIAS: ${CO_TI_RETENCAO_LOG_ACESSO_DIAS:-365}
+      CO_TI_RETENCAO_LOG_API_DIAS: ${CO_TI_RETENCAO_LOG_API_DIAS:-30}
+      CO_TI_RETENCAO_LOG_ERROS_DIAS: ${CO_TI_RETENCAO_LOG_ERROS_DIAS:-90}
+      CO_TI_AGENDADOR_THREADS: ${CO_TI_AGENDADOR_THREADS:-8}
+      CO_TI_BCRYPT_CUSTO: ${CO_TI_BCRYPT_CUSTO:-12}
+      CO_TI_WS_SENDER: ${CO_TI_WS_SENDER:-local}
+      CO_TI_LOGS_RECEPCAO: ${CO_TI_LOGS_RECEPCAO:-true}
+      CO_TI_LOGS_PERMITIDOS: ${CO_TI_LOGS_PERMITIDOS:-}
+      CO_TI_LOGS_RETENCAO_DIAS: ${CO_TI_LOGS_RETENCAO_DIAS:-30}
+      CO_TI_SYSLOG_PORTA: ${CO_TI_SYSLOG_PORTA:-514}
+      CO_TI_GELF_PORTA: ${CO_TI_GELF_PORTA:-12201}
+      # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
+      CO_TI_IMPORTACAO_ARQUIVOS: /importacao/glpi-files
+    ports:
+      # logs: Syslog (FortiGate, servidores, NXLog) e GELF (Windows via NXLog/Winlogbeat)
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/udp"
+      - "${CO_TI_SYSLOG_PORTA:-514}:1514/tcp"
+      - "${CO_TI_GELF_PORTA:-12201}:12201/udp"
+    volumes:
+      - backendlogs:/app/logs
+      - arquivos:/app/arquivos
+      - ./segredos:/run/segredos:ro
+      - ./importacao:/importacao:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    volumes:
+      # HTTP só na 80, com o IP real do cliente vindo do Traefik (o TLS fica no Coolify)
+      - ./deploy/coolify/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # backup diário do banco e dos anexos em ./backups (copie a pasta para fora do servidor). Ver deploy/backup.
+  backup:
+    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    entrypoint: ["bash", "/backup/backup.sh"]
+    user: root
+    environment:
+      TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
+      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_BACKUP_HORA: ${CO_TI_BACKUP_HORA:-02:30}
+      CO_TI_BACKUP_DIAS: ${CO_TI_BACKUP_DIAS:-14}
+    volumes:
+      - ./deploy/backup:/backup:ro
+      - ./backups:/backups
+      - arquivos:/arquivos
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  arquivos:
+  pgdata:
+  redisdata:
+  backendlogs:
