@@ -44,7 +44,7 @@ jobs:
             contexto: deploy
             dockerfile: deploy/Dockerfile.postgres
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # no workflow_run, o commit que o CI testou (não o último do main)
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
