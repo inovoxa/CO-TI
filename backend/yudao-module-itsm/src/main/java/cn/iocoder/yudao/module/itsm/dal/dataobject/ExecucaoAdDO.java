@@ -25,7 +25,7 @@ public class ExecucaoAdDO {
     private String acao;
     /** JSON enviado ao script */
     private String dados;
-    /** aguardando_aprovacao | pronta | executando | sucesso | erro | recusada | cancelada */
+    /** aguardando_aprovacao | aguardando_confirmacao | pronta | executando | sucesso | erro | recusada | cancelada */
     private String status;
     private Integer tentativas;
     private java.time.LocalDateTime proximaTentativa;
@@ -37,5 +37,7 @@ public class ExecucaoAdDO {
     private java.time.LocalDateTime senhaVistaEm;
     private java.time.LocalDateTime criadoEm;
     private java.time.LocalDateTime executadoEm;
+    /** Pedido vindo de integração: no sucesso, fecha o chamado sem esperar o solicitante e desativa a conta no portal */
+    private Boolean fecharAoConcluir;
 
 }

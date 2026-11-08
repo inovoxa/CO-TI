@@ -102,6 +102,7 @@ public final class MonitorVOs {
     public static class Resp {
         private Long id;
         private String nome;
+        private String descricao;
         private String tipo;
         private String alvo;
         private Integer porta;

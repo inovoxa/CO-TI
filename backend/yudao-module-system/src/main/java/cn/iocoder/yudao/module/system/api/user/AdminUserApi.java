@@ -33,6 +33,14 @@ public interface AdminUserApi {
     AdminUserRespDTO getUserByMobile(String mobile);
 
     /**
+     * CO-TI: usuário pelo login (a conta do AD, sem domínio)
+     *
+     * @param username login
+     * @return o usuário ou null
+     */
+    AdminUserRespDTO getUserByUsername(String username);
+
+    /**
      * 通过用户 ID 查询用户下属
      *
      * @param id 用户编号

@@ -26,7 +26,7 @@ public final class FluxoTextos {
 
     public static final String AJUDA_COMANDOS = "A qualquer momento: *menu* volta ao início, *voltar* refaz a pergunta anterior, *cancelar* descarta o pedido e *atendente* chama uma pessoa.";
 
-    public enum Comando { MENU, VOLTAR, CANCELAR, ATENDENTE }
+    public enum Comando { MENU, VOLTAR, CANCELAR, ATENDENTE, SENHA }
 
     /** Comando global, se a mensagem for um. */
     public static Comando comando(String texto) {
@@ -36,6 +36,8 @@ public final class FluxoTextos {
             case "voltar" -> Comando.VOLTAR;
             case "cancelar", "sair" -> Comando.CANCELAR;
             case "atendente", "humano", "falar com atendente", "falar com um atendente", "pessoa" -> Comando.ATENDENTE;
+            // pedido da senha provisória de um reset/criação já executado no AD
+            case "senha", "senha provisoria", "minha senha", "ver senha", "receber senha", "enviar senha" -> Comando.SENHA;
             default -> null;
         };
     }
@@ -59,6 +61,16 @@ public final class FluxoTextos {
     }
 
     /** Código de serviço do catálogo ("2.1", "2.11"), se a mensagem for só isso. */
+    /** Serviços que só o portal atende: o chat não trata perguntas condicionais nem múltipla escolha. */
+    public static String soNoPortal(List<String> servicos, String urlPublica) {
+        if (servicos.isEmpty()) {
+            return "";
+        }
+        String base = urlPublica == null ? "" : urlPublica.trim().replaceAll("/+$", "");
+        return "Pelo portal" + (base.isEmpty() ? " (Catálogo de serviços)" : ": " + base + "/catalogo") + "\n"
+                + servicos.stream().map(s -> "- " + s).collect(java.util.stream.Collectors.joining("\n"));
+    }
+
     public static String codigo(String texto) {
         String t = texto == null ? "" : texto.strip();
         return t.matches("\\d{1,2}\\.\\d{1,2}") ? t : null;
@@ -74,6 +86,7 @@ public final class FluxoTextos {
                 }
             }
             case "email" -> s.append("\n_(e-mail)_");
+            case "usuario" -> s.append("\n_(usuário de rede, ex.: nome.sobrenome)_");
             case "number" -> s.append("\n_(só números)_");
             case "select", "radios" -> {
                 for (int i = 0; i < p.values().size(); i++) {

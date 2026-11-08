@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, unref, watch } from 'vue'
 import { useAppStore } from '@/store/modules/app'
+import { useMarcaStore } from '@/store/modules/marca'
 import { useDesign } from '@/hooks/web/useDesign'
 import { getLayoutRenderMode, isHeaderNavLayout } from '@/utils/layout'
 
@@ -11,6 +12,7 @@ const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('logo')
 
 const appStore = useAppStore()
+const marca = useMarcaStore()
 
 const show = ref(true)
 
@@ -72,8 +74,9 @@ watch(
       to="/"
     >
       <img
-        class="h-[calc(var(--logo-height)-10px)] w-[calc(var(--logo-height)-10px)]"
-        src="@/assets/imgs/logo.png"
+        :src="marca.logoUrl"
+        alt=""
+        class="h-[calc(var(--logo-height)-14px)] w-[calc(var(--logo-height)-14px)] shrink-0 object-contain"
       />
       <div
         v-if="show"

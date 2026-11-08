@@ -29,5 +29,6 @@ public interface ErrorCodeConstants {
     ErrorCode PACOTE_SEM_ARQUIVO = new ErrorCode(1_103_000_020, "Envie o arquivo do pacote (e deixe-o ativo) antes de implantar");
     ErrorCode PACOTE_SEM_ENDERECO = new ErrorCode(1_103_000_021, "Defina CO_TI_URL_PUBLICA (ou CO_TI_INVENTARIO_PACOTES_ENDERECO): os agentes baixam o pacote por esse endereço");
     ErrorCode ALERTA_LIMITE_INVALIDO = new ErrorCode(1_103_000_006, "Limite inválido: use {}");
+    ErrorCode RELATORIO_GRANDE_DEMAIS = new ErrorCode(1_103_000_022, "O relatório teria {} linhas e o limite é {}. Use mais filtros e tente de novo");
 
 }

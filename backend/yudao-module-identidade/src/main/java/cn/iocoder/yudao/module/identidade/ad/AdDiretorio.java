@@ -32,6 +32,8 @@ public class AdDiretorio implements AutoCloseable {
     static final String[] ATRIBUTOS = {"objectGUID", "sAMAccountName", "displayName", "cn", "mail",
             "telephoneNumber", "mobile", "title", "manager", "memberOf", "userAccountControl"};
 
+    public static final Set<String> ATRIBUTOS_DE_BUSCA = Set.of("employeeID", "employeeNumber", "mail", "sAMAccountName", "userPrincipalName");
+
     private final AdProperties props;
     private final LDAPConnectionPool pool;
     /** O servidor LDAP em memória dos testes não conhece a regra em cadeia; o AD real sim. */
@@ -84,6 +86,26 @@ public class AdDiretorio implements AutoCloseable {
                 return Optional.empty();
             }
             return Optional.of(converter(r.getSearchEntries().get(0)));
+        } catch (LDAPException e) {
+            throw new AdIndisponivelException("Falha ao buscar a conta no AD", e);
+        }
+    }
+
+    /**
+     * Todas as contas com aquele valor, para quem precisa saber se a identificação é única. O atributo vem de uma lista fechada e o
+     * valor é escapado pelo filtro.
+     */
+    public List<AdUsuario> buscarPorAtributo(String atributo, String valor) {
+        if (!ATRIBUTOS_DE_BUSCA.contains(atributo)) {
+            throw new IllegalArgumentException("Atributo de busca não permitido: " + atributo);
+        }
+        Filter filtro = Filter.createANDFilter(filtroBase(), Filter.createEqualityFilter(atributo, valor));
+        try {
+            List<AdUsuario> contas = new ArrayList<>();
+            for (SearchResultEntry e : pool.search(props.getBaseUsuarios(), SearchScope.SUB, filtro, ATRIBUTOS).getSearchEntries()) {
+                contas.add(converter(e));
+            }
+            return contas;
         } catch (LDAPException e) {
             throw new AdIndisponivelException("Falha ao buscar a conta no AD", e);
         }

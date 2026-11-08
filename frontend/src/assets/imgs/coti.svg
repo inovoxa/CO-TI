@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CO-TI">
+  <defs>
+    <linearGradient id="coti-fundo" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ba177"/>
+      <stop offset=".55" stop-color="#3a6fb0"/>
+      <stop offset="1" stop-color="#b8609f"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#coti-fundo)"/>
+  <path d="M42.3 21.7A16 16 0 1 0 42.3 42.3" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M20 32h6l3.5-7.5 5 15 3.5-7.5h12" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="51" cy="32" r="3.6" fill="#fff"/>
+</svg>

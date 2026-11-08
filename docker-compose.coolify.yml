@@ -38,6 +38,9 @@ services:
 
   backend:
     image: ghcr.io/inovoxa/co-ti-backend:${CO_TI_VERSAO:-latest}
+    # Ollama ou outra IA instalada no próprio servidor: http://host.docker.internal:11434/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
       TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
@@ -56,11 +59,13 @@ services:
       CO_TI_ADMIN_SENHA_INICIAL: ${SERVICE_PASSWORD_ADMIN}
       CO_TI_CHAVE_MESTRA: ${SERVICE_REALBASE64_32_CHAVEMESTRA}
       CO_TI_MFA_EMISSOR: ${CO_TI_MFA_EMISSOR:-CO-TI}
+      CO_TI_COFRE_EXIGIR_MFA: ${CO_TI_COFRE_EXIGIR_MFA:-true}
       CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
       CO_TI_AD_URL: ${CO_TI_AD_URL:-}
       CO_TI_AD_BIND_DN: ${CO_TI_AD_BIND_DN:-}
       CO_TI_AD_BIND_SENHA: ${CO_TI_AD_BIND_SENHA:-}
       CO_TI_AD_BASE_USUARIOS: ${CO_TI_AD_BASE_USUARIOS:-}
+      CO_TI_AD_GRUPO_APROVADORES: ${CO_TI_AD_GRUPO_APROVADORES:-}
       CO_TI_AD_EXECUCAO: ${CO_TI_AD_EXECUCAO:-desligado}
       CO_TI_AD_SSH_HOST: ${CO_TI_AD_SSH_HOST:-}
       CO_TI_AD_SSH_PORTA: ${CO_TI_AD_SSH_PORTA:-22}
@@ -95,6 +100,8 @@ services:
       CO_TI_LOGS_RECEPCAO: ${CO_TI_LOGS_RECEPCAO:-true}
       CO_TI_LOGS_PERMITIDOS: ${CO_TI_LOGS_PERMITIDOS:-}
       CO_TI_LOGS_RETENCAO_DIAS: ${CO_TI_LOGS_RETENCAO_DIAS:-30}
+      CO_TI_LOGS_LIMITE_GB: ${CO_TI_LOGS_LIMITE_GB:-50}
+      CO_TI_DISCO_LIMITE_GB: ${CO_TI_DISCO_LIMITE_GB:-0}
       CO_TI_SYSLOG_PORTA: ${CO_TI_SYSLOG_PORTA:-514}
       CO_TI_GELF_PORTA: ${CO_TI_GELF_PORTA:-12201}
       # importação do GLPI: copie a pasta files/ do GLPI para ./importacao/glpi-files (só leitura no contêiner)
@@ -146,3 +153,11 @@ volumes:
   pgdata:
   redisdata:
   backendlogs:
+
+# Rede interna dos containers. Fora de 172.16.0.0/12 e de 10.0.0.0/8, que a rede da Prefeitura usa: se a faixa
+# colidir, o monitoramento não alcança as unidades daquela faixa (o ping morre dentro do Docker).
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${CO_TI_REDE_DOCKER:-192.168.240.0/24}

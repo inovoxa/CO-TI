@@ -110,13 +110,18 @@ public class MonitorKpiService {
 
     // ===================== REGRAS =====================
 
-    /** Regra de cor da unidade. Ajuste os limites conforme o acordo de nível de serviço do órgão/empresa. */
+    /**
+     * Regra de cor da unidade. Vermelho é o que está fora agora (link ou boa parte dos serviços); disponibilidade
+     * baixa nas 24 h é amarelo: a unidade que voltou não fica vermelha o dia inteiro por uma queda já resolvida.
+     * Ajuste os limites conforme o acordo de nível de serviço do órgão/empresa.
+     */
     public static String calcularStatus(UnitKpiVO k) {
         double servicos = k.getServicosTotal() == 0 ? 1 : (double) k.getServicosNoAr() / k.getServicosTotal();
-        if ("offline".equals(k.getLink()) || servicos < 0.90 || k.getDisponibilidade() < 98.0) {
+        if ("offline".equals(k.getLink()) || servicos < 0.90) {
             return "critico";
         }
-        if ("degradado".equals(k.getLink()) || k.getLatenciaMs() > 120 || k.getSlaVencido() > 0 || servicos < 1) {
+        if ("degradado".equals(k.getLink()) || k.getDisponibilidade() < 98.0 || k.getLatenciaMs() > 120
+                || k.getSlaVencido() > 0 || servicos < 1) {
             return "atencao";
         }
         return "ok";

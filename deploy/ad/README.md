@@ -43,6 +43,11 @@ A chave privada fica em `./segredos/ad_ssh_key` (montada só para leitura no con
 powershell.exe -File C:\Scripts\Executar_AD_Automatico.ps1 -Acao <Criar|Reset|Reativar|Desativar|AcessoPasta|Transferir|CriarEmail> -DadosB64 <JSON em Base64>
 ```
 
+**Desativar pela integração (RH):** o CO-TI manda `somente_login=true`. Com ele, o script só aceita o login exato e nunca busca por
+nome, porque dois servidores com o mesmo nome não podem ser confundidos. A resposta traz `grupos_removidos` (base para uma
+reativação) e `pendencias` (grupo que não saiu, conta que não mudou de OU). Pedidos feitos pelo catálogo continuam como antes.
+
+
 - Os dados são as respostas do formulário (nomes das perguntas), mais `chamado_id` e `login_solicitante`.
   Vão em Base64: nada digitado no formulário vira parte do comando.
 - O script responde uma linha JSON: `{"sucesso":true,"acao_real":"...","login":"...","senha":"...","mensagem":"..."}`

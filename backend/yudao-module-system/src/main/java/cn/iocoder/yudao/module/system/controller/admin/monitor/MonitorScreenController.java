@@ -60,6 +60,7 @@ public class MonitorScreenController {
             v.setDeptId(u.getDeptId());
             v.setName(u.getName());
             v.setCity(u.getCity());
+            v.setEndereco(endereco(u));
             v.setLatitude(u.getLatitude());
             v.setLongitude(u.getLongitude());
             v.setKpi(monitorKpiService.getKpi(u.getId()));
@@ -70,6 +71,12 @@ public class MonitorScreenController {
         resp.setOcorrencias(monitorKpiService.getOcorrencias());
 
         return success(resp);
+    }
+
+    private static String endereco(MonitorUnitDO u) {
+        String rua = u.getLogradouro() == null ? "" : u.getLogradouro() + (u.getNumero() == null ? "" : ", " + u.getNumero());
+        String bairro = u.getBairro() == null ? "" : u.getBairro();
+        return rua.isEmpty() || bairro.isEmpty() ? rua + bairro : rua + " · " + bairro;
     }
 
 }

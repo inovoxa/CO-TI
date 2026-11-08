@@ -47,5 +47,7 @@ public interface ErrorCodeConstants {
     ErrorCode MACRO_SEM_PERMISSAO = new ErrorCode(1_102_005_011, "Sem permissão para macros de todos");
     ErrorCode CAIXA_CALENDARIO_INVALIDO = new ErrorCode(1_102_000_005, "Calendário não encontrado");
     ErrorCode MODELO_PARAMETROS = new ErrorCode(1_102_004_011, "O modelo pede {} variáveis; preencha todas");
+    ErrorCode WIDGET_DESLIGADO = new ErrorCode(1_102_007_000, "O assistente do portal está desligado");
+    ErrorCode WIDGET_SESSAO_INVALIDA = new ErrorCode(1_102_007_001, "Sessão do assistente inválida: recomece a conversa");
 
 }

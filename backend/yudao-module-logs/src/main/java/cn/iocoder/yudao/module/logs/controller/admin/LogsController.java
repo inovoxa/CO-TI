@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.logs.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.logs.config.LogsProperties;
+import cn.iocoder.yudao.module.system.service.retencao.RetencaoService;
 import cn.iocoder.yudao.module.logs.controller.admin.vo.LogsVOs;
 import cn.iocoder.yudao.module.logs.service.ConsultaLogsService;
 import cn.iocoder.yudao.module.logs.service.GravadorLogs;
@@ -38,6 +39,8 @@ public class LogsController {
     private GravadorLogs gravadorLogs;
     @Resource
     private LogsProperties props;
+    @Resource
+    private RetencaoService retencaoService;
 
     // ================================================================================== consulta
 
@@ -134,7 +137,7 @@ public class LogsController {
         s.setInvalidas(c.invalidas());
         s.setFalhas(c.falhas());
         s.setFila(gravadorLogs.pendentes());
-        s.setRetencaoDias(props.getRetencaoDias());
+        s.setRetencaoDias(retencaoService.valor(RetencaoService.LOGS_MENSAGENS));
         s.setUltimas24h(consultaLogsService.ultimas24hPorFluxo());
         s.setTamanho(consultaLogsService.tamanho());
         return success(s);

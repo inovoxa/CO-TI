@@ -2,7 +2,13 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/pwa/icone-180.png" />
+    <meta name="theme-color" content="#3a6fb0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="CO-TI" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
@@ -48,7 +54,7 @@
         }
 
         .app-loading .app-loading-logo {
-          width: 100px;
+          width: 72px;
           margin: 0 auto 15px auto;
         }
 
@@ -136,9 +142,18 @@
       <div class="app-loading">
         <div class="app-loading-wrap">
           <div class="app-loading-title">
-            <img src="/logo.gif" class="app-loading-logo" alt="Logo" />
+            <img src="/favicon.svg" class="app-loading-logo" alt="" />
             <div class="app-loading-title">%VITE_APP_TITLE%</div>
           </div>
+          <script>
+            // nome e logo alterados em Sistema > Identidade visual (guardados pela última visita)
+            try {
+              var marca = JSON.parse(localStorage.getItem('coti-marca') || 'null')
+              var tela = document.currentScript.parentElement
+              if (marca && marca.nome) tela.querySelector('div.app-loading-title > div').textContent = marca.nome
+              if (marca && marca.logo) tela.querySelector('img').src = marca.logo
+            } catch (e) {}
+          </script>
           <div class="app-loading-item">
             <div class="app-loading-outter"></div>
             <div class="app-loading-inner"></div>

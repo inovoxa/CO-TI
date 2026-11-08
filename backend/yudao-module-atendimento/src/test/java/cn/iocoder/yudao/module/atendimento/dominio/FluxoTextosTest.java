@@ -18,12 +18,23 @@ class FluxoTextosTest {
     private static final Formulario.Pergunta PROC = new Formulario.Pergunta("numero_processo", "Processo", "text", false, List.of(), null);
 
     @Test
+    void servicoSoDoPortal() {
+        assertEquals("", FluxoTextos.soNoPortal(List.of(), "https://ti.org"));
+        assertEquals("Pelo portal: https://ti.org/catalogo\n- 5.1 Login", FluxoTextos.soNoPortal(List.of("5.1 Login"), "https://ti.org/"));
+        assertEquals("Pelo portal (Catálogo de serviços)\n- 5.1 Login", FluxoTextos.soNoPortal(List.of("5.1 Login"), " "));
+    }
+
+    @Test
     void comandos() {
         assertEquals(FluxoTextos.Comando.MENU, FluxoTextos.comando(" Menu "));
         assertEquals(FluxoTextos.Comando.MENU, FluxoTextos.comando("0"));
         assertEquals(FluxoTextos.Comando.CANCELAR, FluxoTextos.comando("cancelar!"));
         assertEquals(FluxoTextos.Comando.ATENDENTE, FluxoTextos.comando("Falar com atendente"));
         assertNull(FluxoTextos.comando("meu computador não liga"));
+        assertEquals(FluxoTextos.Comando.SENHA, FluxoTextos.comando("SENHA"));
+        assertEquals(FluxoTextos.Comando.SENHA, FluxoTextos.comando("senha provisória"));
+        // pedido novo, não a senha de um chamado: segue para o catálogo
+        assertNull(FluxoTextos.comando("esqueci minha senha"));
     }
 
     @Test
@@ -51,8 +62,7 @@ class FluxoTextosTest {
     @Test
     void mascaraEResumo() {
         assertEquals("••••••••901", FluxoTextos.mascarar("cpf", "12345678901"));
-        assertEquals("João", FluxoTextos.mascarar("nome_completo", "João"));
-        Map<String, String> r = new LinkedHashMap<>();
+        assertEquals("João", FluxoTextos.mascarar("nome_completo", "João"));        Map<String, String> r = new LinkedHashMap<>();
         r.put("cpf", "12345678901");
         r.put("tipo_acesso", "Leitura");
         String s = FluxoTextos.resumo("1.5 Acesso a pasta", List.of(CPF, TIPO, PROC), r);

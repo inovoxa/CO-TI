@@ -36,6 +36,8 @@ export interface MonitorUnit {
   deptId: number
   name: string
   city: string
+  /** "Rua X, 115 · Bairro" */
+  endereco?: string
   latitude: number
   longitude: number
   kpi?: UnitKpi
@@ -81,6 +83,8 @@ export interface ChamadoNovo {
 export interface Link {
   id: number
   nome: string
+  /** links importados da planilha: "Faixa 172.19.40.0/24" */
+  descricao?: string
   tipo: string
   alvo: string
   unidadeId: number
@@ -88,6 +92,8 @@ export interface Link {
   papel: 'principal' | 'redundante' | 'servico'
   estado: 'up' | 'lento' | 'down'
   latenciaMs?: number | null
+  mensagem?: string | null
+  desde?: number | null
   historico: Array<'u' | 'p' | 'd'>
   uptime24h: number
   uptime30d: number

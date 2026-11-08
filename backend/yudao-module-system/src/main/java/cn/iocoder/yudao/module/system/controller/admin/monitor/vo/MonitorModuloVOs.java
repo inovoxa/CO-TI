@@ -59,6 +59,8 @@ public final class MonitorModuloVOs {
     public static class LinkVO {
         private Long id;
         private String nome;
+        /** descrição do monitor (os links importados da planilha trazem a faixa: "Faixa 172.19.40.0/24") */
+        private String descricao;
         /** ping | http | port | dns */
         private String tipo;
         private String alvo;
@@ -69,6 +71,9 @@ public final class MonitorModuloVOs {
         /** up | lento | down */
         private String estado;
         private Integer latenciaMs;
+        /** última mensagem da verificação e desde quando está no estado atual */
+        private String mensagem;
+        private java.time.LocalDateTime desde;
         /** últimas verificações, mais antiga primeiro: u (ok), p (lento), d (fora) */
         private List<String> historico = new ArrayList<>();
         private Double uptime24h;

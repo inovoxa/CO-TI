@@ -19,7 +19,7 @@ public class DeptSaveReqVO {
 
     @Schema(description = "部门名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
     @NotBlank(message = "Informe o nome do departamento")
-    @Size(max = 30, message = "O nome do departamento pode ter no máximo 30 caracteres")
+    @Size(max = 100, message = "O nome do departamento pode ter no máximo 100 caracteres")
     private String name;
 
     @Schema(description = "父部门 ID", example = "1024")

@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.assistente.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.ratelimiter.core.annotation.RateLimiter;
-import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.UserRateLimiterKeyResolver;
+import cn.iocoder.yudao.framework.ratelimiter.core.keyresolver.impl.PessoaRateLimiterKeyResolver;
 import cn.iocoder.yudao.module.assistente.controller.admin.vo.AssistenteVOs;
 import cn.iocoder.yudao.module.assistente.service.AssistenteInternoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +33,7 @@ public class AssistenteInternoController {
     @PostMapping("/perguntar")
     @Operation(summary = "Pergunta ao assistente (conversa nova ou continuação)")
     @PreAuthorize("@ss.hasPermission('assistente:usar')")
-    @RateLimiter(time = 60, count = 20, keyResolver = UserRateLimiterKeyResolver.class)
+    @RateLimiter(time = 60, count = 20, keyResolver = PessoaRateLimiterKeyResolver.class)
     public CommonResult<AssistenteVOs.Resposta> perguntar(@Valid @RequestBody AssistenteVOs.PerguntaReq req) {
         return success(assistenteInternoService.perguntar(req, getLoginUserId()));
     }
@@ -48,7 +48,7 @@ public class AssistenteInternoController {
     @PostMapping(value = "/transcrever", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Transcreve a fala gravada (conversa por voz)")
     @PreAuthorize("@ss.hasPermission('assistente:usar')")
-    @RateLimiter(time = 60, count = 30, keyResolver = UserRateLimiterKeyResolver.class)
+    @RateLimiter(time = 60, count = 30, keyResolver = PessoaRateLimiterKeyResolver.class)
     public CommonResult<String> transcrever(@RequestParam("arquivo") MultipartFile arquivo) throws IOException {
         return success(assistenteInternoService.transcrever(arquivo.getBytes(), arquivo.getOriginalFilename(),
                 arquivo.getContentType()));

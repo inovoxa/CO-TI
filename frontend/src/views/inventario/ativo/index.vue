@@ -66,6 +66,13 @@
           <Icon :icon="maisFiltros ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-4px" />
           Mais filtros<template v-if="filtrosExtras"> ({{ filtrosExtras }})</template>
         </el-button>
+        <el-button
+          v-hasPermi="['inventario:ativo:exportar']"
+          :loading="exportando"
+          @click="exportarExcel"
+        >
+          <Icon class="mr-5px" icon="ep:download" /> Excel
+        </el-button>
         <el-button v-if="pode" plain type="primary" @click="abrirNovo">
           <Icon class="mr-5px" icon="ep:plus" /> Cadastrar sem agente
         </el-button>
@@ -570,6 +577,8 @@ import {
   rotulo
 } from '@/api/inventario'
 import * as DeptApi from '@/api/system/dept'
+import download from '@/utils/download'
+import { formatDate } from '@/utils/formatTime'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
 
@@ -724,6 +733,19 @@ const carregar = async () => {
     loading.value = false
   }
 }
+const exportando = ref(false)
+const exportarExcel = async () => {
+  exportando.value = true
+  try {
+    download.excel(
+      await Inv.exportarAtivos(q),
+      `inventario-${formatDate(new Date(), 'YYYY-MM-DD')}.xlsx`
+    )
+  } finally {
+    exportando.value = false
+  }
+}
+
 const buscar = () => {
   q.pageNo = 1
   carregar()

@@ -1,0 +1,11 @@
+-- O 4.2 tinha as perguntas de ramal. Passa a tratar de celular e chip corporativos: retirada, devolução, troca,
+-- manutenção, perda e bloqueio. O nome na condição evita mexer em formulário que o cliente tenha reaproveitado.
+-- Os chamados antigos não mudam: a descrição deles já está gravada.
+UPDATE itsm.formulario
+SET nome = 'Telefonia: celular e chip corporativo',
+    descricao = 'Retirada, devolução, troca e manutenção de celular e chip corporativos, perda, furto ou roubo e bloqueio de linha.',
+    tipo = 2,
+    titulo_modelo = 'Celular corporativo: {tipo_solicitacao}',
+    definicao = '{"secoes":[{"nome":"Servidor responsável","perguntas":[{"name":"nome_solicitante","label":"Nome do servidor","type":"text","required":true},{"name":"matricula","label":"Matrícula","type":"text","required":true},{"name":"setor","label":"Setor","type":"text","required":true},{"name":"local","label":"Nome do local/unidade","type":"text","required":true},{"label":"Celular para contato (com DDD)","regex":"/^[0-9]{10,11}$/","name":"celular_contato","type":"regex","required":true},{"name":"email_unidade","label":"E-mail institucional para contato","type":"email","required":true}]},{"nome":"Solicitação","perguntas":[{"name":"tipo_solicitacao","label":"O que você precisa?","type":"select","required":true,"values":["Retirada de celular e chip","Retirada só do celular","Retirada só do chip","Devolução de celular e/ou chip","Troca de aparelho","Manutenção ou defeito no aparelho","Troca ou segunda via do chip","Perda, furto ou roubo","Bloqueio ou desbloqueio de linha","Transferência para outro responsável","Outros"]},{"name":"numero_linha","label":"Número da linha com DDD (se já tiver)","type":"text","required":false},{"name":"imei_patrimonio","label":"IMEI ou patrimônio do aparelho (se houver)","type":"text","required":false},{"name":"boletim_ocorrencia","label":"Número do boletim de ocorrência (em caso de furto ou roubo)","type":"text","required":false},{"name":"descricao_solicitacao","label":"Descreva o pedido (motivo, defeito ou o que aconteceu)","type":"textarea","required":true}]}]}',
+    update_time = CURRENT_TIMESTAMP
+WHERE deleted = 0 AND codigo = '4.2' AND nome = 'Telefonia: celular e chip';

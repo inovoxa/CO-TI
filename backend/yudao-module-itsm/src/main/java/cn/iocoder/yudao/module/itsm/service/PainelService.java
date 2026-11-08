@@ -22,6 +22,9 @@ import static cn.iocoder.yudao.module.itsm.enums.ErrorCodeConstants.PAINEL_PERIO
 public class PainelService {
 
     private static final int MAX_DIAS = 366;
+    private static final List<String> CONTADORES_RESUMO = List.of("abertos", "semTecnico", "pendentes", "vencidos", "novos",
+            "solucionados", "fechados", "comPrazo", "noPrazo", "comPrazoAtendimento", "atendidosNoPrazo");
+    private static final List<String> CONTADORES_IDADE = List.of("ate1d", "ate3d", "ate7d", "ate30d", "mais30d");
 
     @Resource
     private PainelMapper painelMapper;
@@ -44,6 +47,8 @@ public class PainelService {
 
         Map<String, Object> r = new LinkedHashMap<>();
         Map<String, Object> resumo = camel(painelMapper.resumo(ini, fim, deptId, cats));
+        // sem nenhum chamado, sum() dá nulo em todas as colunas e a linha nem vem: a instalação nova mostra zeros
+        CONTADORES_RESUMO.forEach(k -> resumo.putIfAbsent(k, 0L));
         resumo.put("percentualNoPrazo", percentual(resumo.get("noPrazo"), resumo.get("comPrazo")));
         resumo.put("percentualAtendimentoNoPrazo", percentual(resumo.get("atendidosNoPrazo"), resumo.get("comPrazoAtendimento")));
         r.put("resumo", resumo);
@@ -69,7 +74,9 @@ public class PainelService {
         List<Map<String, Object>> prio = lista(painelMapper.porPrioridade(deptId, cats));
         prio.forEach(p -> p.put("nome", Prioridade.rotulo((int) numero(p.get("prioridade")))));
         r.put("porPrioridade", prio);
-        r.put("idade", camel(painelMapper.idadeDosAbertos(deptId, cats)));
+        Map<String, Object> idade = camel(painelMapper.idadeDosAbertos(deptId, cats));
+        CONTADORES_IDADE.forEach(k -> idade.putIfAbsent(k, 0L));
+        r.put("idade", idade);
         List<Map<String, Object>> tec = lista(painelMapper.porTecnico(ini, fim, deptId, cats));
         Set<Long> ids = new HashSet<>();
         tec.forEach(t -> ids.add(numero(t.get("userId"))));

@@ -26,5 +26,11 @@ public class IaConfigDO extends BaseDO {
     private Boolean ativo;
     private Long provedorAssistenteId;
     private Long provedorCopilotoId;
+    private Long provedorAssistenteReservaId;
+    private Long provedorCopilotoReservaId;
+    /** Assistente IA do portal: ligado à parte do atendimento, com provedor próprio */
+    private Boolean internoAtivo;
+    private Long provedorInternoId;
+    private Long provedorInternoReservaId;
 
 }

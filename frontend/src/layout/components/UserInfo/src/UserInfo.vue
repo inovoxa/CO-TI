@@ -1,13 +1,16 @@
 <script lang="ts" setup>
 import { ElMessageBox } from 'element-plus'
 
-import avatarImg from '@/assets/imgs/avatar.gif'
+import avatarImg from '@/assets/imgs/avatar-padrao.svg'
 import { useDesign } from '@/hooks/web/useDesign'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { useUserStore } from '@/store/modules/user'
 import LockDialog from './components/LockDialog.vue'
 import LockPage from './components/LockPage.vue'
 import { useLockStore } from '@/store/modules/lock'
+import { checkPermi } from '@/utils/permission'
+import { fecharMonitorSocket } from '@/hooks/web/useMonitorSocket'
+import { encerrarChat } from '@/views/chat/useChat'
 
 defineOptions({ name: 'UserInfo' })
 
@@ -41,6 +44,9 @@ const loginOut = async () => {
       cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
+    // antes de sair: a conexão em tempo real é da pessoa que está saindo
+    encerrarChat()
+    fecharMonitorSocket()
     await userStore.loginOut()
     tagsViewStore.delAllViews()
     replace('/login?redirect=/index')
@@ -49,8 +55,9 @@ const loginOut = async () => {
 const toProfile = async () => {
   push('/user/profile')
 }
-const toDocument = () => {
-  window.open('https://doc.iocoder.cn/')
+const podeAcessoRapido = computed(() => checkPermi(['acesso:link:usar']))
+const toAcessoRapido = () => {
+  push('/acesso-rapido')
 }
 </script>
 
@@ -68,9 +75,9 @@ const toDocument = () => {
           <Icon icon="ep:tools" />
           <div @click="toProfile">{{ t('common.profile') }}</div>
         </ElDropdownItem>
-        <ElDropdownItem>
-          <Icon icon="ep:menu" />
-          <div @click="toDocument">{{ t('common.document') }}</div>
+        <ElDropdownItem v-if="podeAcessoRapido" @click="toAcessoRapido">
+          <Icon icon="ep:link" />
+          <div>Acesso rápido</div>
         </ElDropdownItem>
         <ElDropdownItem divided>
           <Icon icon="ep:lock" />

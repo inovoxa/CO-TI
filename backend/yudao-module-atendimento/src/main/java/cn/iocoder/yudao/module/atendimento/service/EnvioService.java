@@ -1,13 +1,17 @@
 package cn.iocoder.yudao.module.atendimento.service;
 
+import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.module.atendimento.canal.Canal;
+import cn.iocoder.yudao.module.atendimento.canal.CanalSegredos;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.*;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -40,6 +44,8 @@ public class EnvioService {
     private ConversaService conversaService;
     @Resource
     private List<Canal> canais;
+    @Resource
+    private CanalSegredos segredos;
 
     private volatile Map<String, Canal> porTipo;
 
@@ -70,14 +76,21 @@ public class EnvioService {
                 if (!Boolean.TRUE.equals(caixa.getAtivo())) {
                     throw new Canal.FalhaDefinitiva("a caixa de entrada está desativada");
                 }
+                String segredo = segredo(m);
+                if (segredo != null) {
+                    // só em memória: o histórico continua com o texto mascarado
+                    m.setConteudo(segredos.decifrar(segredo));
+                }
                 String idExterno = canal.enviar(caixa, c, contatoMapper.selectById(c.getContatoId()),
                         contatoCanalMapper.selectById(c.getContatoCanalId()), m);
+                apagarSegredo(m);
                 envioMapper.updateById(EnvioDO.builder().id(id).status("enviado").enviadoEm(LocalDateTime.now()).erro(null).build());
                 conversaService.atualizarEntrega(m.getId(), "enviada", null, idExterno);
                 n++;
             } catch (Canal.FalhaDefinitiva f) {
                 log.warn("[processarFila][mensagem {}: {}]", m.getId(), f.getMessage());
                 envioMapper.updateById(EnvioDO.builder().id(id).status("erro").erro(limitar(f.getMessage())).build());
+                apagarSegredo(m);
                 conversaService.atualizarEntrega(m.getId(), "falhou", f.getMessage(), null);
             } catch (Exception ex) {
                 int t = e.getTentativas() == null ? 1 : e.getTentativas();
@@ -85,6 +98,7 @@ public class EnvioService {
                 log.warn("[processarFila][mensagem {} tentativa {}: {}]", m.getId(), t, erro);
                 if (t > ESPERA_MIN.length) {
                     envioMapper.updateById(EnvioDO.builder().id(id).status("erro").erro(erro).build());
+                    apagarSegredo(m);
                     conversaService.atualizarEntrega(m.getId(), "falhou", "não entregue depois de " + t + " tentativas: " + erro, null);
                 } else {
                     envioMapper.updateById(EnvioDO.builder().id(id).status("pendente").erro(erro)
@@ -102,6 +116,27 @@ public class EnvioService {
                 .set(EnvioDO::getStatus, "pendente").set(EnvioDO::getTentativas, 0).set(EnvioDO::getProximaTentativa, null));
         // falhou → pendente: atualização direta (atualizarEntrega não volta situação)
         mensagemMapper.updateById(MensagemDO.builder().id(mensagemId).status("pendente").build());
+    }
+
+    /** Texto real cifrado de uma mensagem mascarada (senha provisória), enquanto não foi entregue. */
+    private static String segredo(MensagemDO m) {
+        if (m.getDados() == null || !m.getDados().contains("\"segredo\"")) {
+            return null;
+        }
+        Map<String, Object> d = JsonUtils.parseObject(m.getDados(), new TypeReference<Map<String, Object>>() {
+        });
+        return d == null || d.get("segredo") == null ? null : String.valueOf(d.get("segredo"));
+    }
+
+    /** Entregue (ou sem chance de entrega): o segredo sai do banco; não há reenvio com o texto real. */
+    private void apagarSegredo(MensagemDO m) {
+        if (segredo(m) == null) {
+            return;
+        }
+        Map<String, Object> d = new LinkedHashMap<>(JsonUtils.parseObject(m.getDados(), new TypeReference<Map<String, Object>>() {
+        }));
+        d.remove("segredo");
+        mensagemMapper.updateById(MensagemDO.builder().id(m.getId()).dados(JsonUtils.toJsonString(d)).build());
     }
 
     private static String limitar(String s) {

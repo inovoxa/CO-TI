@@ -442,6 +442,12 @@ public final class AtendimentoVOs {
         /** Vazio = o primeiro provedor ativo pela prioridade */
         private Long provedorAssistenteId;
         private Long provedorCopilotoId;
+        private Long provedorAssistenteReservaId;
+        private Long provedorCopilotoReservaId;
+        /** Assistente IA do portal */
+        private Boolean internoAtivo = false;
+        private Long provedorInternoId;
+        private Long provedorInternoReservaId;
         // só na resposta
         private List<IaProvedor> provedores = new ArrayList<>();
         private List<Map<String, Object>> tipos = new ArrayList<>();
@@ -472,6 +478,8 @@ public final class AtendimentoVOs {
         private java.math.BigDecimal temperatura;
         @Min(50) @Max(8000)
         private Integer maxTokens;
+        /** Responder sem raciocinar antes (reasoning_effort = "none"), para modelos como o Qwen3.5 */
+        private Boolean semRaciocinio = false;
         private Boolean ativo = true;
         @Min(0) @Max(999)
         private Integer prioridade = 0;

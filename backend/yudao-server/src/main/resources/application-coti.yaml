@@ -268,6 +268,9 @@ monitor:
     nivel-minimo: critico
 
 coti:
+  cofre:
+    # Ver senhas do cofre exige a verificação em duas etapas ativa na conta de quem vê
+    exigir-mfa: ${CO_TI_COFRE_EXIGIR_MFA:true}
   atendimento:
     # Endereço público do CO-TI: monta os links dos anexos mandados aos canais e o endereço dos webhooks de entrada
     url-publica: ${CO_TI_URL_PUBLICA:}
@@ -334,18 +337,27 @@ coti:
     porta-publica-gelf: ${CO_TI_GELF_PORTA:12201}
     permitidos: ${CO_TI_LOGS_PERMITIDOS:}   # quem pode mandar (ex.: 172.16.0.0/12,10.0.0.0/8); vazio = todos
     retencao-dias: ${CO_TI_LOGS_RETENCAO_DIAS:30}
+    limite-gb: ${CO_TI_LOGS_LIMITE_GB:50}   # acima disso os dias mais antigos saem antes do prazo, preservando 7; 0 = sem limite
     fila-maxima: ${CO_TI_LOGS_FILA:200000}
+  infra:
+    disco-limite-gb: ${CO_TI_DISCO_LIMITE_GB:0}   # espaço reservado ao CO-TI, para a previsão e os avisos; 0 = o que o servidor informa
+  # Prazos padrão: a tela Infraestrutura > Visão geral vale sobre estes valores
   retencao:   # limpeza diária de registros técnicos antigos (LimpezaRegistrosJob); 0 = guardar para sempre
     log-operacoes-dias: ${CO_TI_RETENCAO_LOG_OPERACOES_DIAS:730}
     log-acesso-dias: ${CO_TI_RETENCAO_LOG_ACESSO_DIAS:365}
     log-api-dias: ${CO_TI_RETENCAO_LOG_API_DIAS:30}
     log-erros-dias: ${CO_TI_RETENCAO_LOG_ERROS_DIAS:90}
     log-tarefas-dias: ${CO_TI_RETENCAO_LOG_TAREFAS_DIAS:30}
+    sino-lidas-dias: ${CO_TI_RETENCAO_SINO_LIDAS_DIAS:90}
+    sino-nao-lidas-dias: ${CO_TI_RETENCAO_SINO_NAO_LIDAS_DIAS:365}
+    email-enviado-dias: ${CO_TI_RETENCAO_EMAIL_ENVIADO_DIAS:180}
+    sla-aviso-dias: ${CO_TI_RETENCAO_SLA_AVISO_DIAS:90}
+    integracao-eventos-dias: ${CO_TI_RETENCAO_INTEGRACAO_EVENTOS_DIAS:90}
   seguranca:
     # Só na primeira partida: substitui a senha pública admin123 do administrador local
     senha-inicial-admin: ${CO_TI_ADMIN_SENHA_INICIAL:}
-    # 32 bytes em Base64 (openssl rand -base64 32). Cifra o segredo do MFA e, depois, o cofre. NÃO PERCA: sem ela,
-    # quem tem verificação em duas etapas precisa recadastrar.
+    # 32 bytes em Base64 (openssl rand -base64 32). Cifra o segredo do MFA e o cofre. NÃO PERCA: sem ela, quem tem
+    # verificação em duas etapas precisa recadastrar e as senhas do cofre não abrem mais.
     chave-mestra: ${CO_TI_CHAVE_MESTRA:}
     mfa:
       emissor: ${CO_TI_MFA_EMISSOR:CO-TI}   # nome que aparece no aplicativo autenticador
@@ -362,6 +374,8 @@ coti:
     truststore: ${CO_TI_AD_TRUSTSTORE:}
     truststore-senha: ${CO_TI_AD_TRUSTSTORE_SENHA:}
     cron-sincronizacao: ${CO_TI_AD_CRON:0 */30 * * * *}
+    # membros deste grupo (CN ou DN; vários separados por ";") aprovam pedidos, além de quem tem o papel Aprovador
+    grupo-aprovadores: ${CO_TI_AD_GRUPO_APROVADORES:}
     # grupos-perfis:                             # grupo do AD (CN ou DN) → código do perfil no portal
     #   GG-TI-NOC: noc
     #   GG-TI-ServiceDesk: service_desk

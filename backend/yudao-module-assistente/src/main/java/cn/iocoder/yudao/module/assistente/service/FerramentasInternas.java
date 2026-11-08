@@ -27,8 +27,12 @@ import cn.iocoder.yudao.module.itsm.controller.admin.vo.ItilVOs;
 import cn.iocoder.yudao.module.itsm.service.MudancaService;
 import cn.iocoder.yudao.module.itsm.service.ProblemaService;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.KbVOs;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.TelefoneVOs;
 import cn.iocoder.yudao.module.itsm.service.ChamadoService;
 import cn.iocoder.yudao.module.itsm.service.KbService;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.EstoqueVOs;
+import cn.iocoder.yudao.module.itsm.service.EstoqueService;
+import cn.iocoder.yudao.module.itsm.service.TelefoneService;
 import cn.iocoder.yudao.module.itsm.service.gov.LicencaService;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
 import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
@@ -107,6 +111,10 @@ public class FerramentasInternas {
     private ConsultaLogsService consultaLogsService;
     @Resource
     private PainelLogsService painelLogsService;
+    @Resource
+    private TelefoneService telefoneService;
+    @Resource
+    private EstoqueService estoqueService;
 
     /** Uma ferramenta: nome, o que faz, parâmetros (JSON Schema), permissões (qualquer uma serve; vazio = todos). */
     private record Ferramenta(String nome, String descricao, Map<String, Object> parametros, String[] permissoes,
@@ -218,6 +226,24 @@ public class FerramentasInternas {
         registrar("buscar_pessoas", "Procura pessoas cadastradas (nome, login, e-mail, unidade, celular) e quantos ativos usam.",
                 props(p("busca", "string", "Nome, login ou e-mail"), p("limite", "integer", "Padrão 10, máximo 30")),
                 new String[]{"system:user:query"}, this::buscarPessoas);
+        registrar("buscar_contatos", "Lista de ramais e telefones: ramal, fixo, celular e WhatsApp de pessoas, salas e serviços, e os contatos"
+                        + " de emergência de cada unidade. Use para saber com quem falar em uma unidade ou qual é o número de alguém."
+                        + " Se o resultado trouxer aviso de link fora, indique primeiro o celular ou o WhatsApp, porque o ramal pode"
+                        + " não funcionar. Celular restrito não é entregue: nunca tente adivinhar o número nem procurá-lo em outra consulta.",
+                props(p("busca", "string", "Nome, setor, e-mail ou número"),
+                        p("unidade", "string", "Nome (ou parte) da unidade, por exemplo UPA Central"),
+                        p("so_emergencia", "boolean", "true para trazer só os contatos de emergência"),
+                        p("limite", "integer", "Padrão 15, máximo 40")),
+                new String[]{"itsm:telefone:query"}, this::buscarContatos);
+        registrar("buscar_estoque", "Estoque da GTI: celulares, chips, memórias, HDs, monitores e outros itens guardados ou entregues,"
+                        + " com situação, saldo, com quem está e garantia. Use para saber o que há disponível ou quem está com um item.",
+                props(p("busca", "string", "Descrição, IMEI, linha, patrimônio ou nome de quem está com o item"),
+                        p("tipo", "string", "Nome (ou parte) do tipo, por exemplo Celular"),
+                        p("situacao", "string", "disponivel | em_uso | manutencao | baixado"),
+                        p("estoque_baixo", "boolean", "true para trazer só os itens no mínimo ou abaixo"),
+                        p("garantia_dias", "integer", "Só os com garantia terminando nestes dias"),
+                        p("limite", "integer", "Padrão 20, máximo 50")),
+                new String[]{"itsm:estoque:query"}, this::buscarEstoque);
         registrar("status_links", "Links e serviços monitorados no Centro de Operações: estado, latência e disponibilidade.",
                 props(p("filtro", "string", "todos (padrão) | down | lento | ou parte do nome"), p("limite", "integer", "Padrão 30, máximo 80")),
                 new String[]{"system:monitor-links:query"}, this::links);
@@ -813,6 +839,125 @@ public class FerramentasInternas {
             }
             return m;
         }).toList());
+    }
+
+    /** Passa pelo serviço da lista, que já esconde o celular restrito de quem não pode vê-lo. */
+    private Object buscarEstoque(Contexto c) {
+        EstoqueVOs.PaginaReq req = new EstoqueVOs.PaginaReq();
+        req.setPageNo(1);
+        Integer limite = c.inteiro("limite");
+        req.setPageSize(Math.max(1, Math.min(50, limite == null ? 20 : limite)));
+        req.setBusca(c.texto("busca"));
+        req.setSituacao(c.texto("situacao"));
+        req.setBaixo(Boolean.parseBoolean(String.valueOf(c.args().get("estoque_baixo"))) ? Boolean.TRUE : null);
+        Integer dias = c.inteiro("garantia_dias");
+        req.setGarantiaDias(dias != null && dias > 0 ? Math.min(dias, 3650) : null);
+        String tipo = c.texto("tipo");
+        if (tipo != null) {
+            String q = semAcento(tipo);
+            List<EstoqueVOs.Tipo> achados = estoqueService.tipos().stream().filter(t -> semAcento(t.getNome()).contains(q)).toList();
+            if (achados.isEmpty()) {
+                return Map.of("itens", List.of(), "aviso", "tipo não encontrado: " + tipo);
+            }
+            req.setTipoId(achados.get(0).getId());
+        }
+        var pagina = estoqueService.pagina(req);
+        return Map.of("total", pagina.getTotal(), "itens", pagina.getList().stream().map(i -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("tipo", i.getTipo());
+            m.put("descricao", i.getDescricao());
+            m.put("condicao", i.getCondicao());
+            m.put("situacao", i.getSituacao());
+            m.put("saldo", i.getQuantidade());
+            m.put("estoque_baixo", i.getBaixo());
+            m.put("identificador", i.getIdentificador());
+            m.put("linha", i.getLinha());
+            m.put("patrimonio", i.getPatrimonio());
+            m.put("com_quem_esta", i.getResponsavel());
+            m.put("destino", i.getDestino());
+            m.put("usado_por", i.getUsadoPor());
+            m.put("garantia_ate", i.getGarantiaAte() == null ? null : i.getGarantiaAte().toString());
+            return m;
+        }).toList());
+    }
+
+    private Object buscarContatos(Contexto c) {
+        String busca = c.texto("busca"), unidade = c.texto("unidade");
+        boolean soEmergencia = Boolean.parseBoolean(String.valueOf(c.args().get("so_emergencia")));
+        if (busca == null && unidade == null && !soEmergencia) {
+            return Map.of("erro", "informe a busca ou a unidade");
+        }
+        int limite = c.limite(15, 40);
+        List<TelefoneVOs.Unidade> unidades = List.of();
+        if (unidade != null) {
+            String q = semAcento(unidade);
+            unidades = telefoneService.unidades().stream().filter(u -> semAcento(u.getNome()).contains(q)).toList();
+            if (unidades.isEmpty()) {
+                return Map.of("total", 0, "observacao", "nenhuma unidade com '" + unidade + "' no nome");
+            }
+            if (unidades.size() > 5) {
+                return Map.of("total", 0, "observacao", "várias unidades têm esse nome: peça para a pessoa escolher",
+                        "unidades", unidades.stream().map(TelefoneVOs.Unidade::getNome).limit(20).toList());
+            }
+        }
+        List<TelefoneVOs.Resp> achados = new ArrayList<>();
+        if (unidades.isEmpty()) {
+            achados.addAll(contatos(busca, null, soEmergencia, limite, c.userId()));
+        }
+        for (TelefoneVOs.Unidade u : unidades) {
+            achados.addAll(contatos(busca, u.getId(), soEmergencia, limite, c.userId()));
+        }
+        // quem atende na emergência primeiro, mesmo vindo de mais de uma unidade
+        achados.sort(Comparator.comparing((TelefoneVOs.Resp t) -> !Boolean.TRUE.equals(t.getEmergencia())));
+
+        // a unidade fora é avisada mesmo sem contato cadastrado
+        Set<String> fora = new LinkedHashSet<>();
+        unidades.stream().filter(u -> Boolean.TRUE.equals(u.getLinkFora())).forEach(u -> fora.add(u.getNome()));
+        achados.stream().filter(t -> Boolean.TRUE.equals(t.getLinkFora()) && t.getUnidade() != null).forEach(t -> fora.add(t.getUnidade()));
+
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("total", achados.size());
+        if (!fora.isEmpty()) {
+            r.put("aviso", "Link fora em " + String.join(", ", fora) + ": ramal e fixo podem não funcionar. Prefira o celular ou o WhatsApp.");
+        }
+        r.put("contatos", achados.stream().limit(limite).map(FerramentasInternas::contato).toList());
+        return r;
+    }
+
+    private List<TelefoneVOs.Resp> contatos(String busca, Long unidadeId, boolean soEmergencia, int limite, Long userId) {
+        TelefoneVOs.PaginaReq req = new TelefoneVOs.PaginaReq();
+        req.setPageNo(1);
+        req.setPageSize(limite);
+        req.setBusca(busca);
+        req.setUnidadeId(unidadeId);
+        req.setEmergencia(soEmergencia ? Boolean.TRUE : null);
+        return telefoneService.pagina(req, userId).getList();
+    }
+
+    private static Map<String, Object> contato(TelefoneVOs.Resp t) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("nome", t.getNome());
+        putSe(m, "unidade", t.getUnidade());
+        putSe(m, "setor", t.getSetor());
+        if (Boolean.TRUE.equals(t.getEmergencia())) {
+            m.put("emergencia", true);
+        }
+        if (Boolean.TRUE.equals(t.getLinkFora())) {
+            m.put("link_fora", true);
+        }
+        putSe(m, "celular", t.getCelular());
+        if (t.getCelular() != null && Boolean.TRUE.equals(t.getWhatsapp())) {
+            String d = t.getCelular().replaceAll("\\D", "");
+            m.put("whatsapp", "https://wa.me/" + (d.length() <= 11 ? "55" + d : d));
+        }
+        if (Boolean.TRUE.equals(t.getCelularOculto())) {
+            m.put("celular_restrito", "existe, mas só a equipe de TI pode ver");
+        }
+        putSe(m, "ramal", t.getRamal());
+        putSe(m, "telefone", t.getTelefone());
+        putSe(m, "email", t.getEmail());
+        putSe(m, "observacao", t.getObservacao());
+        return m;
     }
 
     private Object links(Contexto c) {

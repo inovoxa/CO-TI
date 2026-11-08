@@ -44,6 +44,29 @@ serve tudo em HTTP na 80, guardando o IP real do cliente. Para fixar a versão n
 (ex.: `1.2.0`). Se os pacotes do GHCR forem privados, faça `docker login ghcr.io` no servidor com um token
 `read:packages`. Os backups ficam em `/data/coolify/services/<uuid>/backups`.
 
+### Instalar no servidor do órgão, com imagens prontas
+
+Cada órgão tem a própria instalação. Com `docker-compose.imagens.yml`, o servidor recebe só as imagens: nem o
+repositório nem acesso ao GitHub.
+
+```bash
+# na sua máquina, com o commit da versão feito
+deploy/imagens/gerar-imagens.sh --versao 1.0.0 --publicar       # registro privado (docker login antes), ou
+deploy/imagens/gerar-imagens.sh --versao 1.0.0 --exportar saida # arquivo para levar ao servidor
+
+# no servidor, com docker-compose.imagens.yml e o .env na mesma pasta
+docker load -i co-ti-1.0.0.tar.gz                               # só se veio por arquivo
+docker compose -f docker-compose.imagens.yml --env-file .env up -d
+```
+
+No `.env`, além das variáveis de sempre, defina `CO_TI_VERSAO` e, se usar outro registro, `CO_TI_REGISTRO`. Para
+atualizar, gere uma versão nova, troque `CO_TI_VERSAO` e rode o `up -d` de novo.
+
+- **Backups e certificados:** ficam nos volumes `backups` e `tls`, não em pastas do servidor.
+- **Credencial do registro:** use uma conta só de leitura, porque quem administra o servidor consegue vê-la.
+- **Código-fonte:** entregar as imagens ao órgão é distribuir o software. Pela GPLv3, o código correspondente tem de
+  ser oferecido a ele. O commit de cada versão está no rótulo `org.opencontainers.image.revision` das imagens.
+
 ### HTTPS
 
 O portal só abre por HTTPS (TLS 1.2 e 1.3); o HTTP (`CO_TI_HTTP_PORT`) redireciona, menos os caminhos dos agentes de
@@ -118,14 +141,32 @@ CO_TI_AD_BASE_USUARIOS=OU=Empresa,DC=empresa,DC=local
 - **Login:** a senha é conferida no AD (bind). Na primeira entrada, o usuário é criado no portal. Contas com vínculo ao AD **só** entram com a senha do AD. O `admin` local continua entrando mesmo com o AD fora do ar. O usuário pode ser digitado como no Windows: `joao.silva`, `EMPRESA\joao.silva` ou `joao.silva@empresa.local`; o domínio é descartado e vale a conta (`sAMAccountName`).
 - **Estrutura:** as OUs abaixo de `CO_TI_AD_OU_RAIZ` (padrão: a base) viram departamentos debaixo do departamento `CO_TI_AD_DEPT_RAIZ_ID` (100, "Empresa").
 - **Perfis:** em `coti.ad.grupos-perfis` (`application-coti.yaml`), cada grupo do AD é mapeado para um perfil do portal (`noc`, `service_desk`, `soc`, `portaria`, `gestor_unidade`, `telao`). Os grupos aninhados também valem.
+- **Quem aprova pedidos:** só quem tem o papel **Aprovador** (dado à mão em Sistema → Usuários → Atribuir papel) ou está no grupo do AD de `CO_TI_AD_GRUPO_APROVADORES` (papel **Aprovador (grupo do AD)**, que entra e sai com a sincronização). Vale para o gestor do AD, o e-mail do superior digitado no formulário, o aprovador fixo, as regras e o pedido do técnico; e-mail de quem não é aprovador recusa o envio.
 - **Sincronização completa:** a cada 30 min (`CO_TI_AD_CRON`). Quem sumiu do AD ou foi desativado lá é desativado no portal. Se mais de 20% das contas sumirem de uma vez, a sincronização não desativa ninguém e registra um erro, porque o mais provável é um filtro mal configurado.
 - O certificado do DC precisa ser confiável. Use `CO_TI_AD_TRUSTSTORE` com a CA do AD; `ldap://` sem StartTLS é recusado.
 
 ## Catálogo de serviços e automação no AD
 
-- **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (25 formulários:
+- **Catálogo:** em *Service Desk → Formulários → Importar*, carregue `exemplos/catalogo-servicos.json` (23 formulários:
   usuários e acessos, informática, saúde e telefonia). O usuário pede em *Catálogo de serviços*; o pedido vira chamado
   e passa pelas *Regras* (atribuição, categoria, urgência, pedido de aprovação).
+- **Sistemas administrativos:** `exemplos/formulario-sistemas-administrativos.json` tem o formulário 5.1, de Araraquara:
+  importe só nesse órgão. Ele fica em destaque no catálogo, abre um único chamado com todos os sistemas escolhidos e não
+  aparece no chat, porque usa perguntas condicionais e múltipla escolha. Para converter outra exportação do GLPI 11, veja
+  `ferramentas/formularios/converter_glpi.js`.
+- **Manutenção predial:** os formulários 6.1 a 6.4 (iluminação e elétrica, ar-condicionado, extintores e segurança,
+  outros serviços) entram sozinhos na atualização e abrem o chamado para a equipe *Manutenção predial*. Inclua as pessoas
+  nessa equipe em *Service Desk → Equipes*; até lá, ninguém é avisado.
+- **Estoque GTI** (menu próprio, para Service Desk e Gestão de TI): celulares, chips, HDs, monitores e outros, cada peça
+  com identificação, ou memórias e cabos só pela quantidade. Guarda compra, nota, valor e garantia do item novo e quem
+  usava o usado. A situação e o saldo só mudam por retirada, devolução, manutenção, retorno, entrada ou baixa, e tudo
+  fica no histórico do item. Item não se apaga: sai por baixa. O movimento pode ser ligado a um chamado, gera o termo de
+  responsabilidade para imprimir ou salvar em PDF e a lista sai em Excel e PDF. Retirada do 4.2 pede aprovação do gestor
+  (regra *Retirada de celular corporativo*); sem gestor no AD, o chamado abre com um aviso para pedir à mão.
+- **Técnico por área:** o perfil *Técnico* só vê os chamados atribuídos a ele, às equipes de que faz parte ou registrados
+  por ele, em todas as telas, no painel, no Excel e no assistente. Cada área do catálogo tem uma equipe; inclua os técnicos
+  em *Service Desk → Equipes*. Quem precisa ver tudo, como a triagem, usa um perfil com a permissão *Ver chamados de todas as
+  equipes* (os perfis que já existiam a receberam). Chamado sem equipe, como o aberto sem categoria, fica com esses perfis.
 - **Aprovação:** cada formulário define quem aprova (gestor do AD, e-mail informado no formulário ou uma pessoa fixa).
   O aprovador responde em *Minhas aprovações*; recusado, o chamado é fechado.
 - **Automação no AD:** formulários com operação (criar usuário, resetar senha, reativar, desativar, acesso a pasta,
@@ -235,7 +276,7 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *Fluxo do catálogo* na caixa.
 
 - **Menu:**
-  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.4);
+  1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.2 e 6.1–6.4);
   2. consultar meus chamados;
   3. tirar uma dúvida (FAQ);
   4. falar com um atendente.
@@ -250,6 +291,21 @@ Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *F
   - a consulta mostra apenas os chamados da própria pessoa;
   - os dados pessoais ficam cifrados durante o preenchimento e aparecem mascarados no resumo; depois do envio,
     também na conversa.
+- **Senha provisória pelo canal:** quem esqueceu a senha não entra no portal. Depois do reset (ou da criação da conta)
+  no AD, o solicitante responde **SENHA** e recebe a senha ali mesmo:
+  - só ele recebe (o celular verificado é o de quem abriu o chamado), uma única vez, com registro na auditoria;
+  - no histórico do CO-TI a mensagem aparece oculta; o texto real fica cifrado só até a entrega;
+  - pedida de novo, o robô explica que já foi entregue e oferece um novo reset. Continua valendo também
+    "Ver senha provisória" em "Meus chamados".
+- **"Esqueci minha senha" na tela de login:** abre um assistente (caixa "Assistente da tela de login", canal
+  `widget`) que faz as perguntas do **1.2 Reset de senha**, uma a uma, com a mesma validação do portal:
+  - o visitante não está autenticado: o chamado sai em nome do dono do login informado, só se ele existir e estiver
+    ativo; a conversa não consulta chamados, não usa outros serviços e não entrega senha;
+  - o aprovador vê no pedido que ele veio da tela de login e para qual e-mail pessoal a senha vai;
+  - aprovado e executado no AD, a senha provisória vai **por e-mail ao e-mail pessoal** do formulário (fica cifrada
+    na fila só até o envio e é apagada do banco). Sem o envio de e-mails ligado (Service Desk → Configuração → E-mail), o chamado
+    registra que a senha precisa ser entregue por outro meio;
+  - para tirar o link da tela de login, desative essa caixa em Atendimento → Caixas de entrada.
 - **Avisos de volta** (no lugar dos workflows 13, 14 e 20 do n8n), ligados por caixa:
   - o contato recebe o andamento (acompanhamentos públicos), a solução (inclusive a da operação no AD, sem senha
     no texto) e a decisão da aprovação do chamado que abriu;
@@ -263,12 +319,17 @@ Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *F
 
 Regras completas em `docs/specs/atendimento-ia.md` (reimplementação própria; nada da pasta `enterprise/` do Chatwoot).
 
-- **Vários provedores** (*Atendimento → Configuração → Inteligência artificial*):
+- **Vários provedores** (*Infraestrutura → Inteligência artificial*):
   - OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, Mistral, Ollama local ou outro compatível com a
     API da OpenAI.
   - Cada um tem modelo, chave (cifrada), temperatura, limite e prioridade, e um botão de teste.
-  - O assistente e o copiloto têm cada um o seu provedor principal. Se ele falhar, os outros ativos respondem pela
-    ordem de prioridade.
+  - Cada uso tem o seu provedor principal e uma reserva opcional: o **Assistente IA** do portal, o **robô** do atendimento
+    e o **copiloto**. O Assistente IA e o Atendimento ligam e desligam à parte e, com o principal escolhido, um nunca usa
+    a credencial do outro. Sem principal, os provedores ativos respondem pela ordem de prioridade.
+  - **IA local com Ollama no próprio servidor:** tipo *Ollama*, endereço `http://host.docker.internal:11434/v1`, que o
+    docker-compose já resolve, e chave em branco. A chave só é necessária se houver um proxy na frente que exija uma.
+    Em outra máquina, use o IP dela e suba o Ollama com `OLLAMA_HOST=0.0.0.0`. O modelo precisa aceitar ferramentas
+    (*tools*), por exemplo `qwen2.5:7b` ou `llama3.1:8b`.
   - A tela mostra o uso (chamadas, erros e tokens) dos últimos 30 dias por provedor.
 - **Assistente na caixa:**
   - A conversa nova fica com ele (pendente) e as respostas usam só os artigos FAQ da base de conhecimento.
@@ -404,6 +465,15 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
   `kuma.db` fictício (links de 8 unidades, sistemas, canais, manutenções e 30 dias de histórico com quedas) para testar
   a importação. Com `--pausar-ficticios`, os monitores de alvo inventado entram pausados, com o histórico; os
   "CO-TI ·" verificam os serviços do próprio docker-compose.
+- **Importar da planilha de faixas de IP:** `python ferramentas/unidades/importar_planilha.py ip_unidades.csv >
+  importar.sql` gera o SQL que troca **todos** os monitores e unidades pelos da planilha (colunas `id, faixa_ip,
+  nome_unidade, logradouro, localizacao_geografica`): uma unidade por linha, com departamento na secretaria deduzida do
+  nome, e um monitor de ping no `.1` da faixa. Faça backup antes; o modo de aplicar está no topo do script.
+- **Faixas do Docker × rede monitorada:** o Docker usa por padrão `172.17.0.0/16` (ponte `docker0`) e `172.18+` nas
+  redes do compose. Se a rede da Prefeitura usa as mesmas faixas, o ping de dentro do container não sai da máquina e
+  a unidade aparece fora do ar. A rede do CO-TI fica em `CO_TI_REDE_DOCKER` (padrão `192.168.240.0/24`); a ponte
+  padrão se muda no Docker (Docker Desktop → Settings → Docker Engine, ou `/etc/docker/daemon.json` no Linux):
+  `"bip": "192.168.241.1/24", "default-address-pools": [{"base": "192.168.242.0/23", "size": 26}]`, e reinicie o Docker.
 - **Retenção:** cada verificação fica `CO_TI_MONITORAMENTO_RETENCAO_DIAS` dias (padrão 31) no TimescaleDB; os totais
   por hora (disponibilidade de 30 dias e 1 ano) ficam 400 dias.
 - Detalhes: `docs/specs/monitoramento.md`.
@@ -431,10 +501,10 @@ computadores ainda usam Windows 10 na Saúde?", "qual o status do link da UBS Ce
 chamado #123?".
 
 - **O que consulta:** inventário, alertas, licenças, chamados, problemas, mudanças, conversas, base de conhecimento,
-  pessoas, monitores, links e logs.
+  pessoas, lista de ramais e telefones, monitores, links e logs.
 - **Com quais permissões:** as de quem pergunta, incluindo o escopo de unidade.
 - **Só leitura:** ele não altera nada.
-- **Configuração:** usa o provedor de IA configurado em Atendimento → Inteligência artificial (OpenRouter, OpenAI,
+- **Configuração:** usa o provedor de IA escolhido para o Assistente em Infraestrutura → Inteligência artificial (OpenRouter, OpenAI,
   Ollama local etc.).
 - Detalhes: `docs/specs/assistente-interno.md`.
 
@@ -468,7 +538,7 @@ Como fica:
   - Funciona com qualquer aplicativo autenticador. Recebe 10 códigos de recuperação de uso único.
   - O mesmo código não serve duas vezes. O desafio do login vale 5 minutos e 5 tentativas.
   - Quem perde o celular e os códigos: o administrador usa *Usuários → Mais → Redefinir verificação em duas etapas*.
-- **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA (e, depois, o cofre) com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular.
+- **Chave-mestra (`CO_TI_CHAVE_MESTRA`):** cifra os segredos do MFA e o cofre com AES-256-GCM. **Guarde uma cópia fora do servidor.** Sem ela, quem tem MFA precisa recadastrar o celular e as senhas do cofre não abrem mais.
 - **Trilha de auditoria** (*Sistema → Auditoria do sistema → Trilha de auditoria*):
   - registra login, falhas, MFA, mudanças vindas do AD e a senha inicial;
   - é encadeada por SHA-256: o botão *Verificar integridade* aponta a primeira linha alterada ou removida;
@@ -483,6 +553,62 @@ Como fica:
   - senhas locais com bcrypt de custo `CO_TI_BCRYPT_CUSTO` (12); hashes antigos continuam valendo;
   - o painel `/druid` fica desligado.
 - **IP real:** o nginx sobrescreve `X-Forwarded-For` com o IP da conexão. Atrás de outro proxy, configure o módulo `realip`.
+
+## Relatórios em planilha e PDF
+
+- **Excel:** botão nas telas *Painel* (uma aba por indicador), *Chamados* e *Inventário → Ativos*. Sai com os filtros da
+  tela e o escopo de unidade do perfil, até 50 mil linhas.
+- **PDF:** botão *PDF* no *Painel*, pela impressão do navegador ("Salvar como PDF"), com os gráficos.
+- **Quem pode:** permissões `itsm:chamado:exportar` e `inventario:ativo:exportar`. Quem já consultava recebeu a permissão
+  na atualização; retire do perfil se não quiser. Cada exportação de Excel fica na trilha de auditoria.
+
+## Cofre de senhas
+
+Menu *Cofre de senhas*, para as senhas de equipamentos e sistemas da equipe de TI. Dê o papel **Cofre de senhas** a quem
+vai usar (Sistema → Usuários → Atribuir papel).
+
+- **Pastas:** cada uma tem membros, escolhidos pessoa a pessoa, com um de três papéis: vê, edita ou gerencia. Sem ser
+  membro, ninguém vê a pasta. O administrador do sistema decide os membros de qualquer pasta, mas só lê uma senha se
+  incluir a si mesmo, e essa inclusão fica na auditoria.
+- **Proteção:** senha e notas ficam cifradas com a chave-mestra (AES-256-GCM), ligadas à linha do segredo. A lista nunca
+  traz o valor. Sem a mesma `CO_TI_CHAVE_MESTRA`, um backup restaurado não abre as senhas.
+- **Ver uma senha:** exige a verificação em duas etapas ativa na conta (`CO_TI_COFRE_EXIGIR_MFA=false` desliga) e fica na
+  trilha de auditoria (`cofre.senha_vista`). A janela fecha sozinha em 60 s.
+- **Saída de alguém:** tirar a pessoa da pasta não muda as senhas que ela já conhece. Troque essas senhas; a auditoria
+  mostra quais ela viu.
+- **Ainda não tem:** histórico de versões da senha, compartilhamento por equipe ou grupo do AD e aviso de troca periódica.
+
+## Ramais e telefones
+
+Menu *Ramais e telefones*: lista única para todas as unidades, com busca por nome, setor, unidade ou número (os números são
+comparados pelos dígitos, então `33011234` acha `(16) 3301-1234`). No celular, tocar no número abre a ligação.
+
+- **Ligada às unidades:** o contato aponta para uma unidade do monitoramento. Os contatos também aparecem no painel da
+  unidade, no mapa, e no detalhe do chamado (pela unidade a que o setor do chamado pertence).
+- **Link fora:** sem rede na unidade, o ramal VoIP para junto. A lista avisa, risca ramal e fixo e põe o celular e o
+  WhatsApp primeiro. O estado vem do link principal da unidade no monitoramento.
+- **Contato de emergência:** quem procurar primeiro quando a rede cai. Exige unidade e celular. Sem energia ou internet na
+  unidade, o celular só funciona pelo plano de dados, então cadastre o número antes de precisar.
+- **Quem pode:** todos os papéis que veem a base de conhecimento consultam (`itsm:telefone:query`). Service Desk e Gestão
+  de TI mantêm a lista (`itsm:telefone:update`).
+- **Dados pessoais:** a lista é mantida à mão e não puxa o celular do cadastro de usuários. Ramal e fixo aparecem para todos;
+  celular e WhatsApp só para NOC, Service Desk, SOC, Gestão de TI e Atendente (`itsm:telefone:celular`), inclusive na busca
+  por número. O celular marcado como corporativo aparece para todos. Só inclua número pessoal com autorização.
+- **Planilha:** *Baixar modelo* e *Importar planilha* (.xlsx). As colunas são achadas pelo título, em qualquer ordem, e a
+  unidade precisa ter o nome igual ao da aba *Unidades* do modelo. O mesmo nome na mesma unidade atualiza o contato; a coluna
+  que não vier mantém o valor cadastrado; a linha com erro é recusada e aparece no resultado, sem parar as outras.
+- **Ainda não tem:** exportação.
+
+## Instalar no celular (PWA)
+
+O portal pode ser instalado na tela inicial do celular ou do computador, com atalhos para *Minhas aprovações* e *Meus
+chamados*: no Chrome/Edge, *Instalar app*; no Safari do iPhone, *Compartilhar → Adicionar à Tela de Início*.
+
+- **Precisa de HTTPS com certificado confiável:** com o autoassinado, o portal funciona, mas o navegador não instala.
+- **Nada de dados no aparelho:** só os arquivos estáticos do portal ficam em cache. Sem rede, aparece uma página avisando;
+  chamados e aprovações precisam de conexão.
+- **Atualização:** a versão nova chega ao abrir o portal. Se mudar `public/sw.js`, troque `VERSAO` nele.
+- **Ainda não tem:** notificação no celular. O aviso de aprovação continua por e-mail e WhatsApp.
 
 ## Idioma
 
@@ -516,6 +642,97 @@ Testes do módulo de identidade (servidor LDAP em memória com a forma de um AD)
 ```bash
 cd backend && mvn test -pl yudao-module-identidade
 ```
+
+## Sino
+
+Avisa no portal, sem depender de e-mail: chamado novo, atribuído, andamento, solução, fechado, reaberto, pendente, escalonado,
+aprovação pendente, aprovado e recusado. Andamento privado só vai para os técnicos. Os técnicos e as equipes do chamado
+também recebem um aviso quando o prazo de SLA entra na última hora (`coti.itsm.sla-aviso-minutos`, padrão 60), uma vez por
+prazo; chamado já vencido na atualização não gera aviso.
+
+## Chat interno
+
+Menu *Chat* e botão no cabeçalho, com o contador de não lidas. Todo servidor com login pode conversar com outro e criar
+grupos. Quem cria é o administrador do grupo, e quem entra depois só vê as mensagens a partir daí.
+
+- **Recursos:** conversas diretas e grupos, não lidas, quem está online, respostas, @menções em grupos, edição, busca nas
+  conversas da pessoa, anexos de até 25 MB e aviso no navegador.
+- **Entrega:** cada mensagem é gravada antes de ser avisada e tem um número sequencial. Ao reconectar, a tela busca o que
+  faltou, e reenviar não duplica.
+- **Privacidade:** não há criptografia de ponta a ponta, e quem administra o servidor consegue ler o banco. Mensagem apagada ou
+  editada some da tela, mas o texto anterior fica guardado para apuração. Nada é apagado automaticamente; defina a retenção
+  com o jurídico e o encarregado da LGPD do órgão.
+- **Anexos:** só imagens, PDF, Office, texto e ZIP; o conteúdo precisa combinar com a extensão, e só quem participa da conversa
+  baixa. Ficam em `arquivos/chat`, no mesmo volume dos anexos, e entram no backup.
+- **Mais de um backend:** use `CO_TI_WS_SENDER=redis`.
+
+## Acesso rápido
+
+Menu *Acesso rápido* e opção no menu da foto de perfil. Links do órgão, que todos veem e o administrador cadastra, e links
+pessoais, até 10 por pessoa, que só o dono vê. Para delegar os links públicos, inclua *Gerenciar links públicos* em outro perfil.
+Só endereços http e https são aceitos, inclusive de sistemas internos; os links abrem em outra aba.
+
+## Infraestrutura
+
+Menu só do administrador.
+
+- **Visão geral:** quanto cada área ocupa, quanto cresce por dia e a previsão até o espaço acabar, com aviso no sino em 80% e 90%.
+  Os prazos de retenção e os limites ficam na mesma tela e valem sobre as variáveis de ambiente.
+  - Quando o servidor informa um disco maior que o real, como no Docker Desktop, defina o *Espaço reservado ao CO-TI*
+    (`CO_TI_DISCO_LIMITE_GB`).
+  - Os logs centralizados têm teto próprio (`CO_TI_LOGS_LIMITE_GB`, padrão 50): acima dele, os dias mais antigos saem antes do
+    prazo, sempre preservando 7.
+  - Os logs de arquivo do backend têm teto de 1 GB.
+  - As verificações do monitoramento são comprimidas depois de 2 dias.
+- **Rotinas:** última execução, duração e último erro de cada rotina agendada, inclusive das que só escrevem o erro no log.
+- **Formulários:** a mesma tela de antes, agora aqui.
+- **Integrações:** entradas por webhook, chaves de API e webhooks de saída.
+
+O conteúdo das requisições não vai mais para o log: só o endereço. Para depurar, suba com `LOGGING_LEVEL_CN_IOCODER_YUDAO=debug`;
+mesmo assim, o conteúdo do cofre nunca aparece.
+
+### Desligamento vindo do RH
+
+O sistema do RH chama `POST /admin-api/integracao/entrada/<código>`, e o CO-TI:
+
+1. identifica a pessoa no AD;
+2. abre o chamado do formulário **1.4 Desativação de usuário**, sem aprovação;
+3. bloqueia a conta;
+4. desativa a conta no portal e derruba as sessões;
+5. fecha o chamado.
+
+**Autenticação:** cabeçalhos `X-COTI-Timestamp` (segundos desde 1970) e `X-COTI-Signature`, que é o HMAC-SHA256 em hexadecimal de
+`timestamp.corpo`, com o segredo mostrado ao criar a entrada. Pedidos com mais de 5 minutos são recusados. Para sistemas que não
+assinam, há o token fixo (`Authorization: Bearer`), que exige a lista de IPs.
+
+**Travas:**
+- A entrada nasce em **simulação**, que só registra o que faria. Depois, passa para **com confirmação**, em que um técnico confirma
+  em *Execuções no AD*, e por fim para **automático**.
+- Sem uma conta única para o identificador, com conta protegida (`admin`, grupos e logins da lista) ou com nome divergente, o chamado
+  vai para a equipe e o AD não é tocado.
+- Acima do limite diário de bloqueios automáticos (padrão 5), os próximos esperam confirmação, e o administrador é avisado.
+- Data de efetivação futura agenda o bloqueio. Um aviso com a situação de cancelamento, como uma readmissão, cancela o que ainda
+  não rodou.
+- Evento repetido não abre outro chamado.
+
+**Dados pessoais:** o conteúdo recebido fica cifrado com a chave-mestra e é apagado depois de 90 dias. CPF e data de nascimento não
+entram no chamado. Use *Testar* na tela, com um JSON de exemplo, antes de ligar.
+
+**Script do AD:** atualize o `Executar_AD_Automatico.ps1` no servidor Windows. O pedido automático usa `somente_login=true`, que
+busca só o login exato (sem `Name -eq`), e a resposta traz os grupos removidos e as pendências.
+
+### API e webhooks de saída
+
+- **Chaves de API:** dão acesso a `POST /admin-api/integracao/v1/chamados` (formulário + respostas, com `Idempotency-Key`) e a
+  `GET /admin-api/integracao/v1/chamados/<id>`, com `Authorization: Bearer coti_...`.
+  - Cada chave só vê os chamados que abriu e faz até 120 pedidos por minuto.
+  - Valem a validação e a aprovação normais, e formulários com operação no AD ficam de fora.
+  - A chave aparece uma vez; só o hash fica guardado.
+- **Webhooks de saída:** avisam quando um chamado é aberto, atribuído, solucionado, fechado ou reaberto, com a mesma assinatura das
+  entradas.
+  - O aviso traz só o número, a situação e a categoria.
+  - Falha tenta de novo em 1, 5, 15 e 60 minutos.
+  - O próprio servidor e os endereços locais de enlace, como o serviço de metadados das nuvens, são recusados.
 
 ## Licença
 

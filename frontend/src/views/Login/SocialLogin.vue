@@ -9,7 +9,7 @@
       >
         <!-- 左上角的 logo + 系统标题 -->
         <div class="relative flex items-center text-white">
-          <img alt="" class="mr-10px h-48px w-48px" src="@/assets/imgs/logo.png" />
+          <img alt="" class="mr-10px h-48px w-48px object-contain" :src="marca.logoUrl" />
           <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
         </div>
         <!-- 左边的背景图 + 欢迎语 -->
@@ -35,12 +35,11 @@
           class="flex items-center justify-between text-white at-2xl:justify-end at-xl:justify-end"
         >
           <div class="flex items-center at-2xl:hidden at-xl:hidden">
-            <img alt="" class="mr-10px h-48px w-48px" src="@/assets/imgs/logo.png" />
+            <img alt="" class="mr-10px h-48px w-48px object-contain" :src="marca.logoUrl" />
             <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
           </div>
           <div class="flex items-center justify-end space-x-10px h-48px">
             <ThemeSwitch />
-            <LocaleDropdown class="dark:text-white lt-xl:text-white" />
           </div>
         </div>
         <!-- 右边的登录界面 -->
@@ -157,13 +156,13 @@ import { ElLoading } from 'element-plus'
 
 import { useDesign } from '@/hooks/web/useDesign'
 import { useAppStore } from '@/store/modules/app'
+import { useMarcaStore } from '@/store/modules/marca'
 import { useIcon } from '@/hooks/web/useIcon'
 import { usePermissionStore } from '@/store/modules/permission'
 
 import * as LoginApi from '@/api/login'
 import * as authUtil from '@/utils/auth'
 import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
-import { LocaleDropdown } from '@/layout/components/LocaleDropdown'
 import { LoginStateEnum, useFormValid, useLoginState } from './components/useLogin'
 import LoginFormTitle from './components/LoginFormTitle.vue'
 import router from '@/router'
@@ -174,6 +173,7 @@ const { t } = useI18n()
 const route = useRoute()
 
 const appStore = useAppStore()
+const marca = useMarcaStore()
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('login')
 const iconHouse = useIcon({ icon: 'ep:house' })

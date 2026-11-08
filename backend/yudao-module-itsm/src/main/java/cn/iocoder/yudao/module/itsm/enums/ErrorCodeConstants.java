@@ -51,6 +51,10 @@ public interface ErrorCodeConstants {
     ErrorCode APROVACAO_NAO_EXISTE = new ErrorCode(1_101_003_002, "Aprovação não encontrada");
     ErrorCode APROVACAO_JA_RESPONDIDA = new ErrorCode(1_101_003_003, "Esta aprovação já foi respondida");
     ErrorCode APROVACAO_PROPRIO_SOLICITANTE = new ErrorCode(1_101_003_004, "O aprovador não pode ser o próprio solicitante");
+    ErrorCode APROVACAO_NAO_AUTORIZADO = new ErrorCode(1_101_003_005, "{} não está autorizado(a) a aprovar pedidos. Só aprova quem tem o papel Aprovador");
+    ErrorCode APROVACAO_EMAIL_NAO_AUTORIZADO = new ErrorCode(1_101_003_006, "O e-mail do superior informado ({}) não é de um aprovador autorizado. Confira o e-mail do seu superior ou procure a TI");
+    ErrorCode APROVACAO_GESTOR_NAO_AUTORIZADO = new ErrorCode(1_101_003_007, "Seu gestor no AD ({}) não está autorizado a aprovar pedidos. Procure a TI");
+    ErrorCode APROVACAO_SEM_PERMISSAO = new ErrorCode(1_101_003_008, "Você não está mais autorizado(a) a aprovar pedidos. Peça à TI para encaminhar esta aprovação a outra pessoa");
     ErrorCode REGRA_NAO_EXISTE = new ErrorCode(1_101_003_010, "Regra não encontrada");
     ErrorCode REGRA_INVALIDA = new ErrorCode(1_101_003_011, "{}");
     ErrorCode FORMULARIO_NAO_EXISTE = new ErrorCode(1_101_003_020, "Formulário não encontrado");
@@ -136,5 +140,20 @@ public interface ErrorCodeConstants {
     ErrorCode IMPORTACAO_EM_ANDAMENTO = new ErrorCode(1_101_009_001, "Já há uma importação em andamento; espere terminar ou cancele");
     ErrorCode IMPORTACAO_NAO_EXECUTANDO = new ErrorCode(1_101_009_002, "Esta importação não está em andamento");
     ErrorCode IMPORTACAO_NAO_EXISTE = new ErrorCode(1_101_009_003, "Importação não encontrada");
+
+    // relatórios 1-101-010-xxx
+    ErrorCode RELATORIO_GRANDE_DEMAIS = new ErrorCode(1_101_010_000, "O relatório teria {} linhas e o limite é {}. Use mais filtros e tente de novo");
+
+    // ramais e telefones 1-101-011-xxx
+    ErrorCode TELEFONE_NAO_EXISTE = new ErrorCode(1_101_011_000, "Contato não encontrado na lista");
+    ErrorCode TELEFONE_SEM_NUMERO = new ErrorCode(1_101_011_001, "Informe o ramal, o telefone ou o celular");
+    ErrorCode TELEFONE_UNIDADE_NAO_EXISTE = new ErrorCode(1_101_011_002, "Unidade não encontrada");
+    ErrorCode TELEFONE_EMERGENCIA_INCOMPLETO = new ErrorCode(1_101_011_003, "Contato de emergência precisa de unidade e celular");
+    ErrorCode TELEFONE_CELULAR_INVALIDO = new ErrorCode(1_101_011_004, "Celular inválido: use o DDD");
+    ErrorCode TELEFONE_PLANILHA_INVALIDA = new ErrorCode(1_101_011_005, "Envie uma planilha .xlsx com a coluna Nome");
+
+    // ========== Estoque GTI 1-101-012-000 ==========
+    ErrorCode ESTOQUE_ITEM_NAO_EXISTE = new ErrorCode(1_101_012_000, "Item não encontrado no estoque");
+    ErrorCode ESTOQUE_INVALIDO = new ErrorCode(1_101_012_001, "{}");
 
 }

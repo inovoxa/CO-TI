@@ -18,7 +18,7 @@ import { useMonitorStoreWithOut } from '@/store/modules/monitor'
 type Handler = (conteudo: any) => void
 
 const handlers = new Map<string, Set<Handler>>()
-let conexao: { status: Ref<string>; close: () => void } | null = null
+let conexao: { status: Ref<string>; close: () => void; parar: () => void } | null = null
 
 function despachar(raw: string) {
   if (!raw || raw === 'pong') return
@@ -52,13 +52,19 @@ function garantirConexao() {
   conexao = escopo.run(() => {
     // Mesmo endereço da tela "Infra > WebSocket" do projeto. Se não autenticar, copie de
     // src/views/infra/webSocket/index.vue a forma como a URL e o token são montados.
-    const url = (import.meta.env.VITE_BASE_URL + '/infra/ws').replace('http', 'ws') + '?token=' + getAccessToken()
+    const base = (import.meta.env.VITE_BASE_URL + '/infra/ws').replace('http', 'ws')
+    // função, não texto fixo: o token é renovado durante o uso, e reconectar com o antigo falharia para sempre
+    const url = () => base + '?token=' + getAccessToken()
     const ws = useWebSocket(url, {
-      autoReconnect: { retries: -1, delay: 3000 },
+      // sem login, para de tentar; com o servidor fora, espera cada vez mais, até 1 minuto
+      autoReconnect: {
+        retries: () => !!getAccessToken(),
+        delay: (tentativa: number) => Math.min(3000 * 2 ** Math.max(tentativa - 1, 0), 60000)
+      },
       heartbeat: { message: 'ping', interval: 30000 },
       onMessage: (_ws, ev) => despachar(ev.data)
     })
-    return { status: ws.status as Ref<string>, close: ws.close }
+    return { status: ws.status as Ref<string>, close: ws.close, parar: () => escopo.stop() }
   })!
 
   // assinaturas globais: indicadores e ocorrências alimentam o store compartilhado
@@ -66,6 +72,12 @@ function garantirConexao() {
   adicionar('monitor-kpi', (l) => store.aplicarKpis(l))
   adicionar('monitor-ocorrencia', (l) => store.aplicarOcorrencias(l))
   return conexao
+}
+
+/** Assinatura que não depende de uma tela: dura até ser cancelada ou até a conexão ser fechada. */
+export function ouvirSocket(tipo: string, fn: Handler) {
+  garantirConexao()
+  return adicionar(tipo, fn)
 }
 
 export function useMonitorSocket() {
@@ -83,6 +95,7 @@ export function useMonitorSocket() {
 /** Fecha a conexão (ex.: no logout). */
 export function fecharMonitorSocket() {
   conexao?.close()
+  conexao?.parar()
   conexao = null
   handlers.clear()
 }

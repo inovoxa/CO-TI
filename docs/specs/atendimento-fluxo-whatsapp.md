@@ -7,7 +7,7 @@ Referência analisada: `GLPI_V2_API_Workflows` (n8n da LGTI, workflows 01–26).
 Fluxo: WhatsApp → Chatwoot → `01_GLPI_Agente_Principal`. O WF01 é um agente de IA (OpenRouter, DeepSeek) com um
 prompt de cerca de 22 mil caracteres:
 
-- **Menu:** 1 abrir, 2 consultar, 3 FAQ. A opção 1 mostra o catálogo 1.1–4.4.
+- **Menu:** 1 abrir, 2 consultar, 3 FAQ. A opção 1 mostra o catálogo 1.1–4.2 e 6.1–6.4.
 - **Coleta:** o modelo pergunta os campos um por um e depois chama uma ferramenta por serviço (WF04–WF16), que
   monta o HTML e cria o chamado na API v2 do GLPI.
 - **Consulta:** WF11 busca por número **ou por e-mail digitado**.

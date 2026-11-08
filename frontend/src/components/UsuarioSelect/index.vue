@@ -1,5 +1,6 @@
 <!-- Campo de pessoa: busca no servidor enquanto se digita (nome ou login) e mostra o nome de quem já está escolhido.
-     Aceita os mesmos atributos do el-select (placeholder, clearable, class, size...). -->
+     Aceita os mesmos atributos do el-select (placeholder, clearable, class, size...).
+     Com "aprovadores", só lista quem tem o papel Aprovador. -->
 <template>
   <el-select
     v-bind="$attrs"
@@ -22,13 +23,20 @@
 
 <script lang="ts" setup>
 import type { UserVO } from '@/api/system/user'
-import { buscarUsuarios, garantirUsuarios, usuarioPorId } from '@/hooks/web/useUsuarios'
+import {
+  buscarUsuarios,
+  garantirUsuarios,
+  lembrarUsuarios,
+  usuarioPorId
+} from '@/hooks/web/useUsuarios'
+import { buscarAprovadores } from '@/api/itsm'
 
 defineOptions({ name: 'UsuarioSelect', inheritAttrs: false })
 
 const props = defineProps<{
   modelValue?: number | number[] | null
   multiple?: boolean
+  aprovadores?: boolean
 }>()
 const emit = defineEmits<{ (e: 'update:modelValue', v: any): void }>()
 
@@ -59,7 +67,10 @@ async function buscar(texto: string) {
   const minha = ++ultimaBusca
   carregando.value = true
   try {
-    const lista = await buscarUsuarios(texto || '')
+    const lista = props.aprovadores
+      ? ((await buscarAprovadores(texto || '')) as UserVO[])
+      : await buscarUsuarios(texto || '')
+    if (props.aprovadores) lembrarUsuarios(lista)
     if (minha === ultimaBusca) resultados.value = lista
   } finally {
     if (minha === ultimaBusca) carregando.value = false

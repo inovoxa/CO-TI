@@ -403,6 +403,11 @@ onMounted(async () => {
   const id = Number(route.query.chamado)
   if (id) await abrirDetalhe(id)
 })
+// a tela fica em cache entre as abas: o aviso do sino também precisa abrir o chamado
+watch(
+  () => route.query.chamado,
+  (v) => v && route.path === '/meus-chamados' && abrirDetalhe(Number(v))
+)
 </script>
 
 <style scoped>

@@ -115,6 +115,7 @@ public class MonitoramentoLinksFonte implements MonitorFontes.Links, MonitorFont
         LinkVO l = new LinkVO();
         l.setId(r.getId());
         l.setNome(r.getNome());
+        l.setDescricao(r.getDescricao());
         l.setTipo(switch (r.getTipo()) {
             case "http", "palavra", "json" -> "http";
             case "tcp" -> "port";
@@ -127,6 +128,8 @@ public class MonitoramentoLinksFonte implements MonitorFontes.Links, MonitorFont
         Integer e = r.getEstado();
         l.setEstado(e != null && e == Estados.FORA ? "down" : (e != null && e == Estados.PENDENTE) || Boolean.TRUE.equals(r.getLento()) ? "lento" : "up");
         l.setLatenciaMs(r.getUltimaLatenciaMs());
+        l.setMensagem(r.getUltimaMsg());
+        l.setDesde(r.getEstadoDesde());
         l.setHistorico(r.getHistorico().stream().map(b -> b.getEstado() == Estados.FORA ? "d" : b.getEstado() == Estados.PENDENTE ? "p" : "u")
                 .collect(Collectors.toCollection(ArrayList::new)));
         l.setUptime24h(r.getUptime24h() == null ? 100.0 : r.getUptime24h());

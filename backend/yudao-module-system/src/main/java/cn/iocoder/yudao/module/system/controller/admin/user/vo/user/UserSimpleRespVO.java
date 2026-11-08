@@ -17,6 +17,9 @@ public class UserSimpleRespVO {
     @Schema(description = "用户昵称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋道")
     private String nickname;
 
+    @Schema(description = "CO-TI: login de rede (perguntas \"usuário de rede\" do catálogo)", example = "joao.silva")
+    private String username;
+
     @Schema(description = "头像")
     private String avatar;
     @Schema(description = "性别", example = "1")

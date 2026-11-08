@@ -1,6 +1,7 @@
 <script lang="tsx">
 import { defineComponent, computed } from 'vue'
 import { Message } from '@/layout/components/Message'
+import ChatBotao from '@/views/chat/ChatBotao.vue'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
 import { Screenfull } from '@/layout/components/Screenfull'
@@ -42,6 +43,7 @@ const layout = computed(() => appStore.getLayout)
 
 // CO-TI: no lugar do seletor de idioma (o portal é só em português), o assistente de IA em janela flutuante
 const assistente = computed(() => checkPermi(['assistente:usar']))
+const chat = computed(() => checkPermi(['chat:usar']))
 
 // 消息图标
 const message = computed(() => appStore.getMessage)
@@ -107,6 +109,7 @@ export default defineComponent({
               <Icon color="var(--top-header-text-color)" size={18} icon="ep:magic-stick" />
             </div>
           ) : undefined}
+          {chat.value ? <ChatBotao class="custom-hover"></ChatBotao> : undefined}
           {message.value ? (
             <Message class="custom-hover" color="var(--top-header-text-color)"></Message>
           ) : undefined}

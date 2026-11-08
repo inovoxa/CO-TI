@@ -16,6 +16,8 @@ import { setupGlobCom } from '@/components'
 // 引入 element-plus
 import { setupElementPlus } from '@/plugins/elementPlus'
 
+// fonte da interface, servida pelo próprio portal (funciona sem internet)
+import '@fontsource-variable/inter'
 
 // 引入全局样式
 import '@/styles/index.scss'
@@ -59,7 +61,6 @@ const setupAll = async () => {
 
   setupElementPlus(app)
 
-
   setupRouter(app)
 
   // directives 指令
@@ -77,5 +78,13 @@ const setupAll = async () => {
 }
 
 setupAll()
+
+// PWA: só no build, para o cache não atrapalhar o desenvolvimento. Falha aqui não afeta o portal
+// (ex.: certificado autoassinado ainda não confiável, em que o navegador recusa o service worker).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('PWA indisponível:', e))
+  })
+}
 
 Logger.prettyPrimary(`Bem-vindo ao`, import.meta.env.VITE_APP_TITLE)

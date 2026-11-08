@@ -13,6 +13,12 @@ public class MonitoramentoProperties {
     /** Liga o agendador das verificações (desligue numa segunda instância só de leitura, se houver). */
     private boolean ativo = true;
 
+    /**
+     * Verificações ao mesmo tempo. Threads comuns, não virtuais: com centenas de monitores, as virtuais presas
+     * (pinned) no driver do banco e no Redis travavam todos os núcleos e as verificações paravam.
+     */
+    private int paralelo = 32;
+
     /** Dias de batidas guardadas (cada verificação); os totais por hora ficam {@link #retencaoHorasDias} dias. */
     private int retencaoDias = 31;
     private int retencaoHorasDias = 400;

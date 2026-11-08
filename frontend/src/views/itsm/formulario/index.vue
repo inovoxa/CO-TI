@@ -123,6 +123,10 @@
               <el-radio-button value="campo">E-mail informado</el-radio-button>
               <el-radio-button value="fixo">Pessoa fixa</el-radio-button>
             </el-radio-group>
+            <div v-if="form.aprovacao !== 'nenhuma'" class="dica">
+              Em qualquer opção, só aprova quem tem o papel Aprovador (Sistema → Usuários → Atribuir
+              papel).
+            </div>
           </el-form-item>
           <el-form-item v-if="form.aprovacao === 'campo'" label="Pergunta do e-mail">
             <el-select v-model="form.aprovadorCampo" class="w-full">
@@ -135,7 +139,7 @@
             </el-select>
           </el-form-item>
           <el-form-item v-if="form.aprovacao === 'fixo'" label="Aprovador">
-            <UsuarioSelect v-model="form.aprovadorId" class="w-full" filterable />
+            <UsuarioSelect v-model="form.aprovadorId" aprovadores class="w-full" filterable />
           </el-form-item>
           <el-form-item label="Operação no AD">
             <el-select
@@ -159,6 +163,10 @@
             ></el-col>
             <el-col :span="12"
               ><el-form-item label="Ativo"><el-switch v-model="form.ativo" /></el-form-item
+            ></el-col>
+            <el-col :span="12"
+              ><el-form-item label="Destaque no catálogo"
+                ><el-switch v-model="form.destaque" /></el-form-item
             ></el-col>
           </el-row>
 
@@ -192,7 +200,7 @@
                 ><Icon icon="ep:delete"
               /></el-button>
               <el-input
-                v-if="p.type === 'select' || p.type === 'radios'"
+                v-if="p.type === 'select' || p.type === 'radios' || p.type === 'multipla'"
                 :model-value="(p.values || []).join('\n')"
                 class="w-full"
                 placeholder="Uma opção por linha"
@@ -299,8 +307,10 @@ const TIPOS = [
   { valor: 'date', rotulo: 'Data' },
   { valor: 'select', rotulo: 'Lista' },
   { valor: 'radios', rotulo: 'Opções' },
+  { valor: 'multipla', rotulo: 'Múltipla escolha' },
   { valor: 'regex', rotulo: 'Formato (regex)' },
-  { valor: 'location', rotulo: 'Local' }
+  { valor: 'location', rotulo: 'Local' },
+  { valor: 'usuario', rotulo: 'Usuário de rede (lista de pessoas)' }
 ]
 
 const loading = ref(true)

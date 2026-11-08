@@ -19,6 +19,8 @@ import cn.iocoder.yudao.module.itsm.dominio.Aprovacoes;
 import cn.iocoder.yudao.module.itsm.dominio.Formulario;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
+import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginReqVO;
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -87,6 +89,7 @@ public class FormularioService {
             AdminUserRespDTO u = pessoas.get(f.getAprovadorId());
             r.setAprovador(u == null ? null : u.getNickname());
             r.setAcaoAd(f.getAcaoAd());
+            r.setDestaque(f.getDestaque());
             r.setAtivo(f.getAtivo());
             r.setOrdem(f.getOrdem());
             return r;
@@ -109,6 +112,9 @@ public class FormularioService {
                     erros.add("Escolha o aprovador");
                 } else {
                     adminUserApi.validateUser(req.getAprovadorId());
+                    if (!aprovacaoService.podeAprovar(req.getAprovadorId())) {
+                        erros.add("A pessoa escolhida não tem o papel Aprovador");
+                    }
                 }
             }
             default -> {
@@ -142,7 +148,7 @@ public class FormularioService {
                 .aprovacao(req.getAprovacao()).aprovadorCampo("campo".equals(req.getAprovacao()) ? req.getAprovadorCampo() : null)
                 .aprovadorId("fixo".equals(req.getAprovacao()) ? req.getAprovadorId() : null)
                 .acaoAd(req.getAcaoAd() == null || req.getAcaoAd().isBlank() ? null : req.getAcaoAd())
-                .ativo(req.getAtivo()).ordem(req.getOrdem()).build();
+                .destaque(Boolean.TRUE.equals(req.getDestaque())).ativo(req.getAtivo()).ordem(req.getOrdem()).build();
         if (req.getId() == null) {
             formularioMapper.insert(f);
         } else {
@@ -183,8 +189,21 @@ public class FormularioService {
                     c.setIcone(f.getIcone());
                     c.setDefinicao(definicao(f));
                     c.setPrecisaAprovacao(!"nenhuma".equals(f.getAprovacao()));
+                    c.setDestaque(f.getDestaque());
                     return c;
                 }).toList();
+    }
+
+    /** Os que o fluxo não mostra: ele avisa que existem e indica o portal. */
+    public List<CatalogoVOs.FormularioCatalogo> catalogoSoNoPortal() {
+        return catalogo().stream()
+                .filter(f -> f.getDefinicao().perguntas().stream().anyMatch(Formulario.Pergunta::soNoPortal)).toList();
+    }
+
+    /** O fluxo do WhatsApp não mostra formulário com condições ou múltipla escolha: esses ficam só no portal. */
+    public List<CatalogoVOs.FormularioCatalogo> catalogoDoFluxo() {
+        return catalogo().stream()
+                .filter(f -> f.getDefinicao().perguntas().stream().noneMatch(Formulario.Pergunta::soNoPortal)).toList();
     }
 
     /**
@@ -194,12 +213,23 @@ public class FormularioService {
     @Transactional(rollbackFor = Exception.class)
     @DataPermission(enable = false)
     public Long enviar(CatalogoVOs.EnviarReq req, Long userId) {
+        return enviar(req, userId, null, Map.of());
+    }
+
+    /**
+     * Envio com uma observação para o técnico e o aprovador (no topo da descrição e no pedido de aprovação) e dados
+     * extras para a operação no AD (ex.: {@code entrega_senha=email} no pedido feito pela tela de login).
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public Long enviar(CatalogoVOs.EnviarReq req, Long userId, String observacao, Map<String, String> extrasAd) {
         FormularioDO f = obter(req.getFormularioId());
         if (!Boolean.TRUE.equals(f.getAtivo())) {
             throw exception(FORMULARIO_NAO_EXISTE);
         }
         Formulario.Definicao d = definicao(f);
         Formulario.Resultado r = Formulario.validar(d, req.getRespostas());
+        conferirUsuarios(d, r);
         if (!r.valido()) {
             Map<String, String> rotulos = d.perguntas().stream()
                     .collect(Collectors.toMap(Formulario.Pergunta::name, Formulario.Pergunta::label, (a, b) -> a));
@@ -209,11 +239,27 @@ public class FormularioService {
         }
         Map<String, String> respostas = r.respostas();
         // quem aprova é resolvido antes de abrir: sem aprovador, o pedido nem é criado
+        // e só vale quem tem o papel Aprovador (e-mail digitado de um colega não aprova)
         Long aprovador = switch (f.getAprovacao()) {
-            case "gestor" -> aprovacaoService.gestorDe(userId).orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
-            case "campo" -> aprovacaoService.usuarioPorEmail(respostas.get(f.getAprovadorCampo()))
-                    .orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
-            case "fixo" -> f.getAprovadorId();
+            case "gestor" -> {
+                Long g = aprovacaoService.gestorDe(userId).orElseThrow(() -> exception(APROVACAO_SEM_APROVADOR));
+                if (!aprovacaoService.podeAprovar(g)) {
+                    throw exception(APROVACAO_GESTOR_NAO_AUTORIZADO, aprovacaoService.nome(g));
+                }
+                yield g;
+            }
+            case "campo" -> {
+                String email = respostas.get(f.getAprovadorCampo());
+                // mesma mensagem para e-mail inexistente e para quem não aprova: não revela quem tem conta
+                yield aprovacaoService.usuarioPorEmail(email).filter(aprovacaoService::podeAprovar)
+                        .orElseThrow(() -> exception(APROVACAO_EMAIL_NAO_AUTORIZADO, email));
+            }
+            case "fixo" -> {
+                if (!aprovacaoService.podeAprovar(f.getAprovadorId())) {
+                    throw exception(APROVACAO_NAO_AUTORIZADO, aprovacaoService.nome(f.getAprovadorId()));
+                }
+                yield f.getAprovadorId();
+            }
             default -> null;
         };
         if (aprovador != null && aprovador.equals(userId)) {
@@ -222,7 +268,8 @@ public class FormularioService {
 
         ChamadoVOs.CriarReq c = new ChamadoVOs.CriarReq();
         c.setTitulo(Formulario.titulo(f.getTituloModelo(), f.getNome(), respostas));
-        c.setDescricao("<p><b>Pedido pelo catálogo: " + Formulario.escaparHtml(f.getNome()) + "</b></p>"
+        c.setDescricao((observacao == null ? "" : "<p><b>⚠️ " + Formulario.escaparHtml(observacao) + "</b></p>")
+                + "<p><b>Pedido pelo catálogo: " + Formulario.escaparHtml(f.getNome()) + "</b></p>"
                 + Formulario.descricaoHtml(d, respostas));
         c.setTipo(f.getTipo());
         c.setUrgencia(f.getUrgencia());
@@ -233,13 +280,15 @@ public class FormularioService {
         respostaMapper.insert(FormularioRespostaDO.builder().formularioId(f.getId()).chamadoId(chamadoId).userId(userId)
                 .respostas(JsonUtils.toJsonString(respostas)).criadoEm(LocalDateTime.now()).build());
         if (aprovador != null) {
-            aprovacaoService.solicitar(chamadoId, List.of(aprovador), "Pedido pelo formulário \"" + f.getNome() + "\"", null);
+            aprovacaoService.solicitar(chamadoId, List.of(aprovador), "Pedido pelo formulário \"" + f.getNome() + "\""
+                    + (observacao == null ? "" : ". " + observacao), null);
         }
         if (f.getAcaoAd() != null) {
             ChamadoDO ch = chamadoMapper.selectById(chamadoId);
             boolean aguarda = ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO;
             Map<String, String> dados = new LinkedHashMap<>(respostas);
             dados.put("chamado_id", String.valueOf(chamadoId));
+            dados.putAll(extrasAd);
             // conta do AD de quem pediu, quando o formulário não pergunta (AcessoPasta concede a pasta a esse login)
             VinculoAdDO v = vinculoAdMapper.selectByUserId(userId);
             if (v != null && v.getLogin() != null) {
@@ -250,6 +299,64 @@ public class FormularioService {
                 chamadoService.acompanhamentoSistema(chamadoId, null, "A automação no AD está desligada neste servidor: "
                         + "execute a operação \"" + f.getAcaoAd() + "\" manualmente e registre a solução.", true);
             }
+        }
+        return chamadoId;
+    }
+
+    /** O que uma integração pede além de abrir o chamado. */
+    public record PedidoAd(String login, boolean aguardaConfirmacao, LocalDateTime executarEm) {
+    }
+
+    /**
+     * Abre o chamado de um formulário em nome de outro sistema. Não pede aprovação: quem configurou a integração decidiu que aquela
+     * origem autoriza o pedido, e a observação registra isso. Só valem os campos enviados; valor inválido é descartado e citado na
+     * observação, porque um celular mal formatado não pode impedir o bloqueio de um desligado.
+     *
+     * @param pedido operação no AD; vazio = só abre o chamado para a equipe
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @DataPermission(enable = false)
+    public Long enviarDeIntegracao(Long formularioId, Map<String, String> entrada, Long solicitanteId, String observacao, PedidoAd pedido) {
+        FormularioDO f = obter(formularioId);
+        if (!Boolean.TRUE.equals(f.getAtivo())) {
+            throw exception(FORMULARIO_NAO_EXISTE);
+        }
+        Formulario.Definicao d = Formulario.semObrigatorios(definicao(f));
+        Map<String, String> validas = new LinkedHashMap<>(entrada);
+        Formulario.Resultado r = Formulario.validar(d, validas);
+        String obs = observacao;
+        if (!r.valido()) {
+            obs += " Campos inválidos e descartados: " + String.join(", ", new TreeSet<>(r.erros().keySet())) + ".";
+            r.erros().keySet().forEach(validas::remove);
+            r = Formulario.validar(d, validas);
+        }
+        Map<String, String> respostas = r.respostas();
+
+        ChamadoVOs.CriarReq c = new ChamadoVOs.CriarReq();
+        c.setTitulo(Formulario.titulo(f.getTituloModelo(), f.getNome(), respostas));
+        c.setDescricao("<p><b>⚠️ " + Formulario.escaparHtml(obs) + "</b></p><p><b>Pedido pelo catálogo: "
+                + Formulario.escaparHtml(f.getNome()) + "</b></p>" + Formulario.descricaoHtml(d, respostas));
+        c.setTipo(f.getTipo());
+        c.setUrgencia(f.getUrgencia());
+        c.setImpacto(f.getImpacto());
+        c.setCategoriaId(f.getCategoriaId());
+        Long chamadoId = chamadoService.criar(c, solicitanteId, f.getId());
+        respostaMapper.insert(FormularioRespostaDO.builder().formularioId(f.getId()).chamadoId(chamadoId).userId(solicitanteId)
+                .respostas(JsonUtils.toJsonString(respostas)).criadoEm(LocalDateTime.now()).build());
+        if (pedido == null || f.getAcaoAd() == null) {
+            return chamadoId;
+        }
+        Map<String, String> dados = new LinkedHashMap<>(respostas);
+        dados.put("chamado_id", String.valueOf(chamadoId));
+        dados.put("somente_login", "true");
+        ChamadoDO ch = chamadoMapper.selectById(chamadoId);
+        // uma regra do catálogo ainda pode exigir aprovação: ela prevalece
+        String status = ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.AGUARDANDO ? "aguardando_aprovacao"
+                : pedido.aguardaConfirmacao() ? "aguardando_confirmacao" : "pronta";
+        execucaoAdService.criarDeIntegracao(chamadoId, f.getAcaoAd(), dados, status, pedido.executarEm());
+        if ("desligado".equals(execucaoAdService.modo())) {
+            chamadoService.acompanhamentoSistema(chamadoId, null, "A automação no AD está desligada neste servidor: execute a operação \""
+                    + f.getAcaoAd() + "\" manualmente e registre a solução.", true);
         }
         return chamadoId;
     }
@@ -307,6 +414,7 @@ public class FormularioService {
                 s.setAprovacao(Optional.ofNullable(texto(m.get("aprovacao"))).orElse("nenhuma"));
                 s.setAprovadorCampo(texto(m.get("aprovador_campo")));
                 s.setAcaoAd(texto(m.get("acao_ad")));
+                s.setDestaque(Boolean.parseBoolean(texto(m.get("destaque"))));
                 s.setOrdem(m.get("ordem") != null ? inteiro(m.get("ordem"), ordem) : ordem);
                 s.setDefinicao(JsonUtils.parseObject(JsonUtils.toJsonString(Map.of("secoes", m.get("secoes"))),
                         Formulario.Definicao.class));
@@ -386,6 +494,29 @@ public class FormularioService {
 
     private static String limitar(String s, int max) {
         return s.length() <= max ? s : s.substring(0, max);
+    }
+
+    /**
+     * Login de rede de uma conta ativa ("PMA\joao.silva" e "joao.silva@pma.local" viram "joao.silva"), na grafia do
+     * cadastro, ou vazio.
+     */
+    public Optional<String> loginDeRede(String digitado) {
+        String conta = AuthLoginReqVO.contaDoLogin(digitado);
+        AdminUserRespDTO u = conta == null || conta.isBlank() ? null : adminUserApi.getUserByUsername(conta);
+        return u == null || !CommonStatusEnum.isEnable(u.getStatus()) ? Optional.empty() : Optional.of(u.getUsername());
+    }
+
+    /** Perguntas "usuario": a conta precisa existir e estar ativa; a resposta fica com o login do cadastro. */
+    private void conferirUsuarios(Formulario.Definicao d, Formulario.Resultado r) {
+        for (Formulario.Pergunta p : d.perguntas()) {
+            String v = "usuario".equals(p.type()) ? r.respostas().get(p.name()) : null;
+            if (v != null) {
+                loginDeRede(v).ifPresentOrElse(login -> r.respostas().put(p.name(), login), () -> {
+                    r.respostas().remove(p.name());
+                    r.erros().put(p.name(), "Usuário de rede não encontrado ou desativado");
+                });
+            }
+        }
     }
 
 }

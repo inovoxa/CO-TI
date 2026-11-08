@@ -357,9 +357,13 @@ export interface Pergunta {
     | 'radios'
     | 'regex'
     | 'location'
+    | 'usuario'
+    | 'multipla'
   required: boolean
   values?: string[]
   regex?: string
+  ajuda?: string
+  visivelSe?: { campo: string; valores: string[] }[]
 }
 
 export interface Secao {
@@ -380,10 +384,12 @@ export interface FormularioCatalogo {
   icone?: string
   definicao: Definicao
   precisaAprovacao: boolean
+  destaque?: boolean
 }
 
 export interface Formulario {
   id?: number
+  destaque?: boolean
   codigo?: string
   nome: string
   descricao?: string
@@ -475,6 +481,7 @@ export const ACOES_AD = [
 
 export const STATUS_EXECUCAO: Record<string, { rotulo: string; cor: string }> = {
   aguardando_aprovacao: { rotulo: 'Aguardando aprovação', cor: 'warning' },
+  aguardando_confirmacao: { rotulo: 'Aguardando confirmação', cor: 'warning' },
   pronta: { rotulo: 'Na fila', cor: 'primary' },
   executando: { rotulo: 'Executando', cor: 'primary' },
   sucesso: { rotulo: 'Concluída', cor: 'success' },
@@ -506,6 +513,9 @@ export const revelarSenha = (id: number): Promise<string> =>
 // equipe técnica
 export const getAprovacoesDoChamado = (id: number): Promise<Aprovacao[]> =>
   request.get({ url: '/itsm/chamado/aprovacoes', params: { id } })
+/** Só quem tem o papel Aprovador (busca por nome ou login, no máximo 30) */
+export const buscarAprovadores = (nome: string): Promise<{ id: number; nickname: string }[]> =>
+  request.get({ url: '/itsm/chamado/aprovadores', params: { nome } })
 export const pedirAprovacao = (data: {
   chamadoId: number
   aprovadorIds: number[]
@@ -541,6 +551,8 @@ export const testarRegras = (
   request.post({ url: '/itsm/regra/testar', data: { fatos } })
 export const getExecucoes = (params: any) => request.get({ url: '/itsm/execucao/page', params })
 export const getModoAd = (): Promise<string> => request.get({ url: '/itsm/execucao/modo' })
+export const confirmarExecucao = (id: number) =>
+  request.post({ url: '/itsm/execucao/confirmar', params: { id } })
 export const repetirExecucao = (id: number) =>
   request.post({ url: '/itsm/execucao/repetir', params: { id } })
 export const cancelarExecucao = (id: number, motivo?: string) =>
@@ -725,6 +737,16 @@ export const getPainel = (params: {
   deptId?: number
   categoriaId?: number
 }): Promise<any> => request.get({ url: '/itsm/painel', params })
+
+export const exportarPainel = (params: {
+  de: string
+  ate: string
+  deptId?: number
+  categoriaId?: number
+}): Promise<Blob> => request.download({ url: '/itsm/painel/exportar-excel', params })
+
+export const exportarChamados = (params: any): Promise<Blob> =>
+  request.download({ url: '/itsm/chamado/exportar-excel', params })
 
 // ========== problemas e mudanças ==========
 

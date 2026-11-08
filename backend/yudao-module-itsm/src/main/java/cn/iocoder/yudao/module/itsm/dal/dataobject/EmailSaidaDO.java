@@ -23,6 +23,8 @@ public class EmailSaidaDO {
     private String para;
     private String assunto;
     private String corpo;
+    /** Senha provisória cifrada: entra no corpo só na hora do envio e é apagada em seguida */
+    private String segredo;
     private String messageId;
     /** pendente | enviando | enviado | erro */
     private String status;
