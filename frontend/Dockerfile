@@ -11,9 +11,9 @@ FROM nginx:1.27.3-alpine
 # openssl: gera o certificado autoassinado quando não há o da empresa
 RUN apk add --no-cache openssl
 COPY --from=build /src/dist-coti /usr/share/nginx/html
-COPY nginx/agentes.conf nginx/portal.conf /etc/nginx/coti/
+COPY nginx/agentes.conf nginx/portal.conf nginx/proxy.conf.template /etc/nginx/coti/
 COPY nginx/default.conf.template /etc/nginx/templates/
-COPY --chmod=755 nginx/40-certificado.sh /docker-entrypoint.d/
+COPY --chmod=755 nginx/15-modo-proxy.sh nginx/40-certificado.sh /docker-entrypoint.d/
 # só a porta do HTTPS entra no modelo; $host, $uri etc. ficam para o nginx
 ENV NGINX_ENVSUBST_FILTER=^CO_TI_ CO_TI_HTTPS_PORT=443
 RUN rm -f /etc/nginx/conf.d/default.conf

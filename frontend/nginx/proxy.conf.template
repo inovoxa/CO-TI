@@ -1,13 +1,13 @@
-# Frontend do CO-TI atrás do Traefik do Coolify (docker-compose.coolify.yml): o Traefik termina o HTTPS e repassa
-# tudo em HTTP para cá. Substitui o default.conf.template da imagem, que redireciona para o HTTPS próprio.
+# Modo atrás de proxy (CO_TI_ATRAS_DE_PROXY=true, ex.: Traefik do Coolify): o proxy termina o HTTPS e repassa tudo em
+# HTTP para cá. 15-modo-proxy.sh troca o default.conf.template (HTTPS próprio) por este na subida.
 server {
     listen 80;
     server_name _;
     server_tokens off;
     client_max_body_size 50m;
 
-    # O contêiner não publica porta no host: só o Traefik (redes do Docker) chega aqui. O realip troca $remote_addr
-    # pelo IP que o Traefik acrescentou no X-Forwarded-For, e o portal.conf/agentes.conf repassam esse IP ao backend.
+    # Neste modo o contêiner não publica porta no host: só o proxy (redes do Docker) chega aqui. O realip troca $remote_addr
+    # pelo IP que o proxy acrescentou no X-Forwarded-For, e o portal.conf/agentes.conf repassam esse IP ao backend.
     set_real_ip_from 10.0.0.0/8;
     set_real_ip_from 172.16.0.0/12;
     set_real_ip_from 192.168.0.0/16;

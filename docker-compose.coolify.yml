@@ -1,23 +1,22 @@
-# CO-TI no Coolify (atrás do Traefik, que faz o HTTPS com Let's Encrypt). Cópia do docker-compose.yml com só o que
-# muda: o frontend não publica portas no host e serve tudo em HTTP na 80 (deploy/coolify/nginx.conf.template).
-# Mantenha em sincronia com o docker-compose.yml. No Coolify: build pack "Docker Compose", arquivo
-# /docker-compose.coolify.yml, "Preserve Repository" ligado (os bind mounts ./deploy/... vêm do repositório) e o
-# domínio no serviço frontend, porta 80. Segredos nas variáveis de ambiente do Coolify (ver .env.example).
-
+# CO-TI no Coolify, só com imagens prontas (ghcr.io/inovoxa/co-ti-*, publicadas pelo workflow Imagens).
+# Instalar num cliente: Coolify -> projeto -> + New -> Docker Compose Empty -> cole este arquivo -> defina o domínio
+# do serviço frontend (ex.: https://ti.cliente.com.br) -> Deploy. As senhas, a chave-mestra e a senha inicial do admin
+# são geradas pelo Coolify (variáveis SERVICE_*) e ficam em Environment Variables: guarde a SERVICE_REALBASE64_32_
+# CHAVEMESTRA fora do servidor, sem ela os segredos cifrados do backup não abrem.
+# CO_TI_VERSAO fixa a versão (ex.: 1.2.0); padrão latest. Mantenha em sincronia com o docker-compose.yml.
 services:
   postgres:
-    # PostgreSQL 16 com TimescaleDB e pgvector na mesma imagem (banco único do CO-TI)
-    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    # PostgreSQL 16 com TimescaleDB e pgvector, já com o script do papel coti_app (deploy/Dockerfile.postgres)
+    image: ghcr.io/inovoxa/co-ti-postgres:${CO_TI_VERSAO:-latest}
     environment:
       POSTGRES_DB: coti
       TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
       PGTZ: ${CO_TI_FUSO:-America/Sao_Paulo}
       POSTGRES_USER: coti
-      POSTGRES_PASSWORD: ${CO_TI_DB_PASSWORD:?defina CO_TI_DB_PASSWORD no .env}
-      CO_TI_DB_APP_PASSWORD: ${CO_TI_DB_APP_PASSWORD:?defina CO_TI_DB_APP_PASSWORD no .env}
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_DB}
+      CO_TI_DB_APP_PASSWORD: ${SERVICE_PASSWORD_64_DBAPP}
     volumes:
       - pgdata:/home/postgres/pgdata/data
-      - ./deploy/postgres/050_papel_aplicacao.sh:/docker-entrypoint-initdb.d/050_papel_aplicacao.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U coti -d coti"]
       interval: 10s
@@ -26,7 +25,7 @@ services:
 
   redis:
     image: redis:7.4.2-alpine
-    command: ["redis-server", "--requirepass", "${CO_TI_REDIS_PASSWORD:?defina CO_TI_REDIS_PASSWORD no .env}", "--appendonly", "yes"]
+    command: ["redis-server", "--requirepass", "${SERVICE_PASSWORD_64_REDIS}", "--appendonly", "yes"]
     volumes:
       - redisdata:/data
     healthcheck:
@@ -34,11 +33,11 @@ services:
       interval: 10s
       retries: 10
     environment:
-      REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
+      REDIS_PASSWORD: ${SERVICE_PASSWORD_64_REDIS}
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    image: ghcr.io/inovoxa/co-ti-backend:${CO_TI_VERSAO:-latest}
     environment:
       # fuso da empresa: expediente, feriados e prazos de SLA são calculados nele
       TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
@@ -46,15 +45,16 @@ services:
       CO_TI_DB_URL: jdbc:postgresql://postgres:5432/coti
       # a aplicação conecta como coti_app (só DML); o Flyway usa o dono (coti)
       CO_TI_DB_USER: coti_app
-      CO_TI_DB_PASSWORD: ${CO_TI_DB_APP_PASSWORD}
+      CO_TI_DB_PASSWORD: ${SERVICE_PASSWORD_64_DBAPP}
       CO_TI_FLYWAY_USER: coti
-      CO_TI_FLYWAY_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_FLYWAY_PASSWORD: ${SERVICE_PASSWORD_64_DB}
       CO_TI_REDIS_HOST: redis
-      CO_TI_REDIS_PASSWORD: ${CO_TI_REDIS_PASSWORD}
-      CO_TI_ADMIN_MONITOR_PASSWORD: ${CO_TI_ADMIN_MONITOR_PASSWORD:?defina CO_TI_ADMIN_MONITOR_PASSWORD no .env}
+      CO_TI_REDIS_PASSWORD: ${SERVICE_PASSWORD_64_REDIS}
+      CO_TI_ADMIN_MONITOR_PASSWORD: ${SERVICE_PASSWORD_MONITOR}
       CO_TI_CAPTCHA: ${CO_TI_CAPTCHA:-true}
-      CO_TI_ADMIN_SENHA_INICIAL: ${CO_TI_ADMIN_SENHA_INICIAL:-}
-      CO_TI_CHAVE_MESTRA: ${CO_TI_CHAVE_MESTRA:?defina CO_TI_CHAVE_MESTRA no .env (openssl rand -base64 32)}
+      # senha do admin na primeira partida (veja em Environment Variables); só vale enquanto o admin tem a admin123
+      CO_TI_ADMIN_SENHA_INICIAL: ${SERVICE_PASSWORD_ADMIN}
+      CO_TI_CHAVE_MESTRA: ${SERVICE_REALBASE64_32_CHAVEMESTRA}
       CO_TI_MFA_EMISSOR: ${CO_TI_MFA_EMISSOR:-CO-TI}
       CO_TI_AD_HABILITADO: ${CO_TI_AD_HABILITADO:-false}
       CO_TI_AD_URL: ${CO_TI_AD_URL:-}
@@ -67,7 +67,7 @@ services:
       CO_TI_AD_SSH_USUARIO: ${CO_TI_AD_SSH_USUARIO:-}
       CO_TI_AD_SSH_CHAVE: /run/segredos/ad_ssh_key
       CO_TI_AD_SSH_IMPRESSAO: ${CO_TI_AD_SSH_IMPRESSAO:-}
-      CO_TI_URL_PUBLICA: ${CO_TI_URL_PUBLICA:-}
+      CO_TI_URL_PUBLICA: ${SERVICE_URL_FRONTEND}
       # só em teste: apontam os canais para simuladores (padrão = APIs oficiais)
       CO_TI_META_GRAPH_URL: ${CO_TI_META_GRAPH_URL:-https://graph.facebook.com/v23.0}
       CO_TI_INSTAGRAM_URL: ${CO_TI_INSTAGRAM_URL:-https://graph.instagram.com/v23.0}
@@ -115,26 +115,26 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
-    volumes:
-      # HTTP só na 80, com o IP real do cliente vindo do Traefik (o TLS fica no Coolify)
-      - ./deploy/coolify/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    image: ghcr.io/inovoxa/co-ti-frontend:${CO_TI_VERSAO:-latest}
+    environment:
+      # domínio do portal no Coolify (o Traefik faz o HTTPS e repassa para a 80)
+      SERVICE_URL_FRONTEND_80:
+      CO_TI_ATRAS_DE_PROXY: "true"
     depends_on:
       - backend
     restart: unless-stopped
 
-  # backup diário do banco e dos anexos em ./backups (copie a pasta para fora do servidor). Ver deploy/backup.
+  # backup diário do banco e dos anexos em ./backups (no Coolify: /data/coolify/services/<uuid>/backups). Copie para fora.
   backup:
-    image: ${CO_TI_PG_IMAGE:-timescale/timescaledb-ha:pg16.15-ts2.30.1}
+    image: ghcr.io/inovoxa/co-ti-postgres:${CO_TI_VERSAO:-latest}
     entrypoint: ["bash", "/backup/backup.sh"]
     user: root
     environment:
       TZ: ${CO_TI_FUSO:-America/Sao_Paulo}
-      CO_TI_DB_PASSWORD: ${CO_TI_DB_PASSWORD}
+      CO_TI_DB_PASSWORD: ${SERVICE_PASSWORD_64_DB}
       CO_TI_BACKUP_HORA: ${CO_TI_BACKUP_HORA:-02:30}
       CO_TI_BACKUP_DIAS: ${CO_TI_BACKUP_DIAS:-14}
     volumes:
-      - ./deploy/backup:/backup:ro
       - ./backups:/backups
       - arquivos:/arquivos
     depends_on:

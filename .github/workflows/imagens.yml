@@ -1,0 +1,78 @@
+# Publica as imagens do CO-TI no GitHub Container Registry, para instalar só com imagens (docker-compose.coolify.yml):
+#   ghcr.io/inovoxa/co-ti-backend, co-ti-frontend e co-ti-postgres
+# - main com o CI verde  -> tags "latest" e "sha-<commit>"
+# - tag vX.Y.Z           -> tags "X.Y.Z" e "X.Y" (versão para fixar nos clientes com CO_TI_VERSAO)
+name: Imagens
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: imagens-${{ github.event.workflow_run.head_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar ${{ matrix.nome }}
+    # do CI, só quando passou (e foi push no main, não pull request)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nome: co-ti-backend
+            contexto: backend
+            dockerfile: backend/Dockerfile
+          - nome: co-ti-frontend
+            contexto: frontend
+            dockerfile: frontend/Dockerfile
+          - nome: co-ti-postgres
+            contexto: deploy
+            dockerfile: deploy/Dockerfile.postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # no workflow_run, o commit que o CI testou (não o último do main)
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.nome }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.event_name != 'push' }}
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha || github.sha }},enable=${{ github.event_name != 'push' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.nome }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.contexto }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.contexto }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.contexto }}

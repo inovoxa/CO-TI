@@ -1,0 +1,7 @@
+# Banco do CO-TI pronto para usar sem o repositório (instalação só com imagens, ex.: Coolify): PostgreSQL 16 com
+# TimescaleDB e pgvector, o script que cria o papel coti_app e os scripts de backup (o serviço "backup" usa esta
+# mesma imagem). Build a partir de deploy/:  docker build -f deploy/Dockerfile.postgres deploy
+ARG CO_TI_PG_IMAGE=timescale/timescaledb-ha:pg16.15-ts2.30.1
+FROM ${CO_TI_PG_IMAGE}
+COPY --chmod=755 postgres/050_papel_aplicacao.sh /docker-entrypoint-initdb.d/
+COPY --chmod=755 backup/backup.sh backup/restaurar.sh /backup/

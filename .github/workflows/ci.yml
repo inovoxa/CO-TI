@@ -89,3 +89,13 @@ jobs:
         run: |
           docker run --rm --add-host backend:127.0.0.1 -e CO_TI_HTTPS_PORT=443 --entrypoint sh coti-frontend-ci -c \
             '/docker-entrypoint.d/20-envsubst-on-templates.sh && /docker-entrypoint.d/40-certificado.sh && nginx -t'
+      - name: Configuração do nginx atrás de proxy (Coolify)
+        run: |
+          docker run --rm --add-host backend:127.0.0.1 -e CO_TI_ATRAS_DE_PROXY=true --entrypoint sh coti-frontend-ci -c \
+            '/docker-entrypoint.d/15-modo-proxy.sh && /docker-entrypoint.d/20-envsubst-on-templates.sh && nginx -t'
+      - name: Banco
+        uses: docker/build-push-action@v6
+        with:
+          context: deploy
+          file: deploy/Dockerfile.postgres
+          push: false

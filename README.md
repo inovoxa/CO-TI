@@ -26,6 +26,24 @@ Depois abra `https://<servidor>:8443` (a porta de `CO_TI_HTTPS_PORT`) e entre co
 
 Serviços: `postgres` (PostgreSQL 16, TimescaleDB e pgvector), `redis`, `backend`, `frontend` (nginx, que publica o portal, a API `/admin-api` e o WebSocket `/infra/ws` na mesma origem) e `backup`.
 
+### Instalar no Coolify (só com imagens)
+
+O workflow **Imagens** publica `ghcr.io/inovoxa/co-ti-backend`, `co-ti-frontend` e `co-ti-postgres` a cada push no
+`main` com o CI verde (`latest`) e a cada tag `vX.Y.Z` (`X.Y.Z`). Para um cliente novo não é preciso clonar nem
+compilar nada no servidor dele:
+
+1. Coolify → projeto → **+ New** → **Docker Compose Empty** → cole o [`docker-compose.coolify.yml`](docker-compose.coolify.yml).
+2. No serviço **frontend**, defina o domínio (ex.: `https://ti.cliente.com.br`), com o DNS já apontando para o servidor.
+3. **Deploy.** As senhas do banco e do Redis, a chave-mestra e a senha inicial do `admin` são geradas pelo Coolify
+   (variáveis `SERVICE_*`, em *Environment Variables*). Entre como `admin` com a `SERVICE_PASSWORD_ADMIN`.
+4. **Guarde a `SERVICE_REALBASE64_32_CHAVEMESTRA` fora do servidor**: sem ela os segredos cifrados (MFA, cofre)
+   de um backup não abrem.
+
+Nesse modo o frontend roda com `CO_TI_ATRAS_DE_PROXY=true`: o Traefik do Coolify faz o HTTPS (Let's Encrypt) e o nginx
+serve tudo em HTTP na 80, guardando o IP real do cliente. Para fixar a versão num cliente, defina `CO_TI_VERSAO`
+(ex.: `1.2.0`). Se os pacotes do GHCR forem privados, faça `docker login ghcr.io` no servidor com um token
+`read:packages`. Os backups ficam em `/data/coolify/services/<uuid>/backups`.
+
 ### HTTPS
 
 O portal só abre por HTTPS (TLS 1.2 e 1.3); o HTTP (`CO_TI_HTTP_PORT`) redireciona, menos os caminhos dos agentes de

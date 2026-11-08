@@ -2,6 +2,7 @@
 # Sem certificado em /etc/nginx/tls (segredos/tls no servidor), gera um autoassinado para o HTTPS já funcionar.
 # Ele vale 2 anos e o navegador vai avisar: troque pelo certificado da empresa (cert.pem com a cadeia, key.pem).
 set -eu
+case "${CO_TI_ATRAS_DE_PROXY:-false}" in true | 1 | sim) exit 0 ;; esac   # o HTTPS é do proxy
 DIR=/etc/nginx/tls
 [ -s "$DIR/cert.pem" ] && [ -s "$DIR/key.pem" ] && exit 0
 
