@@ -7,7 +7,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --froze
 COPY . .
 RUN pnpm build:coti
 
-FROM nginx:1.27.3-alpine
+FROM nginx:1.31.7-alpine
 # openssl: gera o certificado autoassinado quando não há o da empresa
 RUN apk add --no-cache openssl
 COPY --from=build /src/dist-coti /usr/share/nginx/html
