@@ -7,12 +7,15 @@ import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
 import cn.iocoder.yudao.module.monitoramento.service.MonitorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,6 +37,13 @@ public class MonitorController {
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
     public CommonResult<PageResult<MonitorVOs.Resp>> pagina(@Valid MonitorVOs.PaginaReq req) {
         return success(monitorService.pagina(req));
+    }
+
+    @GetMapping("/exportar")
+    @Operation(summary = "Planilha com tudo o que o filtro alcança")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public void exportar(@Valid MonitorVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "monitores.xlsx", monitorService.planilha(req));
     }
 
     @GetMapping("/contagens")

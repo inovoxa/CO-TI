@@ -2,16 +2,19 @@ package cn.iocoder.yudao.module.inventario.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.inventario.controller.admin.vo.RedeVOs;
 import cn.iocoder.yudao.module.inventario.service.RedeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -38,6 +41,13 @@ public class RedeController {
     @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
     public CommonResult<PageResult<RedeVOs.Dispositivo>> pagina(@Valid RedeVOs.PaginaReq req) {
         return success(redeService.pagina(req));
+    }
+
+    @GetMapping("/exportar")
+    @Operation(summary = "Planilha com os equipamentos do filtro e as sub-redes")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public void exportar(@Valid RedeVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "rede.xlsx", redeService.planilha(req));
     }
 
     @PostMapping("/cadastrar")

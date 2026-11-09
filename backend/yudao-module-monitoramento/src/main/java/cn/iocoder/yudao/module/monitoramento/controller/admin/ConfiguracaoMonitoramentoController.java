@@ -9,12 +9,15 @@ import cn.iocoder.yudao.module.monitoramento.service.ManutencaoService;
 import cn.iocoder.yudao.module.monitoramento.service.UnidadeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -43,6 +46,12 @@ public class ConfiguracaoMonitoramentoController {
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
     public CommonResult<List<MonitorVOs.Manutencao>> manutencoes() {
         return success(manutencaoService.listar());
+    }
+
+    @GetMapping("/manutencao/exportar")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public void exportarManutencoes(HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "manutencoes.xlsx", manutencaoService.planilha());
     }
 
     @PostMapping("/manutencao/save")
@@ -79,6 +88,13 @@ public class ConfiguracaoMonitoramentoController {
         return success(lista);
     }
 
+    @GetMapping("/canal/exportar")
+    @Operation(summary = "Planilha dos canais, sem configuração nem segredos")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public void exportarCanais(HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "canais-de-aviso.xlsx", canalService.planilha());
+    }
+
     @PostMapping("/canal/save")
     @PreAuthorize("@ss.hasPermission('monitoramento:canal:update')")
     public CommonResult<Long> salvarCanal(@Valid @RequestBody MonitorVOs.Canal req) {
@@ -105,6 +121,12 @@ public class ConfiguracaoMonitoramentoController {
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
     public CommonResult<List<UnidadeVOs.Unidade>> unidades() {
         return success(unidadeService.listar());
+    }
+
+    @GetMapping("/unidade/exportar")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public void exportarUnidades(HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "unidades.xlsx", unidadeService.planilha());
     }
 
     @PostMapping("/unidade/save")

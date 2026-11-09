@@ -63,6 +63,11 @@
           <template #prefix><Icon icon="ep:search" /></template>
         </el-input>
       </el-form-item>
+      <el-form-item>
+        <el-button plain @click="exportar">
+          <Icon class="mr-4px" icon="ep:download" /> Exportar
+        </el-button>
+      </el-form-item>
     </el-form>
   </ContentWrap>
 
@@ -160,6 +165,7 @@
 import { ElMessageBox } from 'element-plus'
 import * as Inv from '@/api/inventario'
 import { TIPOS_ATIVO } from '@/api/inventario'
+import download from '@/utils/download'
 import * as DeptApi from '@/api/system/dept'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
@@ -210,6 +216,7 @@ const buscar = () => {
   q.pageNo = 1
   carregar()
 }
+const exportar = async () => download.excel(await Inv.exportarRede(q), 'rede.xlsx')
 const filtrarSubrede = (s: string) => {
   q.subrede = s
   buscar()

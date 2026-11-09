@@ -6,9 +6,14 @@
         Unidades (filiais) que aparecem no mapa do telão. O CEP preenche o endereço; com o número, o
         ponto é calculado e pode ser ajustado no mapa.
       </span>
-      <el-button v-if="pode" type="primary" @click="abrir()"
-        ><Icon class="mr-4px" icon="ep:plus" />Nova unidade</el-button
-      >
+      <div class="flex gap-8px">
+        <el-button plain @click="exportar">
+          <Icon class="mr-4px" icon="ep:download" /> Exportar
+        </el-button>
+        <el-button v-if="pode" type="primary" @click="abrir()"
+          ><Icon class="mr-4px" icon="ep:plus" />Nova unidade</el-button
+        >
+      </div>
     </div>
     <el-table v-loading="loading" :data="lista">
       <el-table-column label="Unidade" min-width="200">
@@ -172,6 +177,7 @@ import * as Mon from '@/api/monitoramento'
 import * as DeptApi from '@/api/system/dept'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
+import download from '@/utils/download'
 import MapaPonto from './MapaPonto.vue'
 
 defineOptions({ name: 'MonitoramentoUnidade' })
@@ -187,6 +193,7 @@ const PRECISAO: Record<string, string> = {
   cep: 'Achei só o CEP: confira e ajuste o ponto no mapa.',
   cidade: 'Achei só a cidade: arraste o ponto até o endereço da unidade.'
 }
+const exportar = async () => download.excel(await Mon.exportarUnidades(), 'unidades.xlsx')
 const lista = ref<Mon.Unidade[]>([])
 const loading = ref(true)
 const depts = ref<any[]>([])

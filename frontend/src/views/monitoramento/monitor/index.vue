@@ -65,6 +65,9 @@
         >
           <Icon class="mr-4px" icon="ep:plus" />Novo monitor
         </el-button>
+        <el-button plain @click="exportar">
+          <Icon class="mr-4px" icon="ep:download" /> Exportar
+        </el-button>
         <el-button v-hasPermi="['monitoramento:importar']" @click="importar?.abrir()">
           <Icon class="mr-4px" icon="ep:upload" />Importar do Uptime Kuma
         </el-button>
@@ -211,6 +214,7 @@
 import * as Mon from '@/api/monitoramento'
 import { ESTADOS, PAPEIS, TIPOS, duracao, pct, quando } from '@/api/monitoramento'
 import { useMonitorSocket } from '@/hooks/web/useMonitorSocket'
+import download from '@/utils/download'
 import Batidas from './Batidas.vue'
 import ImportarKuma from './ImportarKuma.vue'
 import MonitorDetalhe from './MonitorDetalhe.vue'
@@ -286,6 +290,7 @@ const buscar = () => {
   q.pageNo = 1
   carregar()
 }
+const exportar = async () => download.excel(await Mon.exportarMonitores(q), 'monitores.xlsx')
 const filtrar = (s?: string) => {
   q.situacao = s
   buscar()

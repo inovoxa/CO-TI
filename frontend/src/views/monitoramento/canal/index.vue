@@ -6,9 +6,14 @@
         Por onde os monitores avisam quando caem, voltam ou o certificado está perto de vencer.
         Tokens ficam cifrados.
       </span>
-      <el-button v-if="pode" type="primary" @click="abrir()"
-        ><Icon class="mr-4px" icon="ep:plus" />Novo canal</el-button
-      >
+      <div class="flex gap-8px">
+        <el-button plain @click="exportar">
+          <Icon class="mr-4px" icon="ep:download" /> Exportar
+        </el-button>
+        <el-button v-if="pode" type="primary" @click="abrir()"
+          ><Icon class="mr-4px" icon="ep:plus" />Novo canal</el-button
+        >
+      </div>
     </div>
     <el-table v-loading="loading" :data="lista">
       <el-table-column label="Canal" min-width="200">
@@ -146,12 +151,14 @@
 import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import * as Mon from '@/api/monitoramento'
 import { CANAIS } from '@/api/monitoramento'
+import download from '@/utils/download'
 import { checkPermi } from '@/utils/permission'
 
 defineOptions({ name: 'MonitoramentoCanal' })
 const message = useMessage()
 const pode = checkPermi(['monitoramento:canal:update'])
 const regras = { nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }] }
+const exportar = async () => download.excel(await Mon.exportarCanais(), 'canais-de-aviso.xlsx')
 const lista = ref<Mon.Canal[]>([])
 const loading = ref(true)
 const formRef = ref()

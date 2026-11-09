@@ -66,6 +66,9 @@ export const salvarTelefone = (data: Telefone): Promise<number> =>
 export const excluirTelefone = (id: number) =>
   request.delete({ url: '/itsm/telefone/excluir', params: { id } })
 
+export const exportarTelefones = (params: any): Promise<Blob> =>
+  request.download({ url: '/itsm/telefone/exportar', params })
+
 export const baixarModeloTelefones = (): Promise<Blob> =>
   request.download({ url: '/itsm/telefone/modelo' })
 

@@ -301,6 +301,8 @@ export const getSubredes = (): Promise<Subrede[]> =>
   request.get({ url: '/inventario/rede/subredes' })
 export const getDispositivosRede = (params: any) =>
   request.get({ url: '/inventario/rede/page', params })
+export const exportarRede = (params: any): Promise<Blob> =>
+  request.download({ url: '/inventario/rede/exportar', params })
 export const cadastrarDispositivoRede = (data: any): Promise<number> =>
   request.post({ url: '/inventario/rede/cadastrar', data })
 export const ignorarDispositivoRede = (id: number, ignorado: boolean, observacao?: string) =>

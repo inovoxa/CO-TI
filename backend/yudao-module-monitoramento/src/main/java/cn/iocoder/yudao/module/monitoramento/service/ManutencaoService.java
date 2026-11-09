@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
@@ -44,6 +45,19 @@ public class ManutencaoService {
 
     private volatile Set<Long> emManutencao = Set.of();
     private volatile long calculadoEm;
+
+    public List<Planilha.Aba> planilha() {
+        List<String> dias = List.of("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom");
+        List<List<Object>> linhas = listar().stream().<List<Object>>map(m -> Arrays.asList(m.getTitulo(), m.getDescricao(), m.getTipo(),
+                Planilha.simNao(m.getAtiva()), Planilha.simNao(m.getValendo()), Planilha.dataHora(m.getInicio()),
+                Planilha.dataHora(m.getFim()), m.getDiasSemana() == null ? null
+                        : String.join(", ", m.getDiasSemana().stream().map(d -> dias.get(d - 1)).toList()),
+                m.getHoraInicio() == null ? null : m.getHoraInicio().toString(),
+                m.getHoraFim() == null ? null : m.getHoraFim().toString(), m.getUnidadeNome(),
+                m.getMonitorNomes() == null ? null : String.join(", ", m.getMonitorNomes()))).toList();
+        return List.of(new Planilha.Aba("Manutenções", List.of("Título", "Descrição", "Tipo", "Ligada", "Valendo agora", "Início", "Fim",
+                "Dias da semana", "Hora de início", "Hora de fim", "Unidade", "Monitores"), linhas));
+    }
 
     public List<MonitorVOs.Manutencao> listar() {
         List<ManutencaoDO> lista = monManutencaoMapper.selectList(new LambdaQueryWrapperX<ManutencaoDO>().orderByDesc(ManutencaoDO::getId));

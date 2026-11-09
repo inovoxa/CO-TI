@@ -75,6 +75,13 @@ public class TelefoneController {
         return success(true);
     }
 
+    @GetMapping("/exportar")
+    @Operation(summary = "Planilha com tudo o que o filtro alcança")
+    @PreAuthorize("@ss.hasPermission('itsm:telefone:query')")
+    public void exportar(@Valid TelefoneVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
+        Planilha.responder(resposta, "contatos.xlsx", telefoneService.planilha(req, getLoginUserId()));
+    }
+
     @GetMapping("/modelo")
     @Operation(summary = "Planilha modelo para importar contatos")
     @PreAuthorize("@ss.hasPermission('itsm:telefone:update')")

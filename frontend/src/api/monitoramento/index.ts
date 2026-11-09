@@ -238,6 +238,8 @@ export interface ResultadoKuma {
 }
 
 // ---------------------------------------------------------------- monitores
+export const exportarMonitores = (params: any): Promise<Blob> =>
+  request.download({ url: '/monitoramento/monitor/exportar', params })
 export const getMonitores = (params: any) =>
   request.get({ url: '/monitoramento/monitor/page', params })
 export const getContagens = (): Promise<Contagens> =>
@@ -269,6 +271,8 @@ export const excluirMonitor = (id: number) =>
 // ---------------------------------------------------------------- manutenções, canais e unidades
 export const getManutencoes = (): Promise<Manutencao[]> =>
   request.get({ url: '/monitoramento/manutencao/list' })
+export const exportarManutencoes = (): Promise<Blob> =>
+  request.download({ url: '/monitoramento/manutencao/exportar' })
 export const salvarManutencao = (data: Manutencao): Promise<number> =>
   request.post({ url: '/monitoramento/manutencao/save', data })
 export const ativarManutencao = (id: number, ativa: boolean) =>
@@ -277,6 +281,8 @@ export const excluirManutencao = (id: number) =>
   request.delete({ url: '/monitoramento/manutencao/delete', params: { id } })
 
 export const getCanais = (): Promise<Canal[]> => request.get({ url: '/monitoramento/canal/list' })
+export const exportarCanais = (): Promise<Blob> =>
+  request.download({ url: '/monitoramento/canal/exportar' })
 export const salvarCanal = (data: Canal): Promise<number> =>
   request.post({ url: '/monitoramento/canal/save', data })
 export const testarCanal = (id: number): Promise<string | null> =>
@@ -288,6 +294,8 @@ export const getUnidades = (): Promise<Unidade[]> =>
   request.get({ url: '/monitoramento/unidade/list' })
 export const salvarUnidade = (data: Unidade): Promise<number> =>
   request.post({ url: '/monitoramento/unidade/save', data })
+export const exportarUnidades = (): Promise<Blob> =>
+  request.download({ url: '/monitoramento/unidade/exportar' })
 export const excluirUnidade = (id: number) =>
   request.delete({ url: '/monitoramento/unidade/delete', params: { id } })
 export const buscarCep = (

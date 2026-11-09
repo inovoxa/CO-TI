@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
@@ -101,6 +102,13 @@ public class CanalService {
     }
 
     // ================================================================================== cadastro
+
+    /** Só o que identifica o canal: a configuração guarda tokens e segredos e não vai para arquivo. */
+    public List<Planilha.Aba> planilha() {
+        List<List<Object>> linhas = listar().stream().<List<Object>>map(c -> Arrays.asList(c.getNome(), c.getTipo(),
+                Planilha.simNao(c.getPadrao()), Planilha.simNao(c.getAtivo()), c.getMonitores())).toList();
+        return List.of(new Planilha.Aba("Canais", List.of("Canal", "Tipo", "Padrão", "Ativo", "Monitores"), linhas));
+    }
 
     public List<MonitorVOs.Canal> listar() {
         Map<Long, Long> uso = monMonitorCanalMapper.selectList().stream()

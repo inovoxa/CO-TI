@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.itsm.service;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.TelefoneVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.TelefoneDO;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -169,6 +171,33 @@ public class TelefoneService {
             }
         }
         return r;
+    }
+
+    /**
+     * O que o filtro alcança, nas colunas que o Importar lê. Para quem não pode ver celulares, Celular e WhatsApp nem vêm: como
+     * coluna ausente mantém o cadastro, reimportar esse arquivo não apaga os números.
+     */
+    public List<Planilha.Aba> planilha(TelefoneVOs.PaginaReq req, Long userId) {
+        req.setPageSize(PageParam.PAGE_SIZE_NONE);
+        boolean ver = verCelular(userId);
+        int celular = TelefonePlanilha.COLUNAS.indexOf("Celular");
+        int whatsapp = TelefonePlanilha.COLUNAS.indexOf("WhatsApp");
+        List<String> colunas = new ArrayList<>(TelefonePlanilha.COLUNAS);
+        if (!ver) {
+            colunas.remove(whatsapp);
+            colunas.remove(celular);
+        }
+        List<List<Object>> linhas = pagina(req, userId).getList().stream().map(t -> {
+            List<Object> l = new ArrayList<>(Arrays.asList(t.getNome(), t.getUnidade(), t.getSetor(), t.getRamal(), t.getTelefone(),
+                    t.getCelular(), Planilha.simNao(t.getWhatsapp()), Planilha.simNao(t.getEmergencia()),
+                    Planilha.simNao(t.getCelularPublico()), t.getEmail(), t.getObservacao()));
+            if (!ver) {
+                l.remove(whatsapp);
+                l.remove(celular);
+            }
+            return l;
+        }).toList();
+        return List.of(new Planilha.Aba("Contatos", colunas, linhas));
     }
 
     // ------------------------------------------------------------------ internos

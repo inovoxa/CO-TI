@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.monitoramento.config.MonitoramentoProperties;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.UnidadeVOs;
@@ -54,6 +55,14 @@ public class UnidadeService {
             .followRedirects(HttpClient.Redirect.NORMAL).build();
     /** O Nominatim pede no máximo 1 consulta por segundo */
     private long ultimaGeocodificacao;
+
+    public List<Planilha.Aba> planilha() {
+        List<List<Object>> linhas = listar().stream().<List<Object>>map(u -> Arrays.asList(u.getNome(), u.getDeptNome(), u.getCep(),
+                u.getLogradouro(), u.getNumero(), u.getComplemento(), u.getBairro(), u.getCidade(), u.getUf(), u.getLatitude(),
+                u.getLongitude(), Planilha.simNao(u.getAtiva()), u.getMonitores())).toList();
+        return List.of(new Planilha.Aba("Unidades", List.of("Unidade", "Departamento", "CEP", "Logradouro", "Número", "Complemento",
+                "Bairro", "Cidade", "UF", "Latitude", "Longitude", "Ativa", "Monitores"), linhas));
+    }
 
     public List<UnidadeVOs.Unidade> listar() {
         List<MonitorUnitDO> lista = monitorUnitMapper.selectList(new LambdaQueryWrapperX<MonitorUnitDO>().orderByAsc(MonitorUnitDO::getName));

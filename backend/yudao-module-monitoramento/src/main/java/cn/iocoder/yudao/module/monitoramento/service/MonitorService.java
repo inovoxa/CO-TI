@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
@@ -11,6 +12,7 @@ import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonManutencaoMonitorMapper;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorCanalMapper;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorMapper;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.monitoramento.dominio.Estados;
 import cn.iocoder.yudao.module.monitoramento.dominio.Regras;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Resultado;
@@ -299,6 +301,19 @@ public class MonitorService {
         q.orderByAsc(MonitorDO::getOrdem).orderByAsc(MonitorDO::getNome);
         PageResult<MonitorDO> p = monMonitorMapper.selectPage(req, q);
         return new PageResult<>(converter(p.getList()), p.getTotal());
+    }
+
+    /** Planilha com tudo o que o filtro alcança. */
+    public List<Planilha.Aba> planilha(MonitorVOs.PaginaReq req) {
+        req.setPageSize(PageParam.PAGE_SIZE_NONE);
+        List<List<Object>> linhas = pagina(req).getList().stream().<List<Object>>map(m -> Arrays.asList(m.getNome(), m.getTipo(),
+                m.getAlvo(), m.getPorta(), m.getUnidadeNome(), m.getPapel(),
+                Boolean.TRUE.equals(m.getAtivo()) ? Estados.nome(m.getEstado()) : "pausado", m.getIntervaloS(),
+                Planilha.dataHora(m.getUltimaVerificacao()), m.getUltimaLatenciaMs(), m.getUptime24h(), m.getUptime30d(),
+                m.getCertDias(), m.getDescricao())).toList();
+        return List.of(new Planilha.Aba("Monitores", List.of("Nome", "Tipo", "Endereço", "Porta", "Unidade", "Papel", "Situação",
+                "Intervalo (s)", "Última verificação", "Latência (ms)", "Disponibilidade 24h (%)", "Disponibilidade 30d (%)",
+                "Certificado vence em (dias)", "Descrição"), linhas));
     }
 
     /** Todos os monitores visíveis (para seletores e para o telão). */

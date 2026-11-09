@@ -6,9 +6,14 @@
         Durante a manutenção os monitores não são verificados, não avisam e não abrem chamado. A
         disponibilidade não conta esse período.
       </span>
-      <el-button v-if="pode" type="primary" @click="abrir()"
-        ><Icon class="mr-4px" icon="ep:plus" />Nova manutenção</el-button
-      >
+      <div class="flex gap-8px">
+        <el-button plain @click="exportar">
+          <Icon class="mr-4px" icon="ep:download" /> Exportar
+        </el-button>
+        <el-button v-if="pode" type="primary" @click="abrir()"
+          ><Icon class="mr-4px" icon="ep:plus" />Nova manutenção</el-button
+        >
+      </div>
     </div>
     <el-table v-loading="loading" :data="lista">
       <el-table-column label="Manutenção" min-width="200">
@@ -157,12 +162,14 @@
 <script lang="ts" setup>
 import * as Mon from '@/api/monitoramento'
 import { DIAS } from '@/api/monitoramento'
+import download from '@/utils/download'
 import { checkPermi } from '@/utils/permission'
 
 defineOptions({ name: 'MonitoramentoManutencao' })
 const message = useMessage()
 const pode = checkPermi(['monitoramento:manutencao:update'])
 const regras = { titulo: [{ required: true, message: 'Informe o título', trigger: 'blur' }] }
+const exportar = async () => download.excel(await Mon.exportarManutencoes(), 'manutencoes.xlsx')
 const lista = ref<Mon.Manutencao[]>([])
 const loading = ref(true)
 const unidades = ref<Mon.Unidade[]>([])

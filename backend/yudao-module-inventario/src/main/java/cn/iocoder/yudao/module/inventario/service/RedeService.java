@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.inventario.service;
 
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
@@ -251,6 +253,22 @@ public class RedeService {
             res.add(vo);
         }
         return res;
+    }
+
+    /** Equipamentos que o filtro alcança e, em outra aba, as sub-redes varridas. */
+    public List<Planilha.Aba> planilha(RedeVOs.PaginaReq req) {
+        req.setPageSize(PageParam.PAGE_SIZE_NONE);
+        List<List<Object>> equipamentos = pagina(req).getList().stream().<List<Object>>map(d -> Arrays.asList(d.getIp(), d.getMac(),
+                d.getNome(), d.getSubrede(), d.getAtivoNome(), d.getAtivoTipo(), d.getVistoPor(),
+                d.getAtivoId() != null ? "Já cadastrado" : Boolean.TRUE.equals(d.getIgnorado()) ? "Ignorado" : "Desconhecido",
+                d.getObservacao(), Planilha.dataHora(d.getPrimeiraVez()), Planilha.dataHora(d.getUltimaVez()))).toList();
+        List<List<Object>> redes = subredes().stream().<List<Object>>map(s -> Arrays.asList(s.getSubrede(), s.getMascara(),
+                s.getDispositivos(), s.getDesconhecidos(), String.join(", ", s.getVarredores()),
+                Planilha.dataHora(s.getUltimaVarredura()))).toList();
+        return List.of(new Planilha.Aba("Equipamentos", List.of("IP", "MAC", "Nome", "Sub-rede", "Ativo", "Tipo do ativo", "Visto por",
+                        "Situação", "Observação", "Primeira vez", "Última vez"), equipamentos),
+                new Planilha.Aba("Sub-redes", List.of("Sub-rede", "Máscara", "Equipamentos", "Desconhecidos", "Varrida por",
+                        "Última varredura"), redes));
     }
 
     public PageResult<RedeVOs.Dispositivo> pagina(RedeVOs.PaginaReq req) {

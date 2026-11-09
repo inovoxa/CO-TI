@@ -8,6 +8,8 @@ import org.apache.fesod.sheet.FesodSheet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +24,20 @@ public final class Planilha {
 
     private static final String TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+    private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     public record Aba(String nome, List<String> colunas, List<List<Object>> linhas) {
     }
 
     private Planilha() {
+    }
+
+    public static String dataHora(LocalDateTime momento) {
+        return momento == null ? null : momento.format(DATA_HORA);
+    }
+
+    public static String simNao(Boolean valor) {
+        return Boolean.TRUE.equals(valor) ? "Sim" : "Não";
     }
 
     public static byte[] gerar(List<Aba> abas) {

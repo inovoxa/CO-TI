@@ -228,6 +228,31 @@ class TelefoneServiceTest {
         assertEquals("UPA CENTRAL", r.getUnidade());
     }
 
+    @Test
+    void exportar_semPermissao_naoTrazCelularNemWhatsapp() {
+        permitirCelular(false);
+        when(unitMapper.selectList()).thenReturn(List.of(upa()));
+        when(telefoneMapper.pagina(any(), eq(false))).thenReturn(new PageResult<>(List.of(contato(false)), 1L));
+        cn.iocoder.yudao.framework.excel.core.util.Planilha.Aba aba = service.planilha(new TelefoneVOs.PaginaReq(), 7L).get(0);
+        assertFalse(aba.colunas().contains("Celular"), "reimportar o arquivo apagaria os números");
+        assertFalse(aba.colunas().contains("WhatsApp"));
+        assertEquals(aba.colunas().size(), aba.linhas().get(0).size());
+        assertEquals("1234", aba.linhas().get(0).get(aba.colunas().indexOf("Ramal")));
+    }
+
+    @Test
+    void exportar_comPermissao_trazColunasDoModelo() {
+        permitirCelular(true);
+        when(unitMapper.selectList()).thenReturn(List.of(upa()));
+        when(telefoneMapper.pagina(any(), eq(true))).thenReturn(new PageResult<>(List.of(contato(false)), 1L));
+        cn.iocoder.yudao.framework.excel.core.util.Planilha.Aba aba = service.planilha(new TelefoneVOs.PaginaReq(), 7L).get(0);
+        assertEquals(TelefonePlanilha.COLUNAS, aba.colunas());
+        List<Object> linha = aba.linhas().get(0);
+        assertEquals("(16) 99111-0001", linha.get(aba.colunas().indexOf("Celular")));
+        assertEquals("Sim", linha.get(aba.colunas().indexOf("WhatsApp")));
+        assertEquals("UPA CENTRAL", linha.get(aba.colunas().indexOf("Unidade")));
+    }
+
     // ------------------------------------------------------------------ vínculo com a unidade
 
     @Test

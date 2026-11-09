@@ -33,6 +33,9 @@
       </el-select>
       <el-checkbox v-model="q.emergencia" label="Só emergência" @change="buscar" />
       <el-button @click="buscar">Buscar</el-button>
+      <el-button plain @click="exportar">
+        <Icon class="mr-4px" icon="ep:download" /> Exportar
+      </el-button>
       <div v-hasPermi="['itsm:telefone:update']" class="ml-auto flex gap-8px">
         <el-button plain @click="baixarModelo"> Baixar modelo </el-button>
         <el-upload
@@ -318,6 +321,7 @@ const excluir = async (t: Api.Telefone) => {
   await Promise.all([carregar(), carregarSetores()])
 }
 
+const exportar = async () => download.excel(await Api.exportarTelefones(q), 'contatos.xlsx')
 const baixarModelo = async () => {
   download.excel(await Api.baixarModeloTelefones(), 'modelo-contatos.xlsx')
 }
