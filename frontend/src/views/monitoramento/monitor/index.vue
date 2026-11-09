@@ -337,6 +337,14 @@ onMounted(async () => {
   await atualizar()
   if (route.query.id) detalhe.value?.abrir(Number(route.query.id))
 })
+
+// aviso do sino com a tela já aberta (ou guardada em cache): o onMounted não roda de novo
+watch(
+  () => route.query.id,
+  (id) => {
+    if (id && route.path === '/monitoramento/monitores') detalhe.value?.abrir(Number(id))
+  }
+)
 </script>
 
 <style lang="scss" scoped>

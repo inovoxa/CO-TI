@@ -62,6 +62,10 @@ Com "abrir chamado quando cair":
 Tokens e segredos ficam cifrados com a chave-mestra (`CO_TI_CHAVE_MESTRA`) e voltam mascarados para a tela. Um canal
 que falha não impede os outros; a falha vai para o log. "Padrão" marca o canal nos monitores novos.
 
+O sino do portal independe dos canais: avisa a queda (depois das tentativas, sem reaviso) e o certificado perto de vencer
+(um aviso por certificado), modelos `coti_monitor_caiu` e `coti_monitor_certificado`. Recebe quem enxerga o monitor na tela:
+permissão `monitoramento:monitor:query`, ou administrador, respeitando o escopo de departamento. A volta ao ar não vai para o sino.
+
 ## Manutenção
 
 | Tipo | Vale |

@@ -68,6 +68,8 @@ public class ExecucaoMonitores {
     @Resource
     private CanalService canalService;
     @Resource
+    private SinoMonitorService sinoMonitorService;
+    @Resource
     private ChamadoService chamadoService;
     @Resource
     private ChamadoMapper chamadoMapper;
@@ -340,6 +342,9 @@ public class ExecucaoMonitores {
                 m.setChamadoId(chamadoId);
                 monMonitorMapper.updateById(MonitorDO.builder().id(m.getId()).chamadoId(chamadoId).build());
             }
+            if (t.avisar()) {
+                sinoMonitorService.caiu(m, unidade, link); // no sino só a queda: o reaviso continua apenas nos canais
+            }
             canalService.avisar(new CanalService.Aviso(t.reaviso() ? "reaviso" : "caiu", m, unidade, m.getUltimaMsg(), null, link));
         } else if (t.estado() == Estados.NO_AR && t.avisar()) {
             Long fora = anterior != null && anterior == Estados.FORA && desdeAnterior != null
@@ -357,6 +362,7 @@ public class ExecucaoMonitores {
                 && !m.getCertValidade().equals(m.getCertAvisadoValidade())) {
             m.setCertAvisadoValidade(m.getCertValidade());
             monMonitorMapper.updateById(MonitorDO.builder().id(m.getId()).certAvisadoValidade(m.getCertValidade()).build());
+            sinoMonitorService.certificado(m, unidade, link);
             canalService.avisar(new CanalService.Aviso("certificado", m, unidade, "vence em " + m.getCertDias() + " dias", null, link));
         }
     }
