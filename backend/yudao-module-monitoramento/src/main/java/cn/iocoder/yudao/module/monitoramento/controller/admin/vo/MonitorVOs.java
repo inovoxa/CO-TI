@@ -95,6 +95,10 @@ public final class MonitorVOs {
         private String situacao;
         private Long unidadeId;
         private String papel;
+        /** nome | situacao | resposta | uptime24h | uptime30d | unidade | certificado; vazio = fora do ar primeiro */
+        private String ordenarPor;
+        /** asc | desc */
+        private String direcao;
     }
 
     /** Monitor na lista: configuração resumida, estado atual, últimas batidas e disponibilidade. */

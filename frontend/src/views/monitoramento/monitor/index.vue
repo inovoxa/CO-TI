@@ -87,9 +87,10 @@
       v-loading="loading"
       :data="lista"
       row-class-name="cursor-pointer"
+      @sort-change="ordenar"
       @row-click="(r) => detalhe?.abrir(r.id)"
     >
-      <el-table-column label="Monitor" min-width="260">
+      <el-table-column label="Monitor" min-width="260" prop="nome" sortable="custom">
         <template #default="{ row }">
           <div class="flex items-center">
             <span :class="`ponto ${classe(row)}`"></span>
@@ -120,10 +121,15 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="Últimas 40 verificações" min-width="250">
+      <el-table-column
+        label="Últimas 40 verificações"
+        min-width="250"
+        prop="situacao"
+        sortable="custom"
+      >
         <template #default="{ row }"><Batidas :historico="row.historico" /></template>
       </el-table-column>
-      <el-table-column label="Resposta" width="100">
+      <el-table-column label="Resposta" prop="resposta" sortable="custom" width="115">
         <template #default="{ row }">
           <span v-if="row.estado === 0" class="text-[var(--el-color-danger)]">fora</span>
           <span
@@ -134,13 +140,13 @@
           <span v-else>—</span>
         </template>
       </el-table-column>
-      <el-table-column label="24 h" width="85">
+      <el-table-column label="24 h" prop="uptime24h" sortable="custom" width="95">
         <template #default="{ row }">{{ pct(row.uptime24h) }}</template>
       </el-table-column>
-      <el-table-column label="30 dias" width="85">
+      <el-table-column label="30 dias" prop="uptime30d" sortable="custom" width="105">
         <template #default="{ row }">{{ pct(row.uptime30d) }}</template>
       </el-table-column>
-      <el-table-column label="Unidade" min-width="150">
+      <el-table-column label="Unidade" min-width="150" prop="unidade" sortable="custom">
         <template #default="{ row }">
           {{ row.unidadeNome || '—' }}
           <div
@@ -151,7 +157,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="Certificado" width="105">
+      <el-table-column label="Certificado" prop="certificado" sortable="custom" width="125">
         <template #default="{ row }">
           <el-tag
             v-if="row.certDias != null"
@@ -265,7 +271,9 @@ const q = reactive({
   busca: '',
   tipo: undefined as string | undefined,
   unidadeId: undefined as number | undefined,
-  papel: undefined as string | undefined
+  papel: undefined as string | undefined,
+  ordenarPor: undefined as string | undefined,
+  direcao: undefined as string | undefined
 })
 const filtrado = computed(() => !!(q.situacao || q.busca || q.tipo || q.unidadeId || q.papel))
 const CHIPS = [
@@ -306,6 +314,12 @@ const atualizar = async () => {
 const buscar = () => {
   q.pageNo = 1
   carregar()
+}
+// no servidor: a lista é paginada, e ordenar só a página aberta daria um resultado errado
+const ordenar = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+  q.ordenarPor = order ? prop : undefined
+  q.direcao = order === 'descending' ? 'desc' : order ? 'asc' : undefined
+  buscar()
 }
 const exportar = async () => download.excel(await Mon.exportarMonitores(q), 'monitores.xlsx')
 const filtrar = (s?: string) => {

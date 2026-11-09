@@ -315,10 +315,27 @@ public class MonitorService {
                 }
             }
         }
+        if (OrdenacaoMonitores.aceita(String.valueOf(req.getOrdenarPor()))) {
+            return paginaOrdenada(req, q);
+        }
         // fora do ar primeiro, depois pendentes, depois por nome
         q.orderByAsc(MonitorDO::getOrdem).orderByAsc(MonitorDO::getNome);
         PageResult<MonitorDO> p = monMonitorMapper.selectPage(req, q);
         return new PageResult<>(converter(p.getList()), p.getTotal());
+    }
+
+    /** Disponibilidade e unidade não estão na tabela de monitores: ordena o que o filtro alcança e só então recorta a página. */
+    private PageResult<MonitorVOs.Resp> paginaOrdenada(MonitorVOs.PaginaReq req, LambdaQueryWrapperX<MonitorDO> q) {
+        List<MonitorDO> todos = new ArrayList<>(monMonitorMapper.selectList(q));
+        String campo = req.getOrdenarPor();
+        Map<Long, Double> uptime = new HashMap<>();
+        if (OrdenacaoMonitores.UPTIME_24H.equals(campo) || OrdenacaoMonitores.UPTIME_30D.equals(campo)) {
+            LocalDateTime desde = OrdenacaoMonitores.UPTIME_24H.equals(campo) ? LocalDateTime.now().minusHours(24) : LocalDateTime.now().minusDays(30);
+            disponibilidade(todos.stream().map(MonitorDO::getId).toList(), desde).forEach((id, d) -> uptime.put(id, d[0]));
+        }
+        Map<Long, String> unidades = monitorUnitMapper.selectList().stream().collect(Collectors.toMap(MonitorUnitDO::getId, MonitorUnitDO::getName));
+        todos.sort(OrdenacaoMonitores.comparador(campo, "desc".equals(req.getDirecao()), unidades, uptime));
+        return new PageResult<>(converter(OrdenacaoMonitores.pagina(todos, req.getPageNo(), req.getPageSize())), (long) todos.size());
     }
 
     /** Planilha com tudo o que o filtro alcança. */
