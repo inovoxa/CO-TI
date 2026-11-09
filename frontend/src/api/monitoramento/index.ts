@@ -212,6 +212,10 @@ export interface ImportacaoResultado {
   recusados: number
 }
 
+/** request.upload devolve a resposta inteira ({ code, data, msg }), ao contrário de get e post. */
+const enviarPlanilha = async <T>(url: string, data: object): Promise<T> =>
+  (await request.upload<{ data: T }>({ url, data })).data
+
 export interface Unidade {
   id?: number
   nome: string
@@ -268,15 +272,12 @@ export interface ResultadoKuma {
 // ---------------------------------------------------------------- monitores
 export const exportarMonitores = (params: any): Promise<Blob> =>
   request.download({ url: '/monitoramento/monitor/exportar', params })
-export const analisarImportacaoMonitores = (arquivo: File): Promise<ImportacaoPrevia> =>
-  request.upload({ url: '/monitoramento/monitor/importar/analisar', data: { arquivo } })
-export const importarMonitores = (
-  arquivo: File,
-  removerIds: number[]
-): Promise<ImportacaoResultado> =>
-  request.upload({
-    url: '/monitoramento/monitor/importar',
-    data: { arquivo, removerIds: removerIds.join(',') }
+export const analisarImportacaoMonitores = (arquivo: File) =>
+  enviarPlanilha<ImportacaoPrevia>('/monitoramento/monitor/importar/analisar', { arquivo })
+export const importarMonitores = (arquivo: File, removerIds: number[]) =>
+  enviarPlanilha<ImportacaoResultado>('/monitoramento/monitor/importar', {
+    arquivo,
+    removerIds: removerIds.join(',')
   })
 export const getMonitores = (params: any) =>
   request.get({ url: '/monitoramento/monitor/page', params })
@@ -334,15 +335,12 @@ export const salvarUnidade = (data: Unidade): Promise<number> =>
   request.post({ url: '/monitoramento/unidade/save', data })
 export const exportarUnidades = (): Promise<Blob> =>
   request.download({ url: '/monitoramento/unidade/exportar' })
-export const analisarImportacaoUnidades = (arquivo: File): Promise<ImportacaoPrevia> =>
-  request.upload({ url: '/monitoramento/unidade/importar/analisar', data: { arquivo } })
-export const importarUnidades = (
-  arquivo: File,
-  removerIds: number[]
-): Promise<ImportacaoResultado> =>
-  request.upload({
-    url: '/monitoramento/unidade/importar',
-    data: { arquivo, removerIds: removerIds.join(',') }
+export const analisarImportacaoUnidades = (arquivo: File) =>
+  enviarPlanilha<ImportacaoPrevia>('/monitoramento/unidade/importar/analisar', { arquivo })
+export const importarUnidades = (arquivo: File, removerIds: number[]) =>
+  enviarPlanilha<ImportacaoResultado>('/monitoramento/unidade/importar', {
+    arquivo,
+    removerIds: removerIds.join(',')
   })
 export const excluirUnidade = (id: number) =>
   request.delete({ url: '/monitoramento/unidade/delete', params: { id } })
