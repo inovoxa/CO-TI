@@ -138,7 +138,7 @@ public class TelefoneService {
      */
     @DataPermission(enable = false)
     public TelefoneVOs.ImportacaoResp importar(InputStream arquivo) {
-        List<TelefonePlanilha.Linha> linhas;
+        List<Planilha.Linha> linhas;
         try {
             linhas = TelefonePlanilha.ler(arquivo, MAX_LINHAS);
         } catch (IOException e) {
@@ -150,7 +150,7 @@ public class TelefoneService {
         telefoneMapper.selectList().forEach(t -> existentes.putIfAbsent(chave(t.getNome(), t.getUnidadeId()), t));
 
         TelefoneVOs.ImportacaoResp r = new TelefoneVOs.ImportacaoResp();
-        for (TelefonePlanilha.Linha l : linhas) {
+        for (Planilha.Linha l : linhas) {
             try {
                 TelefoneVOs.SalvarReq req = requisicao(l.campos(), unidades, existentes);
                 validar(req);

@@ -20,5 +20,6 @@ public interface ErrorCodeConstants {
     ErrorCode ENDERECO_INDISPONIVEL = new ErrorCode(1_105_000_010, "Busca de endereço indisponível: {}");
     ErrorCode KUMA_INVALIDO = new ErrorCode(1_105_000_011, "Arquivo do Uptime Kuma inválido: {}");
     ErrorCode KUMA_ANALISE_EXPIRADA = new ErrorCode(1_105_000_012, "A análise do arquivo expirou; envie o arquivo de novo");
+    ErrorCode PLANILHA_INVALIDA = new ErrorCode(1_105_000_013, "Planilha inválida: {}");
 
 }

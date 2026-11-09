@@ -75,6 +75,20 @@ public class MonitorService {
 
     @Transactional(rollbackFor = Exception.class)
     public Long salvar(MonitorVOs.Monitor req) {
+        Long id = gravar(req);
+        depoisDoCommit(execucaoMonitores::recarregar);
+        return id;
+    }
+
+    /** O que a prévia mostrou entra inteiro ou não entra; a lista de execução recarrega uma vez só. */
+    @Transactional(rollbackFor = Exception.class)
+    public void aplicarImportacao(List<MonitorVOs.Monitor> gravar, Collection<Long> remover) {
+        gravar.forEach(this::gravar);
+        remover.forEach(this::excluir);
+        depoisDoCommit(execucaoMonitores::recarregar);
+    }
+
+    private Long gravar(MonitorVOs.Monitor req) {
         MonitorDO atual = req.getId() == null ? null : monMonitorMapper.selectById(req.getId());
         if (req.getId() != null && atual == null) {
             throw exception(MONITOR_NAO_EXISTE);
@@ -107,7 +121,6 @@ public class MonitorService {
                 monMonitorCanalMapper.insert(MonitorCanalDO.builder().monitorId(m.getId()).canalId(c).build());
             }
         }
-        depoisDoCommit(execucaoMonitores::recarregar);
         return m.getId();
     }
 
@@ -163,6 +176,11 @@ public class MonitorService {
         t.setMsg(Boolean.TRUE.equals(m.getInvertido()) ? "invertido: " + r.msg() : r.msg());
         t.setCertDias(r.certDias());
         return t;
+    }
+
+    /** Como o monitor ficaria gravado, pelas regras do cadastro, sem gravar nada. */
+    MonitorDO previsto(MonitorVOs.Monitor req, MonitorDO atual) {
+        return montar(req, atual);
     }
 
     private MonitorDO montar(MonitorVOs.Monitor r, MonitorDO atual) {
@@ -499,6 +517,13 @@ public class MonitorService {
     }
 
     public MonitorVOs.Monitor config(MonitorDO m) {
+        MonitorVOs.Monitor vo = semCanais(m);
+        vo.setCanalIds(monMonitorCanalMapper.selectList(MonitorCanalDO::getMonitorId, m.getId()).stream().map(MonitorCanalDO::getCanalId).toList());
+        return vo;
+    }
+
+    /** Sem a lista de canais: quem grava com ela nula mantém os canais do monitor. */
+    MonitorVOs.Monitor semCanais(MonitorDO m) {
         MonitorVOs.Monitor vo = new MonitorVOs.Monitor();
         vo.setId(m.getId());
         vo.setNome(m.getNome());
@@ -538,7 +563,6 @@ public class MonitorService {
         vo.setAtivo(m.getAtivo());
         vo.setPushToken(m.getPushToken());
         vo.setKumaId(m.getKumaId());
-        vo.setCanalIds(monMonitorCanalMapper.selectList(MonitorCanalDO::getMonitorId, m.getId()).stream().map(MonitorCanalDO::getCanalId).toList());
         return vo;
     }
 

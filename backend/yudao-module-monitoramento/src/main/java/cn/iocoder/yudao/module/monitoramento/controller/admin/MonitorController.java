@@ -2,8 +2,10 @@ package cn.iocoder.yudao.module.monitoramento.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.ImportacaoVOs;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
 import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
+import cn.iocoder.yudao.module.monitoramento.service.ImportacaoMonitorService;
 import cn.iocoder.yudao.module.monitoramento.service.MonitorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,14 +16,17 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 
 @Tag(name = "CO-TI - Monitoramento: monitores")
 @RestController
@@ -31,6 +36,8 @@ public class MonitorController {
 
     @Resource
     private MonitorService monitorService;
+    @Resource
+    private ImportacaoMonitorService importacaoMonitorService;
 
     @GetMapping("/page")
     @Operation(summary = "Monitores com estado, últimas batidas e disponibilidade")
@@ -44,6 +51,25 @@ public class MonitorController {
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
     public void exportar(@Valid MonitorVOs.PaginaReq req, HttpServletResponse resposta) throws IOException {
         Planilha.responder(resposta, "monitores.xlsx", monitorService.planilha(req));
+    }
+
+    @PostMapping("/importar/analisar")
+    @Operation(summary = "Prévia da planilha: o que será adicionado, atualizado e removido, sem gravar nada")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<ImportacaoVOs.Previa> analisarImportacao(@RequestParam("arquivo") MultipartFile arquivo) throws IOException {
+        try (InputStream entrada = arquivo.getInputStream()) {
+            return success(importacaoMonitorService.analisar(entrada));
+        }
+    }
+
+    @PostMapping("/importar")
+    @Operation(summary = "Aplicar a planilha; só remove os monitores ausentes indicados em removerIds")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<ImportacaoVOs.Resultado> importar(@RequestParam("arquivo") MultipartFile arquivo,
+                                                          @RequestParam(value = "removerIds", required = false) List<Long> removerIds) throws IOException {
+        try (InputStream entrada = arquivo.getInputStream()) {
+            return success(importacaoMonitorService.aplicar(entrada, removerIds, getLoginUserId()));
+        }
     }
 
     @GetMapping("/contagens")

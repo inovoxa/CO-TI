@@ -2,9 +2,11 @@ package cn.iocoder.yudao.module.monitoramento.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.security.core.service.SecurityFrameworkService;
+import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.ImportacaoVOs;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.MonitorVOs;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.UnidadeVOs;
 import cn.iocoder.yudao.module.monitoramento.service.CanalService;
+import cn.iocoder.yudao.module.monitoramento.service.ImportacaoUnidadeService;
 import cn.iocoder.yudao.module.monitoramento.service.ManutencaoService;
 import cn.iocoder.yudao.module.monitoramento.service.UnidadeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,11 +18,14 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 
 /**
  * Manutenções, canais de aviso e unidades (com endereço e mapa).
@@ -37,6 +42,8 @@ public class ConfiguracaoMonitoramentoController {
     private CanalService canalService;
     @Resource
     private UnidadeService unidadeService;
+    @Resource
+    private ImportacaoUnidadeService importacaoUnidadeService;
     @Resource
     private SecurityFrameworkService securityFrameworkService;
 
@@ -127,6 +134,25 @@ public class ConfiguracaoMonitoramentoController {
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
     public void exportarUnidades(HttpServletResponse resposta) throws IOException {
         Planilha.responder(resposta, "unidades.xlsx", unidadeService.planilha());
+    }
+
+    @PostMapping("/unidade/importar/analisar")
+    @Operation(summary = "Prévia da planilha: o que será adicionado, atualizado e removido, sem gravar nada")
+    @PreAuthorize("@ss.hasPermission('monitoramento:unidade:update')")
+    public CommonResult<ImportacaoVOs.Previa> analisarImportacaoUnidades(@RequestParam("arquivo") MultipartFile arquivo) throws IOException {
+        try (InputStream entrada = arquivo.getInputStream()) {
+            return success(importacaoUnidadeService.analisar(entrada));
+        }
+    }
+
+    @PostMapping("/unidade/importar")
+    @Operation(summary = "Aplicar a planilha; só remove as unidades ausentes indicadas em removerIds")
+    @PreAuthorize("@ss.hasPermission('monitoramento:unidade:update')")
+    public CommonResult<ImportacaoVOs.Resultado> importarUnidades(@RequestParam("arquivo") MultipartFile arquivo,
+                                                                  @RequestParam(value = "removerIds", required = false) List<Long> removerIds) throws IOException {
+        try (InputStream entrada = arquivo.getInputStream()) {
+            return success(importacaoUnidadeService.aplicar(entrada, removerIds, getLoginUserId()));
+        }
     }
 
     @PostMapping("/unidade/save")

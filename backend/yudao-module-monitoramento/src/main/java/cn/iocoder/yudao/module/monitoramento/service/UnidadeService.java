@@ -93,19 +93,7 @@ public class UnidadeService {
     }
 
     public Long salvar(UnidadeVOs.Unidade req) {
-        if (deptApi.getDept(req.getDeptId()) == null) {
-            throw exception(UNIDADE_INVALIDA, "departamento não encontrado");
-        }
-        String cep = cep(req.getCep());
-        if (req.getCep() != null && !req.getCep().isBlank() && cep == null) {
-            throw exception(UNIDADE_INVALIDA, "CEP deve ter 8 dígitos");
-        }
-        MonitorUnitDO u = MonitorUnitDO.builder().id(req.getId()).name(req.getNome().trim()).deptId(req.getDeptId())
-                .cep(cep == null ? null : cep.substring(0, 5) + "-" + cep.substring(5)).logradouro(vazio(req.getLogradouro()))
-                .numero(vazio(req.getNumero())).complemento(vazio(req.getComplemento())).bairro(vazio(req.getBairro()))
-                .city(vazio(req.getCidade())).uf(req.getUf() == null || req.getUf().isBlank() ? null : req.getUf().trim().toUpperCase(Locale.ROOT))
-                .latitude(req.getLatitude().setScale(7, RoundingMode.HALF_UP)).longitude(req.getLongitude().setScale(7, RoundingMode.HALF_UP))
-                .status(req.getAtiva() == null || req.getAtiva() ? 0 : 1).build();
+        MonitorUnitDO u = previsto(req);
         if (u.getId() == null) {
             monitorUnitMapper.insert(u);
         } else {
@@ -119,6 +107,30 @@ public class UnidadeService {
                     .set(MonitorUnitDO::getBairro, u.getBairro()).set(MonitorUnitDO::getCity, u.getCity()).set(MonitorUnitDO::getUf, u.getUf()));
         }
         return u.getId();
+    }
+
+    /** O que a prévia mostrou entra inteiro ou não entra. */
+    @Transactional(rollbackFor = Exception.class)
+    public void aplicarImportacao(List<UnidadeVOs.Unidade> gravar, Collection<Long> remover) {
+        gravar.forEach(this::salvar);
+        remover.forEach(this::excluir);
+    }
+
+    /** Como a unidade ficaria gravada, pelas regras do cadastro, sem gravar nada. */
+    MonitorUnitDO previsto(UnidadeVOs.Unidade req) {
+        if (deptApi.getDept(req.getDeptId()) == null) {
+            throw exception(UNIDADE_INVALIDA, "departamento não encontrado");
+        }
+        String cep = cep(req.getCep());
+        if (req.getCep() != null && !req.getCep().isBlank() && cep == null) {
+            throw exception(UNIDADE_INVALIDA, "CEP deve ter 8 dígitos");
+        }
+        return MonitorUnitDO.builder().id(req.getId()).name(req.getNome().trim()).deptId(req.getDeptId())
+                .cep(cep == null ? null : cep.substring(0, 5) + "-" + cep.substring(5)).logradouro(vazio(req.getLogradouro()))
+                .numero(vazio(req.getNumero())).complemento(vazio(req.getComplemento())).bairro(vazio(req.getBairro()))
+                .city(vazio(req.getCidade())).uf(req.getUf() == null || req.getUf().isBlank() ? null : req.getUf().trim().toUpperCase(Locale.ROOT))
+                .latitude(req.getLatitude().setScale(7, RoundingMode.HALF_UP)).longitude(req.getLongitude().setScale(7, RoundingMode.HALF_UP))
+                .status(req.getAtiva() == null || req.getAtiva() ? 0 : 1).build();
     }
 
     /** Exclui a unidade; os monitores dela ficam sem unidade. */

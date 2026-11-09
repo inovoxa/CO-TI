@@ -68,6 +68,13 @@
         <el-button plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
+        <el-button
+          v-hasPermi="['monitoramento:monitor:update']"
+          plain
+          @click="importadorPlanilha?.abrir()"
+        >
+          <Icon class="mr-4px" icon="ep:upload" /> Importar
+        </el-button>
         <el-button v-hasPermi="['monitoramento:importar']" @click="importar?.abrir()">
           <Icon class="mr-4px" icon="ep:upload" />Importar do Uptime Kuma
         </el-button>
@@ -208,6 +215,14 @@
   />
   <MonitorDetalhe ref="detalhe" @editar="(d) => form?.abrir(d)" @mudou="atualizar" />
   <ImportarKuma ref="importar" @importado="atualizar" />
+  <ImportarPlanilha
+    ref="importadorPlanilha"
+    :analisar="Mon.analisarImportacaoMonitores"
+    :aplicar="Mon.importarMonitores"
+    nome-plural="monitores"
+    nome-singular="monitor"
+    @importado="atualizar"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -215,6 +230,7 @@ import * as Mon from '@/api/monitoramento'
 import { ESTADOS, PAPEIS, TIPOS, duracao, pct, quando } from '@/api/monitoramento'
 import { useMonitorSocket } from '@/hooks/web/useMonitorSocket'
 import download from '@/utils/download'
+import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
 import Batidas from './Batidas.vue'
 import ImportarKuma from './ImportarKuma.vue'
 import MonitorDetalhe from './MonitorDetalhe.vue'
@@ -225,6 +241,7 @@ const route = useRoute()
 const form = ref<InstanceType<typeof MonitorForm>>()
 const detalhe = ref<InstanceType<typeof MonitorDetalhe>>()
 const importar = ref<InstanceType<typeof ImportarKuma>>()
+const importadorPlanilha = ref<InstanceType<typeof ImportarPlanilha>>()
 
 const lista = ref<Mon.MonitorResp[]>([])
 const total = ref(0)

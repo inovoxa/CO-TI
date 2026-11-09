@@ -10,6 +10,9 @@
         <el-button plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
+        <el-button v-if="pode" plain @click="importador?.abrir()">
+          <Icon class="mr-4px" icon="ep:upload" /> Importar
+        </el-button>
         <el-button v-if="pode" type="primary" @click="abrir()"
           ><Icon class="mr-4px" icon="ep:plus" />Nova unidade</el-button
         >
@@ -170,6 +173,15 @@
       <el-button @click="form.visivel = false">Cancelar</el-button>
     </template>
   </Dialog>
+
+  <ImportarPlanilha
+    ref="importador"
+    :analisar="Mon.analisarImportacaoUnidades"
+    :aplicar="Mon.importarUnidades"
+    nome-plural="unidades"
+    nome-singular="unidade"
+    @importado="carregar"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -178,6 +190,7 @@ import * as DeptApi from '@/api/system/dept'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
 import download from '@/utils/download'
+import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
 import MapaPonto from './MapaPonto.vue'
 
 defineOptions({ name: 'MonitoramentoUnidade' })
@@ -199,6 +212,7 @@ const loading = ref(true)
 const depts = ref<any[]>([])
 const formRef = ref()
 const mapa = ref<InstanceType<typeof MapaPonto>>()
+const importador = ref<InstanceType<typeof ImportarPlanilha>>()
 const form = reactive({ visivel: false, dados: {} as Mon.Unidade })
 const buscando = ref(false)
 const localizando = ref(false)
