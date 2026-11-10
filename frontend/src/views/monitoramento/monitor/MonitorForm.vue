@@ -121,6 +121,198 @@
         title="O estado é escolhido no detalhe do monitor (no ar ou fora do ar)."
       />
 
+      <!-- tipos de serviço -->
+      <template v-if="hostPorta">
+        <el-form-item label="Host" prop="alvo">
+          <el-input v-model="dados.alvo" placeholder="nome ou IP do servidor" />
+        </el-form-item>
+        <el-form-item label="Porta">
+          <el-input-number
+            v-model="dados.porta"
+            :max="65535"
+            :min="1"
+            :placeholder="String(portaPadrao)"
+            controls-position="right"
+          />
+          <span class="ml-8px text-12px text-[var(--el-text-color-secondary)]"
+            >vazio = {{ portaPadrao }}</span
+          >
+        </el-form-item>
+      </template>
+      <el-form-item v-if="dados.tipo === 'rabbitmq'" label="URL da API" prop="alvo">
+        <el-input
+          v-model="dados.alvo"
+          placeholder="http://servidor:15672 (plugin de gerenciamento)"
+        />
+      </el-form-item>
+      <template v-if="dados.tipo === 'docker'">
+        <el-form-item label="Servidor Docker" prop="dockerHostId">
+          <el-select v-model="dados.dockerHostId" class="!w-360px" placeholder="escolha o servidor">
+            <el-option v-for="h in dockerHosts" :key="h.id" :label="h.nome" :value="h.id!" />
+          </el-select>
+          <el-button class="ml-8px" link type="primary" @click="servidoresDocker?.abrir()"
+            >Gerenciar servidores</el-button
+          >
+        </el-form-item>
+        <el-form-item label="Container" prop="consulta">
+          <el-input v-model="dados.consulta" placeholder="nome ou id, ex.: coti-backend-1" />
+        </el-form-item>
+      </template>
+      <template v-if="dados.tipo === 'snmp'">
+        <el-form-item label="Versão">
+          <el-radio-group v-model="dados.snmpVersao">
+            <el-radio-button value="v1">v1</el-radio-button>
+            <el-radio-button value="v2c">v2c</el-radio-button>
+            <el-radio-button value="v3">v3</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="dados.snmpVersao !== 'v3'" label="Comunidade">
+          <el-input
+            v-model="dados.senha"
+            :placeholder="segredoPlaceholder('senha', 'public')"
+            show-password
+            type="password"
+          />
+        </el-form-item>
+        <template v-else>
+          <el-form-item label="Usuário">
+            <el-input v-model="dados.usuario" />
+          </el-form-item>
+          <el-form-item label="Nível">
+            <el-select v-model="dados.snmpNivel" class="!w-200px">
+              <el-option label="authPriv (recomendado)" value="authPriv" />
+              <el-option label="authNoPriv" value="authNoPriv" />
+              <el-option label="noAuthNoPriv" value="noAuthNoPriv" />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="dados.snmpNivel !== 'noAuthNoPriv'" label="Autenticação">
+            <el-select v-model="dados.snmpAuth" class="!w-120px mr-8px">
+              <el-option
+                v-for="a in ['SHA', 'SHA256', 'SHA512', 'MD5']"
+                :key="a"
+                :label="a"
+                :value="a"
+              />
+            </el-select>
+            <el-input
+              v-model="dados.senha"
+              :placeholder="segredoPlaceholder('senha', 'senha de autenticação')"
+              class="!w-260px"
+              show-password
+              type="password"
+            />
+          </el-form-item>
+          <el-form-item v-if="dados.snmpNivel === 'authPriv'" label="Privacidade">
+            <el-select v-model="dados.snmpPriv" class="!w-120px mr-8px">
+              <el-option v-for="p in ['AES', 'AES256', 'DES']" :key="p" :label="p" :value="p" />
+            </el-select>
+            <el-input
+              v-model="dados.segredo"
+              :placeholder="segredoPlaceholder('segredo', 'senha de privacidade')"
+              class="!w-260px"
+              show-password
+              type="password"
+            />
+          </el-form-item>
+        </template>
+        <el-form-item label="OID" prop="consulta">
+          <el-input v-model="dados.consulta" placeholder="ex.: 1.3.6.1.2.1.1.3.0 (tempo ligado)" />
+        </el-form-item>
+      </template>
+      <template v-if="credenciais">
+        <el-form-item :label="dados.tipo === 'redis' ? 'Usuário (ACL)' : 'Usuário'">
+          <el-input
+            v-model="dados.usuario"
+            :placeholder="sql ? 'de preferência um usuário só de leitura' : 'opcional'"
+            maxlength="200"
+          />
+        </el-form-item>
+        <el-form-item label="Senha">
+          <el-input
+            v-model="dados.senha"
+            :placeholder="segredoPlaceholder('senha', '')"
+            autocomplete="new-password"
+            show-password
+            type="password"
+          />
+        </el-form-item>
+        <el-form-item v-if="dados.tipo === 'radius'" label="Segredo compartilhado">
+          <el-input
+            v-model="dados.segredo"
+            :placeholder="
+              segredoPlaceholder('segredo', 'o mesmo cadastrado para o cliente no servidor RADIUS')
+            "
+            show-password
+            type="password"
+          />
+        </el-form-item>
+      </template>
+      <template v-if="sql || dados.tipo === 'mongodb'">
+        <el-form-item :label="dados.tipo === 'oracle' ? 'Serviço' : 'Banco'">
+          <el-input
+            v-model="dados.banco"
+            :placeholder="
+              dados.tipo === 'oracle'
+                ? 'service name, ex.: ORCLPDB1'
+                : dados.tipo === 'mongodb'
+                  ? 'banco da autenticação (vazio = admin)'
+                  : 'opcional'
+            "
+          />
+        </el-form-item>
+      </template>
+      <el-form-item v-if="sql" label="Consulta">
+        <el-input
+          v-model="dados.consulta"
+          :placeholder="dados.tipo === 'oracle' ? 'SELECT 1 FROM DUAL' : 'SELECT 1'"
+          :rows="2"
+          type="textarea"
+        />
+      </el-form-item>
+      <template v-if="dados.tipo === 'mqtt'">
+        <el-form-item label="Tópico">
+          <el-input
+            v-model="dados.consulta"
+            placeholder="opcional: espera uma mensagem neste tópico"
+          />
+        </el-form-item>
+        <el-form-item v-if="dados.consulta" label="Mensagem contém">
+          <el-input v-model="dados.palavra" placeholder="opcional, ex.: online" />
+        </el-form-item>
+      </template>
+      <el-form-item v-if="sql || dados.tipo === 'snmp'" label="Valor esperado">
+        <el-select v-model="dados.jsonOperador" class="!w-110px mr-8px">
+          <el-option
+            v-for="o in ['==', '!=', '<', '<=', '>', '>=', 'contem']"
+            :key="o"
+            :label="o"
+            :value="o"
+          />
+        </el-select>
+        <el-input
+          v-model="dados.jsonEsperado"
+          class="!w-260px"
+          placeholder="opcional: compara o primeiro valor lido"
+        />
+      </el-form-item>
+      <el-form-item v-if="dados.tipo === 'smtp'" label="Segurança">
+        <el-radio-group v-model="dados.smtpSeguranca">
+          <el-radio-button value="nenhuma">Sem TLS (25)</el-radio-button>
+          <el-radio-button value="starttls">STARTTLS (587)</el-radio-button>
+          <el-radio-button value="tls">TLS (465)</el-radio-button>
+        </el-radio-group>
+      </el-form-item>
+      <template v-if="comTls">
+        <el-form-item v-if="dados.tipo !== 'smtp'" label="">
+          <el-checkbox v-model="dados.tls">Conexão com TLS</el-checkbox>
+        </el-form-item>
+        <el-form-item v-if="usaTls" label="">
+          <el-checkbox v-model="dados.ignorarTls"
+            >Ignorar erros de TLS (certificado vencido ou autoassinado)</el-checkbox
+          >
+        </el-form-item>
+      </template>
+
       <el-divider content-position="left">Verificação</el-divider>
       <el-form-item v-if="dados.tipo !== 'manual'" label="Intervalo (s)">
         <el-input-number
@@ -318,12 +510,14 @@
       <el-button @click="visivel = false">Cancelar</el-button>
     </template>
   </Dialog>
+  <DockerHosts ref="servidoresDocker" @mudou="recarregarDocker" />
 </template>
 
 <script lang="ts" setup>
 import * as Mon from '@/api/monitoramento'
 import { PAPEIS, TIPOS } from '@/api/monitoramento'
 import * as Itsm from '@/api/itsm'
+import DockerHosts from './DockerHosts.vue'
 
 const emit = defineEmits<{ salvo: [id: number] }>()
 const message = useMessage()
@@ -339,12 +533,60 @@ const dados = ref<Mon.Monitor>(novo())
 
 const http = computed(() => ['http', 'palavra', 'json'].includes(dados.value.tipo))
 const semVerificacao = computed(() => ['push', 'manual'].includes(dados.value.tipo))
+const sql = computed(() => Mon.TIPOS_SQL.includes(dados.value.tipo))
+const hostPorta = computed(() => !!Mon.PORTA_PADRAO[dados.value.tipo] && dados.value.tipo !== 'tcp')
+const credenciais = computed(
+  () => sql.value || ['redis', 'mongodb', 'radius', 'mqtt', 'rabbitmq'].includes(dados.value.tipo)
+)
+const comTls = computed(
+  () => sql.value || ['redis', 'mongodb', 'mqtt', 'smtp', 'rabbitmq'].includes(dados.value.tipo)
+)
+/** a conexão vai cifrada: vale "ignorar erros de TLS" */
+const usaTls = computed(() =>
+  dados.value.tipo === 'smtp'
+    ? dados.value.smtpSeguranca !== 'nenhuma'
+    : dados.value.tipo === 'rabbitmq'
+      ? /^https:/i.test(dados.value.alvo || '')
+      : !!dados.value.tls
+)
+/** a mesma regra do servidor quando a porta fica vazia */
+const portaPadrao = computed(() => {
+  const t = dados.value.tipo
+  if (t === 'mqtt' && dados.value.tls) return 8883
+  if (t === 'smtp' && dados.value.smtpSeguranca === 'tls') return 465
+  if (t === 'smtp' && dados.value.smtpSeguranca === 'starttls') return 587
+  return Mon.PORTA_PADRAO[t]
+})
+const dockerHosts = ref<Mon.DockerHost[]>([])
+const servidoresDocker = ref<InstanceType<typeof DockerHosts>>()
+const recarregarDocker = async () => {
+  dockerHosts.value = await Mon.getDockerHosts()
+}
+/** Placeholder do campo de senha: a guardada nunca volta para a tela */
+const segredoPlaceholder = (campo: 'senha' | 'segredo', vazio: string) =>
+  (campo === 'senha' ? dados.value.senhaDefinida : dados.value.segredoDefinido)
+    ? 'guardada (cifrada): deixe em branco para manter'
+    : vazio
 const regras = computed(() => ({
   nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
   tipo: [{ required: true, message: 'Escolha o tipo', trigger: 'change' }],
-  alvo: semVerificacao.value
-    ? []
-    : [{ required: true, message: 'Informe o alvo', trigger: 'blur' }],
+  alvo:
+    semVerificacao.value || dados.value.tipo === 'docker'
+      ? []
+      : [{ required: true, message: 'Informe o alvo', trigger: 'blur' }],
+  dockerHostId:
+    dados.value.tipo === 'docker'
+      ? [{ required: true, message: 'Escolha o servidor', trigger: 'change' }]
+      : [],
+  consulta: ['docker', 'snmp'].includes(dados.value.tipo)
+    ? [
+        {
+          required: true,
+          message: dados.value.tipo === 'snmp' ? 'Informe o OID' : 'Informe o container',
+          trigger: 'blur'
+        }
+      ]
+    : [],
   porta:
     dados.value.tipo === 'tcp'
       ? [{ required: true, message: 'Informe a porta', trigger: 'blur' }]
@@ -363,6 +605,11 @@ function novo(): Mon.Monitor {
     codigosAceitos: '200-299',
     jsonOperador: '==',
     dnsTipo: 'A',
+    snmpVersao: 'v2c',
+    snmpNivel: 'authPriv',
+    snmpAuth: 'SHA',
+    snmpPriv: 'AES',
+    smtpSeguranca: 'starttls',
     intervaloS: 60,
     tentativas: 1,
     intervaloTentativaS: 30,
@@ -379,20 +626,29 @@ function novo(): Mon.Monitor {
 
 const abrir = async (detalhe?: Mon.Detalhe) => {
   teste.value = undefined
-  const [c, u, cat] = await Promise.all([
+  const [c, u, cat, d] = await Promise.all([
     Mon.getCanais(),
     Mon.getUnidades(),
-    Itsm.getCategorias(true).catch(() => [])
+    Itsm.getCategorias(true).catch(() => []),
+    Mon.getDockerHosts().catch(() => [])
   ])
   canais.value = c
   unidades.value = u
   categorias.value = cat
+  dockerHosts.value = d
   dados.value = detalhe
-    ? { ...detalhe.config }
+    ? // as opções vazias ganham o padrão do formulário; a senha nunca vem
+      { ...novo(), ...semNulos(detalhe.config), senha: '', segredo: '' }
     : { ...novo(), canalIds: c.filter((x) => x.padrao).map((x) => x.id!) }
   visivel.value = true
 }
 defineExpose({ abrir })
+
+function semNulos<T extends object>(o: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(o).filter(([, v]) => v !== null && v !== undefined)
+  ) as Partial<T>
+}
 
 const testar = async () => {
   await formRef.value.validate()

@@ -21,5 +21,9 @@ public interface ErrorCodeConstants {
     ErrorCode KUMA_INVALIDO = new ErrorCode(1_105_000_011, "Arquivo do Uptime Kuma inválido: {}");
     ErrorCode KUMA_ANALISE_EXPIRADA = new ErrorCode(1_105_000_012, "A análise do arquivo expirou; envie o arquivo de novo");
     ErrorCode PLANILHA_INVALIDA = new ErrorCode(1_105_000_013, "Planilha inválida: {}");
+    ErrorCode MONITOR_SEM_CHAVE_MESTRA = new ErrorCode(1_105_000_014, "Defina CO_TI_CHAVE_MESTRA no servidor: sem ela as senhas dos monitores não podem ser guardadas");
+    ErrorCode DOCKER_HOST_NAO_EXISTE = new ErrorCode(1_105_000_015, "Servidor Docker não encontrado");
+    ErrorCode DOCKER_HOST_INVALIDO = new ErrorCode(1_105_000_016, "Servidor Docker inválido: {}");
+    ErrorCode DOCKER_HOST_EM_USO = new ErrorCode(1_105_000_017, "O servidor Docker é usado por {} monitor(es): troque o servidor deles antes de excluir");
 
 }

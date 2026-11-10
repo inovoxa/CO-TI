@@ -46,6 +46,37 @@ public class ConfiguracaoMonitoramentoController {
     private ImportacaoUnidadeService importacaoUnidadeService;
     @Resource
     private SecurityFrameworkService securityFrameworkService;
+    @Resource
+    private cn.iocoder.yudao.module.monitoramento.service.DockerHostService dockerHostService;
+
+    // ================================================================================== servidores Docker
+
+    @GetMapping("/docker-host/list")
+    @Operation(summary = "Servidores Docker (a chave do cliente só volta como definida)")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public CommonResult<List<MonitorVOs.DockerHost>> dockerHosts() {
+        return success(dockerHostService.listar());
+    }
+
+    @PostMapping("/docker-host/save")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<Long> salvarDockerHost(@Valid @RequestBody MonitorVOs.DockerHost req) {
+        return success(dockerHostService.salvar(req));
+    }
+
+    @PostMapping("/docker-host/testar")
+    @Operation(summary = "Testa a conexão sem salvar; devolve a versão do Docker")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<String> testarDockerHost(@Valid @RequestBody MonitorVOs.DockerHost req) {
+        return success(dockerHostService.testar(req));
+    }
+
+    @DeleteMapping("/docker-host/delete")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<Boolean> excluirDockerHost(@RequestParam("id") Long id) {
+        dockerHostService.excluir(id);
+        return success(true);
+    }
 
     // ================================================================================== manutenções
 

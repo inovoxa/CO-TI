@@ -16,6 +16,23 @@ Monitores de disponibilidade no lugar do Uptime Kuma. O Kuma 2.5.7 (MIT) é refe
 | `dns` | consulta A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR ou CAA, no servidor informado ou no do sistema | há resposta (e contém o valor esperado, se informado) |
 | `push` | o serviço chama `/api/push/<token>?status=up&msg=&ping=` | chegou sinal no intervalo |
 | `manual` | ninguém verifica | a equipe marcou "no ar" |
+| `postgres`, `mysql`, `sqlserver`, `oracle` | conecta pelo JDBC com usuário e senha e roda a consulta (padrão `SELECT 1`) | a consulta roda (e o primeiro valor confere com o esperado, se informado) |
+| `snmp` | GET de um OID, v1, v2c (comunidade) ou v3 (usuário, autenticação e privacidade) | o agente responde (e o valor confere, se informado) |
+| `docker` | `GET /containers/<nome>/json` na API do Docker de um servidor cadastrado (https com certificado de cliente, ou http) | o container está rodando e, com healthcheck, saudável |
+| `redis` | `AUTH` (se houver senha) e `PING`, com TLS opcional | responde `PONG` |
+| `mongodb` | comando `ping` pelo driver oficial | `ok: 1` |
+| `smtp` | banner 220, `EHLO` e, conforme a segurança, `STARTTLS` ou TLS desde a conexão | o servidor aceita; com TLS, guarda os dias até o certificado vencer |
+| `radius` | Access-Request com PAP e Message-Authenticator | Access-Accept assinado com o mesmo segredo |
+| `mqtt` | CONNECT (3.1.1) e, com tópico, espera uma mensagem (que contém a palavra, se informada) | CONNACK 0 (e chegou a mensagem) |
+| `rabbitmq` | `GET /api/health/checks/alarms` na API de gerenciamento | código 200 (sem alarme de memória ou disco) |
+
+**Senhas dos serviços:** senha, comunidade e segredo ficam em `monitor.monitor.segredos`, cifrados com a chave-mestra
+(`CO_TI_CHAVE_MESTRA`), e só são decifrados na hora de verificar. A tela recebe apenas se estão definidos; em branco ao
+alterar, a guardada continua. A chave do cliente Docker fica cifrada do mesmo jeito em `monitor.docker_host`. Use usuários
+só de leitura nos bancos: a consulta roda com as permissões do usuário informado.
+
+**Docker:** o CO-TI não monta o `docker.sock`. Cada servidor é cadastrado com a URL da API (`https://servidor:2376` com o
+`dockerd --tlsverify`, colando ca.pem, cert.pem e key.pem; ou `http://servidor:2375` só em rede isolada).
 
 **Consulta JSON:** aceita caminhos simples (`status`, `$.dados.servicos[0].estado`, `itens["nome com espaço"]`).
 É um subconjunto das expressões JSONata do Kuma. Números são comparados como números.
@@ -170,6 +187,8 @@ A configuração dos canais (destinatários) só aparece para quem pode configur
 ## Fora desta etapa
 
 - Páginas de status públicas.
-- Tipos SNMP, banco de dados, SMTP e grupo.
+- Tipo grupo.
+- Importar do Kuma os tipos de serviço (bancos, SNMP, Docker, Redis, MongoDB, SMTP, RADIUS, MQTT, RabbitMQ): hoje ficam
+  de fora e são cadastrados pela tela.
 - Aviso por WhatsApp.
 - Importar de um Kuma com MariaDB (só o `kuma.db` SQLite).

@@ -24,8 +24,53 @@ export const TIPOS = [
   { valor: 'ping', rotulo: 'Ping', ajuda: 'O host responde ao ping (ICMP)' },
   { valor: 'dns', rotulo: 'DNS', ajuda: 'O nome resolve (e, se quiser, para o valor esperado)' },
   { valor: 'push', rotulo: 'Push', ajuda: 'O serviço chama uma URL de tempos em tempos' },
-  { valor: 'manual', rotulo: 'Manual', ajuda: 'O estado é escolhido à mão' }
+  { valor: 'manual', rotulo: 'Manual', ajuda: 'O estado é escolhido à mão' },
+  { valor: 'postgres', rotulo: 'PostgreSQL', ajuda: 'Conecta e roda uma consulta' },
+  { valor: 'mysql', rotulo: 'MySQL / MariaDB', ajuda: 'Conecta e roda uma consulta' },
+  { valor: 'sqlserver', rotulo: 'SQL Server', ajuda: 'Conecta e roda uma consulta' },
+  { valor: 'oracle', rotulo: 'Oracle', ajuda: 'Conecta e roda uma consulta' },
+  { valor: 'snmp', rotulo: 'SNMP', ajuda: 'Lê um OID (switch, roteador, nobreak, impressora)' },
+  { valor: 'docker', rotulo: 'Container Docker', ajuda: 'O container está rodando (e saudável)' },
+  { valor: 'redis', rotulo: 'Redis', ajuda: 'Responde PONG' },
+  { valor: 'mongodb', rotulo: 'MongoDB', ajuda: 'Responde ao ping' },
+  { valor: 'smtp', rotulo: 'SMTP', ajuda: 'O servidor de e-mail aceita conexão (e TLS)' },
+  { valor: 'radius', rotulo: 'RADIUS', ajuda: 'Aceita o login de um usuário de teste' },
+  {
+    valor: 'mqtt',
+    rotulo: 'MQTT',
+    ajuda: 'O broker aceita conexão (e, se quiser, há mensagem no tópico)'
+  },
+  { valor: 'rabbitmq', rotulo: 'RabbitMQ', ajuda: 'A API de gerenciamento responde sem alarmes' }
 ]
+
+/** Tipos que usam usuário, senha ou opções próprias (não passam pela planilha) */
+export const TIPOS_SERVICO = [
+  'postgres',
+  'mysql',
+  'sqlserver',
+  'oracle',
+  'snmp',
+  'docker',
+  'redis',
+  'mongodb',
+  'smtp',
+  'radius',
+  'mqtt',
+  'rabbitmq'
+]
+export const TIPOS_SQL = ['postgres', 'mysql', 'sqlserver', 'oracle']
+export const PORTA_PADRAO: Record<string, number> = {
+  postgres: 5432,
+  mysql: 3306,
+  sqlserver: 1433,
+  oracle: 1521,
+  snmp: 161,
+  redis: 6379,
+  mongodb: 27017,
+  smtp: 25,
+  radius: 1812,
+  mqtt: 1883
+}
 
 export const PAPEIS = [
   { valor: 'principal', rotulo: 'Link principal da unidade' },
@@ -69,6 +114,21 @@ export interface Monitor {
   dnsTipo?: string
   dnsServidor?: string
   dnsEsperado?: string
+  usuario?: string
+  /** só ida: a senha guardada nunca volta (ver senhaDefinida) */
+  senha?: string
+  segredo?: string
+  banco?: string
+  consulta?: string
+  tls?: boolean
+  snmpVersao?: string
+  snmpNivel?: string
+  snmpAuth?: string
+  snmpPriv?: string
+  smtpSeguranca?: string
+  dockerHostId?: number
+  senhaDefinida?: boolean
+  segredoDefinido?: boolean
   intervaloS?: number
   tentativas?: number
   intervaloTentativaS?: number
@@ -320,6 +380,26 @@ export const ativarManutencao = (id: number, ativa: boolean) =>
   request.post({ url: '/monitoramento/manutencao/ativar', params: { id, ativa } })
 export const excluirManutencao = (id: number) =>
   request.delete({ url: '/monitoramento/manutencao/delete', params: { id } })
+
+export interface DockerHost {
+  id?: number
+  nome: string
+  url: string
+  ca?: string
+  certificado?: string
+  /** só ida; ver chaveDefinida */
+  chave?: string
+  chaveDefinida?: boolean
+  monitores?: number
+}
+export const getDockerHosts = (): Promise<DockerHost[]> =>
+  request.get({ url: '/monitoramento/docker-host/list' })
+export const salvarDockerHost = (data: DockerHost): Promise<number> =>
+  request.post({ url: '/monitoramento/docker-host/save', data })
+export const testarDockerHost = (data: DockerHost): Promise<string> =>
+  request.post({ url: '/monitoramento/docker-host/testar', data })
+export const excluirDockerHost = (id: number) =>
+  request.delete({ url: '/monitoramento/docker-host/delete', params: { id } })
 
 export const getCanais = (): Promise<Canal[]> => request.get({ url: '/monitoramento/canal/list' })
 export const exportarCanais = (): Promise<Blob> =>

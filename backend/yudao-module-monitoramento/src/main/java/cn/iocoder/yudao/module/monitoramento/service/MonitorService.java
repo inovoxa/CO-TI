@@ -15,6 +15,9 @@ import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorMapper;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.monitoramento.dominio.Estados;
 import cn.iocoder.yudao.module.monitoramento.dominio.Regras;
+import cn.iocoder.yudao.module.monitoramento.dominio.RegrasServicos;
+import cn.iocoder.yudao.module.monitoramento.dominio.TiposMonitor;
+import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonDockerHostMapper;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Resultado;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Verificadores;
 import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
@@ -44,7 +47,7 @@ import static cn.iocoder.yudao.module.monitoramento.enums.ErrorCodeConstants.*;
 public class MonitorService {
 
     static final int HISTORICO = 40;
-    private static final Set<String> TIPOS = Set.of("http", "palavra", "json", "tcp", "ping", "dns", "push", "manual");
+    private static final Set<String> TIPOS = TiposMonitor.TODOS;
     private static final Set<String> METODOS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS");
     private static final Set<String> OPERADORES = Set.of("==", "!=", "<", "<=", ">", ">=", "contem");
     private static final Set<String> DNS_TIPOS = Set.of("A", "AAAA", "CNAME", "MX", "NS", "TXT", "SOA", "SRV", "PTR", "CAA");
@@ -67,6 +70,10 @@ public class MonitorService {
     private CanalService canalService;
     @Resource
     private Verificadores verificadores;
+    @Resource
+    private SegredosMonitor segredosMonitor;
+    @Resource
+    private MonDockerHostMapper monDockerHostMapper;
 
     @Value("${coti.atendimento.url-publica:}")
     private String urlPublica;
@@ -106,7 +113,10 @@ public class MonitorService {
                     .set(MonitorDO::getPalavra, m.getPalavra()).set(MonitorDO::getJsonCaminho, m.getJsonCaminho())
                     .set(MonitorDO::getJsonOperador, m.getJsonOperador()).set(MonitorDO::getJsonEsperado, m.getJsonEsperado())
                     .set(MonitorDO::getDnsServidor, m.getDnsServidor()).set(MonitorDO::getDnsEsperado, m.getDnsEsperado())
-                    .set(MonitorDO::getDescricao, m.getDescricao()).set(MonitorDO::getDeptId, m.getDeptId()));
+                    .set(MonitorDO::getDescricao, m.getDescricao()).set(MonitorDO::getDeptId, m.getDeptId())
+                    .set(MonitorDO::getUsuario, m.getUsuario()).set(MonitorDO::getBanco, m.getBanco()).set(MonitorDO::getConsulta, m.getConsulta())
+                    .set(MonitorDO::getOpcoes, m.getOpcoes()).set(MonitorDO::getSegredos, m.getSegredos())
+                    .set(MonitorDO::getDockerHostId, m.getDockerHostId()));
             if (!Objects.equals(atual.getTipo(), m.getTipo()) || !Objects.equals(atual.getAlvo(), m.getAlvo())) {
                 // mudou o que é verificado: recomeça a contagem de tentativas e verifica logo
                 monMonitorMapper.update(null, new LambdaUpdateWrapper<MonitorDO>().eq(MonitorDO::getId, m.getId())
@@ -165,7 +175,9 @@ public class MonitorService {
 
     /** Testa a configuração sem salvar (uma verificação agora). */
     public MonitorVOs.Teste testar(MonitorVOs.Monitor req) {
-        MonitorDO m = montar(req, null);
+        // ao testar um monitor já salvo, a senha guardada vale (a tela não a recebe de volta)
+        MonitorDO atual = req.getId() == null ? null : monMonitorMapper.selectById(req.getId());
+        MonitorDO m = montar(req, atual);
         if (Set.of("push", "manual").contains(m.getTipo())) {
             throw exception(MONITOR_INVALIDO, "push e manual não têm teste: o estado vem de fora");
         }
@@ -186,7 +198,7 @@ public class MonitorService {
     private MonitorDO montar(MonitorVOs.Monitor r, MonitorDO atual) {
         String tipo = r.getTipo() == null ? "" : r.getTipo().trim();
         if (!TIPOS.contains(tipo)) {
-            throw exception(MONITOR_INVALIDO, "tipo deve ser http, palavra, json, tcp, ping, dns, push ou manual");
+            throw exception(MONITOR_INVALIDO, "tipo desconhecido: " + tipo);
         }
         String alvo = vazio(r.getAlvo());
         String metodo = Optional.ofNullable(vazio(r.getMetodo())).orElse("GET").toUpperCase(Locale.ROOT);
@@ -248,6 +260,7 @@ public class MonitorService {
             default -> {
             }
         }
+        Servico s = servico(r, tipo, alvo, atual);
         String papel = Optional.ofNullable(vazio(r.getPapel())).orElse("servico");
         if (!Set.of("principal", "redundante", "servico").contains(papel)) {
             throw exception(MONITOR_INVALIDO, "papel deve ser principal, redundante ou servico");
@@ -267,7 +280,8 @@ public class MonitorService {
         String token = atual != null && atual.getPushToken() != null ? atual.getPushToken()
                 : "push".equals(tipo) ? Optional.ofNullable(vazio(r.getPushToken())).orElseGet(MonitorService::novoToken) : null;
         return MonitorDO.builder().id(r.getId()).nome(r.getNome().trim()).descricao(r.getDescricao()).tipo(tipo).alvo(alvo)
-                .porta("tcp".equals(tipo) ? r.getPorta() : null).metodo(metodo).corpo(vazio(r.getCorpo())).cabecalhos(vazio(r.getCabecalhos()))
+                .porta(s.porta()).usuario(s.usuario()).banco(s.banco()).consulta(s.consulta()).opcoes(s.opcoes()).segredos(s.segredos())
+                .dockerHostId(s.dockerHostId()).metodo(metodo).corpo(vazio(r.getCorpo())).cabecalhos(vazio(r.getCabecalhos()))
                 .codigosAceitos(Optional.ofNullable(vazio(r.getCodigosAceitos())).orElse("200-299")).palavra(vazio(r.getPalavra()))
                 .palavraInvertida(Boolean.TRUE.equals(r.getPalavraInvertida())).jsonCaminho(vazio(r.getJsonCaminho()))
                 .jsonOperador(Optional.ofNullable(vazio(r.getJsonOperador())).orElse("json".equals(tipo) ? "==" : null))
@@ -282,6 +296,57 @@ public class MonitorService {
                 .deptId(deptId).abrirChamado(Boolean.TRUE.equals(r.getAbrirChamado())).chamadoCategoriaId(r.getChamadoCategoriaId())
                 .chamadoUrgencia(Optional.ofNullable(r.getChamadoUrgencia()).orElse(4)).chamadoSolucionar(r.getChamadoSolucionar() == null || r.getChamadoSolucionar())
                 .ativo(r.getAtivo() == null || r.getAtivo()).kumaId(atual == null ? r.getKumaId() : null).build();
+    }
+
+    /** Campos dos tipos de serviço, já validados; os de outro tipo ficam vazios. */
+    private record Servico(Integer porta, String usuario, String banco, String consulta, String opcoes, String segredos, Long dockerHostId) {
+    }
+
+    private Servico servico(MonitorVOs.Monitor r, String tipo, String alvo, MonitorDO atual) {
+        Integer porta = TiposMonitor.usaPorta(tipo) ? Optional.ofNullable(r.getPorta())
+                .orElse("tcp".equals(tipo) ? null : "mqtt".equals(tipo) && Boolean.TRUE.equals(r.getTls()) ? 8883
+                        : "smtp".equals(tipo) && "tls".equals(r.getSmtpSeguranca()) ? 465
+                        : "smtp".equals(tipo) && "starttls".equals(r.getSmtpSeguranca()) ? 587 : TiposMonitor.PORTA_PADRAO.get(tipo)) : null;
+        if (!TiposMonitor.SERVICOS.contains(tipo)) {
+            return new Servico(porta, null, null, null, null, null, null);
+        }
+        Map<String, String> guardados = atual == null ? Map.of() : segredosMonitor.ler(atual.getSegredos());
+        boolean temSenha = vazio(r.getSenha()) != null || guardados.containsKey(SegredosMonitor.SENHA);
+        boolean temSegredo = vazio(r.getSegredo()) != null || guardados.containsKey(SegredosMonitor.SEGREDO);
+        String consulta = Optional.ofNullable(vazio(r.getConsulta())).orElse(TiposMonitor.CONSULTA_PADRAO.get(tipo));
+        Long dockerHostId = "docker".equals(tipo) ? r.getDockerHostId() : null;
+        try {
+            RegrasServicos.validar(new RegrasServicos.Pedido(tipo, alvo, porta, vazio(r.getUsuario()), vazio(r.getBanco()), consulta,
+                    vazio(r.getJsonOperador()), vazio(r.getSnmpVersao()), vazio(r.getSnmpNivel()), vazio(r.getSnmpAuth()), vazio(r.getSnmpPriv()),
+                    vazio(r.getSmtpSeguranca()), dockerHostId, temSenha, temSegredo));
+        } catch (IllegalArgumentException e) {
+            throw exception(MONITOR_INVALIDO, e.getMessage());
+        }
+        if (dockerHostId != null && monDockerHostMapper.selectById(dockerHostId) == null) {
+            throw exception(DOCKER_HOST_NAO_EXISTE);
+        }
+        Map<String, Object> opcoes = new LinkedHashMap<>();
+        if (Boolean.TRUE.equals(r.getTls())) {
+            opcoes.put(TiposMonitor.TLS, true);
+        }
+        if ("snmp".equals(tipo)) {
+            opcoes.put(TiposMonitor.SNMP_VERSAO, Optional.ofNullable(vazio(r.getSnmpVersao())).orElse("v2c"));
+            if ("v3".equals(opcoes.get(TiposMonitor.SNMP_VERSAO))) {
+                opcoes.put(TiposMonitor.SNMP_NIVEL, Optional.ofNullable(vazio(r.getSnmpNivel())).orElse("authPriv"));
+                opcoes.put(TiposMonitor.SNMP_AUTH, Optional.ofNullable(vazio(r.getSnmpAuth())).orElse("SHA"));
+                opcoes.put(TiposMonitor.SNMP_PRIV, Optional.ofNullable(vazio(r.getSnmpPriv())).orElse("AES"));
+            }
+        }
+        if ("smtp".equals(tipo)) {
+            opcoes.put(TiposMonitor.SMTP_SEGURANCA, Optional.ofNullable(vazio(r.getSmtpSeguranca())).orElse(porta != null && porta == 465 ? "tls"
+                    : porta != null && porta == 587 ? "starttls" : "nenhuma"));
+        }
+        // a senha vai como foi digitada (espaço nas pontas pode fazer parte dela)
+        String segredos = segredosMonitor.juntar(atual == null ? null : atual.getSegredos(), r.getSenha(), r.getSegredo());
+        boolean usaBanco = TiposMonitor.SQL.contains(tipo) || "mongodb".equals(tipo);
+        boolean usaConsulta = TiposMonitor.SQL.contains(tipo) || Set.of("snmp", "docker", "mqtt").contains(tipo);
+        return new Servico(porta, vazio(r.getUsuario()), usaBanco ? vazio(r.getBanco()) : null, usaConsulta ? consulta : null,
+                opcoes.isEmpty() ? null : JsonUtils.toJsonString(opcoes), segredos, dockerHostId);
     }
 
     static String novoToken() {
@@ -533,6 +598,15 @@ public class MonitorService {
         return out;
     }
 
+    public static Map<String, Object> opcoes(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+        Map<String, Object> m = JsonUtils.parseObject(json, new TypeReference<>() {
+        });
+        return m == null ? Map.of() : m;
+    }
+
     public MonitorVOs.Monitor config(MonitorDO m) {
         MonitorVOs.Monitor vo = semCanais(m);
         vo.setCanalIds(monMonitorCanalMapper.selectList(MonitorCanalDO::getMonitorId, m.getId()).stream().map(MonitorCanalDO::getCanalId).toList());
@@ -560,6 +634,21 @@ public class MonitorService {
         vo.setDnsTipo(m.getDnsTipo());
         vo.setDnsServidor(m.getDnsServidor());
         vo.setDnsEsperado(m.getDnsEsperado());
+        vo.setUsuario(m.getUsuario());
+        vo.setBanco(m.getBanco());
+        vo.setConsulta(m.getConsulta());
+        vo.setDockerHostId(m.getDockerHostId());
+        Map<String, Object> opcoes = opcoes(m.getOpcoes());
+        vo.setTls(Boolean.TRUE.equals(opcoes.get(TiposMonitor.TLS)));
+        vo.setSnmpVersao((String) opcoes.get(TiposMonitor.SNMP_VERSAO));
+        vo.setSnmpNivel((String) opcoes.get(TiposMonitor.SNMP_NIVEL));
+        vo.setSnmpAuth((String) opcoes.get(TiposMonitor.SNMP_AUTH));
+        vo.setSnmpPriv((String) opcoes.get(TiposMonitor.SNMP_PRIV));
+        vo.setSmtpSeguranca((String) opcoes.get(TiposMonitor.SMTP_SEGURANCA));
+        // só se estão definidos: a senha nunca volta para a tela
+        Map<String, String> segredos = m.getSegredos() == null ? Map.of() : segredosMonitor.ler(m.getSegredos());
+        vo.setSenhaDefinida(segredos.containsKey(SegredosMonitor.SENHA));
+        vo.setSegredoDefinido(segredos.containsKey(SegredosMonitor.SEGREDO));
         vo.setIntervaloS(m.getIntervaloS());
         vo.setTentativas(m.getTentativas());
         vo.setIntervaloTentativaS(m.getIntervaloTentativaS());

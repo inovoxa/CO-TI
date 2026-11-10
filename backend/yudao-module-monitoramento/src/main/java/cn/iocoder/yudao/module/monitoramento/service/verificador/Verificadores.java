@@ -45,8 +45,13 @@ public class Verificadores {
     static final int MAX_CORPO = 1024 * 1024;
     private static final Pattern CHARSET = Pattern.compile("charset=\"?([A-Za-z0-9._\\-]+)");
 
-    private final HttpClient http = cliente(false);
-    private final HttpClient httpSemTls = cliente(true);
+    static final HttpClient HTTP = cliente(false);
+    static final HttpClient HTTP_SEM_TLS = cliente(true);
+    private final HttpClient http = HTTP;
+    private final HttpClient httpSemTls = HTTP_SEM_TLS;
+
+    @jakarta.annotation.Resource
+    private VerificadoresServicos servicos;
 
     public Resultado verificar(MonitorDO m) {
         return switch (m.getTipo()) {
@@ -54,8 +59,24 @@ public class Verificadores {
             case "tcp" -> tcp(m);
             case "ping" -> ping(m);
             case "dns" -> dns(m);
-            default -> Resultado.falha("tipo sem verificação ativa: " + m.getTipo());
+            default -> cn.iocoder.yudao.module.monitoramento.dominio.TiposMonitor.SERVICOS.contains(m.getTipo()) ? servicos.verificar(m)
+                    : Resultado.falha("tipo sem verificação ativa: " + m.getTipo());
         };
+    }
+
+    /** "Ignorar erros de TLS" nos tipos que abrem o socket direto (Redis, SMTP, MQTT, MongoDB). */
+    static SSLContext contextoSemVerificacao() {
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, new TrustManager[]{new AceitaTudo()}, new SecureRandom());
+            return ctx;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static SSLSocketFactory fabricaSemVerificacao() {
+        return contextoSemVerificacao().getSocketFactory();
     }
 
     // ================================================================================== HTTP

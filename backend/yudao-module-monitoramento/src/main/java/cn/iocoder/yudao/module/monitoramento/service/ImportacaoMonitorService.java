@@ -112,6 +112,10 @@ public class ImportacaoMonitorService {
             throw new IllegalArgumentException("a planilha não traz a " + ("json".equals(vo.getTipo()) ? "consulta JSON" : "palavra-chave")
                     + ": crie este monitor pela tela (Novo monitor)");
         }
+        if (atual == null && cn.iocoder.yudao.module.monitoramento.dominio.TiposMonitor.SERVICOS.contains(vo.getTipo())) {
+            throw new IllegalArgumentException("a planilha não traz usuário, senha nem as opções do tipo " + vo.getTipo()
+                    + ": crie este monitor pela tela (Novo monitor)");
+        }
         validar(validator, vo);
         MonitorDO previsto = monitorService.previsto(vo, atual);
 

@@ -76,6 +76,30 @@ public class SnmpCliente implements Closeable {
         return new SnmpLeitura.Dados(valores, tabelas);
     }
 
+    /** Um OID lido com GET; {@code erro} quando o agente respondeu, mas sem o valor. */
+    public record Valor(String texto, String erro) {
+    }
+
+    /** Lê um OID (monitoramento). null = não respondeu com esta credencial. */
+    public Valor valor(String ip, Credencial c, String oid) throws IOException {
+        PDU p = pdu(c);
+        p.setType(PDU.GET);
+        p.add(new VariableBinding(new OID(oid)));
+        ResponseEvent<UdpAddress> r = snmp.send(p, alvo(ip, c));
+        if (r == null || r.getResponse() == null) {
+            return null;
+        }
+        PDU resp = r.getResponse();
+        if (resp.getErrorStatus() != PDU.noError) {
+            return new Valor(null, "o agente SNMP respondeu com erro: " + resp.getErrorStatusText());
+        }
+        Variable v = resp.get(0).getVariable();
+        if (v.isException()) {
+            return new Valor(null, "OID sem valor no agente (" + v + ")");
+        }
+        return new Valor(texto(v), null);
+    }
+
     private Target<UdpAddress> alvo(String ip, Credencial c) {
         UdpAddress endereco = new UdpAddress(ip + "/" + c.porta());
         if ("v3".equals(c.versao())) {
@@ -100,7 +124,7 @@ public class SnmpCliente implements Closeable {
         CommunityTarget<UdpAddress> t = new CommunityTarget<>();
         t.setAddress(endereco);
         t.setCommunity(new OctetString(c.comunidade()));
-        t.setVersion(SnmpConstants.version2c);
+        t.setVersion("v1".equals(c.versao()) ? SnmpConstants.version1 : SnmpConstants.version2c);
         t.setTimeout(tempoLimiteMs);
         t.setRetries(tentativas);
         return t;

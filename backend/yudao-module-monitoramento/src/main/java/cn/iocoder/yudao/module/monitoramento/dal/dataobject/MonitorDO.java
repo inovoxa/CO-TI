@@ -42,6 +42,14 @@ public class MonitorDO extends BaseDO {
     private String dnsTipo;
     private String dnsServidor;
     private String dnsEsperado;
+    private String usuario;
+    private String banco;
+    private String consulta;
+    /** objeto JSON com as opções do tipo; ver {@link cn.iocoder.yudao.module.monitoramento.dominio.TiposMonitor} */
+    private String opcoes;
+    /** objeto JSON cifrado com a chave-mestra ({@code senha}, {@code segredo}); nunca vai para a tela */
+    private String segredos;
+    private Long dockerHostId;
     private Integer intervaloS;
     private Integer tentativas;
     private Integer intervaloTentativaS;

@@ -46,6 +46,27 @@ public final class MonitorVOs {
         private String dnsTipo;
         private String dnsServidor;
         private String dnsEsperado;
+        // ---- tipos de serviço (bancos, SNMP, Docker, Redis, MongoDB, SMTP, RADIUS, MQTT, RabbitMQ)
+        @Size(max = 200)
+        private String usuario;
+        /** senha, comunidade do SNMP ou senha de autenticação do SNMP v3; em branco mantém a guardada */
+        @Size(max = 500)
+        private String senha;
+        /** segredo do RADIUS ou senha de privacidade do SNMP v3; em branco mantém o guardado */
+        @Size(max = 500)
+        private String segredo;
+        @Size(max = 200)
+        private String banco;
+        /** SQL, OID do SNMP, container Docker ou tópico MQTT */
+        @Size(max = 4000)
+        private String consulta;
+        private Boolean tls;
+        private String snmpVersao;
+        private String snmpNivel;
+        private String snmpAuth;
+        private String snmpPriv;
+        private String smtpSeguranca;
+        private Long dockerHostId;
         @Min(5)
         @Max(86400)
         private Integer intervaloS;
@@ -84,6 +105,30 @@ public final class MonitorVOs {
         // ---- só leitura
         private String pushToken;
         private Long kumaId;
+        private Boolean senhaDefinida;
+        private Boolean segredoDefinido;
+    }
+
+    /** Servidor Docker acessado pela API remota. A chave volta só como "definida". */
+    @Data
+    public static class DockerHost {
+        private Long id;
+        @NotBlank
+        @Size(max = 100)
+        private String nome;
+        /** https://servidor:2376 (com certificado de cliente) ou http://servidor:2375 */
+        @NotBlank
+        @Size(max = 500)
+        private String url;
+        @Size(max = 20000)
+        private String ca;
+        @Size(max = 20000)
+        private String certificado;
+        /** em branco mantém a guardada */
+        @Size(max = 20000)
+        private String chave;
+        private Boolean chaveDefinida;
+        private Integer monitores;
     }
 
     @Data
