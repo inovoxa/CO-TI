@@ -58,6 +58,8 @@ class ImportacaoPlanilhaTest {
     private DeptService deptService;
     @Mock
     private AuditoriaService auditoria;
+    @Mock
+    private cn.iocoder.yudao.module.system.service.permission.PermissionService permissao;
     @InjectMocks
     @Spy
     private MonitorService monitorService;
@@ -81,6 +83,7 @@ class ImportacaoPlanilhaTest {
         ReflectionTestUtils.setField(unidades, "deptService", deptService);
         ReflectionTestUtils.setField(unidades, "auditoriaService", auditoria);
         ReflectionTestUtils.setField(unidades, "validator", validator);
+        ReflectionTestUtils.setField(unidades, "permissionService", permissao);
 
         MonitorUnitDO upa = MonitorUnitDO.builder().id(1L).name("UPA CENTRAL").deptId(10L).status(0).build();
         when(unitMapper.selectList()).thenReturn(List.of(upa));
@@ -315,6 +318,59 @@ class ImportacaoPlanilhaTest {
 
         assertEquals(1, unidades.aplicar(arquivo(COLUNAS_UNIDADE, linhas), List.of(2L), 7L).getRemovidos());
         verify(unidadeService).aplicarImportacao(List.of(), Set.of(2L));
+    }
+
+    @Test
+    void semPermissaoDepartamentoQueFaltaRecusaALinha() {
+        doReturn(List.of()).when(unidadeService).listar();
+
+        ImportacaoVOs.Resultado r = unidades.aplicar(arquivo(COLUNAS_UNIDADE, List.of(
+                linhaUnidade("CAPS", "CAPS", null, -21.5d, -48.5d, "Sim"))), List.of(), 7L);
+
+        assertEquals(1, r.getRecusados());
+        verify(deptService, never()).createDept(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void comPermissaoCriaDepartamentoSobOSuperiorOuSobARaiz() {
+        doReturn(List.of()).when(unidadeService).listar();
+        when(permissao.hasAnyPermissions(eq(7L), any(String[].class))).thenReturn(true);
+        DeptDO raiz = new DeptDO();
+        raiz.setId(100L);
+        raiz.setName("Empresa");
+        raiz.setParentId(0L);
+        DeptDO saude = new DeptDO();
+        saude.setId(10L);
+        saude.setName("Saúde");
+        saude.setParentId(100L);
+        when(deptService.getDeptList(any(cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptListReqVO.class)))
+                .thenReturn(List.of(raiz, saude));
+        java.util.concurrent.atomic.AtomicLong ids = new java.util.concurrent.atomic.AtomicLong(500);
+        when(deptService.createDept(any())).thenAnswer(i -> ids.incrementAndGet());
+        List<String> colunas = List.of("Unidade", "Departamento", "Departamento superior", "Latitude", "Longitude");
+        ByteArrayInputStream arq = arquivo(colunas, List.of(Arrays.asList("CAPS", "CAPS", "Saúde", -21.5d, -48.5d),
+                Arrays.asList("UBS Nova", "UBS Nova", "Atenção Básica", -21.5d, -48.5d),
+                Arrays.asList("Avulsa", "Avulsa", null, -21.5d, -48.5d)));
+
+        ImportacaoVOs.Previa p = unidades.analisar(arquivo(colunas, List.of(Arrays.asList("CAPS", "CAPS", "Saúde", -21.5d, -48.5d))));
+        // sem usuário logado vale como sem permissão
+        assertEquals(1, p.getRecusados(), String.valueOf(p.getErros()));
+        unidades.aplicar(arq, List.of(), 7L);
+
+        org.mockito.ArgumentCaptor<cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO> criados =
+                org.mockito.ArgumentCaptor.forClass(cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO.class);
+        verify(deptService, times(4)).createDept(criados.capture());
+        java.util.Map<String, Long> pai = new java.util.HashMap<>();
+        criados.getAllValues().forEach(d -> pai.put(d.getName(), d.getParentId()));
+        assertEquals(10L, pai.get("CAPS"));
+        assertEquals(100L, pai.get("Atenção Básica"));
+        assertEquals(100L, pai.get("Avulsa"));
+        // o superior novo é criado antes do filho, que recebe o id dele
+        assertTrue(pai.get("UBS Nova") > 500L);
+        org.mockito.ArgumentCaptor<List<UnidadeVOs.Unidade>> gravadas = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(unidadeService).aplicarImportacao(gravadas.capture(), anyCollection());
+        assertTrue(gravadas.getValue().stream().allMatch(u -> u.getDeptId() != null && u.getDeptId() > 500L));
     }
 
 }

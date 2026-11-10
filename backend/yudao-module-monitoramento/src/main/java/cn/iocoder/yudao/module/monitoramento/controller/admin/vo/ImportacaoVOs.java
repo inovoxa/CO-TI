@@ -41,6 +41,8 @@ public final class ImportacaoVOs {
         private int semMudanca;
         private int recusados;
         private List<String> erros = new ArrayList<>();
+        /** Departamentos que a importação vai criar, como "CAPS (em "Saúde")" */
+        private List<String> departamentos = new ArrayList<>();
     }
 
     @Data

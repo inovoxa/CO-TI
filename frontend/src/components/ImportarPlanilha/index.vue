@@ -24,6 +24,13 @@
           type="info"
         />
         <el-alert
+          v-if="previa.departamentos?.length"
+          :closable="false"
+          :title="`${previa.departamentos.length} departamento(s) não existe(m) nesta instalação e será(ão) criado(s).`"
+          show-icon
+          type="info"
+        />
+        <el-alert
           v-if="dadosRemovidos"
           :closable="false"
           :title="`${dadosRemovidos} dado(s) será(ão) removido(s): as células estão em branco no arquivo e os campos ficarão vazios.`"
@@ -49,7 +56,7 @@
           type="error"
         />
         <el-alert
-          v-if="nadaAFazer"
+          v-if="nadaAFazer && !previa.recusados"
           :closable="false"
           show-icon
           title="O arquivo é igual ao que está cadastrado: não há nada para aplicar."
@@ -58,6 +65,13 @@
       </div>
       <p v-if="previa.semMudanca" class="nota">
         {{ previa.semMudanca }} {{ rotulo(previa.semMudanca) }} sem mudança.
+      </p>
+      <p
+        v-if="previa.recusados && previa.erros.some((e) => e.includes('não encontrada'))"
+        class="nota"
+      >
+        Unidade não encontrada: importe primeiro a planilha de unidades (Monitoramento → Unidades e
+        endereços) e depois a de monitores.
       </p>
 
       <el-collapse v-model="abertos">
@@ -98,6 +112,15 @@
                 <template v-else>{{ m.de }} → {{ m.para }}</template>
               </div>
             </li>
+          </ul>
+        </el-collapse-item>
+        <el-collapse-item
+          v-if="previa.departamentos?.length"
+          :title="`Departamentos que serão criados (${previa.departamentos.length})`"
+          name="departamentos"
+        >
+          <ul class="lista">
+            <li v-for="d in previa.departamentos" :key="d">{{ d }}</li>
           </ul>
         </el-collapse-item>
         <el-collapse-item

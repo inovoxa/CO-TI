@@ -107,6 +107,11 @@ public class ImportacaoMonitorService {
         }
         MonitorVOs.Monitor vo = atual == null ? new MonitorVOs.Monitor() : monitorService.semCanais(atual);
         preencher(vo, nome, c, atual, unidades);
+        if (atual == null && ("palavra".equals(vo.getTipo()) || "json".equals(vo.getTipo()))) {
+            // sem isso o monitor JSON entraria sem consulta e ficaria fora do ar
+            throw new IllegalArgumentException("a planilha não traz a " + ("json".equals(vo.getTipo()) ? "consulta JSON" : "palavra-chave")
+                    + ": crie este monitor pela tela (Novo monitor)");
+        }
         validar(validator, vo);
         MonitorDO previsto = monitorService.previsto(vo, atual);
 

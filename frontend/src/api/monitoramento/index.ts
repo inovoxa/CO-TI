@@ -203,6 +203,8 @@ export interface ImportacaoPrevia {
   semMudanca: number
   recusados: number
   erros: string[]
+  /** só nas unidades: departamentos que a importação vai criar */
+  departamentos?: string[]
 }
 export interface ImportacaoResultado {
   adicionados: number

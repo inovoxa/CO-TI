@@ -45,6 +45,8 @@ public final class UnidadeVOs {
         private Boolean ativa;
         // ---- só leitura
         private String deptNome;
+        /** Pai do departamento; vazio quando o pai é a raiz (cada instalação tem a sua) */
+        private String deptSuperior;
         private Integer monitores;
     }
 

@@ -57,18 +57,25 @@ public class UnidadeService {
     private long ultimaGeocodificacao;
 
     public List<Planilha.Aba> planilha() {
-        List<List<Object>> linhas = listar().stream().<List<Object>>map(u -> Arrays.asList(u.getNome(), u.getDeptNome(), u.getCep(),
+        List<List<Object>> linhas = listar().stream().<List<Object>>map(u -> Arrays.asList(u.getNome(), u.getDeptNome(), u.getDeptSuperior(), u.getCep(),
                 u.getLogradouro(), u.getNumero(), u.getComplemento(), u.getBairro(), u.getCidade(), u.getUf(), u.getLatitude(),
                 u.getLongitude(), Planilha.simNao(u.getAtiva()), u.getMonitores())).toList();
-        return List.of(new Planilha.Aba("Unidades", List.of("Unidade", "Departamento", "CEP", "Logradouro", "Número", "Complemento",
+        return List.of(new Planilha.Aba("Unidades", List.of("Unidade", "Departamento", "Departamento superior", "CEP", "Logradouro", "Número", "Complemento",
                 "Bairro", "Cidade", "UF", "Latitude", "Longitude", "Ativa", "Monitores"), linhas));
     }
 
     public List<UnidadeVOs.Unidade> listar() {
         List<MonitorUnitDO> lista = monitorUnitMapper.selectList(new LambdaQueryWrapperX<MonitorUnitDO>().orderByAsc(MonitorUnitDO::getName));
         Set<Long> depts = lista.stream().map(MonitorUnitDO::getDeptId).filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, String> nomes = depts.isEmpty() ? Map.of() : deptApi.getDeptList(depts).stream()
+        List<DeptRespDTO> dos = depts.isEmpty() ? List.of() : deptApi.getDeptList(depts);
+        Map<Long, String> nomes = dos.stream().collect(Collectors.toMap(DeptRespDTO::getId, DeptRespDTO::getName));
+        Set<Long> pais = dos.stream().map(DeptRespDTO::getParentId).filter(p -> p != null && p != 0L).collect(Collectors.toSet());
+        // pai na raiz fica fora: a raiz tem outro nome em cada instalação e a importação já usa a raiz quando vem em branco
+        Map<Long, String> superiores = pais.isEmpty() ? Map.of() : deptApi.getDeptList(pais).stream()
+                .filter(p -> p.getParentId() != null && p.getParentId() != 0L)
                 .collect(Collectors.toMap(DeptRespDTO::getId, DeptRespDTO::getName));
+        Map<Long, Long> paiDe = new HashMap<>();
+        dos.forEach(d -> paiDe.put(d.getId(), d.getParentId()));
         Map<Long, Long> monitores = monMonitorMapper.selectList(new LambdaQueryWrapperX<MonitorDO>().isNotNull(MonitorDO::getUnidadeId)).stream()
                 .collect(Collectors.groupingBy(MonitorDO::getUnidadeId, Collectors.counting()));
         return lista.stream().map(u -> {
@@ -77,6 +84,8 @@ public class UnidadeService {
             vo.setNome(u.getName());
             vo.setDeptId(u.getDeptId());
             vo.setDeptNome(nomes.get(u.getDeptId()));
+            Long pai = paiDe.get(u.getDeptId());
+            vo.setDeptSuperior(pai == null ? null : superiores.get(pai));
             vo.setCep(u.getCep());
             vo.setLogradouro(u.getLogradouro());
             vo.setNumero(u.getNumero());
@@ -118,7 +127,12 @@ public class UnidadeService {
 
     /** Como a unidade ficaria gravada, pelas regras do cadastro, sem gravar nada. */
     MonitorUnitDO previsto(UnidadeVOs.Unidade req) {
-        if (deptApi.getDept(req.getDeptId()) == null) {
+        return previsto(req, false);
+    }
+
+    /** @param deptACriar o departamento só passa a existir ao aplicar a importação; não confere agora */
+    MonitorUnitDO previsto(UnidadeVOs.Unidade req, boolean deptACriar) {
+        if (!deptACriar && deptApi.getDept(req.getDeptId()) == null) {
             throw exception(UNIDADE_INVALIDA, "departamento não encontrado");
         }
         String cep = cep(req.getCep());
