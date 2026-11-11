@@ -51,3 +51,64 @@ export const getRetencao = (): Promise<ItemRetencao[]> => request.get({ url: '/i
 export const salvarRetencao = (chave: string, valor: number) =>
   request.put({ url: '/infraestrutura/retencao', data: { chave, valor } })
 export const getRotinas = (): Promise<Rotina[]> => request.get({ url: '/infraestrutura/rotinas' })
+
+// ------------------------------------------------------------------ Diretório LDAP (AD)
+
+export interface DadosAd {
+  habilitado: boolean
+  servidores: string
+  porta: number | null
+  seguranca: 'ldaps' | 'starttls'
+  certificadoCa: string | null
+  bindDn: string
+  baseUsuarios: string
+  filtro: string | null
+  ouRaiz: string | null
+  espelharOus: boolean
+  deptRaizId: number | null
+  perfilPadrao: string | null
+  grupoAprovadores: string | null
+  gruposPerfis: Record<string, string>
+  desativarAusentes: boolean
+}
+
+export interface TelaAd {
+  dados: DadosAd
+  senhaSalva: boolean
+  origem: 'ambiente' | 'tela'
+  atualizadoPor: string | null
+  atualizadoEm: string | null
+  conectado: boolean
+  erroConexao: string | null
+}
+
+export interface TesteAd {
+  ok: boolean
+  etapas: string[]
+  erro: string | null
+}
+
+export interface CertificadoAd {
+  assunto: string
+  emissor: string
+  validoAte: string
+  sha256: string
+  ca: boolean
+  pem: string
+}
+
+export interface ResumoSincronizacao {
+  lidas: number
+  sincronizadas: number
+  ignoradas: number
+  desativadas: number
+  desativacaoSuspensa: boolean
+}
+
+export const getAd = (): Promise<TelaAd> => request.get({ url: '/infraestrutura/ad' })
+export const salvarAd = (dados: DadosAd, senha: string) => request.put({ url: '/infraestrutura/ad', data: { dados, senha } })
+export const testarAd = (dados: DadosAd, senha: string, login: string, senhaUsuario: string): Promise<TesteAd> =>
+  request.post({ url: '/infraestrutura/ad/testar', data: { dados, senha, login, senhaUsuario } })
+export const certificadosAd = (servidores: string, porta: number | null, seguranca: string): Promise<CertificadoAd[]> =>
+  request.post({ url: '/infraestrutura/ad/certificados', data: { servidores, porta, seguranca } })
+export const sincronizarAd = (): Promise<ResumoSincronizacao> => request.post({ url: '/infraestrutura/ad/sincronizar' })

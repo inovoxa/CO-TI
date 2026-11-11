@@ -26,20 +26,18 @@ public class AdSincronizacaoService {
      */
     static final double LIMITE_AUSENTES = 0.2;
 
-    private final AdDiretorio diretorio;
+    private final AdConfiguracaoService configuracao;
     private final AdProvisionamentoService provisionamento;
     private final VinculoAdMapper vinculoAdMapper;
-    private final AdProperties props;
     private final AuditoriaService auditoria;
     private final ReentrantLock emAndamento = new ReentrantLock();
 
-    public AdSincronizacaoService(AdDiretorio diretorio, AdProvisionamentoService provisionamento,
-                                  VinculoAdMapper vinculoAdMapper, AdProperties props, AuditoriaService auditoria) {
+    public AdSincronizacaoService(AdConfiguracaoService configuracao, AdProvisionamentoService provisionamento,
+                                  VinculoAdMapper vinculoAdMapper, AuditoriaService auditoria) {
         this.auditoria = auditoria;
-        this.diretorio = diretorio;
+        this.configuracao = configuracao;
         this.provisionamento = provisionamento;
         this.vinculoAdMapper = vinculoAdMapper;
-        this.props = props;
     }
 
     @Value
@@ -57,6 +55,9 @@ public class AdSincronizacaoService {
             throw new IllegalStateException("Já existe uma sincronização com o AD em andamento");
         }
         try {
+            AdProperties props = configuracao.atual();
+            AdDiretorio diretorio = configuracao.diretorio()
+                    .orElseThrow(() -> new IllegalStateException("O login pelo AD está desligado"));
             LocalDateTime inicio = LocalDateTime.now();
             AtomicInteger lidas = new AtomicInteger();
             AtomicInteger ok = new AtomicInteger();

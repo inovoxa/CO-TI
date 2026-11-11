@@ -4,6 +4,7 @@ import cn.iocoder.yudao.module.identidade.config.AdProperties;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.*;
 import com.unboundid.ldap.sdk.controls.SimplePagedResultsControl;
+import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
@@ -11,9 +12,18 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -220,16 +230,119 @@ public class AdDiretorio implements AutoCloseable {
         return new DN(dcs).toString();
     }
 
+    /**
+     * Conta as contas do filtro sem ler os grupos de cada uma (para o teste da tela). Para em {@code limite}.
+     *
+     * @return quantas achou e até 5 logins de exemplo
+     */
+    public Map.Entry<Integer, List<String>> contarUsuarios(int limite) {
+        try {
+            SearchRequest req = new SearchRequest(props.getBaseUsuarios(), SearchScope.SUB, filtroBase(), "sAMAccountName");
+            ASN1OctetString cookie = null;
+            int total = 0;
+            List<String> exemplos = new ArrayList<>();
+            do {
+                req.setControls(new SimplePagedResultsControl(props.getTamanhoPagina(), cookie));
+                SearchResult r = pool.search(req);
+                for (SearchResultEntry e : r.getSearchEntries()) {
+                    total++;
+                    if (exemplos.size() < 5) {
+                        exemplos.add(e.getAttributeValue("sAMAccountName"));
+                    }
+                }
+                SimplePagedResultsControl resp = SimplePagedResultsControl.get(r);
+                cookie = resp != null && resp.moreResultsToReturn() && total < limite ? resp.getCookie() : null;
+            } while (cookie != null);
+            return Map.entry(total, exemplos);
+        } catch (LDAPException e) {
+            throw new AdIndisponivelException("Falha ao listar contas do AD", e);
+        }
+    }
+
+    /** Quem valida o certificado do DC: a CA colada na tela, o truststore configurado ou o padrão da JVM (nulo). */
+    static TrustManager confianca(AdProperties p) throws Exception {
+        if (p.isConfiarEmQualquerCertificado()) {
+            log.warn("[AD][coti.ad.confiar-em-qualquer-certificado=true: use só em laboratório]");
+            return new TrustAllTrustManager();
+        }
+        if (p.getCertificadoCa() != null && !p.getCertificadoCa().isBlank()) {
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null, null);
+            int i = 0;
+            for (Certificate c : CertificateFactory.getInstance("X.509").generateCertificates(
+                    new ByteArrayInputStream(p.getCertificadoCa().trim().getBytes(StandardCharsets.US_ASCII)))) {
+                ks.setCertificateEntry("ca" + i++, c);
+            }
+            if (i == 0) {
+                throw new IllegalStateException("O certificado da CA não está no formato PEM (-----BEGIN CERTIFICATE-----)");
+            }
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(ks);
+            return tmf.getTrustManagers()[0];
+        }
+        if (p.getTruststore() != null && !p.getTruststore().isBlank()) {
+            return new TrustStoreTrustManager(p.getTruststore(),
+                    p.getTruststoreSenha() == null ? null : p.getTruststoreSenha().toCharArray(), null, true);
+        }
+        return null;
+    }
+
+    /**
+     * Abre a conexão TLS sem validar nada, só para ler os certificados que o servidor apresenta. Quem decide confiar neles é o
+     * administrador, na tela, depois de conferir a impressão digital.
+     */
+    public static List<X509Certificate> certificadosDoServidor(String host, int porta, boolean startTls, Duration timeout) {
+        List<X509Certificate> cadeia = new ArrayList<>();
+        X509TrustManager captura = new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                cadeia.clear();
+                cadeia.addAll(Arrays.asList(chain));
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        };
+        LDAPConnectionOptions opcoes = new LDAPConnectionOptions();
+        opcoes.setConnectTimeoutMillis((int) timeout.toMillis());
+        opcoes.setResponseTimeoutMillis(timeout.toMillis());
+        try {
+            SSLUtil ssl = new SSLUtil(captura);
+            if (startTls) {
+                try (LDAPConnection c = new LDAPConnection(opcoes, host, porta)) {
+                    ExtendedResult r = c.processExtendedOperation(new StartTLSExtendedRequest(ssl.createSSLContext()));
+                    if (r.getResultCode() != ResultCode.SUCCESS) {
+                        throw new LDAPException(r.getResultCode(), "O servidor recusou o StartTLS: " + r.getDiagnosticMessage());
+                    }
+                }
+            } else {
+                try (LDAPConnection c = new LDAPConnection(ssl.createSSLSocketFactory(), opcoes, host, porta)) {
+                    c.getRootDSE();
+                }
+            }
+        } catch (Exception e) {
+            if (cadeia.isEmpty()) {
+                throw new AdIndisponivelException("Não foi possível abrir a conexão segura com " + host + ":" + porta, e);
+            }
+        }
+        if (cadeia.isEmpty()) {
+            throw new AdIndisponivelException("O servidor " + host + ":" + porta + " não apresentou certificado", null);
+        }
+        return cadeia;
+    }
+
     private static LDAPConnectionPool criarPool(AdProperties p) {
         try {
-            TrustManager confianca = null;
-            if (p.isConfiarEmQualquerCertificado()) {
-                log.warn("[AD][coti.ad.confiar-em-qualquer-certificado=true: use só em laboratório]");
-                confianca = new TrustAllTrustManager();
-            } else if (p.getTruststore() != null && !p.getTruststore().isBlank()) {
-                confianca = new TrustStoreTrustManager(p.getTruststore(),
-                        p.getTruststoreSenha() == null ? null : p.getTruststoreSenha().toCharArray(), null, true);
+            if (p.getUrl() == null || p.getUrl().isBlank()) {
+                throw new IllegalStateException("Informe o servidor do AD");
             }
+            TrustManager confianca = confianca(p);
             SSLContext ssl = (confianca == null ? new SSLUtil() : new SSLUtil(confianca)).createSSLContext();
 
             LDAPConnectionOptions opcoes = new LDAPConnectionOptions();

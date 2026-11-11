@@ -128,7 +128,15 @@ tarefas. Leva cerca de 1 minuto.
 
 ## Ligar o Active Directory
 
-No `.env`:
+O caminho mais simples é a tela **Infraestrutura → Diretório LDAP (AD)**. Ela tem os mesmos campos do "Diretório LDAP" do GLPI: servidor, porta, BaseDN, RootDN, senha e filtro da conexão. A tela também tem:
+
+- **Testar conexão:** testa a conta de serviço, conta quem o filtro deixa entrar e, se você informar um usuário, confere o login dele.
+- **Buscar certificado do servidor:** mostra o certificado da CA do DC, para você conferir a impressão digital e confiar.
+- **Sincronizar agora.**
+
+O que for salvo na tela vale na hora, sem reiniciar, e passa a valer no lugar das variáveis abaixo. A senha da conta de serviço fica cifrada com a chave-mestra. A conexão precisa ser LDAPS (636) ou StartTLS (389).
+
+Sem nada salvo na tela, valem as variáveis do `.env`:
 
 ```
 CO_TI_AD_HABILITADO=true

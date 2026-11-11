@@ -21,14 +21,14 @@ import java.util.Optional;
 @Slf4j
 public class AdAutenticador implements AutenticadorExterno {
 
-    private final AdDiretorio diretorio;
+    private final AdConfiguracaoService configuracao;
     private final AdProvisionamentoService provisionamento;
     private final AdminUserMapper adminUserMapper;
     private final VinculoAdMapper vinculoAdMapper;
 
-    public AdAutenticador(AdDiretorio diretorio, AdProvisionamentoService provisionamento,
+    public AdAutenticador(AdConfiguracaoService configuracao, AdProvisionamentoService provisionamento,
                           AdminUserMapper adminUserMapper, VinculoAdMapper vinculoAdMapper) {
-        this.diretorio = diretorio;
+        this.configuracao = configuracao;
         this.provisionamento = provisionamento;
         this.adminUserMapper = adminUserMapper;
         this.vinculoAdMapper = vinculoAdMapper;
@@ -37,6 +37,9 @@ public class AdAutenticador implements AutenticadorExterno {
     @Override
     @DataPermission(enable = false)
     public Resultado autenticar(String username, String password) {
+        if (!configuracao.atual().isHabilitado()) {
+            return Resultado.naoAplicavel();
+        }
         AdminUserDO local = adminUserMapper.selectByUsername(username);
         VinculoAdDO vinculo = local == null ? null : vinculoAdMapper.selectByUserId(local.getId());
         if (local != null && vinculo == null) {
@@ -45,7 +48,11 @@ public class AdAutenticador implements AutenticadorExterno {
 
         Optional<AdUsuario> conta;
         try {
-            conta = diretorio.autenticar(username, password);
+            Optional<AdDiretorio> diretorio = configuracao.diretorio();
+            if (diretorio.isEmpty()) {
+                return Resultado.naoAplicavel();
+            }
+            conta = diretorio.get().autenticar(username, password);
         } catch (AdIndisponivelException e) {
             log.error("[autenticar][AD indisponível no login de {}]", username, e);
             // conta do AD sem AD não entra; conta desconhecida segue o fluxo local (que vai recusar)

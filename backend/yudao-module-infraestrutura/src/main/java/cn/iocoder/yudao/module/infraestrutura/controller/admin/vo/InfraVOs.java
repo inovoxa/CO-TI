@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.infraestrutura.controller.admin.vo;
 
+import cn.iocoder.yudao.module.identidade.service.AdConfiguracaoService;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +25,32 @@ public final class InfraVOs {
 
     public record Rotina(String nome, String rotulo, LocalDateTime ultimaExecucao, long duracaoMs, String status, String ultimoErro,
                          long execucoes, long falhas, LocalDateTime ultimaFalha) {
+    }
+
+    /** @param senha vazia mantém a senha salva da conta de serviço */
+    @Data
+    public static class SalvarAd {
+        @NotNull
+        private AdConfiguracaoService.Dados dados;
+        private String senha;
+    }
+
+    /** Além do que vai ser salvo, um login (e senha) de alguém para conferir que entra. */
+    @Data
+    public static class TestarAd {
+        @NotNull
+        private AdConfiguracaoService.Dados dados;
+        private String senha;
+        private String login;
+        private String senhaUsuario;
+    }
+
+    @Data
+    public static class CertificadosAd {
+        @NotBlank
+        private String servidores;
+        private Integer porta;
+        private String seguranca;
     }
 
     @Data

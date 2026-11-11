@@ -3,7 +3,6 @@ package cn.iocoder.yudao.module.identidade.service;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.module.identidade.ad.AdUsuario;
-import cn.iocoder.yudao.module.identidade.config.AdProperties;
 import cn.iocoder.yudao.module.identidade.dal.dataobject.VinculoAdDO;
 import cn.iocoder.yudao.module.identidade.dal.mysql.VinculoAdMapper;
 import cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO;
@@ -36,7 +35,7 @@ public class AdProvisionamentoService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Resource
-    private AdProperties props;
+    private AdConfiguracaoService configuracao;
     @Resource
     private VinculoAdMapper vinculoAdMapper;
     @Resource
@@ -71,7 +70,9 @@ public class AdProvisionamentoService {
             return Optional.empty();
         }
 
-        Long deptId = resolverDepartamento(conta.getCaminhoOus());
+        // sem espelhar as OUs, o departamento dado à mão no portal vale: só quem chega agora vai para a raiz
+        Long deptId = configuracao.atual().isEspelharOus() ? resolverDepartamento(conta.getCaminhoOus())
+                : usuario != null && usuario.getDeptId() != null ? usuario.getDeptId() : configuracao.atual().getDeptRaizId();
         Integer status = conta.isAtivo() ? CommonStatusEnum.ENABLE.getStatus() : CommonStatusEnum.DISABLE.getStatus();
         if (usuario == null) {
             usuario = AdminUserDO.builder()
@@ -136,7 +137,7 @@ public class AdProvisionamentoService {
 
     /** Cria (se faltar) a cadeia de departamentos que espelha as OUs, abaixo do departamento raiz. */
     Long resolverDepartamento(List<String> caminho) {
-        Long pai = props.getDeptRaizId();
+        Long pai = configuracao.atual().getDeptRaizId();
         for (String nome : caminho) {
             String nomeDept = limitar(nome, 30);
             DeptDO existente = deptMapper.selectByParentIdAndName(pai, nomeDept);
@@ -159,7 +160,7 @@ public class AdProvisionamentoService {
      * conforme o grupo); os demais perfis do usuário, dados à mão no portal, ficam como estão.
      */
     void sincronizarPerfis(Long userId, Set<String> gruposDn, String login) {
-        Map<String, String> mapa = props.getGruposPerfisEfetivos();
+        Map<String, String> mapa = configuracao.atual().getGruposPerfisEfetivos();
         if (mapa.isEmpty()) {
             return;
         }
@@ -189,12 +190,13 @@ public class AdProvisionamentoService {
 
     /** Quem entra pela primeira vez recebe o perfil básico (ex.: portal de chamados). */
     private void atribuirPerfilPadrao(Long userId) {
-        if (props.getPerfilPadrao() == null || props.getPerfilPadrao().isBlank()) {
+        String perfilPadrao = configuracao.atual().getPerfilPadrao();
+        if (perfilPadrao == null || perfilPadrao.isBlank()) {
             return;
         }
-        RoleDO perfil = roleMapper.selectByCode(props.getPerfilPadrao());
+        RoleDO perfil = roleMapper.selectByCode(perfilPadrao);
         if (perfil == null) {
-            log.warn("[atribuirPerfilPadrao][perfil {} (coti.ad.perfil-padrao) não existe]", props.getPerfilPadrao());
+            log.warn("[atribuirPerfilPadrao][perfil {} (coti.ad.perfil-padrao) não existe]", perfilPadrao);
             return;
         }
         Set<Long> atuais = new HashSet<>(permissionService.getUserRoleIdListByUserId(userId));

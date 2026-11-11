@@ -2,11 +2,11 @@ package cn.iocoder.yudao.module.infraestrutura.service;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.module.identidade.ad.AdDiretorio;
+import cn.iocoder.yudao.module.identidade.service.AdConfiguracaoService;
 import cn.iocoder.yudao.module.identidade.service.AdProvisionamentoService;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,13 +23,13 @@ public class IdentificacaoContas {
     }
 
     @Resource
-    private ObjectProvider<AdDiretorio> diretorio;
+    private AdConfiguracaoService configuracao;
     @Resource
     private AdminUserMapper adminUserMapper;
 
     /** @throws cn.iocoder.yudao.module.identidade.ad.AdIndisponivelException se o AD não responder: tentar de novo, nunca decidir sem ele */
     public List<Conta> buscar(String atributo, String valor) {
-        AdDiretorio ad = diretorio.getIfAvailable();
+        AdDiretorio ad = configuracao.diretorio().orElse(null);
         if (ad != null) {
             return ad.buscarPorAtributo(atributo, valor).stream()
                     .map(u -> new Conta(u.getLogin(), u.getNome(), u.getGrupos(), u.isAtivo())).toList();

@@ -29,6 +29,8 @@ public class AdProperties {
     /** Truststore (PKCS12/JKS) com a CA do AD; vazio = truststore padrão da JVM. */
     private String truststore;
     private String truststoreSenha;
+    /** Certificado(s) da CA do AD em PEM, colados na tela. Tem prioridade sobre {@link #truststore}. */
+    private String certificadoCa;
 
     /** Conta de serviço só de leitura usada nas buscas (DN ou UPN). */
     private String bindDn;
@@ -46,6 +48,11 @@ public class AdProperties {
     private String ouRaiz;
     /** Departamento (system_dept.id) que recebe a árvore espelhada do AD. */
     private Long deptRaizId = 100L;
+    /**
+     * Cria departamentos espelhando as OUs e põe cada usuário no da sua OU. Desligado, quem entra pela primeira vez vai para
+     * {@link #deptRaizId} e o departamento dado à mão no portal não muda mais.
+     */
+    private boolean espelharOus = true;
 
     /**
      * Grupo do AD → código do perfil no portal (system_role.code). A chave pode ser o DN completo ou só o CN.
@@ -89,6 +96,35 @@ public class AdProperties {
 
     public String getOuRaizEfetiva() {
         return ouRaiz == null || ouRaiz.isBlank() ? baseUsuarios : ouRaiz;
+    }
+
+    /** Cópia independente: a configuração da tela é aplicada sobre ela sem mexer na que veio das variáveis de ambiente. */
+    public AdProperties copia() {
+        AdProperties c = new AdProperties();
+        c.habilitado = habilitado;
+        c.url = url;
+        c.startTls = startTls;
+        c.confiarEmQualquerCertificado = confiarEmQualquerCertificado;
+        c.truststore = truststore;
+        c.truststoreSenha = truststoreSenha;
+        c.certificadoCa = certificadoCa;
+        c.bindDn = bindDn;
+        c.bindSenha = bindSenha;
+        c.baseUsuarios = baseUsuarios;
+        c.filtroUsuarios = filtroUsuarios;
+        c.ouRaiz = ouRaiz;
+        c.deptRaizId = deptRaizId;
+        c.espelharOus = espelharOus;
+        c.gruposPerfis = new LinkedHashMap<>(gruposPerfis);
+        c.grupoAprovadores = grupoAprovadores;
+        c.perfilPadrao = perfilPadrao;
+        c.cronSincronizacao = cronSincronizacao;
+        c.desativarAusentes = desativarAusentes;
+        c.timeoutConexao = timeoutConexao;
+        c.timeoutOperacao = timeoutOperacao;
+        c.tamanhoPool = tamanhoPool;
+        c.tamanhoPagina = tamanhoPagina;
+        return c;
     }
 
 }
