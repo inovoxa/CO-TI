@@ -373,4 +373,121 @@ class ImportacaoPlanilhaTest {
         assertTrue(gravadas.getValue().stream().allMatch(u -> u.getDeptId() != null && u.getDeptId() > 500L));
     }
 
+    // ------------------------------------------------------------------ departamento superior
+
+    private static final List<String> COLUNAS_SUPERIOR = List.of("Unidade", "Departamento", "Departamento superior", "Latitude", "Longitude");
+
+    private static DeptDO dept(long id, String nome, long pai) {
+        DeptDO d = new DeptDO();
+        d.setId(id);
+        d.setName(nome);
+        d.setParentId(pai);
+        d.setSort(1);
+        d.setStatus(0);
+        return d;
+    }
+
+    /** Raiz 100 com Saúde (10) e Assistência Social (30); o CRASMAA (40) está na Assistência e a UBS (50) na Saúde. */
+    private void arvore(boolean podeCriar, boolean podeEditar) {
+        when(deptService.getDeptList(any(cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptListReqVO.class)))
+                .thenReturn(List.of(dept(100, "Prefeitura", 0), dept(10, "Saúde", 100), dept(30, "Assistência Social", 100),
+                        dept(40, "CRASMAA", 30), dept(50, "UBS", 10)));
+        when(permissao.hasAnyPermissions(eq(7L), any(String[].class))).thenAnswer(i -> {
+            String p = i.getArgument(1);
+            return p.equals(ImportacaoUnidadeService.PERMISSAO_CRIAR_DEPARTAMENTO) ? podeCriar
+                    : p.equals(ImportacaoUnidadeService.PERMISSAO_EDITAR_DEPARTAMENTO) && podeEditar;
+        });
+        UnidadeVOs.Unidade crasmaa = unidade(1, "CRASMAA", 0);
+        crasmaa.setDeptId(40L);
+        crasmaa.setDeptNome("CRASMAA");
+        crasmaa.setLatitude(new BigDecimal("-21.5"));
+        crasmaa.setLongitude(new BigDecimal("-48.5"));
+        UnidadeVOs.Unidade ubs = unidade(2, "UBS", 0);
+        ubs.setDeptId(50L);
+        ubs.setDeptNome("UBS");
+        ubs.setLatitude(new BigDecimal("-21.5"));
+        ubs.setLongitude(new BigDecimal("-48.5"));
+        doReturn(List.of(crasmaa, ubs)).when(unidadeService).listar();
+    }
+
+    private ImportacaoVOs.Previa previa(List<List<Object>> linhas) {
+        Object plano = ReflectionTestUtils.invokeMethod(unidades, "planejar", arquivo(COLUNAS_SUPERIOR, linhas), 7L);
+        return ReflectionTestUtils.invokeMethod(plano, "previa");
+    }
+
+    private List<cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO> mudados() {
+        ArgumentCaptor<cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO> c =
+                ArgumentCaptor.forClass(cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO.class);
+        verify(deptService, atLeast(0)).updateDept(c.capture());
+        return c.getAllValues();
+    }
+
+    @Test
+    void superiorDiferenteMudaODepartamentoDeLugar() {
+        arvore(false, true);
+        List<List<Object>> linhas = List.of(Arrays.asList("CRASMAA", "CRASMAA", "Saúde", -21.5d, -48.5d),
+                Arrays.asList("UBS", "UBS", "Saúde", -21.5d, -48.5d));
+
+        ImportacaoVOs.Previa p = previa(linhas);
+        assertEquals(1, p.getAlterados().size(), String.valueOf(p.getErros()));
+        ImportacaoVOs.Mudanca m = mudanca(p.getAlterados().get(0), "Departamento superior");
+        assertEquals("Assistência Social", m.getDe());
+        assertEquals("Saúde", m.getPara());
+        assertEquals(1, p.getSemMudanca(), "a UBS já está na Saúde");
+
+        unidades.aplicar(arquivo(COLUNAS_SUPERIOR, linhas), List.of(), 7L);
+        List<cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO> mudados = mudados();
+        assertEquals(1, mudados.size());
+        assertEquals(40L, mudados.get(0).getId());
+        assertEquals(10L, mudados.get(0).getParentId());
+        assertEquals("CRASMAA", mudados.get(0).getName(), "o resto do departamento continua igual");
+        assertEquals(1, mudados.get(0).getSort());
+    }
+
+    @Test
+    void superiorEmBrancoEhARaizESemAColunaNadaMuda() {
+        arvore(false, true);
+
+        ImportacaoVOs.Previa p = previa(List.of(Arrays.asList("CRASMAA", "CRASMAA", null, -21.5d, -48.5d),
+                Arrays.asList("UBS", "UBS", "Saúde", -21.5d, -48.5d)));
+        assertEquals("Prefeitura", mudanca(p.getAlterados().get(0), "Departamento superior").getPara());
+
+        ImportacaoVOs.Previa sem = unidades.analisar(arquivo(List.of("Unidade", "Departamento", "Latitude", "Longitude"),
+                List.of(Arrays.asList("CRASMAA", "CRASMAA", -21.5d, -48.5d))));
+        assertEquals(1, sem.getSemMudanca());
+    }
+
+    @Test
+    void semPermissaoDeEditarOuEmCicloRecusaALinha() {
+        arvore(false, false);
+        ImportacaoVOs.Resultado r = unidades.aplicar(arquivo(COLUNAS_SUPERIOR,
+                List.of(Arrays.asList("CRASMAA", "CRASMAA", "Saúde", -21.5d, -48.5d))), List.of(), 7L);
+        assertEquals(1, r.getRecusados());
+        verify(deptService, never()).updateDept(any());
+
+        arvore(false, true);
+        UnidadeVOs.Unidade social = unidade(3, "Sede Social", 0);
+        social.setDeptId(30L);
+        social.setDeptNome("Assistência Social");
+        social.setLatitude(new BigDecimal("-21.5"));
+        social.setLongitude(new BigDecimal("-48.5"));
+        doReturn(List.of(social)).when(unidadeService).listar();
+        ImportacaoVOs.Previa p = previa(List.of(Arrays.asList("Sede Social", "Assistência Social", "CRASMAA", -21.5d, -48.5d)));
+        assertEquals(1, p.getRecusados());
+        assertTrue(p.getErros().get(0).contains("está dentro dele"), p.getErros().get(0));
+    }
+
+    @Test
+    void superiorQueNaoExisteEhCriadoNaRaizSeHouverPermissao() {
+        arvore(true, true);
+        List<List<Object>> linhas = List.of(Arrays.asList("CRASMAA", "CRASMAA", "Saúde Mental", -21.5d, -48.5d));
+
+        ImportacaoVOs.Previa p = previa(linhas);
+        assertEquals(List.of("Saúde Mental (em \"Prefeitura\")"), p.getDepartamentos());
+
+        when(deptService.createDept(any())).thenReturn(900L);
+        unidades.aplicar(arquivo(COLUNAS_SUPERIOR, linhas), List.of(), 7L);
+        assertEquals(900L, mudados().get(0).getParentId());
+    }
+
 }

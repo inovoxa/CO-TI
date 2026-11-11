@@ -43,12 +43,16 @@ import static cn.iocoder.yudao.module.monitoramento.service.ImportacaoPlanilha.*
  *
  * <p>Departamento que não existe (outra instalação, por exemplo) é criado sob o "Departamento superior" da planilha, ou sob
  * a raiz quando ele vem em branco, desde que quem importa possa criar departamentos. Superior que também não existe é
- * criado sob a raiz. Departamento que já existe não muda de lugar.
+ * criado sob a raiz.
+ *
+ * <p>Departamento que já existe muda de lugar quando o "Departamento superior" da planilha é outro, desde que quem importa
+ * possa editar departamentos. Em branco é a raiz, como o Exportar escreve; sem a coluna, nada muda de lugar.
  */
 @Service
 public class ImportacaoUnidadeService {
 
     static final String PERMISSAO_CRIAR_DEPARTAMENTO = "system:dept:create";
+    static final String PERMISSAO_EDITAR_DEPARTAMENTO = "system:dept:update";
     /** Marca a unidade cujo departamento só existirá ao aplicar, para validar o resto da linha na prévia */
     private static final Long A_CRIAR = -1L;
 
@@ -76,12 +80,17 @@ public class ImportacaoUnidadeService {
     private record NovoDept(String nome, String superior, Long paiId, String onde) {
     }
 
-    private record Plano(List<UnidadeVOs.Unidade> gravar, ImportacaoVOs.Previa previa, Map<String, NovoDept> criar,
-                         Map<UnidadeVOs.Unidade, String> pendentes) {
+    /** Departamento que vai para outro superior: {@code paiChave} é a chave de um a criar ou nulo, e então vale {@code paiId}. */
+    private record Mudar(DeptDO dept, Long paiId, String paiChave, String paraNome) {
     }
 
-    /** Árvore de agora: departamentos pelo nome, a raiz e se quem importa pode criar departamentos. */
-    private record Contexto(Map<String, List<DeptDO>> porNome, Long raizId, String raizNome, boolean podeCriar) {
+    private record Plano(List<UnidadeVOs.Unidade> gravar, ImportacaoVOs.Previa previa, Map<String, NovoDept> criar,
+                         Map<UnidadeVOs.Unidade, String> pendentes, Map<Long, Mudar> mudar) {
+    }
+
+    /** Árvore de agora: departamentos pelo nome e pelo id, a raiz e o que quem importa pode fazer com departamentos. */
+    private record Contexto(Map<String, List<DeptDO>> porNome, Map<Long, DeptDO> porId, Long raizId, String raizNome,
+                            boolean podeCriar, boolean podeEditar) {
     }
 
     public ImportacaoVOs.Previa analisar(InputStream arquivo) {
@@ -96,11 +105,19 @@ public class ImportacaoUnidadeService {
         Map<String, Long> criados = new HashMap<>();
         plano.criar().keySet().forEach(k -> criar(k, plano.criar(), criados));
         plano.pendentes().forEach((vo, k) -> vo.setDeptId(criados.get(k)));
+        List<String> mudados = new ArrayList<>();
+        plano.mudar().values().forEach(m -> {
+            DeptSaveReqVO req = new DeptSaveReqVO();
+            BeanUtils.copyProperties(m.dept(), req);
+            req.setParentId(m.paiChave() == null ? m.paiId() : criar(m.paiChave(), plano.criar(), criados));
+            deptService.updateDept(req);
+            mudados.add(m.dept().getName() + " → " + m.paraNome());
+        });
         unidadeService.aplicarImportacao(plano.gravar(), remover);
         ImportacaoVOs.Resultado r = resultado(plano.previa(), remover.size());
         auditoriaService.registrar("monitoramento.importar_unidades", userId, null, Map.of("adicionados", r.getAdicionados(),
                 "atualizados", r.getAtualizados(), "removidos", nomes(plano.previa(), remover), "recusados", r.getRecusados(),
-                "departamentosCriados", plano.previa().getDepartamentos()));
+                "departamentosCriados", plano.previa().getDepartamentos(), "departamentosMudados", mudados));
         return r;
     }
 
@@ -128,22 +145,28 @@ public class ImportacaoUnidadeService {
         List<DeptDO> raizes = depts.stream().filter(d -> Objects.equals(d.getParentId(), DeptDO.PARENT_ID_ROOT)).toList();
         DeptDO raiz = raizes.size() == 1 ? raizes.get(0) : null;
         Contexto ctx = new Contexto(depts.stream().collect(Collectors.groupingBy(d -> chave(d.getName()))),
+                depts.stream().collect(Collectors.toMap(DeptDO::getId, d -> d, (a, b) -> a)),
                 raiz == null ? DeptDO.PARENT_ID_ROOT : raiz.getId(), raiz == null ? null : raiz.getName(),
-                userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_CRIAR_DEPARTAMENTO));
+                userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_CRIAR_DEPARTAMENTO),
+                userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_EDITAR_DEPARTAMENTO));
 
-        Plano plano = new Plano(new ArrayList<>(), new ImportacaoVOs.Previa(), new LinkedHashMap<>(), new IdentityHashMap<>());
+        Plano plano = new Plano(new ArrayList<>(), new ImportacaoVOs.Previa(), new LinkedHashMap<>(), new IdentityHashMap<>(),
+                new LinkedHashMap<>());
         // quem aparece em linha recusada também conta como presente: um erro de digitação não pode virar remoção
         Set<Long> presentes = new HashSet<>();
         Set<Long> usadas = new HashSet<>();
         Set<String> novas = new HashSet<>();
         for (Planilha.Linha l : linhas) {
             Map<String, NovoDept> antes = new LinkedHashMap<>(plano.criar());
+            Map<Long, Mudar> mudarAntes = new LinkedHashMap<>(plano.mudar());
             try {
                 processar(l, porNome, ctx, plano, presentes, usadas, novas);
             } catch (ServiceException | IllegalArgumentException e) {
-                // linha recusada não deixa departamento para criar
+                // linha recusada não deixa departamento para criar nem para mudar de lugar
                 plano.criar().clear();
                 plano.criar().putAll(antes);
+                plano.mudar().clear();
+                plano.mudar().putAll(mudarAntes);
                 recusar(plano.previa(), l, e);
             }
         }
@@ -199,6 +222,9 @@ public class ImportacaoUnidadeService {
         UnidadeVOs.Unidade de = atual == null ? new UnidadeVOs.Unidade() : atual;
         comparar(mudancas, "Unidade", de.getNome(), previsto.getName());
         comparar(mudancas, "Departamento", de.getDeptNome(), deptNome);
+        if (c.containsKey(SUPERIOR) && pendente == null) {
+            superior(vo.getDeptId(), vazio(c.get(SUPERIOR)), ctx, plano, mudancas);
+        }
         comparar(mudancas, "CEP", de.getCep(), previsto.getCep());
         comparar(mudancas, "Logradouro", de.getLogradouro(), previsto.getLogradouro());
         comparar(mudancas, "Número", de.getNumero(), previsto.getNumero());
@@ -275,6 +301,83 @@ public class ImportacaoUnidadeService {
         if (ja != null && !(Objects.equals(ja.superior(), novo.superior()) && Objects.equals(ja.paiId(), novo.paiId()))) {
             throw new IllegalArgumentException("o departamento \"" + nome + "\" aparece com departamentos superiores diferentes");
         }
+    }
+
+    /**
+     * Agenda a mudança do departamento para o superior da planilha. Em branco é a raiz, como o Exportar escreve quando o pai
+     * é a raiz; departamento que já está na raiz, ou que é a própria raiz, fica onde está.
+     */
+    private static void superior(Long deptId, String nomeSup, Contexto ctx, Plano plano, List<ImportacaoVOs.Mudanca> mudancas) {
+        DeptDO dept = deptId == null ? null : ctx.porId().get(deptId);
+        if (dept == null) {
+            return;
+        }
+        Long paiAtual = dept.getParentId();
+        DeptDO pai = paiAtual == null ? null : ctx.porId().get(paiAtual);
+        boolean naRaiz = pai == null || pai.getParentId() == null || Objects.equals(pai.getParentId(), DeptDO.PARENT_ID_ROOT);
+        String sup = nomeSup == null || chave(nomeSup).equals(chave(dept.getName())) ? null : nomeSup;
+        if (sup == null && (naRaiz || ctx.raizNome() == null)) {
+            return;
+        }
+        Long paraId = null;
+        String paraChave = null;
+        String paraNome;
+        if (sup == null) {
+            paraId = ctx.raizId();
+            paraNome = ctx.raizNome();
+        } else {
+            List<DeptDO> pais = ctx.porNome().getOrDefault(chave(sup), List.of());
+            if (pais.size() > 1) {
+                throw new IllegalArgumentException("há " + pais.size() + " departamentos com o nome \"" + sup + "\" (departamento superior)");
+            }
+            if (pais.size() == 1) {
+                paraId = pais.get(0).getId();
+                paraNome = pais.get(0).getName();
+            } else if (!ctx.podeCriar()) {
+                throw new IllegalArgumentException("departamento superior \"" + sup + "\" não encontrado (criá-lo exige a permissão de criar departamentos)");
+            } else {
+                paraChave = chave(sup);
+                paraNome = sup;
+            }
+        }
+        if (paraId != null && Objects.equals(paraId, paiAtual)) {
+            return;
+        }
+        if (!ctx.podeEditar()) {
+            throw new IllegalArgumentException("levar o departamento \"" + dept.getName() + "\" para \"" + paraNome
+                    + "\" exige a permissão de editar departamentos");
+        }
+        if (paraId != null && dentroDe(paraId, deptId, ctx)) {
+            throw new IllegalArgumentException("o departamento \"" + dept.getName() + "\" não pode ficar em \"" + paraNome + "\", que está dentro dele");
+        }
+        Long destino = paraId;
+        if (destino != null && ctx.porNome().getOrDefault(chave(dept.getName()), List.of()).stream()
+                .anyMatch(d -> !d.getId().equals(deptId) && Objects.equals(d.getParentId(), destino))) {
+            throw new IllegalArgumentException("já existe um departamento \"" + dept.getName() + "\" em \"" + paraNome + "\"");
+        }
+        Mudar novo = new Mudar(dept, paraId, paraChave, paraNome);
+        Mudar ja = plano.mudar().putIfAbsent(deptId, novo);
+        if (ja != null && !(Objects.equals(ja.paiId(), paraId) && Objects.equals(ja.paiChave(), paraChave))) {
+            throw new IllegalArgumentException("o departamento \"" + dept.getName() + "\" aparece com departamentos superiores diferentes");
+        }
+        if (paraChave != null) {
+            plano.criar().putIfAbsent(paraChave, new NovoDept(sup, null, ctx.raizId(),
+                    ctx.raizNome() == null ? "na raiz" : "\"" + ctx.raizNome() + "\""));
+        }
+        comparar(mudancas, "Departamento superior", pai == null ? null : pai.getName(), paraNome);
+    }
+
+    /** Se {@code id} é {@code ancestral} ou fica dentro dele */
+    private static boolean dentroDe(Long id, Long ancestral, Contexto ctx) {
+        Set<Long> vistos = new HashSet<>();
+        for (Long atual = id; atual != null && vistos.add(atual); ) {
+            if (atual.equals(ancestral)) {
+                return true;
+            }
+            DeptDO d = ctx.porId().get(atual);
+            atual = d == null ? null : d.getParentId();
+        }
+        return false;
     }
 
     /** Coluna presente com a célula em branco apaga o dado. */
