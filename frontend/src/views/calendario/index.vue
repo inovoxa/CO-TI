@@ -207,7 +207,7 @@
           </div>
         </div>
         <p class="ajuda">Sua resposta:</p>
-        <el-radio-group :model-value="convite.minhaResposta" @change="(v) => responder(v as Api.Resposta)">
+        <el-radio-group :model-value="convite.minhaResposta ?? undefined" @change="(v) => responder(v as Api.Resposta)">
           <el-radio-button value="sim">Vou</el-radio-button>
           <el-radio-button value="talvez">Talvez</el-radio-button>
           <el-radio-button value="nao">Não vou</el-radio-button>
