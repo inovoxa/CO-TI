@@ -117,13 +117,19 @@ const ACOES = [
   { valor: 'ad.perfis_alterados', rotulo: 'AD: perfis alterados' },
   { valor: 'ad.sincronizacao', rotulo: 'AD: sincronização' },
   { valor: 'admin.senha_inicial_definida', rotulo: 'Senha inicial do admin' },
-  { valor: 'auditoria.verificada', rotulo: 'Trilha verificada' }
+  { valor: 'auditoria.verificada', rotulo: 'Trilha verificada' },
+  { valor: 'chat.apuracao_consulta', rotulo: 'Chat: apuração consultada' },
+  { valor: 'chat.apuracao_conversas', rotulo: 'Chat: conversas listadas na apuração' },
+  { valor: 'chat.apuracao_exportacao', rotulo: 'Chat: apuração exportada' },
+  { valor: 'chat.apuracao_anexo', rotulo: 'Chat: anexo baixado na apuração' },
+  { valor: 'infra.ad_alterado', rotulo: 'Diretório AD alterado' },
+  { valor: 'infra.retencao_alterada', rotulo: 'Retenção alterada' }
 ]
 const ROTULOS = Object.fromEntries(ACOES.map((a) => [a.valor, a.rotulo]))
 const rotulo = (acao: string) => ROTULOS[acao] || acao
 const tipoTag = (acao: string) => {
   if (acao.endsWith('falha') || acao.includes('desativ') || acao.includes('redefinido')) return 'danger'
-  if (acao.startsWith('mfa.') || acao.startsWith('admin.')) return 'warning'
+  if (acao.startsWith('mfa.') || acao.startsWith('admin.') || acao.startsWith('chat.apuracao')) return 'warning'
   if (acao.startsWith('ad.')) return 'info'
   return 'success'
 }
