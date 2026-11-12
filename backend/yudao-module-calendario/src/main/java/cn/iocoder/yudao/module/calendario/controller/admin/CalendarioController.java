@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -70,6 +71,39 @@ public class CalendarioController {
             @RequestParam("de") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @RequestParam("ate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
         return success(calendario.eventos(getLoginUserId(), de, ate));
+    }
+
+    @GetMapping("/eventos/{id}")
+    @Operation(summary = "Um compromisso meu ou para o qual fui convidado")
+    @PreAuthorize(USAR)
+    public CommonResult<CalendarioService.Evento> evento(@PathVariable("id") Long id) {
+        return success(calendario.evento(getLoginUserId(), id));
+    }
+
+    @GetMapping("/pessoas")
+    @Operation(summary = "Pessoas para convidar")
+    @PreAuthorize(USAR)
+    public CommonResult<List<CalendarioService.Pessoa>> pessoas(@RequestParam(value = "busca", required = false) String busca) {
+        return success(calendario.pessoas(busca, getLoginUserId()));
+    }
+
+    public record RespostaReq(@NotBlank String resposta) {
+    }
+
+    @PostMapping("/eventos/{id}/resposta")
+    @Operation(summary = "Respondo a um convite: sim, nao ou talvez")
+    @PreAuthorize(USAR)
+    public CommonResult<Boolean> responder(@PathVariable("id") Long id, @Valid @RequestBody RespostaReq req) {
+        calendario.responder(getLoginUserId(), id, req.resposta());
+        return success(true);
+    }
+
+    @PostMapping("/eventos/{id}/sair")
+    @Operation(summary = "Saio de um compromisso para o qual fui convidado")
+    @PreAuthorize(USAR)
+    public CommonResult<Boolean> sair(@PathVariable("id") Long id) {
+        calendario.sair(getLoginUserId(), id);
+        return success(true);
     }
 
     @PostMapping("/eventos")

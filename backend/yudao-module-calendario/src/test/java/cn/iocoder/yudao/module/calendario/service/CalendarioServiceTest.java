@@ -47,6 +47,22 @@ class CalendarioServiceTest {
     }
 
     @Test
+    void soDiaHoraOuDiaInteiroPedemNovaConfirmacao() {
+        LocalDateTime ini = LocalDateTime.of(2026, 11, 12, 15, 0);
+        var r = CalendarioService.normalizar(evento(ini, null, false));
+        assertFalse(CalendarioService.mudouHorario(ini, null, false, r));
+        assertTrue(CalendarioService.mudouHorario(ini.minusHours(1), null, false, r));
+        assertTrue(CalendarioService.mudouHorario(ini, ini.plusHours(1), false, r));
+        assertTrue(CalendarioService.mudouHorario(ini, null, true, r));
+    }
+
+    @Test
+    void quandoNoAviso() {
+        assertEquals("12/11 às 15:00", CalendarioService.quando(LocalDateTime.of(2026, 11, 12, 15, 0), false));
+        assertEquals("12/11 (dia inteiro)", CalendarioService.quando(LocalDateTime.of(2026, 11, 12, 0, 0), true));
+    }
+
+    @Test
     void fimAntesDoInicioRecusa() {
         assertThrows(ServiceException.class, () -> CalendarioService.normalizar(evento(
                 LocalDateTime.of(2026, 11, 12, 15, 0), LocalDateTime.of(2026, 11, 12, 14, 0), false)));
