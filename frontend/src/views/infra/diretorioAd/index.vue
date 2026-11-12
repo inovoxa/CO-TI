@@ -39,6 +39,7 @@
               <el-select v-model="form.seguranca" @change="trocarSeguranca">
                 <el-option label="LDAPS" value="ldaps" />
                 <el-option label="StartTLS" value="starttls" />
+                <el-option label="Sem criptografia" value="nenhuma" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -49,10 +50,21 @@
           </el-col>
         </el-row>
         <p class="ajuda">
-          A senha de cada pessoa passa por esta conexão, então ela precisa ser cifrada. LDAPS (636) é o mais comum. Se o DC só
-          aceita a 389, como no GLPI sem SSL, escolha StartTLS. Ligações sem cifra não são aceitas.
+          A senha de cada pessoa passa por esta conexão. LDAPS (636) é o mais comum; StartTLS cifra na 389. As duas exigem
+          certificado instalado no DC.
         </p>
-        <el-form-item class="mt-12px" label="Certificado da CA do AD">
+        <el-alert
+          v-if="form.seguranca === 'nenhuma'"
+          :closable="false"
+          class="mt-12px"
+          show-icon
+          title="Sem criptografia, a senha de quem entra passa aberta pela rede até o DC"
+          type="error"
+        >
+          Use só se o DC não tem certificado e o caminho entre o CO-TI e o DC é todo na rede interna, como no GLPI sem SSL. Quando o
+          DC ganhar certificado, troque para LDAPS ou StartTLS.
+        </el-alert>
+        <el-form-item v-if="form.seguranca !== 'nenhuma'" class="mt-12px" label="Certificado da CA do AD">
           <el-input
             v-model="form.certificadoCa"
             :rows="4"
@@ -306,12 +318,15 @@ const dados = (): Infra.DadosAd => ({
 
 const trocarSeguranca = (s: string) => {
   if (!form.value) return
-  if (s === 'starttls' && form.value.porta === 636) form.value.porta = 389
+  if (s !== 'ldaps' && form.value.porta === 636) form.value.porta = 389
   if (s === 'ldaps' && form.value.porta === 389) form.value.porta = 636
 }
 
 const salvar = async () => {
   const d = dados()
+  if (d.seguranca === 'nenhuma' && tela.value?.dados.seguranca !== 'nenhuma') {
+    await message.confirm('Salvar sem criptografia? As senhas de quem entra pelo AD vão passar abertas pela rede até o DC.')
+  }
   if (d.habilitado && !tela.value?.dados.habilitado) {
     await message.confirm('Ligar o login pelo AD agora? Teste a conexão antes, se ainda não testou.')
   }

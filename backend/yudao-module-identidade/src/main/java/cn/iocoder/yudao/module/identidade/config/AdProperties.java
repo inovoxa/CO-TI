@@ -22,6 +22,11 @@ public class AdProperties {
     /** Usa StartTLS numa URL ldap:// (porta 389). Ignorado com ldaps://. */
     private boolean startTls = false;
     /**
+     * Aceita ldap:// sem StartTLS: as senhas passam abertas pela rede até o DC. Só para quando o DC não tem certificado e a
+     * ligação fica toda na rede interna (como o GLPI sem SSL).
+     */
+    private boolean semCriptografia = false;
+    /**
      * Confia em qualquer certificado do DC. Só para laboratório: em produção importe a CA do AD
      * no truststore da JVM ou aponte {@link #truststore}.
      */
@@ -104,6 +109,7 @@ public class AdProperties {
         c.habilitado = habilitado;
         c.url = url;
         c.startTls = startTls;
+        c.semCriptografia = semCriptografia;
         c.confiarEmQualquerCertificado = confiarEmQualquerCertificado;
         c.truststore = truststore;
         c.truststoreSenha = truststoreSenha;

@@ -36,6 +36,23 @@ class AdConfiguracaoServiceTest {
         p = AdConfiguracaoService.aplicar(new AdProperties(), d, null);
         assertEquals("ldap://10.0.0.5:389", p.getUrl());
         assertTrue(p.isStartTls());
+        assertFalse(p.isSemCriptografia());
+
+        d.setSeguranca("nenhuma");
+        d.setPorta(null);
+        d.setServidores("10.0.100.124");
+        p = AdConfiguracaoService.aplicar(new AdProperties(), d, null);
+        assertEquals("ldap://10.0.100.124:389", p.getUrl());
+        assertFalse(p.isStartTls());
+        assertTrue(p.isSemCriptografia());
+    }
+
+    @Test
+    void dcSemCertificadoExplicaOQueFazer() {
+        LDAPException e = new LDAPException(ResultCode.UNAVAILABLE,
+                "00000000: LdapErr: DSID-0C0912BA, comment: Error initializing SSL/TLS, data 0, v3839");
+        String msg = AdConfiguracaoService.explicar(new AdIndisponivelException("Não foi possível conectar ao AD", e));
+        assertTrue(msg.contains("Sem criptografia"), msg);
     }
 
     @Test

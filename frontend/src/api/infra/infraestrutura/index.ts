@@ -59,7 +59,7 @@ export interface DadosAd {
   habilitado: boolean
   servidores: string
   porta: number | null
-  seguranca: 'ldaps' | 'starttls'
+  seguranca: 'ldaps' | 'starttls' | 'nenhuma'
   certificadoCa: string | null
   bindDn: string
   baseUsuarios: string

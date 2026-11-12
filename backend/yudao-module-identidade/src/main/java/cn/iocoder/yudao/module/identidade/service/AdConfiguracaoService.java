@@ -52,7 +52,7 @@ public class AdConfiguracaoService {
         /** Um ou mais servidores (nome ou IP) separados por vírgula: o segundo é usado se o primeiro cair. */
         private String servidores;
         private Integer porta;
-        /** ldaps | starttls */
+        /** ldaps | starttls | nenhuma (ldap:// sem cifra, só na rede interna) */
         private String seguranca;
         private String certificadoCa;
         private String bindDn;
@@ -160,9 +160,10 @@ public class AdConfiguracaoService {
             }
         }
         boolean startTls = !ldaps && p.isStartTls();
+        boolean semCifra = !ldaps && !startTls && p.isSemCriptografia();
         d.setServidores(String.join(", ", hosts));
-        d.setSeguranca(startTls ? "starttls" : "ldaps");
-        d.setPorta(porta != null ? porta : (startTls ? 389 : 636));
+        d.setSeguranca(startTls ? "starttls" : semCifra ? "nenhuma" : "ldaps");
+        d.setPorta(porta != null ? porta : (startTls || semCifra ? 389 : 636));
         d.setCertificadoCa(p.getCertificadoCa());
         d.setBindDn(p.getBindDn());
         d.setBaseUsuarios(p.getBaseUsuarios());
@@ -240,7 +241,8 @@ public class AdConfiguracaoService {
             return new Teste(false, etapas, e.getMessage());
         }
         try (AdDiretorio teste = new AdDiretorio(p)) {
-            etapas.add("Conectou em " + p.getUrl() + " e a conta de serviço entrou");
+            etapas.add("Conectou em " + p.getUrl() + " e a conta de serviço entrou"
+                    + (p.isSemCriptografia() ? " (sem criptografia: as senhas passam abertas pela rede)" : ""));
             Map.Entry<Integer, List<String>> contagem = teste.contarUsuarios(LIMITE_CONTAGEM);
             if (contagem.getKey() == 0) {
                 return new Teste(false, etapas, "Nenhuma conta encontrada com esse BaseDN e filtro");
@@ -276,6 +278,9 @@ public class AdConfiguracaoService {
         String host = servidor == null ? "" : servidor.split(",")[0].trim();
         if (host.isEmpty()) {
             throw new IllegalArgumentException("Informe o servidor");
+        }
+        if ("nenhuma".equals(seguranca)) {
+            throw new IllegalArgumentException("Sem criptografia não há certificado a buscar");
         }
         boolean startTls = "starttls".equals(seguranca);
         int p = porta != null ? porta : (startTls ? 389 : 636);
@@ -350,9 +355,11 @@ public class AdConfiguracaoService {
     static AdProperties aplicar(AdProperties base, Dados d, String novaSenha) {
         AdProperties p = base.copia();
         p.setHabilitado(d.isHabilitado());
-        boolean startTls = "starttls".equals(seguranca(d));
-        String esquema = startTls ? "ldap" : "ldaps";
-        int porta = d.getPorta() != null && d.getPorta() > 0 ? d.getPorta() : (startTls ? 389 : 636);
+        String seguranca = seguranca(d);
+        boolean startTls = "starttls".equals(seguranca);
+        boolean semCifra = "nenhuma".equals(seguranca);
+        String esquema = startTls || semCifra ? "ldap" : "ldaps";
+        int porta = d.getPorta() != null && d.getPorta() > 0 ? d.getPorta() : (startTls || semCifra ? 389 : 636);
         List<String> urls = new ArrayList<>();
         for (String s : Optional.ofNullable(d.getServidores()).orElse("").split("[,;\\s]+")) {
             String h = s.trim().replaceFirst("^(?i)ldaps?://", "").replaceFirst(":\\d+/?$", "").replaceFirst("/$", "");
@@ -362,6 +369,7 @@ public class AdConfiguracaoService {
         }
         p.setUrl(urls.isEmpty() ? null : String.join(",", urls));
         p.setStartTls(startTls);
+        p.setSemCriptografia(semCifra);
         p.setCertificadoCa(limpar(d.getCertificadoCa()));
         if (p.getCertificadoCa() != null) {
             p.setConfiarEmQualquerCertificado(false);
@@ -453,6 +461,10 @@ public class AdConfiguracaoService {
         }
         String tudo = String.join(" | ", mensagens);
         String baixo = tudo.toLowerCase(Locale.ROOT);
+        if (baixo.contains("error initializing ssl/tls")) {
+            return "O DC aceitou a conexão mas não tem certificado para ligar o TLS. Instale um certificado de servidor no DC "
+                    + "ou, se a ligação fica toda na rede interna, escolha a segurança \"Sem criptografia\".";
+        }
         if (baixo.contains("pkix") || baixo.contains("certificate") || baixo.contains("certificado")
                 || baixo.contains("trust") && baixo.contains("ssl")) {
             return "O certificado do servidor não é confiável. Use \"Buscar certificado do servidor\" e confirme a impressão digital, "
@@ -482,6 +494,7 @@ public class AdConfiguracaoService {
         List<String> r = new ArrayList<>();
         comparar(r, "habilitado", a.isHabilitado(), b.isHabilitado());
         comparar(r, "servidor", a.getUrl(), b.getUrl());
+        comparar(r, "sem criptografia", a.isSemCriptografia(), b.isSemCriptografia());
         comparar(r, "certificado", a.getCertificadoCa() == null, b.getCertificadoCa() == null);
         comparar(r, "conta de serviço", a.getBindDn(), b.getBindDn());
         comparar(r, "BaseDN", a.getBaseUsuarios(), b.getBaseUsuarios());
@@ -516,7 +529,8 @@ public class AdConfiguracaoService {
     }
 
     private static String seguranca(Dados d) {
-        return "starttls".equalsIgnoreCase(d.getSeguranca()) ? "starttls" : "ldaps";
+        String s = d.getSeguranca() == null ? "" : d.getSeguranca().toLowerCase(Locale.ROOT);
+        return s.equals("starttls") || s.equals("nenhuma") ? s : "ldaps";
     }
 
     private static String limpar(String s) {

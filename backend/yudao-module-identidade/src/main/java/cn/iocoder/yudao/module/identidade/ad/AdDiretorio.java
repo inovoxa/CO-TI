@@ -358,14 +358,18 @@ public class AdDiretorio implements AutoCloseable {
                 hosts.add(uri.getHost());
                 portas.add(uri.getPort() > 0 ? uri.getPort() : (ldaps ? 636 : 389));
             }
-            if (!ldaps && !p.isStartTls()) {
+            boolean semCifra = !ldaps && !p.isStartTls();
+            if (semCifra && !p.isSemCriptografia()) {
                 // a senha do usuário trafega no bind: sem TLS ela iria em texto puro pela rede
                 throw new IllegalStateException("coti.ad.url precisa ser ldaps:// ou usar coti.ad.start-tls=true");
+            }
+            if (semCifra) {
+                log.warn("[AD][conexão sem criptografia com {}: as senhas passam abertas pela rede]", p.getUrl());
             }
             ServerSet servidores = new FailoverServerSet(hosts.toArray(new String[0]),
                     portas.stream().mapToInt(Integer::intValue).toArray(),
                     ldaps ? ssl.getSocketFactory() : null, opcoes);
-            PostConnectProcessor startTls = ldaps ? null : new StartTLSPostConnectProcessor(ssl);
+            PostConnectProcessor startTls = ldaps || semCifra ? null : new StartTLSPostConnectProcessor(ssl);
             return new LDAPConnectionPool(servidores, new SimpleBindRequest(p.getBindDn(), p.getBindSenha()),
                     1, p.getTamanhoPool(), startTls);
         } catch (Exception e) {
