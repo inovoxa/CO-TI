@@ -27,6 +27,7 @@
         <module>yudao-module-chat</module>
         <module>yudao-module-acesso</module>
         <module>yudao-module-infraestrutura</module>
+        <module>yudao-module-calendario</module>
     </modules>
 
     <name>${project.artifactId}</name>
