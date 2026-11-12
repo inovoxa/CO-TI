@@ -30,12 +30,22 @@ public class RetencaoService {
     public static final String SLA_AVISO = "sla-aviso";
     public static final String DISCO_LIMITE_GB = "disco-limite-gb";
     public static final String INTEGRACAO_EVENTOS = "integracao-eventos";
+    public static final String CHAT_ANEXO_MB = "chat-anexo-mb";
+    public static final String CHAT_ANEXOS_HORAS = "chat-anexos-horas";
 
-    /** @param semLimite se 0 é aceito (guardar para sempre, ou sem limite); o mínimo vale só para os demais valores */
-    public record Item(String chave, String rotulo, String ajuda, String unidade, int padrao, int minimo, boolean semLimite, int valor) {
+    /**
+     * @param semLimite se 0 é aceito; o mínimo vale só para os demais valores
+     * @param zero      o que o 0 quer dizer neste item (ex.: "sem limite", "desligado")
+     */
+    public record Item(String chave, String rotulo, String ajuda, String unidade, int padrao, int minimo, boolean semLimite, String zero,
+                       int valor) {
     }
 
-    private record Definicao(String chave, String rotulo, String ajuda, String unidade, int padrao, int minimo, boolean semLimite) {
+    private record Definicao(String chave, String rotulo, String ajuda, String unidade, int padrao, int minimo, boolean semLimite,
+                             String zero) {
+        Definicao(String chave, String rotulo, String ajuda, String unidade, int padrao, int minimo, boolean semLimite) {
+            this(chave, rotulo, ajuda, unidade, padrao, minimo, semLimite, semLimite ? "sem limite" : null);
+        }
     }
 
     @Resource
@@ -65,6 +75,10 @@ public class RetencaoService {
     private int slaAviso;
     @Value("${coti.retencao.integracao-eventos-dias:90}")
     private int integracaoEventos;
+    @Value("${coti.chat.anexo-max-mb:5}")
+    private int chatAnexoMb;
+    @Value("${coti.chat.anexos-horas:48}")
+    private int chatAnexosHoras;
     @Value("${coti.infra.disco-limite-gb:0}")
     private int discoLimiteGb;
 
@@ -79,6 +93,10 @@ public class RetencaoService {
                 new Definicao(EMAIL_ENVIADO, "E-mails já enviados", "Fila de saída; o andamento continua no chamado", "dias", emailEnviado, 7, true),
                 new Definicao(SLA_AVISO, "Controle dos avisos de SLA", "", "dias", slaAviso, 7, true),
                 new Definicao(INTEGRACAO_EVENTOS, "Eventos recebidos das integrações", "Podem ter dados pessoais", "dias", integracaoEventos, 7, false),
+                new Definicao(CHAT_ANEXO_MB, "Tamanho máximo do anexo no chat", "Vale para os próximos envios (até 25 MB)", "MB", chatAnexoMb, 1, true,
+                        "anexos desligados no chat"),
+                new Definicao(CHAT_ANEXOS_HORAS, "Anexos do chat", "Depois desse tempo o arquivo é apagado; a mensagem fica, com o aviso "
+                        + "de anexo expirado", "horas", chatAnexosHoras, 24, true, "guardar para sempre"),
                 new Definicao(LOG_OPERACOES, "Log de operações", "", "dias", logOperacoes, 90, true),
                 new Definicao(LOG_ACESSO, "Log de acessos", "Entradas no portal", "dias", logAcesso, 30, true),
                 new Definicao(LOG_ERROS, "Erros do sistema", "", "dias", logErros, 7, true),
@@ -89,7 +107,7 @@ public class RetencaoService {
         Map<String, Integer> salvos = salvos();
         List<Item> itens = new ArrayList<>();
         for (Definicao d : definicoes()) {
-            itens.add(new Item(d.chave(), d.rotulo(), d.ajuda(), d.unidade(), d.padrao(), d.minimo(), d.semLimite(),
+            itens.add(new Item(d.chave(), d.rotulo(), d.ajuda(), d.unidade(), d.padrao(), d.minimo(), d.semLimite(), d.zero(),
                     salvos.getOrDefault(d.chave(), d.padrao())));
         }
         return itens;

@@ -183,6 +183,13 @@ public class ChatController {
         return success(chatService.buscar(texto, conversaId, getLoginUserId()));
     }
 
+    @GetMapping("/config")
+    @Operation(summary = "Regras de anexo em vigor")
+    @PreAuthorize(USAR)
+    public CommonResult<ChatVOs.Config> config() {
+        return success(chatService.config());
+    }
+
     @PostMapping("/anexo")
     @Operation(summary = "Envia um arquivo, que entra na próxima mensagem")
     @PreAuthorize(USAR)

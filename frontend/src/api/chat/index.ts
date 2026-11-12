@@ -40,7 +40,18 @@ export interface Anexo {
   nome: string
   tamanho: number
   imagem: boolean
+  /** o arquivo já foi apagado pela limpeza de anexos */
+  expirado?: boolean
 }
+
+export interface ConfigChat {
+  anexosLigados: boolean
+  anexoMaxMb: number
+  /** 0 = os anexos ficam para sempre */
+  anexosHoras: number
+}
+
+export const getConfig = (): Promise<ConfigChat> => request.get({ url: '/chat/config' })
 
 export interface Mensagem {
   id: number
@@ -119,7 +130,8 @@ export const anexar = (conversaId: number, arquivo: File): Promise<Anexo> => {
   const data = new FormData()
   data.append('conversaId', String(conversaId))
   data.append('arquivo', arquivo)
-  return request.upload({ url: '/chat/anexo', data })
+  // upload devolve a resposta inteira ({ code, data, msg }), diferente de get e post
+  return request.upload({ url: '/chat/anexo', data }).then((r: any) => r?.data ?? r)
 }
 export const baixarAnexo = (id: number): Promise<Blob> =>
   request.download({ url: '/chat/anexo/baixar', params: { id } })

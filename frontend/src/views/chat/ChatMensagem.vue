@@ -19,8 +19,11 @@
           </template>
         </div>
         <div v-for="a in m.anexos" :key="a.id" class="anexo">
+          <span v-if="a.expirado" class="expirado">
+            <Icon class="mr-4px" icon="ep:document-delete" />{{ a.nome }}: anexo expirado
+          </span>
           <img
-            v-if="a.imagem && imagens[a.id]"
+            v-else-if="a.imagem && imagens[a.id]"
             :alt="a.nome"
             :src="imagens[a.id]"
             class="imagem"
@@ -86,7 +89,7 @@ const partes = computed(() => {
 const imagens = reactive<Record<number, string>>({})
 const carregar = async () => {
   for (const a of props.m.anexos || []) {
-    if (a.imagem && !imagens[a.id] && a.tamanho < 10 * 1024 * 1024) {
+    if (a.imagem && !a.expirado && !imagens[a.id] && a.tamanho < 10 * 1024 * 1024) {
       const b: any = await Api.baixarAnexo(a.id).catch(() => null)
       const blob = b instanceof Blob ? b : b?.data
       if (blob) imagens[a.id] = URL.createObjectURL(new Blob([blob], { type: tipoImagem(a.nome) }))
@@ -201,6 +204,14 @@ const baixar = async (a: Api.Anexo) => {
   margin: 8px 0;
   font-size: 12px;
   text-align: center;
+  color: var(--el-text-color-secondary);
+}
+
+.expirado {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-style: italic;
   color: var(--el-text-color-secondary);
 }
 </style>

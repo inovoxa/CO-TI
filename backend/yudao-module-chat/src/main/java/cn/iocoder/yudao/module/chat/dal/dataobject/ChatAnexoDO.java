@@ -26,5 +26,7 @@ public class ChatAnexoDO extends BaseDO {
     private String caminho;
     private Boolean imagem;
     private Long enviadoPor;
+    /** Quando o arquivo foi apagado pela limpeza; a linha fica para a mensagem mostrar "anexo expirado". */
+    private java.time.LocalDateTime expiradoEm;
 
 }

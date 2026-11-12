@@ -140,6 +140,15 @@ public final class ChatVOs {
         private String nome;
         private Long tamanho;
         private Boolean imagem;
+        private Boolean expirado;
+    }
+
+    @Data
+    public static class Config {
+        private boolean anexosLigados;
+        private int anexoMaxMb;
+        /** 0 = os anexos ficam para sempre */
+        private int anexosHoras;
     }
 
     @Data

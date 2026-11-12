@@ -31,6 +31,7 @@ export interface ItemRetencao {
   padrao: number
   minimo: number
   semLimite: boolean
+  zero: string | null
   valor: number
 }
 

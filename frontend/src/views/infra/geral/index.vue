@@ -66,7 +66,7 @@
     <ContentWrap title="Retenção e limites">
       <p class="ajuda mb-12px">
         A limpeza roda de madrugada. Reduzir um prazo apaga os dados mais antigos na próxima execução, sem como recuperar.
-        Chamados, chat, inventário e a trilha de auditoria não entram aqui.
+        Chamados, mensagens do chat, inventário e a trilha de auditoria não entram aqui (os anexos do chat, sim).
       </p>
       <el-table :data="itens">
         <el-table-column label="Item" min-width="300">
@@ -91,7 +91,7 @@
         <el-table-column label="Regra" min-width="210">
           <template #default="{ row }">
             <span class="ajuda">
-              Padrão {{ row.padrao }}; mínimo {{ row.minimo }}{{ row.semLimite ? '; 0 = sem limite' : '' }}
+              Padrão {{ row.padrao }}; mínimo {{ row.minimo }}{{ row.semLimite ? `; 0 = ${row.zero || 'sem limite'}` : '' }}
             </span>
           </template>
         </el-table-column>
@@ -155,8 +155,8 @@ const carregar = async () => {
 
 const salvar = async (i: Infra.ItemRetencao) => {
   const novo = edicao[i.chave]
-  if (novo !== 0 && novo < i.valor && i.unidade === 'dias') {
-    await message.confirm(`Reduzir "${i.rotulo}" de ${i.valor} para ${novo} dias apaga os dados mais antigos na próxima limpeza. Continuar?`)
+  if (novo !== 0 && novo < i.valor && ['dias', 'horas'].includes(i.unidade)) {
+    await message.confirm(`Reduzir "${i.rotulo}" de ${i.valor} para ${novo} ${i.unidade} apaga os dados mais antigos na próxima limpeza. Continuar?`)
   }
   await Infra.salvarRetencao(i.chave, novo)
   message.success('Salvo')

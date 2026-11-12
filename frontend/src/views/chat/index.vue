@@ -106,8 +106,14 @@
             <div v-for="s in sugestoes" :key="s.id" class="sugestao" @mousedown.prevent="escolherMencao(s)">{{ s.nome }}</div>
           </div>
           <div class="flex items-end gap-6px">
-            <el-upload :auto-upload="false" :disabled="!!editando" :on-change="aoEscolherArquivo" :show-file-list="false" multiple>
-              <el-button :disabled="!!editando" :loading="subindo" title="Anexar"><Icon icon="ep:paperclip" /></el-button>
+            <el-upload
+              v-if="config.anexosLigados"
+              :auto-upload="false" :disabled="!!editando" :on-change="aoEscolherArquivo" :show-file-list="false" multiple>
+              <el-button
+                :disabled="!!editando"
+                :loading="subindo"
+                :title="`Anexar (até ${config.anexoMaxMb} MB${config.anexosHoras ? `, apagado depois de ${config.anexosHoras} horas` : ''})`"
+              ><Icon icon="ep:paperclip" /></el-button>
             </el-upload>
             <ChatEmojis @escolher="inserirEmoji" />
             <el-button
@@ -471,8 +477,13 @@ const apagar = async (m: any) => {
   await Api.apagar(m.id)
 }
 
+const config = reactive<Api.ConfigChat>({ anexosLigados: true, anexoMaxMb: 5, anexosHoras: 0 })
 const aoEscolherArquivo = async (f: any) => {
   if (!atual.value) return
+  if (f.raw.size > config.anexoMaxMb * 1024 * 1024) {
+    message.warning(`${f.name} passa de ${config.anexoMaxMb} MB, o limite do chat`)
+    return
+  }
   subindo.value = true
   try {
     anexos.value.push(await Api.anexar(atual.value.id, f.raw))
@@ -645,6 +656,7 @@ const aoVoltarATela = () => {
 onMounted(async () => {
   iniciarChat()
   Api.getAusencia().then((a) => (ausencia.dados = a)).catch(() => {})
+  Api.getConfig().then((c) => Object.assign(config, c)).catch(() => {})
   document.addEventListener('visibilitychange', aoVoltarATela)
   await carregarConversas()
 })

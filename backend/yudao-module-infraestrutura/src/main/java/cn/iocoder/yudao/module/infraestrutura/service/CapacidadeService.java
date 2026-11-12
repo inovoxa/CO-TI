@@ -157,8 +157,15 @@ public class CapacidadeService {
             case "sino" -> "Lidos, " + dias(RetencaoService.SINO_LIDAS) + "; não lidos, " + dias(RetencaoService.SINO_NAO_LIDAS);
             case "registros" -> "Conforme cada registro";
             case "logs-arquivo" -> "30 dias, até 1 GB";
+            case "chat" -> "Mensagens sem limpeza; anexos, " + horasAnexosChat();
+            case "arquivos" -> "Anexos do chat, " + horasAnexosChat() + "; os demais sem limpeza automática";
             default -> "Sem limpeza automática";
         };
+    }
+
+    private String horasAnexosChat() {
+        int h = retencao.valor(RetencaoService.CHAT_ANEXOS_HORAS);
+        return h <= 0 ? "para sempre" : h + " horas";
     }
 
     private String dias(String chave) {

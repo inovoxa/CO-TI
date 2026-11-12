@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import cn.iocoder.yudao.module.system.service.retencao.RetencaoService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,6 +67,8 @@ public class ChatService {
     private StringRedisTemplate redis;
     @Resource
     private ApplicationEventPublisher eventos;
+    @Resource
+    private RetencaoService retencao;
 
     @Value("${coti.chat.pasta-arquivos:arquivos/chat}")
     private String pastaArquivos;
@@ -425,6 +428,21 @@ public class ChatService {
 
     // ------------------------------------------------------------------ anexos
 
+    /** Regras de anexo em vigor, para a tela esconder o clipe e avisar do tamanho antes de enviar. */
+    public ChatVOs.Config config() {
+        ChatVOs.Config c = new ChatVOs.Config();
+        int mb = anexoMaxMb();
+        c.setAnexosLigados(mb > 0);
+        c.setAnexoMaxMb(mb);
+        c.setAnexosHoras(retencao.valor(RetencaoService.CHAT_ANEXOS_HORAS));
+        return c;
+    }
+
+    /** 0 = anexos desligados; nunca acima do teto do servidor ({@link ChatRegras#MAX_ANEXO}). */
+    private int anexoMaxMb() {
+        return Math.min(retencao.valor(RetencaoService.CHAT_ANEXO_MB), (int) (ChatRegras.MAX_ANEXO / (1024 * 1024)));
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public ChatVOs.AnexoResp anexar(Long conversaId, MultipartFile arquivo, Long userId) throws IOException {
         participacao(conversaId, userId);
@@ -432,8 +450,12 @@ public class ChatService {
         if (arquivo.isEmpty() || nome.isEmpty()) {
             throw exception(ANEXO_INVALIDO, "Arquivo vazio");
         }
-        if (arquivo.getSize() > ChatRegras.MAX_ANEXO) {
-            throw exception(ANEXO_INVALIDO, "Arquivo grande demais (máximo 25 MB)");
+        int maxMb = anexoMaxMb();
+        if (maxMb <= 0) {
+            throw exception(ANEXO_INVALIDO, "O envio de arquivos no chat está desligado");
+        }
+        if (arquivo.getSize() > maxMb * 1024L * 1024L) {
+            throw exception(ANEXO_INVALIDO, "Arquivo grande demais (máximo " + maxMb + " MB)");
         }
         if (!ChatRegras.extensaoPermitida(nome)) {
             throw exception(ANEXO_INVALIDO, "Esse tipo de arquivo não é aceito no chat");
@@ -476,6 +498,9 @@ public class ChatService {
             if (m == null || m.getApagadaEm() != null || m.getSeq() <= p.getDesdeSeq()) {
                 throw exception(ANEXO_NAO_EXISTE);
             }
+        }
+        if (a.getExpiradoEm() != null) {
+            throw exception(ANEXO_INVALIDO, "Esse anexo expirou e foi apagado para liberar espaço");
         }
         Path arquivo = Path.of(pastaArquivos).resolve(a.getCaminho());
         if (!Files.exists(arquivo)) {
@@ -710,6 +735,7 @@ public class ChatService {
         r.setNome(a.getNome());
         r.setTamanho(a.getTamanho());
         r.setImagem(a.getImagem());
+        r.setExpirado(a.getExpiradoEm() != null);
         return r;
     }
 
