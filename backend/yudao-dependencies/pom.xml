@@ -82,7 +82,7 @@
         <justauth.version>1.16.7</justauth.version>
         <justauth-starter.version>1.4.0</justauth-starter.version>
         <jimureport.version>2.5.4</jimureport.version>
-        <jimubi.version>2.5.4</jimubi.version>
+        <jimubi.version>2.5.4.1</jimubi.version>
         <weixin-java.version>4.8.6-20260919.232150</weixin-java.version>
         <bouncycastle.version>1.80</bouncycastle.version>
         <alipay-sdk-java.version>4.40.1014.ALL</alipay-sdk-java.version>
