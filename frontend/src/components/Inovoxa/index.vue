@@ -1,6 +1,7 @@
 <!-- Assinatura da Inovoxa, dona do CO-TI: fica no login e no rodapé, independente da identidade da instância -->
 <template>
   <a
+    v-if="ASSINATURA_INOVOXA_VISIVEL"
     class="inovoxa inline-flex items-center gap-6px text-12px text-[var(--el-text-color-secondary)] decoration-none hover:text-[var(--el-text-color-primary)]"
     href="https://inovoxa.com.br"
     rel="noopener"
@@ -13,6 +14,7 @@
 
 <script lang="ts" setup>
 import logo from '@/assets/imgs/inovoxa.png'
+import { ASSINATURA_INOVOXA_VISIVEL } from './visivel'
 
 defineOptions({ name: 'InovoxaAssinatura' })
 </script>
