@@ -24,6 +24,7 @@ public interface ErrorCodeConstants {
     ErrorCode MONITOR_SEM_CHAVE_MESTRA = new ErrorCode(1_105_000_014, "Defina CO_TI_CHAVE_MESTRA no servidor: sem ela as senhas dos monitores não podem ser guardadas");
     ErrorCode DOCKER_HOST_NAO_EXISTE = new ErrorCode(1_105_000_015, "Servidor Docker não encontrado");
     ErrorCode DOCKER_HOST_INVALIDO = new ErrorCode(1_105_000_016, "Servidor Docker inválido: {}");
+    ErrorCode UNIDADE_NOME_REPETIDO = new ErrorCode(1_105_000_018, "Já existe a unidade \"{}\": use outro nome ou junte as duas");
     ErrorCode DOCKER_HOST_EM_USO = new ErrorCode(1_105_000_017, "O servidor Docker é usado por {} monitor(es): troque o servidor deles antes de excluir");
 
 }

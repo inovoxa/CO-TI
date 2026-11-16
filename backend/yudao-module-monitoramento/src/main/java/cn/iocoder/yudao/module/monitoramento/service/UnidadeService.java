@@ -5,7 +5,12 @@ import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.monitoramento.config.MonitoramentoProperties;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.UnidadeVOs;
+import cn.iocoder.yudao.module.identidade.service.AuditoriaService;
+import cn.iocoder.yudao.module.itsm.dal.dataobject.TelefoneDO;
+import cn.iocoder.yudao.module.itsm.dal.mysql.TelefoneMapper;
+import cn.iocoder.yudao.module.monitoramento.dal.dataobject.ManutencaoDO;
 import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
+import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonManutencaoMapper;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorMapper;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
@@ -26,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,7 +53,13 @@ public class UnidadeService {
     @Resource
     private MonMonitorMapper monMonitorMapper;
     @Resource
+    private MonManutencaoMapper monManutencaoMapper;
+    @Resource
+    private TelefoneMapper telefoneMapper;
+    @Resource
     private DeptApi deptApi;
+    @Resource
+    private AuditoriaService auditoriaService;
     @Resource
     private MonitoramentoProperties monitoramentoProperties;
 
@@ -78,6 +90,10 @@ public class UnidadeService {
         dos.forEach(d -> paiDe.put(d.getId(), d.getParentId()));
         Map<Long, Long> monitores = monMonitorMapper.selectList(new LambdaQueryWrapperX<MonitorDO>().isNotNull(MonitorDO::getUnidadeId)).stream()
                 .collect(Collectors.groupingBy(MonitorDO::getUnidadeId, Collectors.counting()));
+        Map<Long, Long> manutencoes = monManutencaoMapper.selectList(new LambdaQueryWrapperX<ManutencaoDO>().isNotNull(ManutencaoDO::getUnidadeId))
+                .stream().collect(Collectors.groupingBy(ManutencaoDO::getUnidadeId, Collectors.counting()));
+        Map<Long, Long> telefones = telefoneMapper.selectList(new LambdaQueryWrapperX<TelefoneDO>().isNotNull(TelefoneDO::getUnidadeId)).stream()
+                .collect(Collectors.groupingBy(TelefoneDO::getUnidadeId, Collectors.counting()));
         return lista.stream().map(u -> {
             UnidadeVOs.Unidade vo = new UnidadeVOs.Unidade();
             vo.setId(u.getId());
@@ -97,18 +113,30 @@ public class UnidadeService {
             vo.setLongitude(u.getLongitude());
             vo.setAtiva(u.getStatus() == null || u.getStatus() == 0);
             vo.setMonitores(monitores.getOrDefault(u.getId(), 0L).intValue());
+            vo.setManutencoes(manutencoes.getOrDefault(u.getId(), 0L).intValue());
+            vo.setTelefones(telefones.getOrDefault(u.getId(), 0L).intValue());
             return vo;
         }).toList();
     }
 
     public Long salvar(UnidadeVOs.Unidade req) {
         MonitorUnitDO u = previsto(req);
+        MonitorUnitDO atual = u.getId() == null ? null : monitorUnitMapper.selectById(u.getId());
+        if (u.getId() != null && atual == null) {
+            throw exception(UNIDADE_NAO_EXISTE);
+        }
+        // a repetida que já existia continua podendo ser editada sem trocar o nome: o caminho para ela é Juntar
+        String chave = chaveNome(u.getName());
+        if (atual == null || !chave.equals(chaveNome(atual.getName()))) {
+            monitorUnitMapper.selectList().stream()
+                    .filter(o -> !o.getId().equals(u.getId()) && chave.equals(chaveNome(o.getName()))).findFirst()
+                    .ifPresent(o -> {
+                        throw exception(UNIDADE_NOME_REPETIDO, o.getName());
+                    });
+        }
         if (u.getId() == null) {
             monitorUnitMapper.insert(u);
         } else {
-            if (monitorUnitMapper.selectById(u.getId()) == null) {
-                throw exception(UNIDADE_NAO_EXISTE);
-            }
             monitorUnitMapper.updateById(u);
             monitorUnitMapper.update(null, new LambdaUpdateWrapper<MonitorUnitDO>().eq(MonitorUnitDO::getId, u.getId())
                     .set(MonitorUnitDO::getCep, u.getCep()).set(MonitorUnitDO::getLogradouro, u.getLogradouro())
@@ -147,7 +175,11 @@ public class UnidadeService {
                 .status(req.getAtiva() == null || req.getAtiva() ? 0 : 1).build();
     }
 
-    /** Exclui a unidade; os monitores dela ficam sem unidade. */
+    /**
+     * Exclui a unidade. Os monitores dela ficam sem unidade (e deixam de ser link principal), as manutenções passam a
+     * valer só para os monitores escolhidos nelas e os telefones ficam sem unidade (e deixam de ser de emergência, que
+     * exige unidade).
+     */
     @Transactional(rollbackFor = Exception.class)
     public void excluir(Long id) {
         if (monitorUnitMapper.selectById(id) == null) {
@@ -156,6 +188,51 @@ public class UnidadeService {
         monitorUnitMapper.deleteById(id);
         monMonitorMapper.update(null, new LambdaUpdateWrapper<MonitorDO>().eq(MonitorDO::getUnidadeId, id).set(MonitorDO::getUnidadeId, null)
                 .set(MonitorDO::getPapel, "servico"));
+        monManutencaoMapper.update(null, new LambdaUpdateWrapper<ManutencaoDO>().eq(ManutencaoDO::getUnidadeId, id)
+                .set(ManutencaoDO::getUnidadeId, null));
+        telefoneMapper.update(null, new LambdaUpdateWrapper<TelefoneDO>().eq(TelefoneDO::getUnidadeId, id)
+                .set(TelefoneDO::getUnidadeId, null).set(TelefoneDO::getEmergencia, false));
+    }
+
+    /**
+     * Junta a unidade repetida ({@code origemId}) na que fica ({@code destinoId}): monitores, manutenções e telefones
+     * passam para a que fica e a repetida é excluída. Nome, endereço e ponto no mapa da que fica não mudam.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public UnidadeVOs.JuntarResp juntar(Long origemId, Long destinoId, Long userId) {
+        if (Objects.equals(origemId, destinoId)) {
+            throw exception(UNIDADE_INVALIDA, "escolha outra unidade para juntar");
+        }
+        MonitorUnitDO origem = monitorUnitMapper.selectById(origemId);
+        MonitorUnitDO destino = monitorUnitMapper.selectById(destinoId);
+        if (origem == null || destino == null) {
+            throw exception(UNIDADE_NAO_EXISTE);
+        }
+        UnidadeVOs.JuntarResp r = new UnidadeVOs.JuntarResp();
+        r.setMonitores(monMonitorMapper.update(null, new LambdaUpdateWrapper<MonitorDO>().eq(MonitorDO::getUnidadeId, origemId)
+                .set(MonitorDO::getUnidadeId, destinoId)));
+        r.setManutencoes(monManutencaoMapper.update(null, new LambdaUpdateWrapper<ManutencaoDO>().eq(ManutencaoDO::getUnidadeId, origemId)
+                .set(ManutencaoDO::getUnidadeId, destinoId)));
+        r.setTelefones(telefoneMapper.update(null, new LambdaUpdateWrapper<TelefoneDO>().eq(TelefoneDO::getUnidadeId, origemId)
+                .set(TelefoneDO::getUnidadeId, destinoId)));
+        monitorUnitMapper.deleteById(origemId);
+        Map<String, Object> detalhes = new LinkedHashMap<>();
+        detalhes.put("excluida", origem.getName() + " (#" + origemId + ")");
+        detalhes.put("mantida", destino.getName() + " (#" + destinoId + ")");
+        detalhes.put("monitores", r.getMonitores());
+        detalhes.put("manutencoes", r.getManutencoes());
+        detalhes.put("telefones", r.getTelefones());
+        auditoriaService.registrar("monitoramento.juntar_unidades", userId, null, detalhes);
+        return r;
+    }
+
+    /** O nome como o cadastro compara: sem acento e sem diferença de maiúsculas ou de espaços. */
+    static String chaveNome(String nome) {
+        if (nome == null) {
+            return "";
+        }
+        return Normalizer.normalize(nome, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+                .trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     // ================================================================================== CEP e mapa

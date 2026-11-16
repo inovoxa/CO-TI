@@ -48,6 +48,16 @@ public final class UnidadeVOs {
         /** Pai do departamento; vazio quando o pai é a raiz (cada instalação tem a sua) */
         private String deptSuperior;
         private Integer monitores;
+        private Integer manutencoes;
+        private Integer telefones;
+    }
+
+    /** Quanto passou da unidade repetida para a que ficou. */
+    @Data
+    public static class JuntarResp {
+        private Integer monitores;
+        private Integer manutencoes;
+        private Integer telefones;
     }
 
     /** Endereço do CEP (ViaCEP). */

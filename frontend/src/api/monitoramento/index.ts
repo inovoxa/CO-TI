@@ -294,6 +294,8 @@ export interface Unidade {
   ativa?: boolean
   deptNome?: string
   monitores?: number
+  manutencoes?: number
+  telefones?: number
 }
 
 export interface Coordenadas {
@@ -426,6 +428,12 @@ export const importarUnidades = (arquivo: File, removerIds: number[]) =>
   })
 export const excluirUnidade = (id: number) =>
   request.delete({ url: '/monitoramento/unidade/delete', params: { id } })
+/** Junta a repetida (origem) na que fica (destino): monitores, manutenções e telefones passam para ela. */
+export const juntarUnidades = (
+  origemId: number,
+  destinoId: number
+): Promise<{ monitores: number; manutencoes: number; telefones: number }> =>
+  request.post({ url: '/monitoramento/unidade/juntar', params: { origemId, destinoId } })
 export const buscarCep = (
   cep: string
 ): Promise<{ cep: string; logradouro?: string; bairro?: string; cidade?: string; uf?: string }> =>

@@ -199,6 +199,14 @@ public class ConfiguracaoMonitoramentoController {
         return success(true);
     }
 
+    @PostMapping("/unidade/juntar")
+    @Operation(summary = "Juntar a unidade repetida na que fica: monitores, manutenções e telefones passam para ela")
+    @PreAuthorize("@ss.hasPermission('monitoramento:unidade:update')")
+    public CommonResult<UnidadeVOs.JuntarResp> juntarUnidades(@RequestParam("origemId") Long origemId,
+                                                              @RequestParam("destinoId") Long destinoId) {
+        return success(unidadeService.juntar(origemId, destinoId, getLoginUserId()));
+    }
+
     @GetMapping("/unidade/cep")
     @Operation(summary = "Endereço do CEP (ViaCEP)")
     @PreAuthorize("@ss.hasPermission('monitoramento:unidade:update')")

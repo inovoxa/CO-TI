@@ -140,7 +140,7 @@ public class ImportacaoUnidadeService {
     private Plano planejar(InputStream arquivo, Long userId) {
         List<Planilha.Linha> linhas = ler(arquivo, TITULOS, NOME, "Unidade");
         List<UnidadeVOs.Unidade> todas = unidadeService.listar();
-        Map<String, List<UnidadeVOs.Unidade>> porNome = todas.stream().collect(Collectors.groupingBy(u -> chave(u.getNome())));
+        Map<String, List<UnidadeVOs.Unidade>> porNome = todas.stream().collect(Collectors.groupingBy(u -> UnidadeService.chaveNome(u.getNome())));
         List<DeptDO> depts = deptService.getDeptList(new DeptListReqVO());
         List<DeptDO> raizes = depts.stream().filter(d -> Objects.equals(d.getParentId(), DeptDO.PARENT_ID_ROOT)).toList();
         DeptDO raiz = raizes.size() == 1 ? raizes.get(0) : null;
@@ -172,8 +172,23 @@ public class ImportacaoUnidadeService {
         }
         plano.criar().values().forEach(d -> plano.previa().getDepartamentos().add(d.nome() + " (em " + d.onde() + ")"));
         todas.stream().filter(u -> !presentes.contains(u.getId())).forEach(u -> plano.previa().getAusentes().add(item(u.getId(), u.getNome(), List.of(),
-                u.getMonitores() != null && u.getMonitores() > 0 ? u.getMonitores() + " monitor(es) ficarão sem unidade." : null)));
+                semUnidade(u))));
         return plano;
+    }
+
+    /** O que perde a unidade se ela for removida; nulo se nada. */
+    private static String semUnidade(UnidadeVOs.Unidade u) {
+        List<String> partes = new ArrayList<>();
+        if (u.getMonitores() != null && u.getMonitores() > 0) {
+            partes.add(u.getMonitores() + " monitor(es)");
+        }
+        if (u.getManutencoes() != null && u.getManutencoes() > 0) {
+            partes.add(u.getManutencoes() + " manutenção(ões)");
+        }
+        if (u.getTelefones() != null && u.getTelefones() > 0) {
+            partes.add(u.getTelefones() + " telefone(s)");
+        }
+        return partes.isEmpty() ? null : String.join(", ", partes) + " ficarão sem unidade.";
     }
 
     private void processar(Planilha.Linha l, Map<String, List<UnidadeVOs.Unidade>> porNome, Contexto ctx, Plano plano,
@@ -183,13 +198,13 @@ public class ImportacaoUnidadeService {
         if (nome == null) {
             throw new IllegalArgumentException("informe o nome da unidade");
         }
-        List<UnidadeVOs.Unidade> candidatas = porNome.getOrDefault(chave(nome), List.of());
+        List<UnidadeVOs.Unidade> candidatas = porNome.getOrDefault(UnidadeService.chaveNome(nome), List.of());
         candidatas.forEach(u -> presentes.add(u.getId()));
         if (candidatas.size() > 1) {
-            throw new IllegalArgumentException("há " + candidatas.size() + " unidades com este nome");
+            throw new IllegalArgumentException("há " + candidatas.size() + " unidades com este nome: junte-as na tela de unidades antes de importar");
         }
         UnidadeVOs.Unidade atual = candidatas.isEmpty() ? null : candidatas.get(0);
-        if (atual != null ? !usadas.add(atual.getId()) : !novas.add(chave(nome))) {
+        if (atual != null ? !usadas.add(atual.getId()) : !novas.add(UnidadeService.chaveNome(nome))) {
             throw new IllegalArgumentException("a unidade \"" + nome + "\" aparece mais de uma vez no arquivo");
         }
 

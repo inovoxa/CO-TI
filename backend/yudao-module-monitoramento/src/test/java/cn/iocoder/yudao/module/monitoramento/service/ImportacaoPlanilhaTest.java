@@ -296,6 +296,18 @@ class ImportacaoPlanilhaTest {
     }
 
     @Test
+    void unidadeComNomeSemAcentoAchaACadastrada() {
+        doReturn(List.of(unidade(1, "São Carlos", 0))).when(unidadeService).listar();
+
+        ImportacaoVOs.Previa p = unidades.analisar(arquivo(COLUNAS_UNIDADE,
+                List.of(linhaUnidade("SAO CARLOS", "Saúde", null, new BigDecimal("-21.7945"), new BigDecimal("-48.1756"), "Sim"))));
+
+        assertEquals(List.of(), p.getNovos());
+        assertEquals("SAO CARLOS", mudanca(p.getAlterados().get(0), "Unidade").getPara());
+        assertEquals(List.of(), p.getAusentes());
+    }
+
+    @Test
     void unidadeNovaPrecisaDeDepartamentoECoordenadas() {
         doReturn(List.of()).when(unidadeService).listar();
 

@@ -18,39 +18,87 @@
         >
       </div>
     </div>
-    <el-table v-loading="loading" :data="lista">
-      <el-table-column label="Unidade" min-width="200">
+    <div class="mb-12px flex flex-wrap items-center gap-8px">
+      <el-input
+        v-model="q.busca"
+        class="!w-300px"
+        clearable
+        placeholder="Nome, departamento, endereço ou CEP"
+      >
+        <template #prefix><Icon icon="ep:search" /></template>
+      </el-input>
+      <el-check-tag
+        v-for="c in SITUACOES"
+        :key="c.valor"
+        :checked="q.situacao === c.valor"
+        @change="q.situacao = c.valor"
+      >
+        {{ c.rotulo }} <b class="ml-2px">{{ contagens[c.valor] }}</b>
+      </el-check-tag>
+    </div>
+    <el-table
+      v-loading="loading"
+      :data="pagina"
+      :default-sort="{ prop: 'nome', order: 'ascending' }"
+      @sort-change="ordenar"
+    >
+      <el-table-column label="Unidade" min-width="200" prop="nome" sortable="custom">
         <template #default="{ row }">
           <span class="font-medium">{{ row.nome }}</span>
           <el-tag v-if="!row.ativa" class="ml-6px" disable-transitions size="small" type="info"
             >inativa</el-tag
           >
+          <el-tooltip
+            v-if="parecidas.has(row.id)"
+            :content="`Parece a mesma que: ${textoParecidas(row)}`"
+            placement="top"
+          >
+            <el-tag class="ml-6px" disable-transitions size="small" type="warning"
+              >possível repetida</el-tag
+            >
+          </el-tooltip>
           <div class="text-12px text-[var(--el-text-color-secondary)]">{{ row.deptNome }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="Endereço" min-width="280">
+      <el-table-column label="Endereço" min-width="280" prop="cidade" sortable="custom">
         <template #default="{ row }">{{ endereco(row) || '—' }}</template>
       </el-table-column>
       <el-table-column label="Coordenadas" width="190">
         <template #default="{ row }">
-          <span class="text-12px"
+          <span v-if="temPonto(row)" class="text-12px"
             >{{ Number(row.latitude).toFixed(5) }}, {{ Number(row.longitude).toFixed(5) }}</span
           >
+          <span v-else class="text-12px text-[var(--el-color-warning)]">sem localização</span>
         </template>
       </el-table-column>
-      <el-table-column align="right" label="Monitores" prop="monitores" width="100" />
-      <el-table-column v-if="pode" label="" width="140">
+      <el-table-column
+        align="right"
+        label="Monitores"
+        prop="monitores"
+        sortable="custom"
+        width="120"
+      />
+      <el-table-column v-if="pode" label="" width="190">
         <template #default="{ row }">
           <el-button link type="primary" @click="abrir(row)">Editar</el-button>
+          <el-button
+            link
+            :type="parecidas.has(row.id) ? 'warning' : 'primary'"
+            @click="abrirJuntar(row)"
+            >Juntar</el-button
+          >
           <el-button link type="danger" @click="excluir(row)">Excluir</el-button>
         </template>
       </el-table-column>
     </el-table>
     <el-empty
-      v-if="!loading && !lista.length"
+      v-if="!loading && !filtradas.length"
       :image-size="60"
-      description="Nenhuma unidade cadastrada."
+      :description="
+        lista.length ? 'Nenhuma unidade encontrada com esse filtro.' : 'Nenhuma unidade cadastrada.'
+      "
     />
+    <Pagination v-model:limit="q.pageSize" v-model:page="q.pageNo" :total="filtradas.length" />
   </ContentWrap>
 
   <Dialog
@@ -59,9 +107,36 @@
     width="760px"
   >
     <el-form ref="formRef" :model="form.dados" :rules="regras" label-width="120px">
-      <el-form-item label="Nome" prop="nome"
-        ><el-input v-model="form.dados.nome" maxlength="100"
-      /></el-form-item>
+      <el-form-item label="Nome" prop="nome">
+        <el-input v-model="form.dados.nome" maxlength="100" />
+        <el-alert
+          v-if="noForm.mesmoNome"
+          :closable="false"
+          :title="
+            noForm.bloqueia
+              ? `Já existe a unidade “${noForm.mesmoNome.nome}”: use outro nome.`
+              : `Existe outra unidade com este nome (“${noForm.mesmoNome.nome}”). Se for a mesma, use Juntar na lista.`
+          "
+          :type="noForm.bloqueia ? 'error' : 'warning'"
+          class="mt-6px"
+          show-icon
+        />
+        <el-alert
+          v-if="noForm.parecidas.length"
+          :closable="false"
+          class="mt-6px"
+          show-icon
+          title="Confira se não é a mesma unidade:"
+          type="warning"
+        >
+          <div v-for="p in noForm.parecidas" :key="p.unidade.id">
+            <b>{{ p.unidade.nome }}</b> — {{ p.motivos.join(', ') }}
+            <span v-if="endereco(p.unidade)" class="text-[var(--el-text-color-secondary)]"
+              >· {{ endereco(p.unidade) }}</span
+            >
+          </div>
+        </el-alert>
+      </el-form-item>
       <el-form-item label="Departamento" prop="deptId">
         <el-tree-select
           v-model="form.dados.deptId"
@@ -174,6 +249,69 @@
     </template>
   </Dialog>
 
+  <Dialog v-model="juntar.visivel" title="Juntar unidades repetidas" width="620px">
+    <p class="mt-0">
+      Tudo o que está ligado a <b>{{ juntar.origem.nome }}</b> passa para a unidade escolhida
+      abaixo, e <b>{{ juntar.origem.nome }}</b> é excluída.
+    </p>
+    <el-form label-width="110px">
+      <el-form-item label="Fica a unidade">
+        <el-select
+          v-model="juntar.destinoId"
+          class="w-full"
+          filterable
+          placeholder="escolha a unidade que fica"
+        >
+          <el-option
+            v-for="o in opcoesDestino"
+            :key="o.unidade.id"
+            :label="o.unidade.nome"
+            :value="o.unidade.id!"
+          >
+            <span>{{ o.unidade.nome }}</span>
+            <span v-if="o.dica" class="ml-8px text-12px text-[var(--el-color-warning)]">{{
+              o.dica
+            }}</span>
+          </el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <el-descriptions v-if="destino" :column="1" border size="small">
+      <el-descriptions-item label="Sai (excluída)">
+        <b>{{ juntar.origem.nome }}</b>
+        <div class="text-12px text-[var(--el-text-color-secondary)]">{{
+          endereco(juntar.origem) || 'sem endereço'
+        }}</div>
+      </el-descriptions-item>
+      <el-descriptions-item label="Fica">
+        <b>{{ destino.nome }}</b>
+        <div class="text-12px text-[var(--el-text-color-secondary)]">{{
+          endereco(destino) || 'sem endereço'
+        }}</div>
+      </el-descriptions-item>
+      <el-descriptions-item label="Passam para a que fica">
+        {{ ligados(juntar.origem) || 'nada (a unidade que sai não tem vínculos)' }}
+      </el-descriptions-item>
+    </el-descriptions>
+    <p v-if="destino" class="mb-0 text-12px text-[var(--el-text-color-secondary)]">
+      Nome, endereço e ponto no mapa de <b>{{ destino.nome }}</b> não mudam. Se o certo estiver na
+      outra, use “Trocar”. A operação fica registrada na auditoria.
+    </p>
+    <template #footer>
+      <el-button :disabled="!destino" @click="inverterJuntar">
+        <Icon class="mr-4px" icon="ep:switch" />Trocar qual fica
+      </el-button>
+      <el-button
+        :disabled="!destino"
+        :loading="juntar.salvando"
+        type="danger"
+        @click="confirmarJuntar"
+        >Juntar</el-button
+      >
+      <el-button @click="juntar.visivel = false">Cancelar</el-button>
+    </template>
+  </Dialog>
+
   <ImportarPlanilha
     ref="importador"
     :analisar="Mon.analisarImportacaoUnidades"
@@ -192,6 +330,7 @@ import { defaultProps, handleTree } from '@/utils/tree'
 import download from '@/utils/download'
 import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
 import MapaPonto from './MapaPonto.vue'
+import { chaveNome, grupos, motivos, parecidasPorUnidade, simples, temPonto } from './duplicadas'
 
 defineOptions({ name: 'MonitoramentoUnidade' })
 const message = useMessage()
@@ -227,6 +366,91 @@ const endereco = (u: Mon.Unidade) =>
   ]
     .filter(Boolean)
     .join(' · ')
+
+type Situacao = 'todas' | 'ativas' | 'inativas' | 'semMonitor' | 'semPonto' | 'repetidas'
+const SITUACOES: { valor: Situacao; rotulo: string }[] = [
+  { valor: 'todas', rotulo: 'Todas' },
+  { valor: 'ativas', rotulo: 'Ativas' },
+  { valor: 'inativas', rotulo: 'Inativas' },
+  { valor: 'semMonitor', rotulo: 'Sem monitores' },
+  { valor: 'semPonto', rotulo: 'Sem localização' },
+  { valor: 'repetidas', rotulo: 'Possíveis repetidas' }
+]
+const q = reactive({
+  busca: '',
+  situacao: 'todas' as Situacao,
+  pageNo: 1,
+  pageSize: 10,
+  ordem: { prop: 'nome', order: 'ascending' as string | null }
+})
+
+const parecidas = computed(() => parecidasPorUnidade(lista.value))
+const grupoDe = computed(() => grupos(parecidas.value))
+const NA_SITUACAO: Record<Situacao, (u: Mon.Unidade) => boolean> = {
+  todas: () => true,
+  ativas: (u) => !!u.ativa,
+  inativas: (u) => !u.ativa,
+  semMonitor: (u) => !u.monitores,
+  semPonto: (u) => !temPonto(u),
+  repetidas: (u) => parecidas.value.has(u.id!)
+}
+const textoParecidas = (u: Mon.Unidade) =>
+  (parecidas.value.get(u.id!) || [])
+    .map((p) => `${p.unidade.nome} (${p.motivos.join(', ')})`)
+    .join('; ')
+const contagens = computed(
+  () =>
+    Object.fromEntries(
+      SITUACOES.map((s) => [s.valor, lista.value.filter(NA_SITUACAO[s.valor]).length])
+    ) as Record<Situacao, number>
+)
+
+const textoBusca = (u: Mon.Unidade) =>
+  simples(
+    [u.nome, u.deptNome, endereco(u), u.complemento, (u.cep || '').replace(/\D/g, '')].join(' ')
+  )
+
+const filtradas = computed(() => {
+  const termos = simples(q.busca).split(/\s+/).filter(Boolean)
+  const lista_ = lista.value.filter(
+    (u) => NA_SITUACAO[q.situacao](u) && termos.every((t) => textoBusca(u).includes(t))
+  )
+  const { prop, order } = q.ordem
+  const sinal = order === 'descending' ? -1 : 1
+  // nas possíveis repetidas, as do mesmo grupo ficam uma embaixo da outra
+  const porGrupo = q.situacao === 'repetidas'
+  if (!porGrupo && (!prop || !order)) return lista_
+  return [...lista_].sort((a, b) => {
+    if (porGrupo) {
+      const g = (grupoDe.value.get(a.id!) ?? 0) - (grupoDe.value.get(b.id!) ?? 0)
+      if (g) return g
+      if (!prop || !order) return 0
+    }
+    const va = (a as any)[prop]
+    const vb = (b as any)[prop]
+    const r =
+      typeof va === 'number' || typeof vb === 'number'
+        ? (va || 0) - (vb || 0)
+        : String(va || '').localeCompare(String(vb || ''), 'pt-BR', { sensitivity: 'base' })
+    return r * sinal
+  })
+})
+const pagina = computed(() =>
+  filtradas.value.slice((q.pageNo - 1) * q.pageSize, q.pageNo * q.pageSize)
+)
+const ordenar = ({ prop, order }: { prop: string; order: string | null }) => {
+  q.ordem = { prop, order }
+  q.pageNo = 1
+}
+watch(
+  () => [q.busca, q.situacao],
+  () => (q.pageNo = 1)
+)
+// Ao excluir a última da página, volta para a página anterior em vez de mostrar vazio.
+watch(filtradas, (f) => {
+  const ultima = Math.max(1, Math.ceil(f.length / q.pageSize))
+  if (q.pageNo > ultima) q.pageNo = ultima
+})
 
 const carregar = async () => {
   loading.value = true
@@ -273,17 +497,109 @@ const localizar = async () => {
     localizando.value = false
   }
 }
+/** No formulário: a que tem o mesmo nome (o servidor recusa) e as que parecem ser a mesma unidade. */
+const noForm = computed(() => {
+  const d = form.dados
+  const outras = lista.value.filter((u) => u.id !== d.id)
+  const original = lista.value.find((u) => u.id === d.id)
+  const chave = chaveNome(d.nome)
+  const mesmoNome = chave ? outras.find((u) => chaveNome(u.nome) === chave) : undefined
+  return {
+    // editar a repetida que já existia sem trocar o nome continua valendo; o caminho para ela é Juntar
+    bloqueia: !!mesmoNome && (!original || chaveNome(original.nome) !== chave),
+    mesmoNome,
+    parecidas: outras
+      .filter((u) => u !== mesmoNome)
+      .map((u) => ({ unidade: u, motivos: motivos(d, u, true) }))
+      .filter((p) => p.motivos.length)
+      .slice(0, 5)
+  }
+})
+
 const salvar = async () => {
   await formRef.value.validate()
+  if (noForm.value.bloqueia) {
+    message.warning(`Já existe a unidade "${noForm.value.mesmoNome!.nome}": use outro nome.`)
+    return
+  }
   await Mon.salvarUnidade(form.dados)
   message.success('Unidade salva')
   form.visivel = false
   await carregar()
 }
+
+/** "3 monitores, 1 telefone": o que está ligado à unidade. */
+const ligados = (u: Mon.Unidade) =>
+  [
+    [u.monitores, 'monitor', 'monitores'],
+    [u.manutencoes, 'manutenção', 'manutenções'],
+    [u.telefones, 'telefone', 'telefones']
+  ]
+    .filter(([n]) => Number(n) > 0)
+    .map(([n, um, varios]) => `${n} ${Number(n) === 1 ? um : varios}`)
+    .join(', ')
+
 const excluir = async (u: Mon.Unidade) => {
-  await message.delConfirm(`Excluir a unidade "${u.nome}"? Os monitores dela ficam sem unidade.`)
+  const lig = ligados(u)
+  await message.delConfirm(
+    lig
+      ? `Excluir a unidade "${u.nome}"? Ficam sem unidade: ${lig}. Telefones de emergência deixam de ser de emergência.` +
+          (parecidas.value.has(u.id!)
+            ? ' Se ela é repetida, use Juntar para não perder esses vínculos.'
+            : '')
+      : `Excluir a unidade "${u.nome}"?`
+  )
   await Mon.excluirUnidade(u.id!)
+  message.success('Unidade excluída')
   await carregar()
+}
+
+// ---------------------------------------------------------------- juntar repetidas
+const juntar = reactive({
+  visivel: false,
+  origem: {} as Mon.Unidade,
+  destinoId: undefined as number | undefined,
+  salvando: false
+})
+const destino = computed(() => lista.value.find((u) => u.id === juntar.destinoId))
+/** As parecidas primeiro, depois as outras em ordem de nome. */
+const opcoesDestino = computed(() => {
+  const sugeridas = parecidas.value.get(juntar.origem.id!) || []
+  const ids = new Set(sugeridas.map((p) => p.unidade.id))
+  return [
+    ...sugeridas.map((p) => ({ unidade: p.unidade, dica: p.motivos.join(', ') })),
+    ...lista.value
+      .filter((u) => u.id !== juntar.origem.id && !ids.has(u.id))
+      .map((u) => ({ unidade: u, dica: '' }))
+  ]
+})
+const abrirJuntar = (u: Mon.Unidade) => {
+  juntar.origem = u
+  juntar.destinoId = parecidas.value.get(u.id!)?.[0]?.unidade.id
+  juntar.visivel = true
+}
+/** Troca qual fica e qual sai. */
+const inverterJuntar = () => {
+  const d = destino.value
+  if (!d) return
+  juntar.destinoId = juntar.origem.id
+  juntar.origem = d
+}
+const confirmarJuntar = async () => {
+  if (!destino.value) return
+  juntar.salvando = true
+  try {
+    const r = await Mon.juntarUnidades(juntar.origem.id!, destino.value.id!)
+    const movidos = ligados({ nome: '', ...r })
+    message.success(
+      `"${juntar.origem.nome}" foi juntada em "${destino.value.nome}"` +
+        (movidos ? `; passaram para ela: ${movidos}.` : '.')
+    )
+    juntar.visivel = false
+    await carregar()
+  } finally {
+    juntar.salvando = false
+  }
 }
 
 onMounted(carregar)
