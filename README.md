@@ -678,6 +678,16 @@ grupos. Quem cria é o administrador do grupo, e quem entra depois só vê as me
   baixa. Ficam em `arquivos/chat`, no mesmo volume dos anexos, e entram no backup.
 - **Mais de um backend:** use `CO_TI_WS_SENDER=redis`.
 
+## Recados (calendário)
+
+No *Calendário*, escolha um dia → **Novo recado neste dia**: título, texto, de qual a qual dia aparece (com atalhos de
+duração) e quem vê. Sem unidade é **recado geral**; com unidades, vê quem está nelas ou nas que ficam abaixo delas.
+
+- **Ao entrar no sistema** abre um aviso com os recados do dia. **Ciente** não mostra mais aquele recado à pessoa; **Ver
+  depois** mostra de novo na próxima entrada. Alterar o título, o texto ou o período mostra de novo para todos.
+- Os recados ficam no calendário (📢) durante o período; quem não publica só lê.
+- Publica quem tem *Publicar recados* (`calendario:recado`): de início, Administrador e Gestão de TI.
+
 ## Acesso rápido
 
 Menu *Acesso rápido* e opção no menu da foto de perfil. Links do órgão, que todos veem e o administrador cadastra, e links

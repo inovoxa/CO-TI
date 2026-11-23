@@ -2,13 +2,17 @@ package cn.iocoder.yudao.module.calendario.controller.admin;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
+import cn.iocoder.yudao.framework.security.core.service.SecurityFrameworkService;
 import cn.iocoder.yudao.module.calendario.service.CalendarioService;
+import cn.iocoder.yudao.module.calendario.service.RecadoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -29,8 +33,14 @@ public class CalendarioController {
 
     private static final String USAR = "@ss.hasPermission('calendario:usar')";
 
+    private static final String PUBLICAR = "@ss.hasPermission('calendario:recado')";
+
     @Resource
     private CalendarioService calendario;
+    @Resource
+    private RecadoService recados;
+    @Resource
+    private SecurityFrameworkService securityFrameworkService;
 
     /** Data de nascimento de quem está logado: fica em Meu perfil, que todo mundo acessa. */
     @GetMapping("/meu-nascimento")
@@ -126,6 +136,58 @@ public class CalendarioController {
     @PreAuthorize(USAR)
     public CommonResult<Boolean> excluir(@PathVariable("id") Long id) {
         calendario.excluir(getLoginUserId(), id);
+        return success(true);
+    }
+
+    // ---------- recados ----------
+
+    @GetMapping("/recados")
+    @Operation(summary = "Recados do período que enxergo (quem publica vê todos)")
+    @PreAuthorize(USAR)
+    public CommonResult<List<RecadoService.Recado>> recados(
+            @RequestParam("de") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam("ate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
+        return success(recados.recados(getLoginUserId(), securityFrameworkService.hasPermission("calendario:recado"), de, ate));
+    }
+
+    @GetMapping("/recados/pendentes")
+    @Operation(summary = "Recados de hoje para o aviso de entrada (os que ainda não dei Ciente)")
+    @PreAuthorize(USAR)
+    public CommonResult<List<RecadoService.Recado>> recadosPendentes() {
+        return success(recados.pendentes(getLoginUserId(), LocalDate.now()));
+    }
+
+    public record CienteReq(@NotNull @Size(max = 100) List<Long> ids) {
+    }
+
+    @PostMapping("/recados/ciente")
+    @Operation(summary = "Dou Ciente: o aviso de entrada não mostra mais estes recados")
+    @PreAuthorize(USAR)
+    public CommonResult<Boolean> recadosCiente(@Valid @RequestBody CienteReq req) {
+        recados.ciente(getLoginUserId(), req.ids());
+        return success(true);
+    }
+
+    @PostMapping("/recados")
+    @Operation(summary = "Publica um recado")
+    @PreAuthorize(PUBLICAR)
+    public CommonResult<Long> criarRecado(@Valid @RequestBody RecadoService.RecadoReq req) {
+        return success(recados.criar(getLoginUserId(), req));
+    }
+
+    @PutMapping("/recados/{id}")
+    @Operation(summary = "Altera um recado")
+    @PreAuthorize(PUBLICAR)
+    public CommonResult<Boolean> alterarRecado(@PathVariable("id") Long id, @Valid @RequestBody RecadoService.RecadoReq req) {
+        recados.alterar(id, req);
+        return success(true);
+    }
+
+    @DeleteMapping("/recados/{id}")
+    @Operation(summary = "Exclui um recado")
+    @PreAuthorize(PUBLICAR)
+    public CommonResult<Boolean> excluirRecado(@PathVariable("id") Long id) {
+        recados.excluir(id);
         return success(true);
     }
 

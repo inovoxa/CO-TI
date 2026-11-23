@@ -16,13 +16,23 @@
         />
         <el-checkbox v-model="mostrarAniversarios">Aniversariantes</el-checkbox>
         <el-checkbox v-model="mostrarCompromissos">Meus compromissos</el-checkbox>
+        <el-checkbox v-model="mostrarRecados">Recados</el-checkbox>
         <div class="flex-1"></div>
-        <el-button @click="exportar"><Icon class="mr-4px" icon="ep:download" />Exportar aniversariantes do mês</el-button>
-        <el-button type="primary" @click="novo(diaSelecionado)"><Icon class="mr-4px" icon="ep:plus" />Novo compromisso</el-button>
+        <el-button @click="exportar"
+          ><Icon class="mr-4px" icon="ep:download" />Exportar aniversariantes do mês</el-button
+        >
+        <el-button v-if="podePublicar" @click="novoRecado(diaSelecionado)">
+          <Icon class="mr-4px" icon="ep:bell" />Novo recado
+        </el-button>
+        <el-button type="primary" @click="novo(diaSelecionado)"
+          ><Icon class="mr-4px" icon="ep:plus" />Novo compromisso</el-button
+        >
       </div>
       <p class="ajuda mt-8px">
-        Aparece aqui quem informou a data de nascimento em Meu perfil e marcou como pública. Sua agenda só você vê: os
-        outros veem apenas os compromissos para os quais você os convidar.
+        Aparece aqui quem informou a data de nascimento em Meu perfil e marcou como pública. Sua
+        agenda só você vê: os outros veem apenas os compromissos para os quais você os convidar.
+        Recados (📢) aparecem para todos, ou só para as unidades escolhidas, e abrem num aviso ao
+        entrar no sistema enquanto durarem.
       </p>
     </ContentWrap>
 
@@ -31,8 +41,25 @@
         <ContentWrap v-loading="carregando">
           <el-calendar v-model="dataAtual">
             <template #date-cell="{ data }">
-              <div :class="['celula', { fora: data.type !== 'current-month', hoje: data.day === hojeIso }]">
+              <div
+                :class="[
+                  'celula',
+                  { fora: data.type !== 'current-month', hoje: data.day === hojeIso }
+                ]"
+              >
                 <div class="numero">{{ Number(data.day.slice(8)) }}</div>
+                <template v-if="mostrarRecados">
+                  <div
+                    v-for="r in recadosDoDia(data.day)"
+                    :key="`r${r.id}`"
+                    :style="{ borderLeftColor: r.cor || corRecado }"
+                    :title="r.titulo"
+                    class="item recado"
+                    @click.stop="abrirRecado(r)"
+                  >
+                    📢 {{ r.titulo }}
+                  </div>
+                </template>
                 <template v-if="mostrarAniversarios">
                   <div
                     v-for="a in aniversariosDoDia(data.day)"
@@ -47,7 +74,11 @@
                   <div
                     v-for="e in eventosDoDia(data.day)"
                     :key="`e${e.id}`"
-                    :class="['item', 'evento', { convidado: !e.meu, pendente: e.minhaResposta === 'pendente' }]"
+                    :class="[
+                      'item',
+                      'evento',
+                      { convidado: !e.meu, pendente: e.minhaResposta === 'pendente' }
+                    ]"
                     :style="{ background: e.cor || corPadrao }"
                     :title="e.meu ? e.titulo : `${e.titulo} (convite de ${e.dono})`"
                     @click.stop="abrir(e)"
@@ -64,43 +95,87 @@
 
       <el-col :lg="7" :xs="24">
         <ContentWrap :title="tituloDia">
+          <template v-if="mostrarRecados">
+            <div
+              v-for="r in recadosDoDia(diaSelecionado)"
+              :key="`r${r.id}`"
+              class="compromisso"
+              @click="abrirRecado(r)"
+            >
+              <span :style="{ background: r.cor || corRecado }" class="bolinha"></span>
+              <div class="flex-1">
+                <div>📢 {{ r.titulo }}</div>
+                <div class="ajuda">{{ periodoRecado(r) }} · {{ paraQuem(r) }}</div>
+              </div>
+            </div>
+          </template>
           <template v-if="mostrarAniversarios && aniversariosDoDia(diaSelecionado).length">
             <div v-for="a in aniversariosDoDia(diaSelecionado)" :key="a.usuarioId" class="pessoa">
               <el-avatar :size="32" :src="a.avatar || undefined">{{ iniciais(a.nome) }}</el-avatar>
               <div>
                 <div>🎂 {{ a.nome }}</div>
-                <div class="ajuda">{{ a.unidade }}<span v-if="!a.publico"> · privado, só você vê</span></div>
+                <div class="ajuda"
+                  >{{ a.unidade }}<span v-if="!a.publico"> · privado, só você vê</span></div
+                >
               </div>
             </div>
           </template>
           <template v-if="mostrarCompromissos">
-            <div v-for="e in eventosDoDia(diaSelecionado)" :key="e.id" class="compromisso" @click="abrir(e)">
+            <div
+              v-for="e in eventosDoDia(diaSelecionado)"
+              :key="e.id"
+              class="compromisso"
+              @click="abrir(e)"
+            >
               <span :style="{ background: e.cor || corPadrao }" class="bolinha"></span>
               <div class="flex-1">
                 <div>{{ e.titulo }}</div>
-                <div class="ajuda">{{ quando(e) }}<span v-if="e.local"> · {{ e.local }}</span></div>
+                <div class="ajuda"
+                  >{{ quando(e) }}<span v-if="e.local"> · {{ e.local }}</span></div
+                >
                 <div v-if="!e.meu" class="ajuda">Convite de {{ e.dono }}</div>
                 <div v-else-if="e.participantes.length" class="ajuda">
-                  {{ e.participantes.length }} {{ e.participantes.length === 1 ? 'convidado' : 'convidados' }}
+                  {{ e.participantes.length }}
+                  {{ e.participantes.length === 1 ? 'convidado' : 'convidados' }}
                 </div>
               </div>
-              <el-tag v-if="!e.meu" :type="RESPOSTAS[e.minhaResposta || 'pendente'].tipo" size="small">
+              <el-tag
+                v-if="!e.meu"
+                :type="RESPOSTAS[e.minhaResposta || 'pendente'].tipo"
+                size="small"
+              >
                 {{ RESPOSTAS[e.minhaResposta || 'pendente'].rotulo }}
               </el-tag>
             </div>
           </template>
           <el-empty
-            v-if="!aniversariosDoDia(diaSelecionado).length && !eventosDoDia(diaSelecionado).length"
+            v-if="
+              !aniversariosDoDia(diaSelecionado).length &&
+              !eventosDoDia(diaSelecionado).length &&
+              !recadosDoDia(diaSelecionado).length
+            "
             :image-size="60"
             description="Nada neste dia"
           />
           <el-button class="mt-8px w-full" plain type="primary" @click="novo(diaSelecionado)">
             Novo compromisso neste dia
           </el-button>
+          <el-button
+            v-if="podePublicar"
+            class="mt-8px !ml-0 w-full"
+            plain
+            @click="novoRecado(diaSelecionado)"
+          >
+            Novo recado neste dia
+          </el-button>
         </ContentWrap>
 
         <ContentWrap :title="`Aniversariantes de ${nomeMes}`">
-          <el-empty v-if="!aniversariantesDoMes.length" :image-size="60" description="Ninguém neste mês" />
+          <el-empty
+            v-if="!aniversariantesDoMes.length"
+            :image-size="60"
+            description="Ninguém neste mês"
+          />
           <div
             v-for="a in aniversariantesDoMes"
             :key="a.usuarioId"
@@ -119,7 +194,11 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="dialogo" :title="form.id ? 'Compromisso' : 'Novo compromisso'" width="520px">
+    <el-dialog
+      v-model="dialogo"
+      :title="form.id ? 'Compromisso' : 'Novo compromisso'"
+      width="520px"
+    >
       <el-form ref="formRef" :model="form" :rules="regras" label-position="top">
         <el-form-item label="Título" prop="titulo">
           <el-input v-model="form.titulo" maxlength="120" placeholder="Ex.: Reunião com a Saúde" />
@@ -167,12 +246,15 @@
             </el-option>
           </el-select>
           <div class="ajuda">
-            O compromisso aparece na agenda de quem você convidar, com aviso no sino. Só você pode alterar ou excluir.
+            O compromisso aparece na agenda de quem você convidar, com aviso no sino. Só você pode
+            alterar ou excluir.
           </div>
         </el-form-item>
         <div v-if="respostasDoEvento.length" class="respostas">
           <div v-for="p in respostasDoEvento" :key="p.id">
-            <el-tag :type="RESPOSTAS[p.resposta].tipo" class="mr-6px" size="small">{{ RESPOSTAS[p.resposta].rotulo }}</el-tag>
+            <el-tag :type="RESPOSTAS[p.resposta].tipo" class="mr-6px" size="small">{{
+              RESPOSTAS[p.resposta].rotulo
+            }}</el-tag>
             {{ p.nome }}
           </div>
         </div>
@@ -180,16 +262,109 @@
           <el-input v-model="form.local" maxlength="200" />
         </el-form-item>
         <el-form-item label="Descrição">
-          <el-input v-model="form.descricao" :rows="3" maxlength="2000" show-word-limit type="textarea" />
+          <el-input
+            v-model="form.descricao"
+            :rows="3"
+            maxlength="2000"
+            show-word-limit
+            type="textarea"
+          />
         </el-form-item>
         <el-form-item label="Cor">
           <el-color-picker v-model="form.cor" :predefine="cores" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button v-if="form.id" class="float-left" type="danger" plain @click="excluir">Excluir</el-button>
+        <el-button v-if="form.id" class="float-left" type="danger" plain @click="excluir"
+          >Excluir</el-button
+        >
         <el-button @click="dialogo = false">Cancelar</el-button>
         <el-button :loading="salvando" type="primary" @click="salvar">Salvar</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="dialogoRecado" :title="recado.id ? 'Recado' : 'Novo recado'" width="560px">
+      <el-form ref="recadoRef" :model="recado" :rules="regrasRecado" label-position="top">
+        <el-form-item label="Título" prop="titulo">
+          <el-input
+            v-model="recado.titulo"
+            maxlength="120"
+            placeholder="Ex.: Campanha de vacinação"
+          />
+        </el-form-item>
+        <el-form-item label="Recado" prop="texto">
+          <el-input
+            v-model="recado.texto"
+            :rows="5"
+            maxlength="4000"
+            show-word-limit
+            type="textarea"
+          />
+        </el-form-item>
+        <el-form-item label="Aparece de / até" prop="periodo">
+          <el-date-picker
+            v-model="recado.periodo"
+            class="!w-full"
+            end-placeholder="último dia"
+            format="DD/MM/YYYY"
+            start-placeholder="primeiro dia"
+            type="daterange"
+            value-format="YYYY-MM-DD"
+          />
+          <div class="duracoes">
+            <span class="ajuda">Durar:</span>
+            <el-button
+              v-for="d in DURACOES"
+              :key="d.dias"
+              link
+              type="primary"
+              @click="durar(d.dias)"
+            >
+              {{ d.rotulo }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="Quem vê">
+          <el-tree-select
+            v-model="recado.unidades"
+            :data="depts"
+            :props="defaultProps"
+            check-strictly
+            class="!w-full"
+            clearable
+            filterable
+            multiple
+            node-key="id"
+            placeholder="Recado geral: todas as unidades"
+            show-checkbox
+          />
+          <div class="ajuda">
+            Vazio é recado geral. Com unidades, vê quem está nelas ou nas que ficam abaixo delas.
+          </div>
+        </el-form-item>
+        <el-form-item label="Cor">
+          <el-color-picker v-model="recado.cor" :predefine="cores" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button v-if="recado.id" class="float-left" plain type="danger" @click="excluirRecado"
+          >Excluir</el-button
+        >
+        <el-button @click="dialogoRecado = false">Cancelar</el-button>
+        <el-button :loading="salvando" type="primary" @click="salvarRecado">Publicar</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="dialogoLerRecado" :title="lendo?.titulo" width="520px">
+      <template v-if="lendo">
+        <p class="texto mt-0">{{ lendo.texto }}</p>
+        <p class="ajuda">
+          {{ periodoRecado(lendo) }} · {{ paraQuem(lendo)
+          }}<span v-if="lendo.autor"> · {{ lendo.autor }}</span>
+        </p>
+      </template>
+      <template #footer>
+        <el-button @click="dialogoLerRecado = false">Fechar</el-button>
       </template>
     </el-dialog>
 
@@ -202,19 +377,26 @@
         <p v-if="convite.descricao" class="texto">{{ convite.descricao }}</p>
         <div class="respostas">
           <div v-for="p in convite.participantes" :key="p.id">
-            <el-tag :type="RESPOSTAS[p.resposta].tipo" class="mr-6px" size="small">{{ RESPOSTAS[p.resposta].rotulo }}</el-tag>
+            <el-tag :type="RESPOSTAS[p.resposta].tipo" class="mr-6px" size="small">{{
+              RESPOSTAS[p.resposta].rotulo
+            }}</el-tag>
             {{ p.nome }}
           </div>
         </div>
         <p class="ajuda">Sua resposta:</p>
-        <el-radio-group :model-value="convite.minhaResposta ?? undefined" @change="(v) => responder(v as Api.Resposta)">
+        <el-radio-group
+          :model-value="convite.minhaResposta ?? undefined"
+          @change="(v) => responder(v as Api.Resposta)"
+        >
           <el-radio-button value="sim">Vou</el-radio-button>
           <el-radio-button value="talvez">Talvez</el-radio-button>
           <el-radio-button value="nao">Não vou</el-radio-button>
         </el-radio-group>
       </template>
       <template #footer>
-        <el-button class="float-left" plain type="danger" @click="sairDoConvite">Sair do compromisso</el-button>
+        <el-button class="float-left" plain type="danger" @click="sairDoConvite"
+          >Sair do compromisso</el-button
+        >
         <el-button @click="dialogoConvite = false">Fechar</el-button>
       </template>
     </el-dialog>
@@ -227,6 +409,7 @@ import * as Api from '@/api/calendario'
 import * as DeptApi from '@/api/system/dept'
 import { defaultProps, handleTree } from '@/utils/tree'
 import download from '@/utils/download'
+import { checkPermi } from '@/utils/permission'
 
 defineOptions({ name: 'Calendario' })
 
@@ -244,6 +427,10 @@ const deptId = ref<number>()
 const depts = ref<any[]>([])
 const mostrarAniversarios = ref(true)
 const mostrarCompromissos = ref(true)
+const mostrarRecados = ref(true)
+const recados = ref<Api.RecadoVO[]>([])
+const podePublicar = checkPermi(['calendario:recado'])
+const corRecado = '#e6a23c'
 const aniversariantes = ref<Api.Aniversariante[]>([])
 const eventos = ref<Api.EventoVO[]>([])
 const carregando = ref(false)
@@ -275,6 +462,12 @@ const eventosDoDia = (dia: string) => {
   return eventos.value.filter((e) => e.inicio < fim && (e.fim ?? e.inicio) >= ini)
 }
 
+const recadosDoDia = (dia: string) => recados.value.filter((r) => r.inicio <= dia && r.fim >= dia)
+const periodoRecado = (r: Api.RecadoVO) =>
+  r.inicio === r.fim ? diaMes(r.inicio) : `${diaMes(r.inicio)} a ${diaMes(r.fim)}`
+const paraQuem = (r: Api.RecadoVO) =>
+  r.unidades.length ? r.unidades.map((u) => u.nome).join(', ') : 'Recado geral'
+
 const primeiroNome = (n: string) => n.split(' ')[0]
 const iniciais = (n: string) =>
   n
@@ -285,9 +478,13 @@ const iniciais = (n: string) =>
     .join('')
     .toUpperCase()
 const diaMes = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`
-const hora = (ms: number) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+const hora = (ms: number) =>
+  new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const dataBr = (ms: number) => new Date(ms).toLocaleDateString('pt-BR')
-const RESPOSTAS: Record<Api.Resposta, { rotulo: string; tipo: 'success' | 'danger' | 'warning' | 'info' }> = {
+const RESPOSTAS: Record<
+  Api.Resposta,
+  { rotulo: string; tipo: 'success' | 'danger' | 'warning' | 'info' }
+> = {
   sim: { rotulo: 'Vai', tipo: 'success' },
   nao: { rotulo: 'Não vai', tipo: 'danger' },
   talvez: { rotulo: 'Talvez', tipo: 'warning' },
@@ -295,15 +492,24 @@ const RESPOSTAS: Record<Api.Resposta, { rotulo: string; tipo: 'success' | 'dange
 }
 const quando = (e: { inicio: number; fim?: number | null; diaInteiro: boolean }) => {
   if (e.diaInteiro) {
-    return e.fim && dataBr(e.fim) !== dataBr(e.inicio) ? `${dataBr(e.inicio)} a ${dataBr(e.fim)}` : 'Dia inteiro'
+    return e.fim && dataBr(e.fim) !== dataBr(e.inicio)
+      ? `${dataBr(e.inicio)} a ${dataBr(e.fim)}`
+      : 'Dia inteiro'
   }
-  const fim = e.fim ? (dataBr(e.fim) === dataBr(e.inicio) ? hora(e.fim) : `${dataBr(e.fim)} ${hora(e.fim)}`) : ''
+  const fim = e.fim
+    ? dataBr(e.fim) === dataBr(e.inicio)
+      ? hora(e.fim)
+      : `${dataBr(e.fim)} ${hora(e.fim)}`
+    : ''
   return fim ? `${hora(e.inicio)} – ${fim}` : hora(e.inicio)
 }
 
 const carregarAniversariantes = async () => {
   anoCarregado = dataAtual.value.getFullYear()
-  aniversariantes.value = await Api.getAniversariantes({ ano: anoCarregado, deptId: deptId.value || undefined })
+  aniversariantes.value = await Api.getAniversariantes({
+    ano: anoCarregado,
+    deptId: deptId.value || undefined
+  })
 }
 
 let mesCarregado = ''
@@ -314,7 +520,12 @@ const carregarEventos = async (forcar = false) => {
   mesCarregado = chave
   const de = new Date(d.getFullYear(), d.getMonth(), 1 - 7)
   const ate = new Date(d.getFullYear(), d.getMonth() + 1, 14)
-  eventos.value = await Api.getEventos(iso(de), iso(ate))
+  const [ev, rec] = await Promise.all([
+    Api.getEventos(iso(de), iso(ate)),
+    Api.getRecados(iso(de), iso(ate))
+  ])
+  eventos.value = ev
+  recados.value = rec
 }
 
 const carregar = async () => {
@@ -337,7 +548,10 @@ const exportar = async () => {
     mes: d.getMonth() + 1,
     deptId: deptId.value || undefined
   })
-  download.excel(blob as any, `aniversariantes-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}.xlsx`)
+  download.excel(
+    blob as any,
+    `aniversariantes-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}.xlsx`
+  )
 }
 
 // ---------- compromisso ----------
@@ -362,7 +576,10 @@ const buscarPessoas = async (busca: string) => {
   const achadas = await Api.getPessoas(busca)
   // mantém as já escolhidas na lista, para o nome continuar aparecendo
   const escolhidas = pessoasOpcoes.value.filter((p) => form.value.participantes?.includes(p.id))
-  pessoasOpcoes.value = [...escolhidas, ...achadas.filter((p) => !escolhidas.some((e) => e.id === p.id))]
+  pessoasOpcoes.value = [
+    ...escolhidas,
+    ...achadas.filter((p) => !escolhidas.some((e) => e.id === p.id))
+  ]
 }
 const regras: FormRules = {
   titulo: [{ required: true, whitespace: true, message: 'Informe o título', trigger: 'blur' }],
@@ -398,6 +615,97 @@ const editar = (e: Api.EventoVO) => {
   nextTick(() => formRef.value?.clearValidate())
 }
 
+// ---------- recado ----------
+interface RecadoForm {
+  id?: number
+  titulo: string
+  texto: string
+  periodo: [string, string] | null
+  unidades: number[]
+  cor: string | null
+}
+const DURACOES = [
+  { dias: 1, rotulo: 'só o dia' },
+  { dias: 3, rotulo: '3 dias' },
+  { dias: 7, rotulo: '1 semana' },
+  { dias: 15, rotulo: '15 dias' },
+  { dias: 30, rotulo: '1 mês' }
+]
+const dialogoRecado = ref(false)
+const dialogoLerRecado = ref(false)
+const lendo = ref<Api.RecadoVO>()
+const recadoRef = ref<FormInstance>()
+const recado = ref<RecadoForm>({ titulo: '', texto: '', periodo: null, unidades: [], cor: null })
+const regrasRecado: FormRules = {
+  titulo: [{ required: true, whitespace: true, message: 'Informe o título', trigger: 'blur' }],
+  texto: [{ required: true, whitespace: true, message: 'Escreva o recado', trigger: 'blur' }],
+  periodo: [{ required: true, message: 'Escolha o primeiro e o último dia', trigger: 'change' }]
+}
+const somarDias = (dia: string, n: number) => {
+  const d = new Date(`${dia}T00:00:00`)
+  d.setDate(d.getDate() + n)
+  return iso(d)
+}
+const durar = (dias: number) => {
+  const ini = recado.value.periodo?.[0] || diaSelecionado.value
+  recado.value.periodo = [ini, somarDias(ini, dias - 1)]
+}
+const novoRecado = (dia: string) => {
+  recado.value = { titulo: '', texto: '', periodo: [dia, dia], unidades: [], cor: null }
+  dialogoRecado.value = true
+  nextTick(() => recadoRef.value?.clearValidate())
+}
+const abrirRecado = (r: Api.RecadoVO) => {
+  if (!podePublicar) {
+    lendo.value = r
+    dialogoLerRecado.value = true
+    return
+  }
+  recado.value = {
+    id: r.id,
+    titulo: r.titulo,
+    texto: r.texto,
+    periodo: [r.inicio, r.fim],
+    unidades: r.unidades.map((u) => u.id),
+    cor: r.cor
+  }
+  dialogoRecado.value = true
+  nextTick(() => recadoRef.value?.clearValidate())
+}
+const salvarRecado = async () => {
+  if (!(await recadoRef.value?.validate().catch(() => false))) return
+  const f = recado.value
+  const dados: Api.Recado = {
+    titulo: f.titulo,
+    texto: f.texto,
+    inicio: f.periodo![0],
+    fim: f.periodo![1],
+    cor: f.cor,
+    unidades: f.unidades
+  }
+  salvando.value = true
+  try {
+    if (f.id) await Api.alterarRecado(f.id, dados)
+    else await Api.criarRecado(dados)
+    dialogoRecado.value = false
+    message.success(f.id ? 'Recado alterado' : 'Recado publicado')
+    await carregarEventos(true)
+  } finally {
+    salvando.value = false
+  }
+}
+const excluirRecado = async () => {
+  try {
+    await message.delConfirm(`Excluir o recado "${recado.value.titulo}"?`)
+  } catch {
+    return
+  }
+  await Api.excluirRecado(recado.value.id!)
+  dialogoRecado.value = false
+  message.success('Recado excluído')
+  await carregarEventos(true)
+}
+
 // ---------- convite (compromisso de outra pessoa) ----------
 const dialogoConvite = ref(false)
 const convite = ref<Api.EventoVO>()
@@ -422,7 +730,9 @@ const responder = async (r: Api.Resposta) => {
 const sairDoConvite = async () => {
   if (!convite.value) return
   try {
-    await message.confirm(`Sair de "${convite.value.titulo}"? Ele some da sua agenda e ${convite.value.dono} fica sabendo.`)
+    await message.confirm(
+      `Sair de "${convite.value.titulo}"? Ele some da sua agenda e ${convite.value.dono} fica sabendo.`
+    )
   } catch {
     return
   }
@@ -539,6 +849,21 @@ onMounted(async () => {
   white-space: nowrap;
   text-overflow: ellipsis;
   border-radius: 3px;
+}
+
+.recado {
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  background: var(--el-color-warning-light-9);
+  border-left: 3px solid;
+}
+
+.duracoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin-top: 4px;
 }
 
 .aniversario {
