@@ -1,7 +1,10 @@
 import request from '@/config/axios'
 
 /** 0 fora, 1 no ar, 2 pendente, 3 manutenção */
-export const ESTADOS: Record<number, { rotulo: string; cor: string }> = {
+export const ESTADOS: Record<
+  number,
+  { rotulo: string; cor: 'success' | 'warning' | 'danger' | 'info' }
+> = {
   0: { rotulo: 'Fora do ar', cor: 'danger' },
   1: { rotulo: 'No ar', cor: 'success' },
   2: { rotulo: 'Pendente', cor: 'warning' },
