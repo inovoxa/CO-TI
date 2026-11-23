@@ -378,6 +378,20 @@ export const marcarManual = (id: number, noAr: boolean, msg?: string) =>
   request.post({ url: '/monitoramento/monitor/manual', params: { id, noAr, msg } })
 export const excluirMonitor = (id: number) =>
   request.delete({ url: '/monitoramento/monitor/delete', params: { id } })
+/** Unidade que o nome do monitor indica; null quando nenhuma se destaca (aí a escolha é à mão). */
+export const sugerirUnidade = (nome: string): Promise<number | null> =>
+  request.get({ url: '/monitoramento/monitor/sugerir-unidade', params: { nome } })
+/** Os marcados (ids) ou, com todos, tudo o que o filtro alcança. Devolve quantos foram alcançados. */
+export const executarLote = (data: {
+  acao: 'excluir' | 'pausar' | 'retomar'
+  ids?: number[]
+  todos?: boolean
+  busca?: string
+  tipo?: string
+  situacao?: string
+  unidadeId?: number
+  papel?: string
+}): Promise<number> => request.post({ url: '/monitoramento/monitor/lote', data, timeout: 300000 })
 
 // ---------------------------------------------------------------- manutenções, canais e unidades
 export const getManutencoes = (): Promise<Manutencao[]> =>

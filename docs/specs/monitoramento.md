@@ -142,6 +142,17 @@ departamento raiz, endereço e coordenadas:
 
 Sem internet, deixe as duas URLs vazias e marque o ponto no mapa (ou digite as coordenadas).
 
+**Unidade pelo nome do monitor** (`SugestaoUnidade`): monitor novo sem unidade ganha a que o nome indica, no formulário
+(enquanto se digita o nome, até alguém escolher outra), na importação por planilha e na sincronização do Kuma.
+
+- Ignora acentos, parênteses, IP e códigos de equipamento (`SW01`, `RT02`, `M02`). Junta palavras vizinhas
+  ("MARIA LUIZA" = "MARIALUIZA", "6 ANDAR" = "6ANDAR") e aceita um erro de digitação em palavras de 4+ letras.
+- Vale quando: todas as palavras da unidade estão no nome ("CER ELOA DO VALLE QUADROS" → CER ELOA); o nome é a forma
+  curta de uma unidade só ("CER JUDITH" → CER JUDITH DE BARROS BATELLI); ou a maior parte do peso da unidade bate,
+  bem à frente da segunda, ou um código só dela ("CÂMERA 01 - 6 ANDAR" → PACO MUNICIPAL 6ANDAR). Palavras raras
+  entre as unidades pesam mais.
+- Na dúvida (empate, "CMS SANTA LUCIA" entre I, II e III, ou só palavras comuns) não sugere: a unidade fica à mão.
+
 ## Uptime Kuma ao vivo
 
 Monitoramento → Monitores → "Uptime Kuma ao vivo" (permissão `monitoramento:monitor:update`). Serve para quem quer

@@ -14,10 +14,12 @@ import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorCanalMapper;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonMonitorMapper;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.monitoramento.dominio.Estados;
+import cn.iocoder.yudao.module.monitoramento.dominio.SugestaoUnidade;
 import cn.iocoder.yudao.module.monitoramento.dominio.Regras;
 import cn.iocoder.yudao.module.monitoramento.dominio.RegrasServicos;
 import cn.iocoder.yudao.module.monitoramento.dominio.TiposMonitor;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonDockerHostMapper;
+import cn.iocoder.yudao.module.identidade.service.AuditoriaService;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Resultado;
 import cn.iocoder.yudao.module.monitoramento.service.verificador.Verificadores;
 import cn.iocoder.yudao.module.system.dal.dataobject.monitor.MonitorUnitDO;
@@ -75,6 +77,8 @@ public class MonitorService {
     @Resource
     private MonDockerHostMapper monDockerHostMapper;
     @Resource
+    private AuditoriaService auditoriaService;
+    @Resource
     private cn.iocoder.yudao.module.monitoramento.dal.mysql.MonKumaServidorMapper monKumaServidorMapper;
 
     @Value("${coti.atendimento.url-publica:}")
@@ -101,6 +105,10 @@ public class MonitorService {
         MonitorDO atual = req.getId() == null ? null : monMonitorMapper.selectById(req.getId());
         if (req.getId() != null && atual == null) {
             throw exception(MONITOR_NAO_EXISTE);
+        }
+        if (atual == null && req.getUnidadeId() == null) {
+            // monitor novo sem unidade: a que o nome indica; sem uma clara, fica para escolher à mão
+            req.setUnidadeId(sugerirUnidade(req.getNome()));
         }
         MonitorDO m = montar(req, atual);
         if (atual == null) {
@@ -136,6 +144,15 @@ public class MonitorService {
         return m.getId();
     }
 
+    /** Unidade que o nome do monitor indica ("PSF MARIA LUIZA (172.19.21.0)" → PSF MARIA LUIZA), ou null. */
+    public Long sugerirUnidade(String nome) {
+        if (nome == null || nome.isBlank()) {
+            return null;
+        }
+        return new SugestaoUnidade(monitorUnitMapper.selectList().stream()
+                .map(u -> new SugestaoUnidade.Unidade(u.getId(), u.getName())).toList()).sugerir(nome);
+    }
+
     /** Liga ou pausa. Pausado não verifica nem avisa. */
     public void ativar(Long id, boolean ativo) {
         existente(id);
@@ -149,11 +166,54 @@ public class MonitorService {
     @Transactional(rollbackFor = Exception.class)
     public void excluir(Long id) {
         existente(id);
+        monMonitorMapper.liberarDescompressao();
         monMonitorMapper.deleteById(id);
         monMonitorCanalMapper.delete(MonitorCanalDO::getMonitorId, id);
         monManutencaoMonitorMapper.delete(ManutencaoMonitorDO::getMonitorId, id);
         monMonitorMapper.apagarBatidas(id);
         depoisDoCommit(() -> execucaoMonitores.esquecer(id));
+    }
+
+    /** Exclui, pausa ou retoma vários de uma vez, numa transação só. Devolve quantos foram alcançados. */
+    @Transactional(rollbackFor = Exception.class)
+    public int executarLote(MonitorVOs.LoteReq req, Long userId) {
+        LambdaQueryWrapperX<MonitorDO> q;
+        if (Boolean.TRUE.equals(req.getTodos())) {
+            q = filtro(req);
+        } else if (req.getIds() == null || req.getIds().isEmpty()) {
+            return 0;
+        } else {
+            q = new LambdaQueryWrapperX<MonitorDO>();
+            q.in(MonitorDO::getId, new LinkedHashSet<>(req.getIds()));
+        }
+        q.select(MonitorDO::getId);
+        List<Long> ids = monMonitorMapper.selectList(q).stream().map(MonitorDO::getId).toList();
+        if (ids.isEmpty()) {
+            return 0;
+        }
+        String acao = req.getAcao();
+        switch (acao) {
+            case "excluir" -> {
+                monMonitorMapper.liberarDescompressao();
+                monMonitorMapper.deleteByIds(ids);
+                monMonitorCanalMapper.delete(new LambdaQueryWrapperX<MonitorCanalDO>().in(MonitorCanalDO::getMonitorId, ids));
+                monManutencaoMonitorMapper.delete(new LambdaQueryWrapperX<ManutencaoMonitorDO>().in(ManutencaoMonitorDO::getMonitorId, ids));
+                monMonitorMapper.apagarBatidasDe(ids);
+            }
+            case "pausar", "retomar" -> monMonitorMapper.update(null, new LambdaUpdateWrapper<MonitorDO>()
+                    .in(MonitorDO::getId, ids).set(MonitorDO::getAtivo, "retomar".equals(acao)));
+            default -> throw exception(MONITOR_INVALIDO, "ação desconhecida: " + acao);
+        }
+        boolean parar = !"retomar".equals(acao);
+        depoisDoCommit(() -> {
+            if (parar) {
+                ids.forEach(execucaoMonitores::esquecer);
+            }
+            execucaoMonitores.recarregar();
+        });
+        auditoriaService.registrar("monitoramento.lote", userId, null, Map.of("acao", acao, "quantidade", ids.size(),
+                "todosDoFiltro", Boolean.TRUE.equals(req.getTodos())));
+        return ids.size();
     }
 
     public void verificarAgora(Long id) {
@@ -375,6 +435,18 @@ public class MonitorService {
     // ================================================================================== consulta
 
     public PageResult<MonitorVOs.Resp> pagina(MonitorVOs.PaginaReq req) {
+        LambdaQueryWrapperX<MonitorDO> q = filtro(req);
+        if (OrdenacaoMonitores.aceita(String.valueOf(req.getOrdenarPor()))) {
+            return paginaOrdenada(req, q);
+        }
+        // fora do ar primeiro, depois pendentes, depois por nome
+        q.orderByAsc(MonitorDO::getOrdem).orderByAsc(MonitorDO::getNome);
+        PageResult<MonitorDO> p = monMonitorMapper.selectPage(req, q);
+        return new PageResult<>(converter(p.getList()), p.getTotal());
+    }
+
+    /** O que a busca, os chips e os seletores da lista alcançam (a lista, a planilha e as ações em lote usam o mesmo). */
+    private LambdaQueryWrapperX<MonitorDO> filtro(MonitorVOs.PaginaReq req) {
         LambdaQueryWrapperX<MonitorDO> q = new LambdaQueryWrapperX<MonitorDO>()
                 .eqIfPresent(MonitorDO::getTipo, vazio(req.getTipo()))
                 .eqIfPresent(MonitorDO::getUnidadeId, req.getUnidadeId())
@@ -395,13 +467,7 @@ public class MonitorService {
                 }
             }
         }
-        if (OrdenacaoMonitores.aceita(String.valueOf(req.getOrdenarPor()))) {
-            return paginaOrdenada(req, q);
-        }
-        // fora do ar primeiro, depois pendentes, depois por nome
-        q.orderByAsc(MonitorDO::getOrdem).orderByAsc(MonitorDO::getNome);
-        PageResult<MonitorDO> p = monMonitorMapper.selectPage(req, q);
-        return new PageResult<>(converter(p.getList()), p.getTotal());
+        return q;
     }
 
     /** Disponibilidade e unidade não estão na tabela de monitores: ordena o que o filtro alcança e só então recorta a página. */

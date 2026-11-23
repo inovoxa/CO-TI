@@ -151,6 +151,20 @@ public class MonitorController {
         return success(true);
     }
 
+    @GetMapping("/sugerir-unidade")
+    @Operation(summary = "Unidade que o nome do monitor indica (vazio quando nenhuma se destaca)")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:query')")
+    public CommonResult<Long> sugerirUnidade(@RequestParam("nome") String nome) {
+        return success(monitorService.sugerirUnidade(nome.length() > 200 ? nome.substring(0, 200) : nome));
+    }
+
+    @PostMapping("/lote")
+    @Operation(summary = "Excluir, pausar ou retomar vários monitores de uma vez")
+    @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
+    public CommonResult<Integer> lote(@Valid @RequestBody MonitorVOs.LoteReq req) {
+        return success(monitorService.executarLote(req, getLoginUserId()));
+    }
+
     @DeleteMapping("/delete")
     @PreAuthorize("@ss.hasPermission('monitoramento:monitor:update')")
     public CommonResult<Boolean> excluir(@RequestParam("id") Long id) {

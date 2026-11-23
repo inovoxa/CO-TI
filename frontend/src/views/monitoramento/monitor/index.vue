@@ -90,13 +90,66 @@
   </ContentWrap>
 
   <ContentWrap>
+    <div
+      v-hasPermi="['monitoramento:monitor:update']"
+      class="mb-10px flex flex-wrap items-center gap-x-12px gap-y-6px"
+    >
+      <el-dropdown
+        :disabled="!quantosMarcados"
+        trigger="click"
+        @command="(a: AcaoLote) => executar(a)"
+      >
+        <el-button :disabled="!quantosMarcados" :loading="executando">
+          Executar ação<Icon class="ml-4px" icon="ep:arrow-down" />
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="pausar">
+              <Icon class="mr-6px" icon="ep:video-pause" />Pausar
+            </el-dropdown-item>
+            <el-dropdown-item command="retomar">
+              <Icon class="mr-6px" icon="ep:video-play" />Retomar
+            </el-dropdown-item>
+            <el-dropdown-item class="!text-[var(--el-color-danger)]" command="excluir" divided>
+              <Icon class="mr-6px" icon="ep:delete" />Excluir
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <span class="text-13px text-[var(--el-text-color-secondary)]">
+        <template v-if="!quantosMarcados">Marque os monitores na primeira coluna.</template>
+        <template v-else-if="todosDoFiltro">
+          Todos os <b>{{ total }}</b> monitores{{ filtrado ? ' do filtro' : '' }} estão
+          selecionados.
+        </template>
+        <template v-else>{{ marcados.length }} selecionado(s) nesta página.</template>
+      </span>
+      <el-button
+        v-if="paginaInteira && !todosDoFiltro && total > lista.length"
+        link
+        type="primary"
+        @click="todosDoFiltro = true"
+      >
+        Selecionar todos os {{ total }}{{ filtrado ? ' do filtro' : '' }}
+      </el-button>
+      <el-button v-if="quantosMarcados" link @click="limparSelecao">Limpar seleção</el-button>
+    </div>
     <el-table
+      ref="tabela"
       v-loading="loading"
       :data="lista"
       row-class-name="cursor-pointer"
+      row-key="id"
+      @selection-change="marcar"
       @sort-change="ordenar"
       @row-click="(r) => detalhe?.abrir(r.id)"
     >
+      <el-table-column
+        v-if="podeAlterar"
+        :selectable="() => !executando"
+        type="selection"
+        width="44"
+      />
       <el-table-column label="Monitor" min-width="260" prop="nome" sortable="custom">
         <template #default="{ row }">
           <div class="flex items-center">
@@ -245,6 +298,8 @@ import { ESTADOS, PAPEIS, TIPOS, duracao, pct, quando } from '@/api/monitorament
 import { useMonitorSocket } from '@/hooks/web/useMonitorSocket'
 import download from '@/utils/download'
 import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
+import { ElMessageBox, type TableInstance } from 'element-plus'
+import { checkPermi } from '@/utils/permission'
 import Batidas from './Batidas.vue'
 import ImportarKuma from './ImportarKuma.vue'
 import KumaServidores from './KumaServidores.vue'
@@ -303,6 +358,82 @@ const CHIPS = [
 const rotuloTipo = (t: string) => TIPOS.find((x) => x.valor === t)?.rotulo ?? t
 const classe = (r: Mon.MonitorResp) =>
   !r.ativo ? 'pausado' : r.estado == null ? 'novo' : r.lento ? 'lento' : `e${r.estado}`
+
+// ------------------------------------------------------------------ seleção e ações em lote
+type AcaoLote = 'excluir' | 'pausar' | 'retomar'
+const podeAlterar = checkPermi(['monitoramento:monitor:update'])
+const tabela = ref<TableInstance>()
+const marcados = ref<Mon.MonitorResp[]>([])
+/** "Selecionar todos os N": vale tudo o que o filtro alcança, não só a página aberta */
+const todosDoFiltro = ref(false)
+const executando = ref(false)
+const message = useMessage()
+const paginaInteira = computed(
+  () => lista.value.length > 0 && marcados.value.length === lista.value.length
+)
+const quantosMarcados = computed(() => (todosDoFiltro.value ? total.value : marcados.value.length))
+const marcar = (linhas: Mon.MonitorResp[]) => {
+  marcados.value = linhas
+  if (!paginaInteira.value) todosDoFiltro.value = false
+}
+const limparSelecao = () => {
+  todosDoFiltro.value = false
+  tabela.value?.clearSelection()
+}
+const VERBOS: Record<AcaoLote, [string, string]> = {
+  excluir: ['Excluir', 'excluído(s)'],
+  pausar: ['Pausar', 'pausado(s)'],
+  retomar: ['Retomar', 'retomado(s)']
+}
+const executar = async (acao: AcaoLote) => {
+  const n = quantosMarcados.value
+  if (!n) return
+  const [verbo, feito] = VERBOS[acao]
+  const quais = todosDoFiltro.value
+    ? `todos os ${n} monitores${filtrado.value ? ' do filtro' : ''}`
+    : `${n} monitor(es)`
+  try {
+    if (acao === 'excluir') {
+      await ElMessageBox.confirm(
+        `Excluir ${quais}? O histórico de verificações deles também sai e não dá para desfazer. ` +
+          'Se quiser uma cópia, use Exportar antes.',
+        'Excluir monitores',
+        {
+          type: 'warning',
+          confirmButtonText: `Excluir ${n}`,
+          confirmButtonClass: 'el-button--danger',
+          cancelButtonText: 'Cancelar'
+        }
+      )
+    } else {
+      await message.confirm(`${verbo} ${quais}?`)
+    }
+  } catch {
+    return
+  }
+  executando.value = true
+  try {
+    const feitos = await Mon.executarLote({
+      acao,
+      ...(todosDoFiltro.value
+        ? {
+            todos: true,
+            busca: q.busca || undefined,
+            tipo: q.tipo,
+            situacao: q.situacao,
+            unidadeId: q.unidadeId,
+            papel: q.papel
+          }
+        : { ids: marcados.value.map((m) => m.id) })
+    })
+    message.success(`${feitos} monitor(es) ${feito}.`)
+    limparSelecao()
+    if (acao === 'excluir') q.pageNo = 1
+    await atualizar()
+  } finally {
+    executando.value = false
+  }
+}
 
 const carregar = async () => {
   loading.value = true

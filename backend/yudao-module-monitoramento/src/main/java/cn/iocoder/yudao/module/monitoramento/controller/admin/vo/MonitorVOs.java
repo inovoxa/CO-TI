@@ -148,6 +148,18 @@ public final class MonitorVOs {
         private String direcao;
     }
 
+    /** Ação em vários monitores: os marcados, ou (todos = true) tudo o que o filtro alcança. */
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    public static class LoteReq extends PaginaReq {
+        @NotBlank
+        @Pattern(regexp = "excluir|pausar|retomar")
+        private String acao;
+        @Size(max = 20000)
+        private List<Long> ids;
+        private Boolean todos;
+    }
+
     /** Monitor na lista: configuração resumida, estado atual, últimas batidas e disponibilidade. */
     @Data
     public static class Resp {

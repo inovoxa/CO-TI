@@ -461,6 +461,12 @@
         >
           <el-option v-for="u in unidades" :key="u.id" :label="u.nome" :value="u.id!" />
         </el-select>
+        <div
+          v-if="unidadeSugerida && dados.unidadeId === unidadeSugerida"
+          class="text-12px text-[var(--el-text-color-secondary)]"
+        >
+          Escolhida pelo nome do monitor. Troque se não for esta.
+        </div>
       </el-form-item>
       <el-form-item label="Papel">
         <el-radio-group v-model="dados.papel">
@@ -675,8 +681,30 @@ function novo(): Mon.Monitor {
   }
 }
 
+// monitor novo: a unidade acompanha o nome enquanto ninguém escolheu outra à mão
+const unidadeSugerida = ref<number>()
+let esperaSugestao: ReturnType<typeof setTimeout> | undefined
+watch(
+  () => dados.value.nome,
+  (nome) => {
+    clearTimeout(esperaSugestao)
+    if (!visivel.value || dados.value.id) return
+    const automatica = !dados.value.unidadeId || dados.value.unidadeId === unidadeSugerida.value
+    if (!automatica) return
+    esperaSugestao = setTimeout(async () => {
+      const id = nome?.trim() ? await Mon.sugerirUnidade(nome.trim()).catch(() => null) : null
+      // o nome pode ter mudado, ou a unidade ter sido escolhida, enquanto a resposta vinha
+      if (dados.value.nome !== nome || dados.value.id) return
+      if (dados.value.unidadeId && dados.value.unidadeId !== unidadeSugerida.value) return
+      dados.value.unidadeId = id ?? undefined
+      unidadeSugerida.value = id ?? undefined
+    }, 400)
+  }
+)
+
 const abrir = async (detalhe?: Mon.Detalhe) => {
   teste.value = undefined
+  unidadeSugerida.value = undefined
   const [c, u, cat, d, k] = await Promise.all([
     Mon.getCanais(),
     Mon.getUnidades(),

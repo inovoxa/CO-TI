@@ -69,4 +69,15 @@ public interface MonMonitorMapper extends BaseMapperX<MonitorDO> {
     @Delete("DELETE FROM monitor.batida WHERE monitor_id = #{monitorId}")
     void apagarBatidas(@Param("monitorId") Long monitorId);
 
+    @Delete("<script>DELETE FROM monitor.batida WHERE monitor_id IN "
+            + "<foreach collection='ids' item='i' open='(' separator=',' close=')'>#{i}</foreach></script>")
+    void apagarBatidasDe(@Param("ids") Collection<Long> ids);
+
+    /**
+     * Apagar o histórico de um monitor descompacta os pedaços antigos da batida (TimescaleDB), e o limite padrão
+     * (100 mil linhas por transação) barra quem verifica há meses. Só vale até o fim da transação.
+     */
+    @Update("SET LOCAL timescaledb.max_tuples_decompressed_per_dml_transaction = 0")
+    void liberarDescompressao();
+
 }
