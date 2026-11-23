@@ -142,6 +142,41 @@ departamento raiz, endereço e coordenadas:
 
 Sem internet, deixe as duas URLs vazias e marque o ponto no mapa (ou digite as coordenadas).
 
+## Uptime Kuma ao vivo
+
+Monitoramento → Monitores → "Uptime Kuma ao vivo" (permissão `monitoramento:monitor:update`). Serve para quem quer
+manter o Kuma verificando: o CO-TI só espelha o estado de cada monitor e cuida do telão, dos avisos, do chamado
+automático e do histórico.
+
+1. **Cadastro do Kuma:** nome, endereço (ex.: `https://kuma.orgao.gov.br`) e a chave de API criada no Kuma em
+   Configurações → Chaves de API (`uk1_...`). A chave fica cifrada com a chave-mestra e nunca volta para a tela. Kuma
+   sem chave de API: marque "entrar com usuário e senha". "Testar conexão" lê o `/metrics` sem salvar.
+2. **Sincronizar:** mostra os monitores do Kuma e o que acontece com cada um: **novo** (passa a ser acompanhado),
+   **muda** (nome ou endereço mudou no Kuma), **já acompanhado** e **sumiu** (pausado ou excluído no Kuma). Os novos e
+   os que mudaram vêm marcados; os que sumiram só são excluídos se a pessoa marcar. Dá para escolher a unidade, o
+   intervalo de leitura (padrão 30 s) e se abre chamado. A sincronização vai para a auditoria.
+3. **Monitor do tipo "Uptime Kuma (ao vivo)":** também pode ser criado à mão, com o Kuma e o id do monitor lá (o
+   número de `/dashboard/<id>`; no Kuma 1.x, que não informa o id, vale o nome).
+
+**Como o estado vem.** O CO-TI lê `GET /metrics` (Basic, só a chave como senha) e usa `monitor_status`,
+`monitor_response_time` e `monitor_cert_days_remaining`, conferidos em `server/prometheus.js` do Kuma 2.5.7. Uma
+leitura serve a todos os monitores do mesmo Kuma por 15 s, porque o Kuma limita a autenticação da API a 60 por minuto.
+
+| No Kuma | No CO-TI |
+|---|---|
+| 1 no ar | no ar, com o tempo de resposta |
+| 0 fora | fora do ar **na hora**: as tentativas já foram feitas no Kuma |
+| 2 pendente | pendente, sem aviso, até o Kuma decidir |
+| 3 manutenção | em manutenção, sem aviso |
+| não aparece (pausado ou excluído lá) | pendente (ou continua fora, se já estava) |
+| Kuma sem resposta, chave recusada | pendente (ou continua fora, se já estava): não abre chamado de todos os monitores de uma vez |
+
+- As tentativas, o tempo limite e o "invertido" do CO-TI não valem para este tipo: o Kuma já faz isso. As janelas de
+  manutenção do CO-TI continuam valendo.
+- Para saber quando o próprio Kuma cai, crie um monitor HTTP comum apontando para ele.
+- O aviso de certificado vem desligado nos monitores sincronizados (o Kuma já avisa); dá para ligar em cada um.
+- O Kuma não informa a mensagem de erro no `/metrics`: a mensagem mostra só o estado ("fora do ar no Kuma").
+
 ## Importar do Uptime Kuma
 
 Monitoramento → Monitores → "Importar do Uptime Kuma" (permissão `monitoramento:importar`, só do administrador até

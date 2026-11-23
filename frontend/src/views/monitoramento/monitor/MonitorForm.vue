@@ -158,6 +158,29 @@
           <el-input v-model="dados.consulta" placeholder="nome ou id, ex.: coti-backend-1" />
         </el-form-item>
       </template>
+      <template v-if="dados.tipo === 'kuma'">
+        <el-form-item label="Uptime Kuma" prop="kumaServidorId">
+          <el-select v-model="dados.kumaServidorId" class="!w-360px" placeholder="escolha o Kuma">
+            <el-option v-for="k in kumas" :key="k.id" :label="k.nome" :value="k.id!" />
+          </el-select>
+          <el-button class="ml-8px" link type="primary" @click="servidoresKuma?.abrir()"
+            >Gerenciar</el-button
+          >
+        </el-form-item>
+        <el-form-item label="Monitor no Kuma" prop="consulta">
+          <el-input v-model="dados.consulta" placeholder="id do monitor lá (ex.: 12) ou o nome" />
+          <div class="text-12px text-[var(--el-text-color-secondary)]">
+            O id aparece no endereço do monitor no Kuma (/dashboard/12). Mais fácil: em Gerenciar →
+            Sincronizar, escolha os monitores e eles são criados aqui.
+          </div>
+        </el-form-item>
+        <el-form-item label="Endereço (exibição)">
+          <el-input
+            v-model="dados.alvo"
+            placeholder="o que o Kuma verifica (vai no telão e nos avisos)"
+          />
+        </el-form-item>
+      </template>
       <template v-if="dados.tipo === 'snmp'">
         <el-form-item label="Versão">
           <el-radio-group v-model="dados.snmpVersao">
@@ -314,6 +337,13 @@
       </template>
 
       <el-divider content-position="left">Verificação</el-divider>
+      <el-alert
+        v-if="kuma"
+        :closable="false"
+        class="mb-12px"
+        title="Quem verifica é o Kuma: fora, pendente e manutenção vêm de lá como estão, sem tentativas daqui. Se o Kuma não responder, o monitor fica pendente (sem abrir chamado)."
+        type="info"
+      />
       <el-form-item v-if="dados.tipo !== 'manual'" label="Intervalo (s)">
         <el-input-number
           v-model="dados.intervaloS"
@@ -323,11 +353,15 @@
         />
         <span class="ml-8px text-12px text-[var(--el-text-color-secondary)]">
           {{
-            dados.tipo === 'push' ? 'tempo máximo sem sinal' : 'de quanto em quanto tempo verificar'
+            dados.tipo === 'push'
+              ? 'tempo máximo sem sinal'
+              : kuma
+                ? 'de quanto em quanto tempo ler o estado no Kuma'
+                : 'de quanto em quanto tempo verificar'
           }}
         </span>
       </el-form-item>
-      <el-form-item v-if="!semVerificacao" label="Tempo limite (s)">
+      <el-form-item v-if="!semVerificacao && !kuma" label="Tempo limite (s)">
         <el-input-number
           v-model="dados.tempoLimiteS"
           :max="300"
@@ -335,14 +369,14 @@
           controls-position="right"
         />
       </el-form-item>
-      <el-form-item v-if="dados.tipo !== 'manual'" label="Tentativas antes de cair">
+      <el-form-item v-if="dados.tipo !== 'manual' && !kuma" label="Tentativas antes de cair">
         <el-input-number v-model="dados.tentativas" :max="20" :min="0" controls-position="right" />
         <span class="ml-8px text-12px text-[var(--el-text-color-secondary)]"
           >falhas seguidas que ficam como "pendente"</span
         >
       </el-form-item>
       <el-form-item
-        v-if="dados.tipo !== 'manual' && dados.tentativas"
+        v-if="dados.tipo !== 'manual' && !kuma && dados.tentativas"
         label="Intervalo das tentativas (s)"
       >
         <el-input-number
@@ -360,7 +394,7 @@
           placeholder="opcional"
         />
       </el-form-item>
-      <el-form-item v-if="!semVerificacao" label="">
+      <el-form-item v-if="!semVerificacao && !kuma" label="">
         <el-checkbox v-model="dados.invertido"
           >Invertido: está "no ar" quando falha (ex.: porta que deve estar fechada)</el-checkbox
         >
@@ -385,7 +419,7 @@
           <el-input
             v-model="dados.cabecalhos"
             :rows="2"
-            placeholder="{&quot;Authorization&quot;: &quot;Bearer ...&quot;}"
+            placeholder='{"Authorization": "Bearer ..."}'
             type="textarea"
           />
         </el-form-item>
@@ -511,6 +545,7 @@
     </template>
   </Dialog>
   <DockerHosts ref="servidoresDocker" @mudou="recarregarDocker" />
+  <KumaServidores ref="servidoresKuma" @mudou="recarregarKuma" />
 </template>
 
 <script lang="ts" setup>
@@ -518,6 +553,7 @@ import * as Mon from '@/api/monitoramento'
 import { PAPEIS, TIPOS } from '@/api/monitoramento'
 import * as Itsm from '@/api/itsm'
 import DockerHosts from './DockerHosts.vue'
+import KumaServidores from './KumaServidores.vue'
 
 const emit = defineEmits<{ salvo: [id: number] }>()
 const message = useMessage()
@@ -562,6 +598,12 @@ const servidoresDocker = ref<InstanceType<typeof DockerHosts>>()
 const recarregarDocker = async () => {
   dockerHosts.value = await Mon.getDockerHosts()
 }
+const kuma = computed(() => dados.value.tipo === 'kuma')
+const kumas = ref<Mon.KumaServidor[]>([])
+const servidoresKuma = ref<InstanceType<typeof KumaServidores>>()
+const recarregarKuma = async () => {
+  kumas.value = await Mon.getKumaServidores()
+}
 /** Placeholder do campo de senha: a guardada nunca volta para a tela */
 const segredoPlaceholder = (campo: 'senha' | 'segredo', vazio: string) =>
   (campo === 'senha' ? dados.value.senhaDefinida : dados.value.segredoDefinido)
@@ -571,18 +613,27 @@ const regras = computed(() => ({
   nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
   tipo: [{ required: true, message: 'Escolha o tipo', trigger: 'change' }],
   alvo:
-    semVerificacao.value || dados.value.tipo === 'docker'
+    semVerificacao.value || ['docker', 'kuma'].includes(dados.value.tipo)
       ? []
       : [{ required: true, message: 'Informe o alvo', trigger: 'blur' }],
   dockerHostId:
     dados.value.tipo === 'docker'
       ? [{ required: true, message: 'Escolha o servidor', trigger: 'change' }]
       : [],
-  consulta: ['docker', 'snmp'].includes(dados.value.tipo)
+  kumaServidorId:
+    dados.value.tipo === 'kuma'
+      ? [{ required: true, message: 'Escolha o Kuma', trigger: 'change' }]
+      : [],
+  consulta: ['docker', 'snmp', 'kuma'].includes(dados.value.tipo)
     ? [
         {
           required: true,
-          message: dados.value.tipo === 'snmp' ? 'Informe o OID' : 'Informe o container',
+          message:
+            dados.value.tipo === 'snmp'
+              ? 'Informe o OID'
+              : dados.value.tipo === 'kuma'
+                ? 'Informe o monitor no Kuma'
+                : 'Informe o container',
           trigger: 'blur'
         }
       ]
@@ -626,12 +677,14 @@ function novo(): Mon.Monitor {
 
 const abrir = async (detalhe?: Mon.Detalhe) => {
   teste.value = undefined
-  const [c, u, cat, d] = await Promise.all([
+  const [c, u, cat, d, k] = await Promise.all([
     Mon.getCanais(),
     Mon.getUnidades(),
     Itsm.getCategorias(true).catch(() => []),
-    Mon.getDockerHosts().catch(() => [])
+    Mon.getDockerHosts().catch(() => []),
+    Mon.getKumaServidores().catch(() => [])
   ])
+  kumas.value = k
   canais.value = c
   unidades.value = u
   categorias.value = cat

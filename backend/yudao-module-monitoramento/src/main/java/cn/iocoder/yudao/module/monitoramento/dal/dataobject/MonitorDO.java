@@ -50,6 +50,8 @@ public class MonitorDO extends BaseDO {
     /** objeto JSON cifrado com a chave-mestra ({@code senha}, {@code segredo}); nunca vai para a tela */
     private String segredos;
     private Long dockerHostId;
+    /** Uptime Kuma de onde vem o estado (tipo "kuma"); o id ou o nome do monitor lá fica em {@link #consulta} */
+    private Long kumaServidorId;
     private Integer intervaloS;
     private Integer tentativas;
     private Integer intervaloTentativaS;

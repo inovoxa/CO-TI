@@ -10,9 +10,9 @@ public final class TiposMonitor {
     public static final Set<String> SQL = Set.of("postgres", "mysql", "sqlserver", "oracle");
     /** Tipos que vieram depois do Kuma "básico": usam usuário, senha ou opções que a planilha não traz */
     public static final Set<String> SERVICOS = Set.of("postgres", "mysql", "sqlserver", "oracle", "snmp", "docker", "redis", "mongodb",
-            "smtp", "radius", "mqtt", "rabbitmq");
+            "smtp", "radius", "mqtt", "rabbitmq", "kuma");
     public static final Set<String> TODOS = Set.of("http", "palavra", "json", "tcp", "ping", "dns", "push", "manual", "postgres", "mysql",
-            "sqlserver", "oracle", "snmp", "docker", "redis", "mongodb", "smtp", "radius", "mqtt", "rabbitmq");
+            "sqlserver", "oracle", "snmp", "docker", "redis", "mongodb", "smtp", "radius", "mqtt", "rabbitmq", "kuma");
 
     /** Porta usada quando não é informada; o tipo que está aqui guarda a porta */
     public static final Map<String, Integer> PORTA_PADRAO = Map.ofEntries(Map.entry("tcp", 0), Map.entry("postgres", 5432),

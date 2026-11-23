@@ -67,6 +67,8 @@ public final class MonitorVOs {
         private String snmpPriv;
         private String smtpSeguranca;
         private Long dockerHostId;
+        /** tipo "kuma": de qual Uptime Kuma vem o estado */
+        private Long kumaServidorId;
         @Min(5)
         @Max(86400)
         private Integer intervaloS;

@@ -69,4 +69,22 @@ public class SegredosMonitor {
         return guardada == null || guardada.isBlank() ? null : cifradorSegredos.decifrar(guardada, CONTEXTO_DOCKER);
     }
 
+    /** Marca a chave do Kuma ainda em claro (teste antes de salvar); nunca é gravada assim. */
+    public static final String CLARO = "claro:";
+    static final String CONTEXTO_KUMA = "monitoramento-kuma";
+
+    public String chaveKuma(String guardada, String nova) {
+        if (nova == null || nova.isBlank()) {
+            return guardada;
+        }
+        if (!cifradorSegredos.configurado()) {
+            throw exception(MONITOR_SEM_CHAVE_MESTRA);
+        }
+        return cifradorSegredos.cifrar(nova.trim(), CONTEXTO_KUMA);
+    }
+
+    public String lerChaveKuma(String guardada) {
+        return guardada == null || guardada.isBlank() ? null : cifradorSegredos.decifrar(guardada, CONTEXTO_KUMA);
+    }
+
 }

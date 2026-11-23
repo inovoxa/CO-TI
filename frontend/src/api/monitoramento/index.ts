@@ -40,7 +40,12 @@ export const TIPOS = [
     rotulo: 'MQTT',
     ajuda: 'O broker aceita conexão (e, se quiser, há mensagem no tópico)'
   },
-  { valor: 'rabbitmq', rotulo: 'RabbitMQ', ajuda: 'A API de gerenciamento responde sem alarmes' }
+  { valor: 'rabbitmq', rotulo: 'RabbitMQ', ajuda: 'A API de gerenciamento responde sem alarmes' },
+  {
+    valor: 'kuma',
+    rotulo: 'Uptime Kuma (ao vivo)',
+    ajuda: 'O Kuma verifica; aqui aparece o estado que ele informa'
+  }
 ]
 
 /** Tipos que usam usuário, senha ou opções próprias (não passam pela planilha) */
@@ -56,7 +61,8 @@ export const TIPOS_SERVICO = [
   'smtp',
   'radius',
   'mqtt',
-  'rabbitmq'
+  'rabbitmq',
+  'kuma'
 ]
 export const TIPOS_SQL = ['postgres', 'mysql', 'sqlserver', 'oracle']
 export const PORTA_PADRAO: Record<string, number> = {
@@ -127,6 +133,8 @@ export interface Monitor {
   snmpPriv?: string
   smtpSeguranca?: string
   dockerHostId?: number
+  /** tipo kuma: de qual Uptime Kuma vem o estado; o id (ou nome) do monitor lá vai em consulta */
+  kumaServidorId?: number
   senhaDefinida?: boolean
   segredoDefinido?: boolean
   intervaloS?: number
@@ -402,6 +410,51 @@ export const testarDockerHost = (data: DockerHost): Promise<string> =>
   request.post({ url: '/monitoramento/docker-host/testar', data })
 export const excluirDockerHost = (id: number) =>
   request.delete({ url: '/monitoramento/docker-host/delete', params: { id } })
+
+// ---------------------------------------------------------------- Uptime Kuma ao vivo (/metrics)
+export interface KumaServidor {
+  id?: number
+  nome: string
+  url: string
+  /** só no login comum (Kuma sem chave de API) */
+  usuario?: string
+  /** só ida; ver chaveDefinida */
+  chave?: string
+  chaveDefinida?: boolean
+  ignorarTls?: boolean
+  monitores?: number
+}
+export interface ItemAoVivo {
+  chave: string
+  nome?: string
+  tipoKuma?: string
+  alvo?: string
+  estado?: number
+  situacao: 'novo' | 'igual' | 'muda' | 'sumiu'
+  monitorId?: number
+  monitorNome?: string
+  mudanca?: string
+}
+export const getKumaServidores = (): Promise<KumaServidor[]> =>
+  request.get({ url: '/monitoramento/kuma-servidor/list' })
+export const salvarKumaServidor = (data: KumaServidor): Promise<number> =>
+  request.post({ url: '/monitoramento/kuma-servidor/save', data })
+export const testarKumaServidor = (data: KumaServidor): Promise<string> =>
+  request.post({ url: '/monitoramento/kuma-servidor/testar', data })
+export const excluirKumaServidor = (id: number) =>
+  request.delete({ url: '/monitoramento/kuma-servidor/delete', params: { id } })
+export const previaKuma = (id: number): Promise<{ itens: ItemAoVivo[] }> =>
+  request.get({ url: '/monitoramento/kuma-servidor/previa', params: { id } })
+export const sincronizarKuma = (data: {
+  servidorId: number
+  adicionar: string[]
+  atualizar: number[]
+  remover: number[]
+  unidadeId?: number
+  abrirChamado?: boolean
+  intervaloS?: number
+}): Promise<{ adicionados: number; atualizados: number; removidos: number }> =>
+  request.post({ url: '/monitoramento/kuma-servidor/sincronizar', data, timeout: 120000 })
 
 export const getCanais = (): Promise<Canal[]> => request.get({ url: '/monitoramento/canal/list' })
 export const exportarCanais = (): Promise<Blob> =>

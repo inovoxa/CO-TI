@@ -68,6 +68,20 @@ public final class Estados {
         return new Transicao(estado, tentativa, novasQuedas, importante, avisar, reaviso);
     }
 
+    /**
+     * Estado decidido fora do CO-TI (monitor do Uptime Kuma), espelhado como veio: o Kuma já fez as tentativas dele,
+     * então "fora" cai na hora e "pendente" fica pendente (sem aviso) até o Kuma decidir. Os avisos, o reaviso e o
+     * histórico seguem as mesmas regras de {@link #avaliar}.
+     */
+    public static Transicao espelhar(Integer anterior, int quedas, int externo, int reenviarACada) {
+        return switch (externo) {
+            case MANUTENCAO -> avaliar(anterior, 0, quedas, true, true, 0, reenviarACada);
+            case NO_AR -> avaliar(anterior, 0, quedas, true, false, 0, reenviarACada);
+            case PENDENTE -> avaliar(anterior, 0, quedas, false, false, Integer.MAX_VALUE, reenviarACada);
+            default -> avaliar(anterior, 0, quedas, false, false, 0, reenviarACada);
+        };
+    }
+
     /** Mudou de estado de um jeito que interessa ao histórico (no ar ↔ fora, entrada e saída da manutenção). */
     static boolean importante(boolean primeira, Integer anterior, int atual) {
         if (primeira) {

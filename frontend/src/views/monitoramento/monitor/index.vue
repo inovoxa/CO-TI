@@ -75,6 +75,13 @@
         >
           <Icon class="mr-4px" icon="ep:upload" /> Importar
         </el-button>
+        <el-button
+          v-hasPermi="['monitoramento:monitor:update']"
+          plain
+          @click="servidoresKuma?.abrir()"
+        >
+          <Icon class="mr-4px" icon="ep:connection" />Uptime Kuma ao vivo
+        </el-button>
         <el-button v-hasPermi="['monitoramento:importar']" @click="importar?.abrir()">
           <Icon class="mr-4px" icon="ep:upload" />Importar do Uptime Kuma
         </el-button>
@@ -221,6 +228,7 @@
   />
   <MonitorDetalhe ref="detalhe" @editar="(d) => form?.abrir(d)" @mudou="atualizar" />
   <ImportarKuma ref="importar" @importado="atualizar" />
+  <KumaServidores ref="servidoresKuma" @mudou="atualizar" />
   <ImportarPlanilha
     ref="importadorPlanilha"
     :analisar="Mon.analisarImportacaoMonitores"
@@ -239,6 +247,7 @@ import download from '@/utils/download'
 import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
 import Batidas from './Batidas.vue'
 import ImportarKuma from './ImportarKuma.vue'
+import KumaServidores from './KumaServidores.vue'
 import MonitorDetalhe from './MonitorDetalhe.vue'
 import MonitorForm from './MonitorForm.vue'
 
@@ -247,6 +256,7 @@ const route = useRoute()
 const form = ref<InstanceType<typeof MonitorForm>>()
 const detalhe = ref<InstanceType<typeof MonitorDetalhe>>()
 const importar = ref<InstanceType<typeof ImportarKuma>>()
+const servidoresKuma = ref<InstanceType<typeof KumaServidores>>()
 const importadorPlanilha = ref<InstanceType<typeof ImportarPlanilha>>()
 
 const lista = ref<Mon.MonitorResp[]>([])

@@ -74,6 +74,8 @@ public class MonitorService {
     private SegredosMonitor segredosMonitor;
     @Resource
     private MonDockerHostMapper monDockerHostMapper;
+    @Resource
+    private cn.iocoder.yudao.module.monitoramento.dal.mysql.MonKumaServidorMapper monKumaServidorMapper;
 
     @Value("${coti.atendimento.url-publica:}")
     private String urlPublica;
@@ -116,7 +118,7 @@ public class MonitorService {
                     .set(MonitorDO::getDescricao, m.getDescricao()).set(MonitorDO::getDeptId, m.getDeptId())
                     .set(MonitorDO::getUsuario, m.getUsuario()).set(MonitorDO::getBanco, m.getBanco()).set(MonitorDO::getConsulta, m.getConsulta())
                     .set(MonitorDO::getOpcoes, m.getOpcoes()).set(MonitorDO::getSegredos, m.getSegredos())
-                    .set(MonitorDO::getDockerHostId, m.getDockerHostId()));
+                    .set(MonitorDO::getDockerHostId, m.getDockerHostId()).set(MonitorDO::getKumaServidorId, m.getKumaServidorId()));
             if (!Objects.equals(atual.getTipo(), m.getTipo()) || !Objects.equals(atual.getAlvo(), m.getAlvo())) {
                 // mudou o que é verificado: recomeça a contagem de tentativas e verifica logo
                 monMonitorMapper.update(null, new LambdaUpdateWrapper<MonitorDO>().eq(MonitorDO::getId, m.getId())
@@ -281,7 +283,7 @@ public class MonitorService {
                 : "push".equals(tipo) ? Optional.ofNullable(vazio(r.getPushToken())).orElseGet(MonitorService::novoToken) : null;
         return MonitorDO.builder().id(r.getId()).nome(r.getNome().trim()).descricao(r.getDescricao()).tipo(tipo).alvo(alvo)
                 .porta(s.porta()).usuario(s.usuario()).banco(s.banco()).consulta(s.consulta()).opcoes(s.opcoes()).segredos(s.segredos())
-                .dockerHostId(s.dockerHostId()).metodo(metodo).corpo(vazio(r.getCorpo())).cabecalhos(vazio(r.getCabecalhos()))
+                .dockerHostId(s.dockerHostId()).kumaServidorId(s.kumaServidorId()).metodo(metodo).corpo(vazio(r.getCorpo())).cabecalhos(vazio(r.getCabecalhos()))
                 .codigosAceitos(Optional.ofNullable(vazio(r.getCodigosAceitos())).orElse("200-299")).palavra(vazio(r.getPalavra()))
                 .palavraInvertida(Boolean.TRUE.equals(r.getPalavraInvertida())).jsonCaminho(vazio(r.getJsonCaminho()))
                 .jsonOperador(Optional.ofNullable(vazio(r.getJsonOperador())).orElse("json".equals(tipo) ? "==" : null))
@@ -299,7 +301,8 @@ public class MonitorService {
     }
 
     /** Campos dos tipos de serviço, já validados; os de outro tipo ficam vazios. */
-    private record Servico(Integer porta, String usuario, String banco, String consulta, String opcoes, String segredos, Long dockerHostId) {
+    private record Servico(Integer porta, String usuario, String banco, String consulta, String opcoes, String segredos, Long dockerHostId,
+                           Long kumaServidorId) {
     }
 
     private Servico servico(MonitorVOs.Monitor r, String tipo, String alvo, MonitorDO atual) {
@@ -308,7 +311,7 @@ public class MonitorService {
                         : "smtp".equals(tipo) && "tls".equals(r.getSmtpSeguranca()) ? 465
                         : "smtp".equals(tipo) && "starttls".equals(r.getSmtpSeguranca()) ? 587 : TiposMonitor.PORTA_PADRAO.get(tipo)) : null;
         if (!TiposMonitor.SERVICOS.contains(tipo)) {
-            return new Servico(porta, null, null, null, null, null, null);
+            return new Servico(porta, null, null, null, null, null, null, null);
         }
         Map<String, String> guardados = atual == null ? Map.of() : segredosMonitor.ler(atual.getSegredos());
         boolean temSenha = vazio(r.getSenha()) != null || guardados.containsKey(SegredosMonitor.SENHA);
@@ -324,6 +327,18 @@ public class MonitorService {
         }
         if (dockerHostId != null && monDockerHostMapper.selectById(dockerHostId) == null) {
             throw exception(DOCKER_HOST_NAO_EXISTE);
+        }
+        Long kumaServidorId = "kuma".equals(tipo) ? r.getKumaServidorId() : null;
+        if ("kuma".equals(tipo)) {
+            if (kumaServidorId == null) {
+                throw exception(MONITOR_INVALIDO, "escolha o servidor Uptime Kuma");
+            }
+            if (consulta == null || consulta.isBlank() || consulta.length() > 150) {
+                throw exception(MONITOR_INVALIDO, "informe o id (ou o nome) do monitor no Kuma");
+            }
+            if (monKumaServidorMapper.selectById(kumaServidorId) == null) {
+                throw exception(KUMA_SERVIDOR_NAO_EXISTE);
+            }
         }
         Map<String, Object> opcoes = new LinkedHashMap<>();
         if (Boolean.TRUE.equals(r.getTls())) {
@@ -344,9 +359,9 @@ public class MonitorService {
         // a senha vai como foi digitada (espaço nas pontas pode fazer parte dela)
         String segredos = segredosMonitor.juntar(atual == null ? null : atual.getSegredos(), r.getSenha(), r.getSegredo());
         boolean usaBanco = TiposMonitor.SQL.contains(tipo) || "mongodb".equals(tipo);
-        boolean usaConsulta = TiposMonitor.SQL.contains(tipo) || Set.of("snmp", "docker", "mqtt").contains(tipo);
+        boolean usaConsulta = TiposMonitor.SQL.contains(tipo) || Set.of("snmp", "docker", "mqtt", "kuma").contains(tipo);
         return new Servico(porta, vazio(r.getUsuario()), usaBanco ? vazio(r.getBanco()) : null, usaConsulta ? consulta : null,
-                opcoes.isEmpty() ? null : JsonUtils.toJsonString(opcoes), segredos, dockerHostId);
+                opcoes.isEmpty() ? null : JsonUtils.toJsonString(opcoes), segredos, dockerHostId, kumaServidorId);
     }
 
     static String novoToken() {
@@ -638,6 +653,7 @@ public class MonitorService {
         vo.setBanco(m.getBanco());
         vo.setConsulta(m.getConsulta());
         vo.setDockerHostId(m.getDockerHostId());
+        vo.setKumaServidorId(m.getKumaServidorId());
         Map<String, Object> opcoes = opcoes(m.getOpcoes());
         vo.setTls(Boolean.TRUE.equals(opcoes.get(TiposMonitor.TLS)));
         vo.setSnmpVersao((String) opcoes.get(TiposMonitor.SNMP_VERSAO));

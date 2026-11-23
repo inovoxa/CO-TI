@@ -25,6 +25,9 @@ public interface ErrorCodeConstants {
     ErrorCode DOCKER_HOST_NAO_EXISTE = new ErrorCode(1_105_000_015, "Servidor Docker não encontrado");
     ErrorCode DOCKER_HOST_INVALIDO = new ErrorCode(1_105_000_016, "Servidor Docker inválido: {}");
     ErrorCode UNIDADE_NOME_REPETIDO = new ErrorCode(1_105_000_018, "Já existe a unidade \"{}\": use outro nome ou junte as duas");
+    ErrorCode KUMA_SERVIDOR_NAO_EXISTE = new ErrorCode(1_105_000_019, "Servidor Uptime Kuma não encontrado");
+    ErrorCode KUMA_SERVIDOR_INVALIDO = new ErrorCode(1_105_000_020, "Servidor Uptime Kuma inválido: {}");
+    ErrorCode KUMA_SERVIDOR_EM_USO = new ErrorCode(1_105_000_021, "O Uptime Kuma é usado por {} monitor(es): exclua ou troque o servidor deles antes");
     ErrorCode DOCKER_HOST_EM_USO = new ErrorCode(1_105_000_017, "O servidor Docker é usado por {} monitor(es): troque o servidor deles antes de excluir");
 
 }

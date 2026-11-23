@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.monitoramento.service.verificador;
 
 import cn.iocoder.yudao.module.inventario.service.SnmpCliente;
 import cn.iocoder.yudao.module.monitoramento.dal.dataobject.DockerHostDO;
+import cn.iocoder.yudao.module.monitoramento.dal.dataobject.KumaServidorDO;
 import cn.iocoder.yudao.module.monitoramento.dal.dataobject.MonitorDO;
 import cn.iocoder.yudao.module.monitoramento.dal.mysql.MonDockerHostMapper;
 import cn.iocoder.yudao.module.monitoramento.dominio.Regras;
@@ -60,6 +61,10 @@ public class VerificadoresServicos {
     private MonDockerHostMapper monDockerHostMapper;
     @Resource
     private ClienteDocker clienteDocker;
+    @Resource
+    private cn.iocoder.yudao.module.monitoramento.dal.mysql.MonKumaServidorMapper monKumaServidorMapper;
+    @Resource
+    private ClienteKuma clienteKuma;
 
     public Resultado verificar(MonitorDO m) {
         Map<String, String> s;
@@ -81,6 +86,7 @@ public class VerificadoresServicos {
             case "radius" -> radius(m, senha, segredo);
             case "mqtt" -> mqtt(m, senha, tls);
             case "rabbitmq" -> rabbitmq(m, senha);
+            case "kuma" -> kuma(m);
             default -> Resultado.falha("tipo sem verificação ativa: " + m.getTipo());
         };
     }
@@ -198,6 +204,16 @@ public class VerificadoresServicos {
         } catch (IllegalArgumentException e) {
             return Resultado.falha(e.getMessage());
         }
+    }
+
+    // ================================================================================== Uptime Kuma
+
+    Resultado kuma(MonitorDO m) {
+        KumaServidorDO s = m.getKumaServidorId() == null ? null : monKumaServidorMapper.selectById(m.getKumaServidorId());
+        if (s == null) {
+            return Resultado.falha("servidor Uptime Kuma não encontrado: escolha outro no monitor");
+        }
+        return clienteKuma.estado(s, m);
     }
 
     // ================================================================================== sockets

@@ -272,15 +272,19 @@ public class ExecucaoMonitores {
     // ================================================================================== batida
 
     void processar(MonitorDO m, Resultado r, boolean emManutencao, LocalDateTime agora) {
-        boolean invertido = Boolean.TRUE.equals(m.getInvertido()) && !emManutencao && !Set.of("push", "manual").contains(m.getTipo());
-        boolean ok = invertido != r.ok();
+        // estado decidido fora (Uptime Kuma): espelha como veio; o Kuma já fez as tentativas e a inversão dele
+        Integer externo = emManutencao ? null : r.estadoExterno();
+        boolean invertido = externo == null && Boolean.TRUE.equals(m.getInvertido()) && !emManutencao
+                && !Set.of("push", "manual").contains(m.getTipo());
+        boolean ok = externo == null ? invertido != r.ok() : externo == Estados.NO_AR;
         String msg = r.msg();
         if (invertido) {
             msg = (ok ? "invertido: falhou, como esperado (" : "invertido: respondeu, mas devia falhar (") + msg + ")";
         }
         Integer anterior = m.getEstado();
         LocalDateTime desdeAnterior = m.getEstadoDesde();
-        Estados.Transicao t = Estados.avaliar(anterior, nz(m.getTentativaAtual()), nz(m.getQuedasSeguidas()), ok, emManutencao,
+        Estados.Transicao t = externo != null ? Estados.espelhar(anterior, nz(m.getQuedasSeguidas()), externo, nz(m.getReenviarACada()))
+                : Estados.avaliar(anterior, nz(m.getTentativaAtual()), nz(m.getQuedasSeguidas()), ok, emManutencao,
                 nz(m.getTentativas()), nz(m.getReenviarACada()));
         boolean mudou = anterior == null || anterior != t.estado();
         LocalDateTime desde = mudou ? agora : desdeAnterior;

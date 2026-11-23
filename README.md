@@ -464,6 +464,10 @@ Detalhes do protocolo e das regras: `docs/specs/inventario-agentes.md`.
 - **Unidades no mapa:** o CEP preenche o endereço (ViaCEP), o número completa e as coordenadas vêm do OpenStreetMap
   (Nominatim); dá para ajustar o ponto no mapa. Em rede sem internet, deixe `CO_TI_VIACEP_URL` e
   `CO_TI_GEOCODIFICACAO_URL` vazios e marque o ponto à mão.
+- **Uptime Kuma ao vivo:** quem prefere manter o Kuma verificando cadastra o Kuma em Monitores → "Uptime Kuma ao
+  vivo" (endereço e chave de API) e sincroniza: cada monitor escolhido passa a espelhar o estado do Kuma (fora,
+  pendente e manutenção como estão lá), e o CO-TI cuida do telão, dos avisos, do chamado e do histórico. Detalhes em
+  `docs/specs/monitoramento.md`.
 - **Importar do Uptime Kuma:** em Monitores → "Importar do Uptime Kuma", envie o `kuma.db` (pasta `data` do Kuma,
   com o Kuma parado). Entram os monitores dos tipos acima, os canais de aviso, as manutenções e, se quiser, até 30 dias
   de histórico. Os monitores push mantêm o token: os scripts que chamam `/api/push/<token>` continuam funcionando
