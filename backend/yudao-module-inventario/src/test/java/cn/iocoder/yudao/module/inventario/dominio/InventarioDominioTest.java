@@ -259,4 +259,22 @@ class InventarioDominioTest {
         assertEquals("desconhecido", Normalizacao.discoTipo(List.of(disco("Disco genérico", fixo))));
         assertNull(Normalizacao.discoTipo(List.of()));
     }
+
+    @Test
+    void zlibSemFechamentoDoAgente24() {
+        // agente Windows 2.4: zlib com sync flush, sem bloco final nem adler32 (termina em 00 00 ff ff)
+        byte[] xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><REQUEST><DEVICEID>PC-2.4</DEVICEID><QUERY>PROLOG</QUERY></REQUEST>"
+                .getBytes(StandardCharsets.UTF_8);
+        Deflater d = new Deflater();
+        d.setInput(xml);
+        byte[] buf = new byte[1024];
+        int n = d.deflate(buf, 0, buf.length, Deflater.SYNC_FLUSH);
+        d.end();
+        byte[] corpo = java.util.Arrays.copyOf(buf, n);
+        assertEquals(0xff, corpo[corpo.length - 1] & 0xff);
+        Protocolo.Pedido p = Protocolo.ler(corpo);
+        assertEquals("PROLOG", p.consulta());
+        assertEquals("PC-2.4", p.deviceId());
+        assertThrows(Protocolo.ProtocoloInvalido.class, () -> Protocolo.descomprimir(new byte[]{1, 2, 3, 4}));
+    }
 }

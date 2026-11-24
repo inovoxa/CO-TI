@@ -74,19 +74,41 @@ public final class Protocolo {
             }
         }
         for (boolean semCabecalho : new boolean[]{false, true}) {
-            Inflater inf = new Inflater(semCabecalho);
-            try (InputStream in = new InflaterInputStream(new ByteArrayInputStream(corpo), inf)) {
-                byte[] r = lerComLimite(in);
-                if (r.length > 0) {
-                    return r;
-                }
-            } catch (IOException e) {
-                // tenta o próximo formato
-            } finally {
-                inf.end();
+            byte[] r = inflar(corpo, semCabecalho);
+            if (r != null && r.length > 0) {
+                return r;
             }
         }
         throw new ProtocoloInvalido("compressão não reconhecida");
+    }
+
+    /**
+     * Descomprime zlib (ou deflate puro) aceitando fluxo sem fechamento: o agente Windows 2.4 manda o XML com
+     * sync flush (termina em 00 00 ff ff), sem o bloco final nem o adler32. O InflaterInputStream acusa "fim
+     * inesperado" nesse caso; o servidor OCS (Perl) aceita. Formato inválido = null.
+     */
+    private static byte[] inflar(byte[] corpo, boolean semCabecalho) {
+        Inflater inf = new Inflater(semCabecalho);
+        try {
+            inf.setInput(corpo);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[64 * 1024];
+            while (!inf.finished()) {
+                int n = inf.inflate(buf);
+                if (n == 0) {
+                    break;   // acabou o que veio (fluxo sem fechamento) ou pede dicionário
+                }
+                if (out.size() + n > MAXIMO_DESCOMPRIMIDO) {
+                    throw new ProtocoloInvalido("inventário maior que " + (MAXIMO_DESCOMPRIMIDO / 1024 / 1024) + " MB");
+                }
+                out.write(buf, 0, n);
+            }
+            return out.toByteArray();
+        } catch (DataFormatException e) {
+            return null;
+        } finally {
+            inf.end();
+        }
     }
 
     private static byte[] lerComLimite(InputStream in) throws IOException {
