@@ -711,6 +711,10 @@ const descreverHistorico = (h: Inv.Historico) => {
       return `Software instalado: ${para}`
     case 'software_removido':
       return `Software removido: ${para}`
+    case 'limpeza':
+      if (h.campo === 'mesclado') return `Limpeza: ${de} juntado → ${para}`
+      if (h.campo === 'dados_agente') return `Limpeza: ${para} (agente de ${de})`
+      return `Limpeza · ${CAMPOS[h.campo ?? ''] ?? h.campo}: ${de} → ${para}`
     default:
       if (h.campo === 'inventario' || h.campo === 'cadastro' || h.campo === 'chamado')
         return h.depois ?? `Desligado: ${de}`

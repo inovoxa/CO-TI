@@ -62,6 +62,8 @@ public class InventarioAgenteService {
     private RedeService redeService;
     @Resource
     private PacoteService pacoteService;
+    @Resource
+    private EnvioAgenteService envioAgenteService;
 
     /** Resposta HTTP pronta para o controller. */
     public record Resposta(int status, String tipo, byte[] corpo, Map<String, String> cabecalhos) {
@@ -71,15 +73,40 @@ public class InventarioAgenteService {
         }
     }
 
+    /** O que aconteceu com o pedido, para o registro de envios. */
+    static final class Contexto {
+        String deviceId, formato, consulta, resultado = "invalido", detalhe;
+    }
+
     public Resposta receber(byte[] corpo, String ip, String agente, String autorizacao) {
+        long inicio = System.nanoTime();
+        Contexto c = new Contexto();
+        try {
+            return atender(corpo, ip, agente, autorizacao, c);
+        } catch (RuntimeException e) {
+            c.resultado = "erro";
+            c.detalhe = e.getClass().getSimpleName() + ": " + e.getMessage();
+            throw e;
+        } finally {
+            envioAgenteService.registrar(new EnvioAgenteService.Envio(ip, c.deviceId, c.formato, c.consulta, c.resultado, c.detalhe,
+                    limpar(agente, 255), corpo == null ? 0 : corpo.length, (int) ((System.nanoTime() - inicio) / 1_000_000)));
+        }
+    }
+
+    private Resposta atender(byte[] corpo, String ip, String agente, String autorizacao, Contexto c) {
         if (!Redes.permitido(ip, inventarioProperties.getAgenteRedes())) {
             log.warn("[inventario] agente recusado: {} fora das redes permitidas", ip);
+            c.resultado = "recusado_rede";
+            c.detalhe = "IP fora de CO_TI_INVENTARIO_REDES";
             return Resposta.vazia(403);
         }
         if (!senhaConfere(autorizacao)) {
+            c.resultado = "recusado_senha";
+            c.detalhe = autorizacao == null ? "o agente não mandou usuário e senha (/USER e /PWD)" : "usuário ou senha não conferem";
             return new Resposta(401, "text/plain", new byte[0], Map.of("WWW-Authenticate", "Basic realm=\"CO-TI inventario\""));
         }
         if (corpo == null || corpo.length == 0) {
+            c.detalhe = "pedido vazio";
             return Resposta.vazia(400);
         }
         Protocolo.Pedido p;
@@ -87,22 +114,28 @@ public class InventarioAgenteService {
             p = Protocolo.ler(corpo);
         } catch (Protocolo.ProtocoloInvalido e) {
             log.info("[inventario] pedido inválido de {}: {}", ip, e.getMessage());
+            c.detalhe = e.getMessage();
             return Resposta.vazia(400);
         }
+        c.formato = p.formato();
+        c.consulta = p.consulta();
         String deviceId = limpar(p.deviceId(), 255);
+        c.deviceId = deviceId;
         if (deviceId == null) {
+            c.detalhe = "sem DEVICEID";
             return "glpi".equals(p.formato()) ? json(400, Map.of("status", "error", "message", "deviceid ausente")) : Resposta.vazia(400);
         }
         String versaoAgente = limpar(agente, 255);
-        return "glpi".equals(p.formato()) ? glpi(p, deviceId, versaoAgente) : ocs(p, deviceId, versaoAgente);
+        return "glpi".equals(p.formato()) ? glpi(p, deviceId, versaoAgente, c) : ocs(p, deviceId, versaoAgente, c);
     }
 
     // ======================================================================================= protocolos
 
-    private Resposta ocs(Protocolo.Pedido p, String deviceId, String agente) {
+    private Resposta ocs(Protocolo.Pedido p, String deviceId, String agente, Contexto c) {
         switch (p.consulta()) {
             case "PROLOG" -> {
                 boolean enviar = precisaInventariar(deviceId, agente);
+                c.resultado = enviar ? "enviar" : "aguardar";
                 Map<String, Object> r = new LinkedHashMap<>();
                 r.put("RESPONSE", enviar ? "SEND" : "STOP");
                 r.put("PROLOG_FREQ", inventarioProperties.getPrologoHoras());
@@ -119,11 +152,15 @@ public class InventarioAgenteService {
                 }
                 if (!opcoes.isEmpty()) {
                     r.put("OPTION", opcoes);
+                    c.detalhe = ipdiscover != null && download != null ? "descoberta de rede, pacotes"
+                            : ipdiscover != null ? "descoberta de rede" : "pacotes";
                 }
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(r), Map.of());
             }
             case "INVENTORY" -> {
                 Long ativoId = processar(p, deviceId, agente, "ocs");
+                c.resultado = "gravado";
+                c.detalhe = resumo(p);
                 if (!p.lista("IPDISCOVER").isEmpty()) {
                     redeService.registrar(p, ativoId);
                 }
@@ -132,20 +169,24 @@ public class InventarioAgenteService {
             case "DOWNLOAD" -> {
                 // resultado da implantação: ID do pacote e ERR (SUCCESS, ERR_BAD_DIGEST, EXIT_CODE_n...)
                 Map<String, String> req = p.unico("REQUEST");
+                c.resultado = "pacote";
+                c.detalhe = "pacote " + req.get("ID") + ": " + req.get("ERR");
                 pacoteService.resultado(cmdbAtivoMapper.selectOne(AtivoDO::getDeviceId, deviceId), req.get("ID"), req.get("ERR"));
                 return new Resposta(200, "application/x-compressed", new byte[0], Map.of());
             }
             default -> {
                 // UPDATE e outros
+                c.resultado = "nao_suportado";
                 return new Resposta(200, "application/x-compressed", Protocolo.replyOcs(Map.of("RESPONSE", "OTHER_ERROR")), Map.of());
             }
         }
     }
 
-    private Resposta glpi(Protocolo.Pedido p, String deviceId, String agente) {
+    private Resposta glpi(Protocolo.Pedido p, String deviceId, String agente, Contexto c) {
         switch (p.consulta()) {
             case "CONTACT", "PROLOG" -> {
                 boolean enviar = precisaInventariar(deviceId, agente);
+                c.resultado = enviar ? "enviar" : "aguardar";
                 Map<String, Object> tarefas = new LinkedHashMap<>();
                 if (enviar) {
                     tarefas.put("inventory", Map.of("server", "glpi", "version", "10.0.0"));
@@ -154,12 +195,22 @@ public class InventarioAgenteService {
             }
             case "INVENTORY" -> {
                 processar(p, deviceId, agente, "glpi_agent");
+                c.resultado = "gravado";
+                c.detalhe = resumo(p);
                 return json(200, Map.of("status", "ok", "expiration", inventarioProperties.getPrologoHoras()));
             }
             default -> {
+                c.resultado = "nao_suportado";
                 return json(400, Map.of("status", "error", "message", "ação não suportada"));
             }
         }
+    }
+
+    /** Nome da máquina e quantos softwares vieram, para o registro de envios. */
+    private static String resumo(Protocolo.Pedido p) {
+        String nome = p.unico("HARDWARE").get("NAME");
+        int softwares = p.lista("SOFTWARES").size();
+        return (nome == null || nome.isBlank() ? "" : nome.strip() + " · ") + softwares + " softwares";
     }
 
     private static Resposta json(int status, Object corpo) {
@@ -248,6 +299,11 @@ public class InventarioAgenteService {
         if ("snmp".equals(origem)) {
             novo.setNome(null);
             novo.setTipo(null);
+        }
+        if ("baixado".equals(atual.getSituacao()) && !"snmp".equals(origem)) {
+            // voltou a mandar inventário: está em uso de novo
+            novo.setSituacao("em_uso");
+            registrar(atual.getId(), agora, "campo", "situacao", "baixado", "em_uso");
         }
         if (!deviceId.equals(atual.getDeviceId())) {
             registrar(atual.getId(), agora, "agente", "device_id", atual.getDeviceId(), deviceId);

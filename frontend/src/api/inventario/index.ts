@@ -203,6 +203,62 @@ export const getSoftwares = (params: any) =>
 export const getPainelAgentes = (): Promise<PainelAgentes> =>
   request.get({ url: '/inventario/ativo/agentes' })
 
+// ---------- envios dos agentes e limpeza ----------
+export interface Envio {
+  id: number
+  quando: string
+  ip?: string
+  deviceId?: string
+  formato?: string
+  consulta?: string
+  resultado: string
+  detalhe?: string
+  agente?: string
+  bytes?: number
+  ms?: number
+  ativoId?: number
+  ativoNome?: string
+  ativoRemovido?: boolean
+}
+export interface ResumoEnvios {
+  porResultado: Record<string, number>
+  maquinas: number
+  recusas: { ip: string; resultado: string; vezes: number; ultima: string }[]
+  dias: number
+}
+export interface GrupoRepetido {
+  motivos: string[]
+  ativos: Ativo[]
+  chamados: number[]
+}
+type CorTag = 'success' | 'warning' | 'danger' | 'info' | 'primary'
+export const RESULTADOS_ENVIO: Record<string, { rotulo: string; cor: CorTag }> = {
+  gravado: { rotulo: 'Inventário gravado', cor: 'success' },
+  enviar: { rotulo: 'Pediu para enviar', cor: 'primary' },
+  aguardar: { rotulo: 'Ainda não é hora', cor: 'info' },
+  pacote: { rotulo: 'Resultado de pacote', cor: 'info' },
+  recusado_rede: { rotulo: 'Recusado: rede', cor: 'danger' },
+  recusado_senha: { rotulo: 'Recusado: senha', cor: 'danger' },
+  invalido: { rotulo: 'Pedido inválido', cor: 'warning' },
+  erro: { rotulo: 'Erro ao gravar', cor: 'danger' },
+  nao_suportado: { rotulo: 'Não suportado', cor: 'warning' }
+}
+export const getEnvios = (params: any) => request.get({ url: '/inventario/limpeza/envios', params })
+export const getResumoEnvios = (): Promise<ResumoEnvios> =>
+  request.get({ url: '/inventario/limpeza/envios/resumo' })
+export const exportarEnvios = (params: any): Promise<Blob> =>
+  request.download({ url: '/inventario/limpeza/envios/exportar', params })
+export const getRepetidas = (): Promise<GrupoRepetido[]> =>
+  request.get({ url: '/inventario/limpeza/repetidas' })
+export const mesclarAtivos = (manterId: number, ids: number[]) =>
+  request.post({ url: '/inventario/limpeza/mesclar', data: { manterId, ids } })
+export const marcarDistintos = (ids: number[]) =>
+  request.post({ url: '/inventario/limpeza/distintos', data: { ids } })
+export const getParadas = (dias: number): Promise<Ativo[]> =>
+  request.get({ url: '/inventario/limpeza/paradas', params: { dias } })
+export const baixarAtivos = (ids: number[]): Promise<number> =>
+  request.post({ url: '/inventario/limpeza/baixar', data: { ids } })
+
 export const getAtivosDoChamado = (chamadoId: number): Promise<Ativo[]> =>
   request.get({ url: '/inventario/ativo/do-chamado', params: { chamadoId } })
 export const vincularAtivo = (chamadoId: number, ativoId: number) =>

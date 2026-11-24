@@ -399,6 +399,13 @@ Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
   - o usuário logado, ligado à pessoa do AD; a unidade do ativo segue a da pessoa.
 - **Máquina repetida:** quando o agente é reinstalado, a máquina é reconhecida pelo UUID, pela série ou pelo
   MAC + nome.
+- **Inventário → Agentes:**
+  - **Envios recebidos:** cada pedido dos agentes, aceito ou recusado (rede, senha, erro), por
+    `CO_TI_INVENTARIO_ENVIOS_DIAS` (padrão 30).
+  - **Limpeza:** máquinas repetidas (mesmo nome, série, UUID ou MAC), para juntar, dar baixa nos antigos ou marcar
+    como diferentes; e máquinas paradas, com baixa em lote.
+  - `CO_TI_INVENTARIO_BAIXA_DIAS` > 0 dá baixa automática nas máquinas sem contato há N dias. Máquina baixada que
+    volta a mandar inventário volta para "em uso".
 - **Integração:**
   - o chamado ganha o bloco "Equipamentos";
   - o telão e a tela de inventário do Centro de Operações passam a usar os dados reais.

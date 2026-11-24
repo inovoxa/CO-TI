@@ -1,5 +1,12 @@
 <template>
-  <div v-loading="loading">
+  <el-tabs v-model="aba" class="abas">
+    <el-tab-pane label="Resumo" name="resumo" />
+    <el-tab-pane label="Envios recebidos" name="envios" />
+    <el-tab-pane label="Limpeza" name="limpeza" />
+  </el-tabs>
+  <Envios v-if="aba === 'envios'" />
+  <Limpeza v-else-if="aba === 'limpeza'" />
+  <div v-else v-loading="loading">
     <template v-if="p">
       <el-row :gutter="12">
         <el-col :lg="6" :sm="12" :xs="24">
@@ -129,9 +136,15 @@
 <script lang="ts" setup>
 import * as Inv from '@/api/inventario'
 import { ORIGENS } from '@/api/inventario'
+import Envios from './Envios.vue'
+import Limpeza from './Limpeza.vue'
 
 defineOptions({ name: 'InventarioAgente' })
 const router = useRouter()
+const route = useRoute()
+const aba = ref(
+  ['envios', 'limpeza'].includes(String(route.query.aba)) ? String(route.query.aba) : 'resumo'
+)
 const loading = ref(true)
 const p = ref<Inv.PainelAgentes>()
 const base = window.location.origin
@@ -146,3 +159,9 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.abas :deep(.el-tabs__header) {
+  margin-bottom: 8px;
+}
+</style>

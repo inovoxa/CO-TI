@@ -306,6 +306,8 @@ coti:
     prologo-horas: ${CO_TI_INVENTARIO_PROLOGO_HORAS:12}
     inventario-dias: ${CO_TI_INVENTARIO_DIAS:0}   # 0 = inventaria a cada contato
     sem-contato-dias: ${CO_TI_INVENTARIO_SEM_CONTATO_DIAS:30}
+    envios-dias: ${CO_TI_INVENTARIO_ENVIOS_DIAS:30}   # registro de cada envio dos agentes (aba Envios)
+    baixa-automatica-dias: ${CO_TI_INVENTARIO_BAIXA_DIAS:0}   # 0 = desligada; > 0 = baixa nas máquinas sem contato há N dias
     alertas-intervalo-ms: ${CO_TI_INVENTARIO_ALERTAS_MS:900000}   # 0 = só pelo botão "Avaliar agora"
     ipdiscover: ${CO_TI_INVENTARIO_IPDISCOVER:true}   # descoberta de rede pelos agentes OCS
     ipdiscover-por-rede: ${CO_TI_INVENTARIO_IPDISCOVER_POR_REDE:1}

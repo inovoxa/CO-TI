@@ -61,6 +61,48 @@ O mesmo equipamento é reconhecido, nesta ordem, por:
 Quando a máquina é achada pelos critérios 2–4 (agente reinstalado), o `DEVICEID` novo substitui o antigo e a troca
 fica no histórico. Pedidos do mesmo `DEVICEID` são gravados um de cada vez.
 
+Uma máquina **baixada** que volta a mandar inventário volta para "em uso" (a mudança fica no histórico).
+
+## Envios recebidos (`cmdb.agente_envio`)
+
+Cada pedido dos agentes fica registrado, aceito ou recusado: quando, IP, `DEVICEID`, consulta, versão do agente,
+tamanho, tempo e resultado.
+
+| Resultado | Quando |
+|---|---|
+| `recusado_rede` | IP fora de `CO_TI_INVENTARIO_REDES` |
+| `recusado_senha` | sem `/USER` e `/PWD`, ou errados |
+| `invalido` | corpo vazio, ilegível ou sem `DEVICEID` |
+| `enviar` / `aguardar` | resposta ao PROLOG (`SEND` / `STOP`); o detalhe diz se foram descoberta de rede ou pacotes |
+| `gravado` / `erro` | inventário gravado (nome e quantidade de softwares) ou a falha |
+| `pacote` | resultado de implantação |
+| `nao_suportado` | outras consultas |
+
+- Recusas do mesmo IP e motivo entram uma vez por minuto (um agente mal configurado não enche a tabela).
+- Falhar ao registrar nunca atrapalha o agente.
+- Guardado por `CO_TI_INVENTARIO_ENVIOS_DIAS` (padrão 30). A limpeza roda de hora em hora, numa instância só.
+
+## Limpeza
+
+Máquina formatada com o mesmo hardware volta no mesmo ativo (regra acima), com qualquer nome. A aba **Limpeza** cuida
+do resto:
+
+- **Repetidas:** ativos fora os baixados com o mesmo nome (só computadores), a mesma série + fabricante, o mesmo UUID
+  ou o mesmo MAC.
+  - Valores genéricos não agrupam, nem um valor que aparece em mais de 30 ativos.
+  - O grupo vem do contato mais recente para o mais antigo; o primeiro é a sugestão do que fica.
+  - **Juntar:** os outros saem das listas (`deleted = 1`, `mesclado_em` = o que fica).
+    - Chamados, equipamentos de rede vistos e alvos SNMP passam para o que fica; os alertas dos outros são encerrados.
+    - Patrimônio, observação e unidade escolhida à mão completam o que fica quando ele não tem.
+    - Se o agente está mandando por um dos outros, o `DEVICEID`, os dados do agente, as peças e os softwares passam
+      para o que fica, para o próximo inventário cair nele.
+    - O histórico não muda de dono (é somente inclusão); o do que fica mostra também o dos que foram juntados nele.
+  - **Dar baixa nos outros:** o nome foi reaproveitado num equipamento novo.
+  - **São diferentes:** o par vai para `cmdb.ativo_distinto` e não aparece mais.
+- **Paradas:** agente ou SNMP sem contato há N dias (30 a 365), com baixa em lote.
+  - `CO_TI_INVENTARIO_BAIXA_DIAS` > 0 liga a baixa automática (padrão 0, desligada).
+- Cada ação vai para o histórico do ativo e para a auditoria.
+
 ## O que é gravado
 
 - **Ativo** (resumo):
@@ -120,7 +162,8 @@ guardados. A mudança de tipo (troca de HD por SSD) entra no histórico.
   - A equipe muda situação, patrimônio, unidade e observação.
   - Os outros campos só mudam em ativo cadastrado à mão, porque o agente os sobrescreveria.
 - **Softwares:** o catálogo com o número de instalações. O clique abre os ativos que têm aquele software.
-- **Agentes:** endereços, redes, versões em uso e últimos inventários.
+- **Agentes** (`inventario:ativo:update`): abas Resumo (endereços, redes, versões em uso e últimos inventários),
+  Envios recebidos (com Exportar, `inventario:ativo:exportar`) e Limpeza.
 - **Chamado:** o bloco "Equipamentos" liga ativos ao chamado.
   - Sugere primeiro os ativos de quem pediu.
   - Exige `itsm:chamado:update` e respeita o escopo do chamado.

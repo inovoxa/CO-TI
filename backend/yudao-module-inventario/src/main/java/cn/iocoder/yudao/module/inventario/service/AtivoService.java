@@ -19,6 +19,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +62,8 @@ public class AtivoService {
     private AdminUserMapper adminUserMapper;
     @Resource
     private DeptApi deptApi;
+    @Resource
+    private JdbcTemplate jdbcTemplate;
 
     // ======================================================================================= consulta
 
@@ -194,10 +197,16 @@ public class AtivoService {
 
     public PageResult<AtivoVOs.Historico> historico(Long id, PageParam pagina) {
         existente(id);
+        // o histórico dos ativos juntados neste pela limpeza aparece junto
+        List<Long> ids = jdbcTemplate.queryForList("""
+                WITH RECURSIVE m AS (SELECT id FROM cmdb.ativo WHERE id = ?
+                    UNION SELECT a.id FROM cmdb.ativo a JOIN m ON a.mesclado_em = m.id)
+                SELECT id FROM m LIMIT 1000
+                """, Long.class, id);
         PageResult<HistoricoAtivoDO> p = cmdbHistoricoMapper.selectPage(pagina, new LambdaQueryWrapperX<HistoricoAtivoDO>()
-                .eq(HistoricoAtivoDO::getAtivoId, id).orderByDesc(HistoricoAtivoDO::getQuando).orderByDesc(HistoricoAtivoDO::getId));
-        Set<Long> ids = p.getList().stream().map(HistoricoAtivoDO::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, String> nomes = ids.isEmpty() ? Map.of() : adminUserMapper.selectByIds(ids).stream()
+                .in(HistoricoAtivoDO::getAtivoId, ids).orderByDesc(HistoricoAtivoDO::getQuando).orderByDesc(HistoricoAtivoDO::getId));
+        Set<Long> usuarios = p.getList().stream().map(HistoricoAtivoDO::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, String> nomes = usuarios.isEmpty() ? Map.of() : adminUserMapper.selectByIds(usuarios).stream()
                 .collect(Collectors.toMap(AdminUserDO::getId, AdminUserDO::getNickname));
         List<AtivoVOs.Historico> l = new ArrayList<>();
         for (HistoricoAtivoDO h : p.getList()) {

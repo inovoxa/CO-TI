@@ -61,5 +61,7 @@ public class AtivoDO extends BaseDO {
     private Long paginas;
     /** sysLocation do SNMP */
     private String localizacao;
+    /** Juntado em outro ativo pela limpeza (o registro fica removido) */
+    private Long mescladoEm;
 
 }

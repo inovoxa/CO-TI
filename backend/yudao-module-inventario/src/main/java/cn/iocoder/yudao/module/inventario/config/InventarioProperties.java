@@ -32,6 +32,15 @@ public class InventarioProperties {
     /** Sem contato há mais que isto (dias): o ativo aparece como "sem comunicação". */
     private int semContatoDias = 30;
 
+    /** Por quantos dias o registro de cada envio dos agentes fica guardado (aba "Envios"). */
+    private int enviosDias = 30;
+
+    /**
+     * Limpeza automática: máquina de agente sem contato há mais que isto (dias) passa para "baixado". 0 = desligado (a
+     * equipe dá baixa pela aba "Limpeza"). Se a máquina voltar a mandar inventário, volta para "em uso".
+     */
+    private int baixaAutomaticaDias = 0;
+
     /** De quanto em quanto tempo os alertas são reavaliados (ms); 0 = só pelo botão "Avaliar agora". */
     private long alertasIntervaloMs = 15 * 60 * 1000L;
 
