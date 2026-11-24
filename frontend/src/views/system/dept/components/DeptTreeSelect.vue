@@ -49,7 +49,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  'node-click': [deptId: number | undefined]
+  'node-click': [deptId: number | undefined, nome?: string]
 }>()
 
 const filterText = ref('') // 过滤关键字
@@ -84,7 +84,7 @@ const handleNodeClick = (row: { [key: string]: any }) => {
   } else {
     // 选中新节点
     currentNodeId = row.id
-    emit('node-click', row.id)
+    emit('node-click', row.id, row.name)
   }
 }
 

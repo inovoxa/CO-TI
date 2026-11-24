@@ -11,6 +11,7 @@ public interface ErrorCodeConstants {
     ErrorCode MFA_NAO_INICIADO = new ErrorCode(1_100_000_001, "Comece o cadastro da verificação em duas etapas antes de confirmar");
     ErrorCode MFA_CODIGO_INVALIDO = new ErrorCode(1_100_000_002, "Código incorreto. Confira o horário do celular e tente o código atual");
     ErrorCode MFA_NAO_ATIVO = new ErrorCode(1_100_000_003, "A verificação em duas etapas não está ativa");
+    ErrorCode USUARIOS_INVALIDO = new ErrorCode(1_100_000_010, "Usuários: {}");
     ErrorCode MFA_CHAVE_MESTRA_AUSENTE = new ErrorCode(1_100_000_004, "O servidor não tem a chave-mestra configurada (CO_TI_CHAVE_MESTRA). Avise o administrador");
 
 }

@@ -42,7 +42,7 @@
           :closable="false"
           :title="
             remover
-              ? `${previa.ausentes.length} ${rotulo(previa.ausentes.length)} será(ão) removido(s) do sistema.`
+              ? `${previa.ausentes.length} ${rotulo(previa.ausentes.length)} será(ão) ${desativar ? 'desativado(s)' : 'removido(s) do sistema'}.`
               : `${previa.ausentes.length} ${rotulo(previa.ausentes.length)} não está(ão) no arquivo e será(ão) mantido(s).`
           "
           :type="remover ? 'error' : 'info'"
@@ -129,7 +129,8 @@
           name="ausentes"
         >
           <el-checkbox v-model="remover" class="mb-8px">
-            Remover do sistema os {{ previa.ausentes.length }} que não estão no arquivo
+            {{ desativar ? 'Desativar' : 'Remover do sistema' }} os {{ previa.ausentes.length }} que
+            não estão no arquivo
           </el-checkbox>
           <ul class="lista">
             <li v-for="i in previa.ausentes" :key="i.id">
@@ -173,6 +174,8 @@ const props = defineProps<{
   nomePlural: string
   analisar: (arquivo: File) => Promise<ImportacaoPrevia>
   aplicar: (arquivo: File, removerIds: number[]) => Promise<ImportacaoResultado>
+  /** Os ausentes são desativados, não removidos (usuários) */
+  desativar?: boolean
 }>()
 const emit = defineEmits<{ importado: [] }>()
 const message = useMessage()
@@ -229,7 +232,7 @@ const confirmar = async () => {
   try {
     const r = await props.aplicar(arquivo.value, ids)
     message.success(
-      `Importação concluída: ${r.adicionados} adicionado(s), ${r.atualizados} atualizado(s), ${r.removidos} removido(s).`
+      `Importação concluída: ${r.adicionados} adicionado(s), ${r.atualizados} atualizado(s), ${r.removidos} ${props.desativar ? 'desativado(s)' : 'removido(s)'}.`
     )
     visivel.value = false
     emit('importado')

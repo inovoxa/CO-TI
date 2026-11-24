@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.identidade.service;
 
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
+import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.module.identidade.ad.AdUsuario;
 import cn.iocoder.yudao.module.identidade.dal.dataobject.VinculoAdDO;
@@ -13,6 +14,7 @@ import cn.iocoder.yudao.module.system.dal.mysql.dept.DeptMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
+import cn.iocoder.yudao.module.system.service.oauth2.OAuth2TokenService;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,8 @@ public class AdProvisionamentoService {
     private PasswordEncoder passwordEncoder;
     @Resource
     private AuditoriaService auditoria;
+    @Resource
+    private OAuth2TokenService oauth2TokenService;
 
     /**
      * @return o usuário do portal, ou vazio se a conta colide com uma conta local de mesmo login sem vínculo
@@ -99,6 +103,10 @@ public class AdProvisionamentoService {
             if (!Objects.equals(statusAnterior, status)) {
                 auditoria.registrar("ad.usuario_status", usuario.getId(), conta.getLogin(),
                         Map.of("ativo", conta.isAtivo()));
+                if (!conta.isAtivo()) {
+                    // desativada no AD: as sessões abertas no portal acabam agora, não quando o token expirar
+                    oauth2TokenService.removeAccessToken(usuario.getId(), UserTypeEnum.ADMIN.getValue());
+                }
             }
         }
 
@@ -128,6 +136,7 @@ public class AdProvisionamentoService {
         if (u != null && CommonStatusEnum.isEnable(u.getStatus())) {
             u.setStatus(CommonStatusEnum.DISABLE.getStatus());
             adminUserMapper.updateById(u);
+            oauth2TokenService.removeAccessToken(u.getId(), UserTypeEnum.ADMIN.getValue());
             log.info("[desativarAusente][{} não está mais no AD; desativado no portal]", vinculo.getLogin());
             auditoria.registrar("ad.usuario_desativado", u.getId(), vinculo.getLogin(), Map.of("motivo", "ausente no AD"));
         }

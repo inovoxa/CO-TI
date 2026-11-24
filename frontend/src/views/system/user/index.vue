@@ -1,418 +1,697 @@
 <template>
   <el-row :gutter="20">
-    <!-- 左侧部门树 -->
     <el-col :span="4" :xs="24">
       <ContentWrap class="h-1/1">
-        <DeptTreeSelect @node-click="handleDeptNodeClick" />
-      </ContentWrap>
-    </el-col>
-    <el-col :span="20" :xs="24">
-      <!-- 搜索 -->
-      <ContentWrap>
-        <el-form
-          class="-mb-15px"
-          :model="queryParams"
-          ref="queryFormRef"
-          :inline="true"
-          label-width="68px"
-        >
-          <el-form-item label="Usuário" prop="username">
-            <el-input
-              v-model="queryParams.username"
-              placeholder="Digite o usuário"
-              clearable
-              @keyup.enter="handleQuery"
-              class="!w-240px"
-            />
-          </el-form-item>
-          <el-form-item label="Celular" prop="mobile">
-            <el-input
-              v-model="queryParams.mobile"
-              placeholder="Digite o celular"
-              clearable
-              @keyup.enter="handleQuery"
-              class="!w-240px"
-            />
-          </el-form-item>
-          <el-form-item label="Situação" prop="status">
-            <el-select
-              v-model="queryParams.status"
-              placeholder="Selecione a situação"
-              clearable
-              class="!w-240px"
-            >
-              <el-option
-                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="Criado em" prop="createTime">
-            <el-date-picker
-              v-model="queryParams.createTime"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              type="datetimerange"
-              start-placeholder="Data inicial"
-              end-placeholder="Data final"
-              class="!w-240px"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button @click="handleQuery"><Icon icon="ep:search" />Buscar</el-button>
-            <el-button @click="resetQuery"><Icon icon="ep:refresh" />Limpar</el-button>
-            <el-button
-              type="primary"
-              plain
-              @click="openForm('create')"
-              v-hasPermi="['system:user:create']"
-            >
-              <Icon icon="ep:plus" /> Novo
-            </el-button>
-            <el-button
-              type="warning"
-              plain
-              @click="handleImport"
-              v-hasPermi="['system:user:import']"
-            >
-              <Icon icon="ep:upload" /> Importar
-            </el-button>
-            <el-button
-              type="success"
-              plain
-              @click="handleExport"
-              :loading="exportLoading"
-              v-hasPermi="['system:user:export']"
-            >
-              <Icon icon="ep:download" />Exportar
-            </el-button>
-            <el-button
-              type="danger"
-              plain
-              :disabled="checkedIds.length === 0"
-              @click="handleDeleteBatch"
-              v-hasPermi="['system:user:delete']"
-            >
-              <Icon icon="ep:delete" />Excluir selecionados
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </ContentWrap>
-      <ContentWrap>
-        <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
-          <el-table-column type="selection" width="55" />
-          <el-table-column label="Nº" align="center" key="id" prop="id" />
-          <el-table-column
-            label="Usuário"
-            align="center"
-            prop="username"
-            :show-overflow-tooltip="true"
-          />
-          <el-table-column
-            label="Nome"
-            align="center"
-            prop="nickname"
-            :show-overflow-tooltip="true"
-          />
-          <el-table-column
-            label="Departamento"
-            align="center"
-            key="deptName"
-            prop="deptName"
-            :show-overflow-tooltip="true"
-          />
-          <el-table-column label="Celular" align="center" prop="mobile" width="120" />
-          <el-table-column label="Situação" key="status">
-            <template #default="scope">
-              <el-switch
-                v-model="scope.row.status"
-                :active-value="0"
-                :inactive-value="1"
-                @change="handleStatusChange(scope.row)"
-                :disabled="!checkPermi(['system:user:update'])"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Criado em"
-            align="center"
-            prop="createTime"
-            :formatter="dateFormatter"
-            width="180"
-          />
-          <el-table-column label="Ações" align="center" width="160">
-            <template #default="scope">
-              <div class="flex items-center justify-center">
-                <el-button
-                  type="primary"
-                  link
-                  @click="openForm('update', scope.row.id)"
-                  v-hasPermi="['system:user:update']"
-                >
-                  <Icon icon="ep:edit" />Editar
-                </el-button>
-                <el-dropdown
-                  @command="(command) => handleCommand(command, scope.row)"
-                  v-hasPermi="[
-                    'system:user:delete',
-                    'system:user:update-password',
-                    'system:permission:assign-user-role'
-                  ]"
-                >
-                  <el-button type="primary" link><Icon icon="ep:d-arrow-right" /> Mais</el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item
-                        command="handleDelete"
-                        v-if="checkPermi(['system:user:delete'])"
-                      >
-                        <Icon icon="ep:delete" />Excluir
-                      </el-dropdown-item>
-                      <el-dropdown-item
-                        command="handleResetPwd"
-                        v-if="checkPermi(['system:user:update-password'])"
-                      >
-                        <Icon icon="ep:key" />Redefinir senha
-                      </el-dropdown-item>
-                      <el-dropdown-item
-                        command="handleRole"
-                        v-if="checkPermi(['system:permission:assign-user-role'])"
-                      >
-                        <Icon icon="ep:circle-check" />Atribuir perfis
-                      </el-dropdown-item>
-                      <el-dropdown-item
-                        command="handleRedefinirMfa"
-                        v-if="checkPermi(['identidade:mfa:redefinir'])"
-                      >
-                        <Icon icon="ep:iphone" />Redefinir verificação em duas etapas
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-        <Pagination
-          :total="total"
-          v-model:page="queryParams.pageNo"
-          v-model:limit="queryParams.pageSize"
-          @pagination="getList"
+        <div class="ajuda mb-8px">Unidade pela máquina que a pessoa usa</div>
+        <DeptTreeSelect
+          ref="arvore"
+          @node-click="(id?: number, nome?: string) => filtrarUnidade(id, nome)"
         />
       </ContentWrap>
     </el-col>
+    <el-col :span="20" :xs="24">
+      <el-tabs v-model="aba" class="abas">
+        <el-tab-pane label="Usuários" name="usuarios" />
+        <el-tab-pane label="Revisão de acessos" name="revisao" />
+      </el-tabs>
+
+      <RevisaoAcessos v-if="aba === 'revisao'" @abrir="(id) => fichaRef?.abrir(id)" />
+
+      <template v-else>
+        <ContentWrap>
+          <el-form :inline="true" class="-mb-15px" label-width="0">
+            <el-form-item>
+              <el-input
+                v-model="q.busca"
+                class="!w-260px"
+                clearable
+                placeholder="Nome, usuário, e-mail ou celular"
+                @keyup.enter="buscar"
+              >
+                <template #prefix><Icon icon="ep:search" /></template>
+              </el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-select
+                v-model="q.status"
+                class="!w-120px"
+                clearable
+                placeholder="Situação"
+                @change="buscar"
+              >
+                <el-option :value="0" label="Ativos" />
+                <el-option :value="1" label="Inativos" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-select
+                v-model="q.roleId"
+                class="!w-180px"
+                clearable
+                filterable
+                placeholder="Perfil"
+                @change="buscar"
+              >
+                <el-option v-for="r in perfis" :key="r.id" :label="r.name" :value="r.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-select
+                v-model="q.origem"
+                class="!w-130px"
+                clearable
+                placeholder="Origem"
+                @change="buscar"
+              >
+                <el-option label="AD" value="ad" />
+                <el-option label="Conta local" value="local" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-select
+                v-model="q.semAcessoDias"
+                class="!w-170px"
+                clearable
+                placeholder="Sem acesso há"
+                @change="buscar"
+              >
+                <el-option
+                  v-for="d in [30, 60, 90, 180, 365]"
+                  :key="d"
+                  :label="`Sem acesso há ${d} dias`"
+                  :value="d"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-checkbox v-model="q.semMfa" @change="buscar"
+                >Sem verificação em duas etapas</el-checkbox
+              >
+              <el-checkbox v-model="q.privilegiado" @change="buscar"
+                >Com acesso administrativo</el-checkbox
+              >
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="buscar"><Icon icon="ep:search" class="mr-4px" />Buscar</el-button>
+              <el-button @click="limpar"><Icon icon="ep:refresh" class="mr-4px" />Limpar</el-button>
+              <el-button
+                v-hasPermi="['system:user:create']"
+                plain
+                type="primary"
+                @click="openForm('create')"
+              >
+                <Icon icon="ep:plus" class="mr-4px" />Novo
+              </el-button>
+              <el-button v-hasPermi="['system:user:import']" plain @click="importador?.abrir()">
+                <Icon icon="ep:upload" class="mr-4px" />Importar
+              </el-button>
+              <el-button
+                v-hasPermi="['system:user:export']"
+                :loading="exportando"
+                plain
+                @click="exportar"
+              >
+                <Icon icon="ep:download" class="mr-4px" />Exportar
+              </el-button>
+            </el-form-item>
+          </el-form>
+          <div v-if="q.unidadeId !== undefined" class="mt-8px">
+            <el-tag closable disable-transitions @close="filtrarUnidade(undefined)">
+              Unidade: {{ unidadeFiltro || 'sem unidade' }}
+            </el-tag>
+          </div>
+        </ContentWrap>
+
+        <ContentWrap>
+          <div v-if="selecionados.length" class="lote">
+            <span>
+              <b>{{ selecionados.length }}</b> selecionado(s)
+            </span>
+            <el-dropdown trigger="click" @command="executar">
+              <el-button size="small" type="primary">
+                Executar ação <Icon class="ml-4px" icon="ep:arrow-down" />
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="checkPermi(['system:user:update'])" command="ativar"
+                    >Ativar</el-dropdown-item
+                  >
+                  <el-dropdown-item v-if="checkPermi(['system:user:update'])" command="desativar">
+                    Desativar (encerra as sessões)
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="checkPermi(['system:user:update'])" command="mover">
+                    Mover de departamento…
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="checkPermi(['system:permission:assign-user-role'])"
+                    command="perfil"
+                  >
+                    Dar perfil…
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="checkPermi(['system:permission:assign-user-role'])"
+                    command="tirar_perfil"
+                  >
+                    Tirar perfil…
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="checkPermi(['identidade:mfa:redefinir'])" command="mfa">
+                    Redefinir verificação em duas etapas
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="checkPermi(['system:user:update'])" command="encerrar">
+                    Encerrar sessões
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="checkPermi(['system:user:delete'])"
+                    command="excluir"
+                    divided
+                  >
+                    <span class="text-[var(--el-color-danger)]">Excluir</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-button link size="small" @click="tabela?.clearSelection()"
+              >Limpar seleção</el-button
+            >
+          </div>
+
+          <el-table
+            ref="tabela"
+            v-loading="loading"
+            :data="lista"
+            :default-sort="{ prop: 'nome', order: 'ascending' }"
+            class="cursor-pointer"
+            row-key="id"
+            @row-click="(r: IdentidadeApi.UsuarioLinha) => fichaRef?.abrir(r.id)"
+            @selection-change="(l: IdentidadeApi.UsuarioLinha[]) => (selecionados = l)"
+            @sort-change="ordenar"
+          >
+            <el-table-column type="selection" width="45" />
+            <el-table-column label="Nome" min-width="200" prop="nome" sortable="custom">
+              <template #default="{ row }">
+                <div class="font-medium">{{ row.nickname }}</div>
+                <div class="ajuda"
+                  >{{ row.username }}<span v-if="row.email"> · {{ row.email }}</span></div
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="Unidade" min-width="160" prop="unidade" sortable="custom">
+              <template #default="{ row }">
+                <el-tooltip :content="origemUnidade(row)" placement="top">
+                  <el-link
+                    :type="row.unidadeId ? 'primary' : 'info'"
+                    :underline="false"
+                    @click.stop="daColuna(row)"
+                  >
+                    {{ row.unidadeNome || (row.unidadeOrigem === 'fora' ? 'IP fora das faixas' : '—') }}
+                  </el-link>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+            <el-table-column label="Perfis" min-width="190">
+              <template #default="{ row }">
+                <el-tag
+                  v-for="p in row.perfis"
+                  :key="p.id"
+                  :type="p.codigo === 'super_admin' ? 'danger' : 'info'"
+                  class="mb-2px mr-4px"
+                  disable-transitions
+                  size="small"
+                  >{{ p.nome }}</el-tag
+                >
+                <el-tooltip
+                  v-if="row.privilegiado"
+                  content="Administra usuários, perfis ou permissões"
+                  placement="top"
+                >
+                  <Icon class="align-middle text-[var(--el-color-danger)]" icon="ep:key" />
+                </el-tooltip>
+                <span v-if="!row.perfis.length" class="ajuda">sem perfil</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Origem" width="120">
+              <template #default="{ row }">
+                <el-tag
+                  v-if="row.origem === 'ad'"
+                  :type="row.adAtivo === false ? 'danger' : 'success'"
+                  disable-transitions
+                  size="small"
+                  >{{ row.adAtivo === false ? 'Desativado no AD' : 'AD' }}</el-tag
+                >
+                <el-tag v-else disable-transitions size="small" type="info">Local</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="2 etapas" width="85">
+              <template #default="{ row }">
+                <Icon
+                  v-if="row.mfa"
+                  class="text-[var(--el-color-success)]"
+                  icon="ep:circle-check-filled"
+                />
+                <span v-else class="ajuda">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Último acesso" prop="acesso" sortable="custom" width="150">
+              <template #default="{ row }">
+                <el-tooltip
+                  :content="row.ultimoIp ? `IP ${row.ultimoIp}` : 'Nunca entrou'"
+                  placement="top"
+                >
+                  <span :class="{ parado: parado(row) }">{{ quando(row.ultimoAcesso) }}</span>
+                </el-tooltip>
+                <div v-if="row.sessoes" class="ajuda">{{ row.sessoes }} sessão(ões) aberta(s)</div>
+              </template>
+            </el-table-column>
+            <el-table-column label="Situação" prop="situacao" sortable="custom" width="105">
+              <template #default="{ row }">
+                <span @click.stop>
+                  <el-switch
+                    v-model="row.status"
+                    :active-value="0"
+                    :disabled="!checkPermi(['system:user:update'])"
+                    :inactive-value="1"
+                    @change="handleStatusChange(row)"
+                  />
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" label="Ações" width="150">
+              <template #default="{ row }">
+                <div class="flex items-center justify-center" @click.stop>
+                  <el-button
+                    v-hasPermi="['system:user:update']"
+                    link
+                    type="primary"
+                    @click="openForm('update', row.id)"
+                  >
+                    <Icon icon="ep:edit" />Editar
+                  </el-button>
+                  <el-dropdown
+                    v-hasPermi="[
+                      'system:user:delete',
+                      'system:user:update-password',
+                      'system:permission:assign-user-role',
+                      'identidade:mfa:redefinir'
+                    ]"
+                    @command="(c: string) => handleCommand(c, row)"
+                  >
+                    <el-button link type="primary"><Icon icon="ep:d-arrow-right" /> Mais</el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item
+                          v-if="checkPermi(['system:user:update-password'])"
+                          command="senha"
+                        >
+                          <Icon icon="ep:key" />Redefinir senha
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                          v-if="checkPermi(['system:permission:assign-user-role'])"
+                          command="perfis"
+                        >
+                          <Icon icon="ep:circle-check" />Atribuir perfis
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                          v-if="checkPermi(['identidade:mfa:redefinir'])"
+                          command="mfa"
+                        >
+                          <Icon icon="ep:iphone" />Redefinir verificação em duas etapas
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                          v-if="checkPermi(['system:user:update']) && row.sessoes"
+                          command="encerrar"
+                        >
+                          <Icon icon="ep:switch-button" />Encerrar sessões
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                          v-if="checkPermi(['system:user:delete'])"
+                          command="excluir"
+                        >
+                          <Icon icon="ep:delete" />Excluir
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          <Pagination
+            v-model:limit="q.pageSize"
+            v-model:page="q.pageNo"
+            :total="total"
+            @pagination="carregar"
+          />
+        </ContentWrap>
+      </template>
+    </el-col>
   </el-row>
 
-  <!-- 添加或修改用户对话框 -->
-  <UserForm ref="formRef" @success="getList" />
-  <!-- 用户导入对话框 -->
-  <UserImportForm ref="importFormRef" @success="getList" />
-  <!-- 分配角色 -->
-  <UserAssignRoleForm ref="assignRoleFormRef" @success="getList" />
+  <UserForm ref="formRef" @success="carregar" />
+  <UserAssignRoleForm ref="assignRoleFormRef" @success="carregar" />
+  <FichaUsuario ref="fichaRef" @editar="(id) => openForm('update', id)" @mudou="carregar" />
+  <ImportarPlanilha
+    ref="importador"
+    :analisar="IdentidadeApi.analisarImportacaoUsuarios"
+    :aplicar="IdentidadeApi.importarUsuarios"
+    desativar
+    nome-plural="usuários"
+    nome-singular="usuário"
+    @importado="carregar"
+  />
+
+  <Dialog v-model="escolha.visivel" :title="escolha.titulo" width="460px">
+    <el-tree-select
+      v-if="escolha.acao === 'mover'"
+      v-model="escolha.deptId"
+      :data="depts"
+      :props="defaultProps"
+      check-strictly
+      class="!w-full"
+      filterable
+      node-key="id"
+      placeholder="Departamento"
+    />
+    <el-select v-else v-model="escolha.roleId" class="!w-full" filterable placeholder="Perfil">
+      <el-option v-for="r in perfis" :key="r.id" :label="r.name" :value="r.id" />
+    </el-select>
+    <div class="ajuda mt-8px">
+      {{ selecionados.length }} usuário(s). Contas do AD: se o AD espelha as OUs, o departamento
+      volta para o da OU na próxima sincronização.
+    </div>
+    <template #footer>
+      <el-button
+        :disabled="escolha.acao === 'mover' ? !escolha.deptId : !escolha.roleId"
+        type="primary"
+        @click="confirmarEscolha"
+        >Aplicar</el-button
+      >
+      <el-button @click="escolha.visivel = false">Cancelar</el-button>
+    </template>
+  </Dialog>
 </template>
+
 <script lang="ts" setup>
-import { ElMessageBox } from 'element-plus'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { ElMessageBox, type TableInstance } from 'element-plus'
 import { checkPermi } from '@/utils/permission'
-import { dateFormatter } from '@/utils/formatTime'
 import download from '@/utils/download'
 import { CommonStatusEnum } from '@/utils/constants'
+import { defaultProps, handleTree } from '@/utils/tree'
 import * as UserApi from '@/api/system/user'
+import * as RoleApi from '@/api/system/role'
+import * as DeptApi from '@/api/system/dept'
 import * as IdentidadeApi from '@/api/identidade'
+import ImportarPlanilha from '@/components/ImportarPlanilha/index.vue'
 import UserForm from './UserForm.vue'
-import UserImportForm from './UserImportForm.vue'
 import UserAssignRoleForm from './UserAssignRoleForm.vue'
+import FichaUsuario from './FichaUsuario.vue'
+import RevisaoAcessos from './RevisaoAcessos.vue'
 import DeptTreeSelect from '@/views/system/dept/components/DeptTreeSelect.vue'
 
 defineOptions({ name: 'SystemUser' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const message = useMessage()
+const aba = ref('usuarios')
+const loading = ref(true)
+const total = ref(0)
+const lista = ref<IdentidadeApi.UsuarioLinha[]>([])
+const selecionados = ref<IdentidadeApi.UsuarioLinha[]>([])
+const perfis = ref<RoleApi.RoleVO[]>([])
+const depts = ref<any[]>([])
+const tabela = ref<TableInstance>()
+const fichaRef = ref<InstanceType<typeof FichaUsuario>>()
+const importador = ref<InstanceType<typeof ImportarPlanilha>>()
+const exportando = ref(false)
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数
-const queryParams = reactive({
+const inicial = () => ({
   pageNo: 1,
-  pageSize: 10,
-  username: undefined,
-  mobile: undefined,
-  status: undefined,
-  deptId: undefined as number | undefined,
-  createTime: []
+  pageSize: 20,
+  busca: '',
+  status: undefined as number | undefined,
+  roleId: undefined as number | undefined,
+  origem: undefined as string | undefined,
+  semAcessoDias: undefined as number | undefined,
+  semMfa: false,
+  privilegiado: false,
+  unidadeId: undefined as number | undefined,
+  ordem: 'nome',
+  direcao: 'asc'
 })
-const queryFormRef = ref() // 搜索的表单
+const q = reactive(inicial())
 
-/** 查询列表 */
-const getList = async () => {
+const quando = (d?: string) =>
+  d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nunca'
+const parado = (u: IdentidadeApi.UsuarioLinha) =>
+  u.status === 0 &&
+  (!u.ultimoAcesso || Date.now() - new Date(u.ultimoAcesso).getTime() > 90 * 86400000)
+
+const params = () => {
+  const p: any = { ...q }
+  for (const k of Object.keys(p))
+    if (p[k] === '' || p[k] === null || p[k] === undefined || p[k] === false) delete p[k]
+  return p
+}
+const carregar = async () => {
   loading.value = true
   try {
-    const data = await UserApi.getUserPage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    const r = await IdentidadeApi.getUsuarios(params())
+    lista.value = r.list
+    total.value = r.total
   } finally {
     loading.value = false
   }
 }
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
+const buscar = () => {
+  q.pageNo = 1
+  carregar()
+}
+const arvore = ref<InstanceType<typeof DeptTreeSelect>>()
+const limpar = () => {
+  Object.assign(q, inicial())
+  arvore.value?.reset()
+  unidadeFiltro.value = undefined
+  buscar()
+}
+const ordenar = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+  q.ordem = order ? prop : 'nome'
+  q.direcao = order === 'descending' ? 'desc' : 'asc'
+  buscar()
+}
+/** Unidade = a da máquina que a pessoa usa (faixa de IP ou dada à mão na máquina); -1 = sem unidade */
+const unidadeFiltro = ref<string>()
+const filtrarUnidade = (id: number | undefined, nome?: string) => {
+  q.unidadeId = id
+  unidadeFiltro.value = id !== undefined && id >= 0 ? nome : undefined
+  buscar()
+}
+const daColuna = (u: IdentidadeApi.UsuarioLinha) => {
+  arvore.value?.reset()
+  if (u.unidadeId) arvore.value?.setCurrent(u.unidadeId)
+  filtrarUnidade(u.unidadeId ?? -1, u.unidadeNome)
+}
+const origemUnidade = (u: IdentidadeApi.UsuarioLinha) => {
+  const maq = `${u.unidadeMaquina}${u.unidadeIp ? ' (' + u.unidadeIp + ')' : ''}`
+  switch (u.unidadeOrigem) {
+    case 'faixa':
+      return `Pela faixa de IP da máquina ${maq}. Clique para ver todos desta unidade.`
+    case 'manual':
+      return `Unidade dada à mão na máquina ${maq}. Clique para ver todos desta unidade.`
+    case 'fora':
+      return `A máquina ${maq} está num IP fora das faixas cadastradas (Inventário → Rede).`
+    default:
+      return 'Nenhuma máquina do inventário com esta pessoa.'
+  }
 }
 
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value?.resetFields()
-  handleQuery()
-}
-
-/** 处理部门被点击 */
-const handleDeptNodeClick = async (deptId: number | undefined) => {
-  queryParams.deptId = deptId
-  await getList()
-}
-
-/** 添加/修改操作 */
 const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
+const openForm = (type: string, id?: number) => formRef.value.open(type, id)
+const assignRoleFormRef = ref()
 
-/** 用户导入 */
-const importFormRef = ref()
-const handleImport = () => {
-  importFormRef.value.open()
-}
-
-/** 修改用户状态 */
-const handleStatusChange = async (row: UserApi.UserVO) => {
+const exportar = async () => {
+  exportando.value = true
   try {
-    // 修改状态的二次确认
-    const text = row.status === CommonStatusEnum.ENABLE ? 'ativar' : 'desativar'
-    await message.confirm('Confirma ' + text + ' o usuário "' + row.username + '"?')
-    // 发起修改状态
+    download.excel(await IdentidadeApi.exportarUsuarios(params()), 'usuarios.xlsx')
+  } finally {
+    exportando.value = false
+  }
+}
+
+const handleStatusChange = async (row: IdentidadeApi.UsuarioLinha) => {
+  try {
+    const ativar = row.status === CommonStatusEnum.ENABLE
+    await message.confirm(
+      `${ativar ? 'Ativar' : 'Desativar'} "${row.username}"?` +
+        (ativar ? '' : ' As sessões abertas acabam na hora.') +
+        (row.origem === 'ad'
+          ? ' A conta vem do AD: a próxima sincronização volta a situação que está lá.'
+          : '')
+    )
     await UserApi.updateUserStatus(row.id, row.status)
-    // 刷新列表
-    await getList()
+    await carregar()
   } catch {
-    // 取消后，进行恢复按钮
     row.status =
       row.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
   }
 }
 
-/** 导出按钮操作 */
-const exportLoading = ref(false)
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await UserApi.exportUser(queryParams)
-    download.excel(data, 'usuarios.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
-}
-
-/** 操作分发 */
-const handleCommand = (command: string, row: UserApi.UserVO) => {
+// ---------- ações de uma pessoa ----------
+const handleCommand = async (command: string, row: IdentidadeApi.UsuarioLinha) => {
   switch (command) {
-    case 'handleDelete':
-      handleDelete(row.id)
-      break
-    case 'handleResetPwd':
-      handleResetPwd(row)
-      break
-    case 'handleRole':
-      handleRole(row)
-      break
-    case 'handleRedefinirMfa':
-      handleRedefinirMfa(row)
-      break
-    default:
-      break
+    case 'senha':
+      return redefinirSenha(row)
+    case 'perfis':
+      return assignRoleFormRef.value.open({
+        id: row.id,
+        username: row.username,
+        nickname: row.nickname
+      } as any)
+    case 'mfa':
+    case 'encerrar':
+      return emLote(command, [row])
+    case 'excluir':
+      try {
+        await message.delConfirm(
+          `Excluir "${row.username}"? Prefira desativar: excluir apaga o vínculo com o histórico.`
+        )
+      } catch {
+        return
+      }
+      await UserApi.deleteUser(row.id)
+      message.success('Usuário excluído')
+      return carregar()
   }
 }
 
-/** CO-TI: remove a verificação em duas etapas de quem perdeu o celular e os códigos */
-const handleRedefinirMfa = async (row: UserApi.UserVO) => {
+const redefinirSenha = async (row: IdentidadeApi.UsuarioLinha) => {
+  if (row.origem === 'ad') {
+    message.warning('Esta conta entra com a senha do AD: troque a senha no AD.')
+    return
+  }
   try {
-    await message.confirm(
-      'Remover a verificação em duas etapas de "' +
-        row.username +
-        '"? Confirme a identidade da pessoa antes: ela poderá entrar só com a senha e cadastrar um novo celular.'
-    )
-    await IdentidadeApi.redefinirMfaUsuario(row.id)
-    message.success('Verificação em duas etapas removida')
+    const r = await ElMessageBox.prompt(`Nova senha de "${row.username}"`, 'Redefinir senha', {
+      confirmButtonText: 'Redefinir',
+      cancelButtonText: 'Cancelar',
+      inputType: 'password',
+      inputValidator: (v) =>
+        (v.length >= 8 && v.length <= 16) || 'A senha deve ter de 8 a 16 caracteres'
+    })
+    await UserApi.resetUserPassword(row.id, r.value)
+    message.success('Senha redefinida. Passe-a à pessoa por um canal seguro.')
   } catch {}
 }
 
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await UserApi.deleteUser(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
+// ---------- lote ----------
+const TEXTOS: Record<string, string> = {
+  ativar: 'Ativar',
+  desativar: 'Desativar (as sessões abertas acabam na hora)',
+  mfa: 'Remover a verificação em duas etapas de',
+  encerrar: 'Encerrar as sessões de'
 }
+const escolha = reactive({
+  visivel: false,
+  acao: '',
+  titulo: '',
+  deptId: undefined as number | undefined,
+  roleId: undefined as number | undefined
+})
 
-/** 批量删除按钮操作 */
-const checkedIds = ref<number[]>([])
-const handleRowCheckboxChange = (rows: UserApi.UserVO[]) => {
-  checkedIds.value = rows.map((row) => row.id)
-}
-
-const handleDeleteBatch = async () => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起批量删除
-    await UserApi.deleteUserList(checkedIds.value)
-    checkedIds.value = []
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 重置密码 */
-const handleResetPwd = async (row: UserApi.UserVO) => {
-  try {
-    // 重置的二次确认
-    const result = await ElMessageBox.prompt(
-      'Digite a nova senha de "' + row.username + '"',
-      t('common.reminder'),
+const emLote = async (
+  acao: string,
+  alvos: IdentidadeApi.UsuarioLinha[],
+  extra: { deptId?: number; roleId?: number } = {}
+) => {
+  if (TEXTOS[acao]) {
+    try {
+      await message.confirm(
+        `${TEXTOS[acao]} ${alvos.length === 1 ? `"${alvos[0].username}"` : `${alvos.length} usuários`}?` +
+          (acao === 'mfa'
+            ? ' Confirme a identidade antes: a pessoa poderá entrar só com a senha.'
+            : '')
+      )
+    } catch {
+      return
+    }
+  }
+  const r = await IdentidadeApi.loteUsuarios({ acao, ids: alvos.map((u) => u.id), ...extra })
+  if (r.avisos.length) {
+    await ElMessageBox.alert(
+      r.avisos.join('\n'),
+      `${r.feitos} feito(s), ${r.ignorados} ignorado(s)`,
       {
-        confirmButtonText: t('common.ok'),
-        cancelButtonText: t('common.cancel'),
-        type: 'warning',
-        inputValidator: (value) => (value.length >= 4 && value.length <= 16) || 'A senha deve ter de 4 a 16 caracteres'
+        confirmButtonText: 'Ok'
       }
     )
-    const password = result.value
-    // 发起重置
-    await UserApi.resetUserPassword(row.id, password)
-    message.success('Senha alterada. Nova senha: ' + password)
-  } catch {}
+  } else {
+    message.success(`${r.feitos} usuário(s) atualizado(s)`)
+  }
+  tabela.value?.clearSelection()
+  await carregar()
 }
 
-/** 分配角色 */
-const assignRoleFormRef = ref()
-const handleRole = (row: UserApi.UserVO) => {
-  assignRoleFormRef.value.open(row)
+const executar = async (acao: string) => {
+  const alvos = selecionados.value
+  if (acao === 'excluir') {
+    try {
+      await message.delConfirm(`Excluir ${alvos.length} usuário(s)? Prefira desativar.`)
+    } catch {
+      return
+    }
+    await UserApi.deleteUserList(alvos.map((u) => u.id))
+    message.success('Usuários excluídos')
+    tabela.value?.clearSelection()
+    return carregar()
+  }
+  if (acao === 'mover' || acao === 'perfil' || acao === 'tirar_perfil') {
+    if (acao === 'mover' && !depts.value.length)
+      depts.value = handleTree(await DeptApi.getSimpleDeptList())
+    Object.assign(escolha, {
+      visivel: true,
+      acao,
+      deptId: undefined,
+      roleId: undefined,
+      titulo:
+        acao === 'mover'
+          ? 'Mover para o departamento'
+          : acao === 'perfil'
+            ? 'Dar o perfil'
+            : 'Tirar o perfil'
+    })
+    return
+  }
+  await emLote(acao, alvos)
+}
+const confirmarEscolha = async () => {
+  escolha.visivel = false
+  await emLote(escolha.acao, selecionados.value, { deptId: escolha.deptId, roleId: escolha.roleId })
 }
 
-/** 初始化 */
-onMounted(() => {
-  getList()
+onMounted(async () => {
+  carregar()
+  perfis.value = await RoleApi.getSimpleRoleList()
 })
 </script>
+
+<style lang="scss" scoped>
+.abas :deep(.el-tabs__header) {
+  margin-bottom: 8px;
+}
+
+.ajuda {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.parado {
+  color: var(--el-color-warning);
+}
+
+.lote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
+}
+</style>

@@ -578,6 +578,36 @@ Como fica:
   - o painel `/druid` fica desligado.
 - **IP real:** o nginx sobrescreve `X-Forwarded-For` com o IP da conexão. Atrás de outro proxy, configure o módulo `realip`.
 
+## Usuários (Sistema → Usuários)
+
+- **Lista:**
+  - colunas: perfis (com a chave vermelha para quem tem acesso administrativo), origem (AD, local ou desativado no AD),
+    verificação em duas etapas, último acesso (com IP) e sessões abertas;
+  - uma busca por nome, usuário, e-mail ou celular;
+  - filtros: situação, perfil, origem, sem acesso há N dias, sem verificação em duas etapas e com acesso administrativo;
+  - ordenação pelo cabeçalho.
+- **Unidade** (coluna e árvore à esquerda): a da máquina que a pessoa usa, não o departamento da conta.
+  - Vale a máquina do inventário com contato mais recente em que ela é a usuária.
+  - A unidade dada à mão na máquina vence; senão, a faixa de IP mais específica (Inventário → Rede) que contém o IP dela.
+  - Sem faixa para o IP: "IP fora das faixas". A unidade que a máquina herdou da própria pessoa não conta (seria circular).
+  - Clique na unidade para ver todos dela, com as subunidades. Regra no banco: `cmdb.unidade_do_usuario` (V93).
+  - O departamento da conta continua na Ficha, no Exportar/Importar e no escopo de dados dos perfis.
+- **Acesso administrativo:** perfil `super_admin` ou perfil que cria, altera ou exclui usuários, troca senhas, dá perfis
+  ou muda permissões (`UsuarioGestaoService.PRIVILEGIOS`).
+- **Ficha** (clique na linha): perfis e o que cada um enxerga, conta do AD, segundo fator, acessos (entradas e
+  recusas), sessões abertas, equipamentos do inventário, chamados que a pessoa pediu e o que ela fez na auditoria.
+- **Em lote:** ativar, desativar, mover de departamento, dar ou tirar perfil, redefinir a verificação em duas etapas,
+  encerrar sessões e excluir. Cada ação exige a mesma permissão do botão de uma pessoa só e vai para a auditoria.
+- **Contas do AD:** nome, e-mail, celular e situação vêm do AD (e o departamento, se o AD espelha as OUs). A próxima
+  sincronização sobrescreve o que mudar aqui. A conta desativada pelo AD tem as sessões encerradas na hora.
+- **Revisão de acessos** (aba): desativados no AD com acesso aqui, acesso administrativo sem segundo fator, acesso
+  administrativo, ativos sem entrar há 90 dias e contas locais. "Marcar como revisado" registra na auditoria quem
+  revisou e o que estava na lista.
+- **Exportar e Importar** (com prévia): Usuário, Nome, E-mail, Celular, Departamento, Situação e Perfis.
+  - A importação só altera quem já existe. Conta nova entra pelo AD ou pelo botão Novo: um login criado por planilha
+    impediria o AD de vincular a conta.
+  - Quem não está no arquivo só é desativado (nunca excluído) se for marcado, e só se for conta local.
+
 ## Relatórios em planilha e PDF
 
 - **Excel:** botão nas telas *Painel* (uma aba por indicador), *Chamados* e *Inventário → Ativos*. Sai com os filtros da
