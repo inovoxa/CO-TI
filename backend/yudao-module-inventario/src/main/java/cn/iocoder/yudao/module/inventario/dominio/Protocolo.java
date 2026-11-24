@@ -281,6 +281,9 @@ public final class Protocolo {
                 secoes.put(nome, itens);
             }
         }
+        if (j.get("tag") != null && !String.valueOf(j.get("tag")).isBlank()) {
+            secoes.putIfAbsent("ACCOUNTINFO", List.of(Map.of("KEYNAME", "TAG", "KEYVALUE", String.valueOf(j.get("tag")))));
+        }
         traduzirGlpiAgent(secoes);
         return new Pedido("glpi", String.valueOf(j.get("action")).toUpperCase(Locale.ROOT),
                 j.get("deviceid") == null ? null : j.get("deviceid").toString(), secoes);

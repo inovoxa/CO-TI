@@ -132,6 +132,23 @@
       </el-form-item>
       <el-form-item>
         <el-select
+          v-model="q.tag"
+          class="!w-170px"
+          clearable
+          filterable
+          placeholder="TAG"
+          @change="buscar"
+        >
+          <el-option
+            v-for="o in opcoes.tags"
+            :key="o.valor"
+            :label="`${o.valor} (${o.total})`"
+            :value="o.valor"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select
           v-model="q.antivirus"
           class="!w-160px"
           clearable
@@ -198,10 +215,12 @@
     <el-table
       v-loading="loading"
       :data="lista"
+      :default-sort="{ prop: 'nome', order: 'ascending' }"
       class="cursor-pointer"
       @row-click="(r) => abrir(r.id)"
+      @sort-change="ordenar"
     >
-      <el-table-column label="Nome" min-width="190">
+      <el-table-column label="Nome" min-width="190" prop="nome" sortable="custom">
         <template #default="{ row }">
           <Icon :icon="icone(row.tipo)" class="mr-6px align-middle" />
           <span class="font-medium">{{ row.nome }}</span>
@@ -210,7 +229,22 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="Sistema" min-width="200" show-overflow-tooltip>
+      <el-table-column
+        label="TAG"
+        min-width="110"
+        prop="tag"
+        show-overflow-tooltip
+        sortable="custom"
+      >
+        <template #default="{ row }">{{ row.tag || '—' }}</template>
+      </el-table-column>
+      <el-table-column
+        label="Sistema"
+        min-width="200"
+        prop="sistema"
+        show-overflow-tooltip
+        sortable="custom"
+      >
         <template #default="{ row }">
           {{ row.soNome || '—' }}
           <el-tag
@@ -223,12 +257,29 @@
           >
         </template>
       </el-table-column>
-      <el-table-column label="Usuário" min-width="150" show-overflow-tooltip>
+      <el-table-column
+        label="Usuário"
+        min-width="150"
+        prop="usuario"
+        show-overflow-tooltip
+        sortable="custom"
+      >
         <template #default="{ row }">{{ row.usuarioNome || row.usuarioLogin || '—' }}</template>
       </el-table-column>
-      <el-table-column label="Unidade" min-width="150" prop="deptNome" show-overflow-tooltip />
-      <el-table-column label="IP" prop="ip" width="130" />
-      <el-table-column label="Antivírus" width="125">
+      <el-table-column
+        label="Unidade"
+        min-width="150"
+        prop="unidade"
+        show-overflow-tooltip
+        sortable="custom"
+      >
+        <template #default="{ row }">{{ row.deptNome || '—' }}</template>
+      </el-table-column>
+      <el-table-column label="IP" prop="ip" sortable="custom" width="130" />
+      <el-table-column label="Memória" prop="memoria" sortable="custom" width="105">
+        <template #default="{ row }">{{ gb(row.memoriaMb) }}</template>
+      </el-table-column>
+      <el-table-column label="Antivírus" prop="antivirus" sortable="custom" width="125">
         <template #default="{ row }">
           <el-tag
             v-if="AGENTES.includes(row.origem)"
@@ -240,14 +291,14 @@
           <span v-else>—</span>
         </template>
       </el-table-column>
-      <el-table-column label="Último contato" width="150">
+      <el-table-column label="Último contato" prop="contato" sortable="custom" width="150">
         <template #default="{ row }">
           <span :class="row.semContato ? 'text-[var(--el-color-danger)]' : ''">{{
             quando(row.ultimoContato)
           }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Situação" width="115">
+      <el-table-column label="Situação" prop="situacao" sortable="custom" width="115">
         <template #default="{ row }">
           <el-tag :type="cor(SITUACOES_ATIVO, row.situacao)" disable-transitions size="small">{{
             rotulo(SITUACOES_ATIVO, row.situacao)
@@ -309,6 +360,7 @@
       </el-alert>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item label="Patrimônio">{{ a.patrimonio || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="TAG">{{ a.tag || '—' }}</el-descriptions-item>
         <el-descriptions-item label="Número de série">{{
           a.numeroSerie || '—'
         }}</el-descriptions-item>
@@ -379,18 +431,26 @@
       </el-descriptions>
 
       <el-tabs v-model="aba" class="mt-12px" @tab-change="trocarAba">
-        <el-tab-pane :label="`Componentes (${detalhe.d.componentes.length})`" name="componentes">
-          <el-empty
-            v-if="!detalhe.d.componentes.length"
-            :image-size="60"
-            description="O agente ainda não mandou as peças"
+        <el-tab-pane :label="`Hardware (${contar(HARDWARE)})`" name="hardware">
+          <Pecas
+            :componentes="detalhe.d.componentes"
+            :tipos="HARDWARE"
+            vazio="O agente ainda não mandou o hardware"
           />
-          <div v-for="(itens, tipo) in componentesPorTipo" :key="tipo" class="mb-12px">
-            <div class="mb-4px text-13px font-bold">{{ COMPONENTES[tipo] || tipo }}</div>
-            <ul class="m-0 pl-18px text-13px leading-22px">
-              <li v-for="c in itens" :key="c.id">{{ c.descricao }}</li>
-            </ul>
-          </div>
+        </el-tab-pane>
+        <el-tab-pane :label="`Rede (${contar(REDE)})`" name="rede">
+          <Pecas
+            :componentes="detalhe.d.componentes"
+            :tipos="REDE"
+            vazio="Nenhuma placa de rede informada"
+          />
+        </el-tab-pane>
+        <el-tab-pane :label="`Dispositivos (${contar(DISPOSITIVOS)})`" name="dispositivos">
+          <Pecas
+            :componentes="detalhe.d.componentes"
+            :tipos="DISPOSITIVOS"
+            vazio="Nenhum monitor, teclado, mouse, USB, impressora ou modem informado"
+          />
         </el-tab-pane>
         <el-tab-pane :label="`Softwares (${detalhe.d.softwares.length})`" name="softwares">
           <el-input
@@ -564,6 +624,7 @@
 
 <script lang="ts" setup>
 import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
+import Pecas from './Pecas.vue'
 import * as Inv from '@/api/inventario'
 import {
   ANTIVIRUS,
@@ -616,10 +677,13 @@ const q = reactive({
   discoTipo: undefined as string | undefined,
   origem: undefined as string | undefined,
   memoriaMinGb: undefined as number | undefined,
-  memoriaMaxGb: undefined as number | undefined
+  memoriaMaxGb: undefined as number | undefined,
+  tag: undefined as string | undefined,
+  ordem: 'nome',
+  direcao: 'asc'
 })
 const maisFiltros = ref(false)
-const opcoes = ref<Inv.Opcoes>({ sistemas: [], fabricantes: [], modelos: [] })
+const opcoes = ref<Inv.Opcoes>({ sistemas: [], fabricantes: [], modelos: [], tags: [] })
 const EXTRAS = [
   'sistema',
   'fabricante',
@@ -628,7 +692,8 @@ const EXTRAS = [
   'discoTipo',
   'origem',
   'memoriaMinGb',
-  'memoriaMaxGb'
+  'memoriaMaxGb',
+  'tag'
 ] as const
 const filtrosExtras = computed(
   () => EXTRAS.filter((k) => q[k] !== undefined && q[k] !== null && q[k] !== '').length
@@ -639,7 +704,24 @@ const limparExtras = () => {
 }
 const detalhe = reactive({ visivel: false, d: undefined as Inv.Detalhe | undefined })
 const a = computed(() => detalhe.d!.ativo)
-const aba = ref('componentes')
+const aba = ref('hardware')
+const HARDWARE = [
+  'bios',
+  'processador',
+  'memoria',
+  'disco',
+  'volume',
+  'video',
+  'som',
+  'controlador',
+  'bateria',
+  'slot',
+  'suprimento'
+]
+const REDE = ['rede']
+const DISPOSITIVOS = ['monitor', 'entrada', 'usb', 'impressora', 'modem']
+const contar = (tipos: string[]) =>
+  (detalhe.d?.componentes ?? []).filter((c) => tipos.includes(c.tipo)).length
 const filtroSoftware = ref('')
 const hist = reactive({
   pageNo: 1,
@@ -662,11 +744,6 @@ const quando = (d?: string) =>
   d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 const dataCurta = (d?: string) => (d ? d.split('-').reverse().join('/') : '—')
 
-const componentesPorTipo = computed(() => {
-  const g: Record<string, Inv.Componente[]> = {}
-  for (const c of detalhe.d?.componentes ?? []) (g[c.tipo] ||= []).push(c)
-  return g
-})
 const softwaresFiltrados = computed(() => {
   const f = filtroSoftware.value.trim().toLowerCase()
   const l = detalhe.d?.softwares ?? []
@@ -754,6 +831,11 @@ const buscar = () => {
   q.pageNo = 1
   carregar()
 }
+const ordenar = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+  q.ordem = order ? prop : 'nome'
+  q.direcao = order === 'descending' ? 'desc' : 'asc'
+  buscar()
+}
 const alertar = (v: string) => {
   q.alerta = v
   buscar()
@@ -766,7 +848,7 @@ const limparSoftware = () => {
 
 const abrir = async (id: number) => {
   detalhe.d = await Inv.getAtivo(id)
-  aba.value = 'componentes'
+  aba.value = 'hardware'
   filtroSoftware.value = ''
   hist.pageNo = 1
   hist.lista = []
@@ -851,6 +933,30 @@ const irChamado = (id: number) => router.push({ path: '/servicedesk/chamados', q
 const aplicarQuery = async () => {
   q.softwareId = route.query.softwareId ? Number(route.query.softwareId) : undefined
   if (route.query.alerta) q.alerta = String(route.query.alerta)
+  // filtros vindos do painel (clique num gráfico)
+  const filtros = [
+    'tipo',
+    'situacao',
+    'origem',
+    'sistema',
+    'fabricante',
+    'modelo',
+    'antivirus',
+    'discoTipo',
+    'tag'
+  ] as const
+  if (filtros.some((k) => route.query[k])) {
+    for (const k of filtros) (q as any)[k] = route.query[k] ? String(route.query[k]) : undefined
+    maisFiltros.value = [
+      'sistema',
+      'fabricante',
+      'modelo',
+      'antivirus',
+      'discoTipo',
+      'tag',
+      'origem'
+    ].some((k) => route.query[k])
+  }
   q.pageNo = 1
   await carregar()
   const id = Number(route.query.id)

@@ -77,6 +77,7 @@ public class AtivoService {
                 .eqIfPresent(AtivoDO::getModelo, vazio(req.getModelo()))
                 .eqIfPresent(AtivoDO::getAntivirus, vazio(req.getAntivirus()))
                 .eqIfPresent(AtivoDO::getOrigem, vazio(req.getOrigem()))
+                .eqIfPresent(AtivoDO::getTag, vazio(req.getTag()))
                 .eqIfPresent(AtivoDO::getDiscoTipo, "com_ssd".equals(req.getDiscoTipo()) ? null : vazio(req.getDiscoTipo()))
                 .geIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMinGb() == null ? null : req.getMemoriaMinGb() * 1024 - 512)
                 .leIfPresent(AtivoDO::getMemoriaMb, req.getMemoriaMaxGb() == null ? null : req.getMemoriaMaxGb() * 1024 + 512);
@@ -91,7 +92,8 @@ public class AtivoService {
         if (req.getBusca() != null && !req.getBusca().isBlank()) {
             String b = "%" + req.getBusca().trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
             q.and(w -> w.apply("nome ILIKE {0}", b).or().apply("patrimonio ILIKE {0}", b).or().apply("numero_serie ILIKE {0}", b)
-                    .or().apply("ip ILIKE {0}", b).or().apply("usuario_login ILIKE {0}", b).or().apply("modelo ILIKE {0}", b));
+                    .or().apply("ip ILIKE {0}", b).or().apply("usuario_login ILIKE {0}", b).or().apply("modelo ILIKE {0}", b)
+                    .or().apply("tag ILIKE {0}", b));
         }
         if (req.getAlerta() != null) {
             switch (req.getAlerta()) {
@@ -106,7 +108,7 @@ public class AtivoService {
             q.apply("EXISTS (SELECT 1 FROM cmdb.ativo_software x WHERE x.ativo_id = ativo.id AND x.deleted = 0 AND x.software_id = {0})",
                     req.getSoftwareId());
         }
-        q.orderByAsc(AtivoDO::getNome);
+        q.last(ordenacao(req.getOrdem(), req.getDirecao()));
         PageResult<AtivoDO> p = cmdbAtivoMapper.selectPage(req, q);
         return new PageResult<>(converter(p.getList()), p.getTotal());
     }
@@ -117,7 +119,23 @@ public class AtivoService {
         o.setSistemas(cmdbAtivoMapper.valoresDistintos("so_nome"));
         o.setFabricantes(cmdbAtivoMapper.valoresDistintos("fabricante"));
         o.setModelos(cmdbAtivoMapper.valoresDistintos("modelo"));
+        o.setTags(cmdbAtivoMapper.valoresDistintos("tag"));
         return o;
+    }
+
+    /** Colunas que a tela pode ordenar (só expressões daqui vão para o SQL, nunca o texto do usuário). */
+    static final Map<String, String> ORDENS = Map.ofEntries(
+            Map.entry("nome", "lower(nome)"), Map.entry("tag", "lower(tag)"), Map.entry("sistema", "lower(so_nome)"),
+            Map.entry("usuario", "lower(coalesce((SELECT u.nickname FROM system_users u WHERE u.id = ativo.usuario_id), usuario_login))"),
+            Map.entry("unidade", "lower((SELECT d.name FROM system_dept d WHERE d.id = ativo.dept_id))"),
+            Map.entry("ip", "(CASE WHEN ip ~ '^[0-9]{1,3}(\\.[0-9]{1,3}){3}$' THEN ip::inet END)"),
+            Map.entry("contato", "ultimo_contato"), Map.entry("situacao", "situacao"), Map.entry("antivirus", "antivirus"),
+            Map.entry("memoria", "memoria_mb"), Map.entry("tipo", "tipo"), Map.entry("patrimonio", "lower(patrimonio)"));
+
+    static String ordenacao(String ordem, String direcao) {
+        String expr = ORDENS.getOrDefault(ordem == null ? "nome" : ordem, ORDENS.get("nome"));
+        String dir = "desc".equalsIgnoreCase(direcao) ? "DESC" : "ASC";
+        return "ORDER BY " + expr + " " + dir + " NULLS LAST, id";
     }
 
     private static String vazio(String s) {
@@ -509,6 +527,7 @@ public class AtivoService {
             r.setNome(a.getNome());
             r.setSituacao(a.getSituacao());
             r.setPatrimonio(a.getPatrimonio());
+            r.setTag(a.getTag());
             r.setNumeroSerie(a.getNumeroSerie());
             r.setFabricante(a.getFabricante());
             r.setModelo(a.getModelo());

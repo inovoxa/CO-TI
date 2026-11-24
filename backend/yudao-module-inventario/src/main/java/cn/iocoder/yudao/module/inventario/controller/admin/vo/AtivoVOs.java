@@ -44,6 +44,11 @@ public final class AtivoVOs {
         /** Memória em GB (inclusive) */
         private Integer memoriaMinGb;
         private Integer memoriaMaxGb;
+        private String tag;
+        /** Coluna clicada no cabeçalho: nome, tag, sistema, usuario, unidade, ip, contato, situacao, antivirus, memoria, tipo, patrimonio */
+        private String ordem;
+        /** asc | desc */
+        private String direcao;
     }
 
     /** Valores existentes para os filtros, com quantos ativos têm cada um. */
@@ -52,6 +57,7 @@ public final class AtivoVOs {
         private List<Map<String, Object>> sistemas;
         private List<Map<String, Object>> fabricantes;
         private List<Map<String, Object>> modelos;
+        private List<Map<String, Object>> tags;
     }
 
     @Data
@@ -60,6 +66,7 @@ public final class AtivoVOs {
         private String tipo;
         private String nome;
         private String situacao;
+        private String tag;
         private String patrimonio;
         private String numeroSerie;
         private String fabricante;

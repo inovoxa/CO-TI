@@ -64,6 +64,8 @@ public class InventarioAgenteService {
     private PacoteService pacoteService;
     @Resource
     private EnvioAgenteService envioAgenteService;
+    @Resource
+    private UnidadeRedeService unidadeRedeService;
 
     /** Resposta HTTP pronta para o controller. */
     public record Resposta(int status, String tipo, byte[] corpo, Map<String, String> cabecalhos) {
@@ -279,6 +281,13 @@ public class InventarioAgenteService {
         novo.setUltimoInventario(agora);
         novo.setUltimoContato(agora);
         vincularUsuario(novo, atual);
+        // a faixa do IP vale mais que a unidade da pessoa logada (máquina compartilhada, sem usuário do AD...)
+        if (atual == null || !Boolean.TRUE.equals(atual.getDeptManual())) {
+            Long daFaixa = unidadeRedeService.unidadeDoIp(novo.getIp() != null ? novo.getIp() : atual == null ? null : atual.getIp());
+            if (daFaixa != null) {
+                novo.setDeptId(daFaixa);
+            }
+        }
 
         if (atual == null) {
             novo.setPrimeiroInventario(agora);
@@ -337,7 +346,8 @@ public class InventarioAgenteService {
             new Campo("cpu_nucleos", AtivoDO::getCpuNucleos), new Campo("memoria_mb", AtivoDO::getMemoriaMb),
             new Campo("disco_total_mb", AtivoDO::getDiscoTotalMb), new Campo("mac", AtivoDO::getMac),
             new Campo("dominio", AtivoDO::getDominio), new Campo("usuario_login", AtivoDO::getUsuarioLogin),
-            new Campo("antivirus", AtivoDO::getAntivirus), new Campo("disco_tipo", AtivoDO::getDiscoTipo), new Campo("so_sem_suporte", AtivoDO::getSoSemSuporte));
+            new Campo("antivirus", AtivoDO::getAntivirus), new Campo("disco_tipo", AtivoDO::getDiscoTipo), new Campo("so_sem_suporte", AtivoDO::getSoSemSuporte),
+            new Campo("tag", AtivoDO::getTag));
 
     /** Mesma máquina: DEVICEID, senão UUID, senão série + fabricante, senão MAC + nome. */
     AtivoDO localizar(String deviceId, Normalizacao.Resumo n) {
@@ -379,7 +389,7 @@ public class InventarioAgenteService {
                 .soNome(limpar(n.soNome(), 255)).soVersao(limpar(n.soVersao(), 100)).soArquitetura(limpar(n.soArquitetura(), 30))
                 .soSemSuporte(n.soSemSuporte()).cpu(limpar(n.cpu(), 255)).cpuNucleos(n.cpuNucleos()).memoriaMb(n.memoriaMb())
                 .discoTotalMb(n.discoTotalMb()).discoLivreMb(n.discoLivreMb()).discoTipo(n.discoTipo()).ip(limpar(n.ip(), 64)).mac(limpar(n.mac(), 32))
-                .dominio(limpar(n.dominio(), 255)).usuarioLogin(limpar(n.usuarioLogin(), 255)).antivirus(n.antivirus())
+                .dominio(limpar(n.dominio(), 255)).usuarioLogin(limpar(n.usuarioLogin(), 255)).antivirus(n.antivirus()).tag(limpar(n.tag(), 100))
                 .build();
     }
 

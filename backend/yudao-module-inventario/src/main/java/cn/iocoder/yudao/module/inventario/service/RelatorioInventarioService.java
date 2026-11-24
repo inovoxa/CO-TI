@@ -31,7 +31,7 @@ public class RelatorioInventarioService {
 
     static final List<String> COLUNAS = List.of("Nome", "Tipo", "Situação", "Patrimônio", "Número de série", "Fabricante",
             "Modelo", "Sistema", "Versão do sistema", "Sistema sem suporte", "Processador", "Memória (GB)", "Disco (GB)",
-            "Disco livre (GB)", "IP", "MAC", "Usuário", "Unidade", "Antivírus", "Origem", "Último inventário");
+            "Disco livre (GB)", "IP", "MAC", "Usuário", "Unidade", "Antivírus", "Origem", "Último inventário", "TAG");
 
     @Resource
     private AtivoService ativoService;
@@ -65,7 +65,7 @@ public class RelatorioInventarioService {
                 a.getModelo(), a.getSoNome(), a.getSoVersao(), Boolean.TRUE.equals(a.getSoSemSuporte()) ? "Sim" : "Não",
                 a.getCpu(), gb(a.getMemoriaMb()), gb(a.getDiscoTotalMb()), gb(a.getDiscoLivreMb()), a.getIp(), a.getMac(),
                 a.getUsuarioNome() != null ? a.getUsuarioNome() : a.getUsuarioLogin(), a.getDeptNome(), a.getAntivirus(),
-                a.getOrigem(), dataHora(a.getUltimoInventario()));
+                a.getOrigem(), dataHora(a.getUltimoInventario()), a.getTag());
     }
 
     private static Double gb(Number mb) {

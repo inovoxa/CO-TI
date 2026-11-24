@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
 import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
+import cn.iocoder.yudao.module.inventario.service.PainelInventarioService;
 import cn.iocoder.yudao.module.inventario.service.RelatorioInventarioService;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +40,8 @@ public class AtivoController {
     private LicencaInventarioService licencaInventarioService;
     @Resource
     private RelatorioInventarioService relatorioInventarioService;
+    @Resource
+    private PainelInventarioService painelInventarioService;
 
     @GetMapping("/page")
     @Operation(summary = "Lista de ativos (filtros e alertas)")
@@ -123,6 +126,13 @@ public class AtivoController {
                 p.getList().stream().map(AtivoVOs.SoftwareResp::getId).toList());
         p.getList().forEach(s -> s.setLicencas(licencas.getOrDefault(s.getId(), List.of())));
         return success(p);
+    }
+
+    @GetMapping("/painel")
+    @Operation(summary = "Painel do inventário: totais e distribuições do parque")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public CommonResult<PainelInventarioService.Painel> painel() {
+        return success(painelInventarioService.painel());
     }
 
     @GetMapping("/agentes")

@@ -111,6 +111,7 @@ do resto:
   - sistema, versão e arquitetura, e se o sistema está **sem suporte** do fabricante na data;
   - processador, núcleos, memória, discos locais (total e livre), IP, MAC da placa física e domínio;
   - último usuário logado, sem o domínio;
+  - TAG do agente (OCS: `/TAG=` na instalação, que chega em `ACCOUNTINFO`; GLPI Agent: `tag`);
   - antivírus: ativo, desatualizado, ausente ou desconhecido;
   - tipo de disco: SSD, HD, misto (os dois) ou não identificado (ver abaixo).
 - **Componentes** (`cmdb.ativo_componente`): cada peça com uma chave que a identifica (série, slot, MAC…).
@@ -118,8 +119,15 @@ do resto:
   com versão, data e arquitetura.
 - **Pessoa e unidade:**
   - o login informado pelo agente é procurado no vínculo com o AD e, senão, entre os usuários locais;
-  - achada a pessoa, o ativo fica ligado a ela e passa para a unidade dela;
-  - a exceção é quando alguém escolheu a unidade à mão (`dept_manual`).
+  - achada a pessoa, o ativo fica ligado a ela.
+- **Unidade do ativo**, nesta ordem:
+  1. escolhida à mão no ativo (`dept_manual`): o agente não muda;
+  2. a **faixa de IP** (`cmdb.unidade_rede`, Inventário → Rede) onde o IP cai, a mais específica;
+  3. a unidade da pessoa logada.
+  - Faixa: `172.19.21.0/24`; sem barra, `172.19.21.0` vale /24 e um IP vale /32. Prefixo de 8 a 32, só IPv4.
+  - "Sugerir pelas máquinas": redes /24 sem faixa com 2 ou mais máquinas, 60% ou mais delas numa mesma unidade.
+  - Salvar, excluir ou importar faixas aplica nos ativos na hora (fora os de unidade à mão e os baixados), com a
+    mudança no histórico. Exportar e Importar (com prévia) usam as colunas Faixa, Unidade e Observação.
 - **Patrimônio:** o agente só preenche quando o campo está vazio. A etiqueta cadastrada pela equipe vale mais.
 
 ## Tipo de disco (`disco_tipo`)
@@ -155,10 +163,21 @@ guardados. A mudança de tipo (troca de HD por SSD) entra no histórico.
 
 ## Tela e permissões
 
+- **Inventário → Painel** (`inventario:ativo:query`, respeita o escopo de unidade):
+  - números do parque: equipamentos, computadores, impressoras, rede, contato nas últimas 24 h, sem comunicação,
+    sistema sem suporte, antivírus com problema, SSD, alertas abertos, desconhecidos na rede e softwares;
+  - gráficos: tipo, situação, origem, sistemas (os sem suporte em vermelho), unidades, memória, tipo de disco,
+    antivírus, arquitetura, último contato, alertas por regra, fabricantes, modelos, softwares, TAG, versões do
+    agente, inventários por dia (30 dias, do registro de envios) e equipamentos novos por mês (12 meses);
+  - clicar num número ou numa barra abre a lista de ativos com o filtro.
 - **Inventário → Ativos** (`inventario:ativo:query`, edição com `inventario:ativo:update`):
-  - filtros por tipo, situação, unidade (com as subunidades), busca e alertas;
+  - filtros por tipo, situação, unidade (com as subunidades), TAG, busca e alertas;
+  - ordenação pelo cabeçalho: nome, TAG, sistema, usuário, unidade, IP (em ordem numérica), memória, antivírus,
+    último contato e situação;
   - alertas: sistema sem suporte, antivírus com problema, sem comunicação há `CO_TI_INVENTARIO_SEM_CONTATO_DIAS`.
-- **Detalhe do ativo:** componentes, softwares, chamados ligados e histórico.
+- **Detalhe do ativo:** abas Hardware (sistema e BIOS, processadores, memória, armazenamento, partições com o uso,
+  vídeo, som, controladoras, baterias, slots, suprimentos), Rede (placas com MAC, IP, máscara, gateway, DHCP,
+  velocidade), Dispositivos (monitores, entrada, USB, impressoras, modems), Softwares, Chamados e Histórico.
   - A equipe muda situação, patrimônio, unidade e observação.
   - Os outros campos só mudam em ativo cadastrado à mão, porque o agente os sobrescreveria.
 - **Softwares:** o catálogo com o número de instalações. O clique abre os ativos que têm aquele software.

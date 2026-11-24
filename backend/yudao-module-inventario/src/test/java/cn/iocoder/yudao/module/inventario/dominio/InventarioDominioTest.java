@@ -98,6 +98,16 @@ class InventarioDominioTest {
         assertEquals("M378A1K43EB2|1|8192", mem.get(0).chave());
         assertEquals("8192 MB · DDR4 · 3200 MHz", mem.get(0).descricao());
         assertTrue(r.componentes().stream().anyMatch(c -> c.tipo().equals("monitor") && c.chave().equals("CN0V1X7H|DELL P2422H|Monitor PnP genérico")));
+        assertEquals("SAUDE", a.tag(), "ACCOUNTINFO TAG");
+        assertTrue(r.componentes().stream().anyMatch(c -> c.tipo().equals("bios") && c.descricao().contains("OptiPlex 7090")
+                && c.descricao().contains("BIOS 1.12.0")));
+    }
+
+    @Test
+    void tagDoGlpiAgentVemDaRaiz() {
+        String json = "{\"action\":\"inventory\",\"deviceid\":\"pc-1\",\"tag\":\"EDUCACAO\",\"content\":{\"hardware\":{\"name\":\"PC-1\"}}}";
+        Normalizacao.Resultado r = Normalizacao.normalizar(Protocolo.ler(json.getBytes(StandardCharsets.UTF_8)), LocalDate.of(2026, 10, 24));
+        assertEquals("EDUCACAO", r.resumo().tag());
     }
 
     @Test

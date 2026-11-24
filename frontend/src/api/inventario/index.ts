@@ -1,4 +1,5 @@
 import request from '@/config/axios'
+import type { ImportacaoPrevia, ImportacaoResultado } from '@/api/monitoramento'
 
 export interface Ativo {
   id: number
@@ -38,6 +39,7 @@ export interface Ativo {
   observacao?: string
   paginas?: number
   localizacao?: string
+  tag?: string
 }
 
 export interface Componente {
@@ -149,20 +151,22 @@ export const ORIGENS = {
 } as Record<string, string>
 
 export const COMPONENTES = {
+  bios: 'Sistema e BIOS',
   processador: 'Processadores',
-  memoria: 'Memórias',
-  disco: 'Discos',
-  volume: 'Volumes',
+  memoria: 'Memória',
+  disco: 'Armazenamento (discos físicos)',
+  volume: 'Discos (partições)',
   rede: 'Placas de rede',
-  video: 'Vídeo',
+  video: 'Placas de vídeo',
   monitor: 'Monitores',
   impressora: 'Impressoras',
   controlador: 'Controladoras',
-  usb: 'USB',
+  usb: 'Dispositivos USB',
   bateria: 'Baterias',
   som: 'Som',
-  entrada: 'Teclado e mouse',
+  entrada: 'Dispositivos de entrada',
   slot: 'Slots',
+  modem: 'Modems',
   suprimento: 'Suprimentos'
 } as Record<string, string>
 
@@ -182,6 +186,7 @@ export interface Opcoes {
   sistemas: { valor: string; total: number }[]
   fabricantes: { valor: string; total: number }[]
   modelos: { valor: string; total: number }[]
+  tags: { valor: string; total: number }[]
 }
 export const getOpcoes = (): Promise<Opcoes> => request.get({ url: '/inventario/ativo/opcoes' })
 export const getContagens = (): Promise<Record<string, number>> =>
@@ -200,6 +205,17 @@ export const getAtivosDosIps = (ips: string[]): Promise<Ativo[]> =>
   request.get({ url: '/inventario/ativo/dos-ips', params: { ips: ips.join(',') } })
 export const getSoftwares = (params: any) =>
   request.get({ url: '/inventario/ativo/software/page', params })
+export interface Fatia {
+  valor: string
+  total: number
+}
+export interface PainelInventario {
+  totais: Record<string, number>
+  series: Record<string, Fatia[]>
+  semContatoDias: number
+}
+export const getPainelInventario = (): Promise<PainelInventario> =>
+  request.get({ url: '/inventario/ativo/painel' })
 export const getPainelAgentes = (): Promise<PainelAgentes> =>
   request.get({ url: '/inventario/ativo/agentes' })
 
@@ -485,3 +501,45 @@ export const cancelarImplantacao = (id: number) =>
   request.post({ url: '/inventario/pacote/cancelar', params: { id } })
 export const getImplantacoes = (params: any) =>
   request.get({ url: '/inventario/pacote/implantacoes', params })
+
+// ---------- unidade pela faixa de IP ----------
+export interface FaixaUnidade {
+  id: number
+  cidr: string
+  deptId: number
+  deptNome?: string
+  observacao?: string
+  maquinas: number
+}
+export interface SugestaoFaixa {
+  cidr: string
+  deptId: number
+  deptNome: string
+  maquinas: number
+  naUnidade: number
+}
+export const getFaixas = (): Promise<FaixaUnidade[]> =>
+  request.get({ url: '/inventario/unidade-rede/list' })
+export const getSugestoesFaixa = (): Promise<SugestaoFaixa[]> =>
+  request.get({ url: '/inventario/unidade-rede/sugestoes' })
+export const salvarFaixa = (data: {
+  id?: number
+  cidr: string
+  deptId: number
+  observacao?: string
+}): Promise<number> => request.post({ url: '/inventario/unidade-rede/save', data })
+export const excluirFaixa = (id: number) =>
+  request.delete({ url: '/inventario/unidade-rede/delete', params: { id } })
+export const aplicarFaixas = (): Promise<number> =>
+  request.post({ url: '/inventario/unidade-rede/aplicar' })
+export const exportarFaixas = (): Promise<Blob> =>
+  request.download({ url: '/inventario/unidade-rede/exportar' })
+const enviarPlanilha = async <T>(url: string, data: object): Promise<T> =>
+  (await request.upload<{ data: T }>({ url, data })).data
+export const analisarImportacaoFaixas = (arquivo: File) =>
+  enviarPlanilha<ImportacaoPrevia>('/inventario/unidade-rede/importar/analisar', { arquivo })
+export const importarFaixas = (arquivo: File, removerIds: number[]) =>
+  enviarPlanilha<ImportacaoResultado>('/inventario/unidade-rede/importar', {
+    arquivo,
+    removerIds: removerIds.join(',')
+  })

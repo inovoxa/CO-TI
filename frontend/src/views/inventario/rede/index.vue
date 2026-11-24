@@ -1,4 +1,6 @@
 <template>
+  <FaixasUnidade />
+
   <ContentWrap title="Sub-redes">
     <el-table :data="subredes" size="small" @row-click="(r) => filtrarSubrede(r.subrede)">
       <el-table-column label="Sub-rede" min-width="150">
@@ -166,6 +168,7 @@ import { ElMessageBox } from 'element-plus'
 import * as Inv from '@/api/inventario'
 import { TIPOS_ATIVO } from '@/api/inventario'
 import download from '@/utils/download'
+import FaixasUnidade from './FaixasUnidade.vue'
 import * as DeptApi from '@/api/system/dept'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'

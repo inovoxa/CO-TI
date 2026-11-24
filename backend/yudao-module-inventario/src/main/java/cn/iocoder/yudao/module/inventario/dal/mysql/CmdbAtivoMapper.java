@@ -41,6 +41,22 @@ public interface CmdbAtivoMapper extends BaseMapperX<AtivoDO> {
             + " AND ${coluna} <> '' GROUP BY ${coluna} ORDER BY total DESC, ${coluna} LIMIT 200")
     List<Map<String, Object>> valoresDistintos(@Param("coluna") String coluna);
 
+    /**
+     * Painel: quantos ativos (fora os baixados) por {@code expr}, com o filtro {@code filtro}. As duas expressões vêm só
+     * do código ({@code PainelInventarioService}), nunca do usuário.
+     */
+    @Select("SELECT ${expr} AS valor, count(*) AS total FROM cmdb.ativo a WHERE a.deleted = 0 AND a.situacao <> 'baixado' ${filtro}"
+            + " GROUP BY 1 ORDER BY total DESC LIMIT #{limite}")
+    List<Map<String, Object>> contarPor(@Param("expr") String expr, @Param("filtro") String filtro, @Param("limite") int limite);
+
+    @Select("SELECT a.situacao AS valor, count(*) AS total FROM cmdb.ativo a WHERE a.deleted = 0 GROUP BY 1 ORDER BY total DESC")
+    List<Map<String, Object>> porSituacao();
+
+    /** Ativos novos por mês (primeiro inventário ou cadastro). */
+    @Select("SELECT to_char(date_trunc('month', coalesce(a.primeiro_inventario, a.create_time)), 'YYYY-MM') AS valor, count(*) AS total"
+            + " FROM cmdb.ativo a WHERE a.deleted = 0 AND coalesce(a.primeiro_inventario, a.create_time) >= #{desde} GROUP BY 1 ORDER BY 1")
+    List<Map<String, Object>> novosPorMes(@Param("desde") java.time.LocalDateTime desde);
+
     /** Versões de agente em uso (página "Agentes"). */
     @Select("SELECT a.origem, coalesce(a.agente, '?') AS agente, count(*) AS total FROM cmdb.ativo a WHERE a.deleted = 0"
             + " AND a.origem <> 'manual' GROUP BY a.origem, coalesce(a.agente, '?') ORDER BY total DESC LIMIT 30")

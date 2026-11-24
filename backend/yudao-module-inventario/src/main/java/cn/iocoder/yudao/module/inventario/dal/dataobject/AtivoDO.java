@@ -61,6 +61,8 @@ public class AtivoDO extends BaseDO {
     private Long paginas;
     /** sysLocation do SNMP */
     private String localizacao;
+    /** TAG do agente (OCS /TAG=, GLPI Agent tag) */
+    private String tag;
     /** Juntado em outro ativo pela limpeza (o registro fica removido) */
     private Long mescladoEm;
 

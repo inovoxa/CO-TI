@@ -399,6 +399,11 @@ Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
   - o usuário logado, ligado à pessoa do AD; a unidade do ativo segue a da pessoa.
 - **Máquina repetida:** quando o agente é reinstalado, a máquina é reconhecida pelo UUID, pela série ou pelo
   MAC + nome.
+- **Inventário → Painel:** números e gráficos do parque. Clicar num número ou numa barra abre a lista filtrada.
+- **Ativos:** ordenação pelo cabeçalho, coluna e filtro de **TAG** (o `/TAG=` do agente OCS ou o `tag` do GLPI
+  Agent). O detalhe tem as abas Hardware, Rede, Dispositivos, Softwares, Chamados e Histórico.
+- **Unidade do ativo:** a escolhida à mão; senão a da **faixa de IP** (Inventário → Rede → Unidade por faixa de
+  IP, com sugestões a partir das máquinas, Exportar e Importar); senão a da pessoa logada.
 - **Inventário → Agentes:**
   - **Envios recebidos:** cada pedido dos agentes, aceito ou recusado (rede, senha, erro), por
     `CO_TI_INVENTARIO_ENVIOS_DIAS` (padrão 30).

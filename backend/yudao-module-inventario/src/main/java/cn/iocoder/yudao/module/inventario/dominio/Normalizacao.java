@@ -19,7 +19,7 @@ public final class Normalizacao {
     public record Resumo(String tipo, String nome, String fabricante, String modelo, String numeroSerie, String patrimonio, String uuid,
                          String soNome, String soVersao, String soArquitetura, boolean soSemSuporte, String cpu, Integer cpuNucleos,
                          Integer memoriaMb, Long discoTotalMb, Long discoLivreMb, String ip, String mac, String dominio,
-                         String usuarioLogin, String antivirus, String discoTipo) {
+                         String usuarioLogin, String antivirus, String discoTipo, String tag) {
     }
 
     public record Componente(String tipo, String chave, String descricao, Map<String, String> dados) {
@@ -49,6 +49,8 @@ public final class Normalizacao {
         SECOES.put("SOUNDS", new String[]{"som", "NAME", "MANUFACTURER"});
         SECOES.put("INPUTS", new String[]{"entrada", "DESCRIPTION", "CAPTION"});
         SECOES.put("SLOTS", new String[]{"slot", "NAME", "DESIGNATION"});
+        SECOES.put("MODEMS", new String[]{"modem", "NAME", "MODEL", "DESCRIPTION"});
+        SECOES.put("BIOS", new String[]{"bios", "SSN", "BVERSION"});
     }
 
     /** Valores de fábrica que não identificam nada */
@@ -107,8 +109,19 @@ public final class Normalizacao {
                 semSuporte(soNome, hw.get("OSVERSION"), hoje), cortar(cpu, 255), nucleos, inteiro(hw.get("MEMORY")),
                 total > 0 ? total : null, total > 0 ? livre : null, cortar(ip, 64), mac,
                 cortar(Optional.ofNullable(vazio(hw.get("WORKGROUP"))).orElse(vazio(hw.get("USERDOMAIN"))), 255), cortar(login, 255),
-                antivirus(p, soNome), discoTipo(p.lista("STORAGES")));
+                antivirus(p, soNome), discoTipo(p.lista("STORAGES")), cortar(tag(p), 100));
         return new Resultado(r, componentes, softwares(p));
+    }
+
+    /** TAG do agente: OCS manda em ACCOUNTINFO (KEYNAME TAG), o GLPI Agent na raiz ("tag", traduzido pelo Protocolo). */
+    static String tag(Protocolo.Pedido p) {
+        for (Map<String, String> a : p.lista("ACCOUNTINFO")) {
+            if ("TAG".equalsIgnoreCase(a.get("KEYNAME"))) {
+                String v = vazio(a.get("KEYVALUE"));
+                return v == null || v.equalsIgnoreCase("NA") ? null : v;
+            }
+        }
+        return null;
     }
 
     // ================================================================================== componentes
@@ -147,6 +160,10 @@ public final class Normalizacao {
                     d.get("TOTAL") == null ? null : mbLegivel(longo(d.get("FREE"))) + " livres de " + mbLegivel(longo(d.get("TOTAL"))));
             case "rede" -> juntar(d.get("DESCRIPTION"), d.get("MACADDR"), d.get("IPADDRESS"));
             case "monitor" -> juntar(d.get("MANUFACTURER"), d.get("CAPTION"), d.get("SERIAL"));
+            case "bios" -> juntar(d.get("SMANUFACTURER"), d.get("SMODEL"), d.get("BVERSION") == null ? null : "BIOS " + d.get("BVERSION"),
+                    d.get("BDATE"));
+            case "video" -> juntar(d.get("NAME"), d.get("MEMORY") == null ? null : d.get("MEMORY") + " MB", d.get("RESOLUTION"));
+            case "modem" -> juntar(Optional.ofNullable(vazio(d.get("NAME"))).orElse(d.get("DESCRIPTION")), d.get("MODEL"));
             default -> juntar(Optional.ofNullable(vazio(d.get("NAME"))).orElse(d.get("DESCRIPTION")), d.get("MANUFACTURER"));
         };
     }
