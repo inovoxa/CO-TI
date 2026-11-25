@@ -158,72 +158,14 @@
           placeholder="Como você avalia este atendimento? Responda com uma nota de 1 (ruim) a 5 (ótimo)."
         />
       </el-form-item>
-      <el-form-item label="Fluxo do catálogo">
-        <el-switch v-model="form.dados.fluxoAtivo" />
-        <span class="dica ml-8px"
-          >menu, abertura de pedidos do catálogo, consulta e dúvidas pelo canal (substitui o fluxo
-          do n8n)</span
+      <el-form-item label="Assistente virtual">
+        <span>{{ resumoRobo(form.dados) }}</span>
+        <el-button class="ml-8px" link type="primary" @click="irParaAssistente"
+          >Configurar em Assistente virtual</el-button
         >
-      </el-form-item>
-      <el-form-item v-if="form.dados.fluxoAtivo" label="Boas-vindas">
-        <el-input
-          v-model="form.dados.fluxoBoasVindas"
-          maxlength="1000"
-          placeholder="Olá! Sou o assistente virtual da equipe de TI 👋"
-        />
-      </el-form-item>
-      <el-form-item v-if="!form.dados.fluxoAtivo" label="Assistente de IA">
-        <el-switch v-model="form.dados.roboAtivo" />
-        <span class="dica ml-8px"
-          >responde as conversas novas e passa para uma pessoa quando precisa (exige a IA
-          ligada)</span
-        >
-      </el-form-item>
-      <template v-if="form.dados.roboAtivo && !form.dados.fluxoAtivo">
-        <el-form-item label="Nome do assistente">
-          <el-input v-model="form.dados.roboNome" maxlength="60" placeholder="Assistente da TI" />
-        </el-form-item>
-        <el-form-item label="Instruções">
-          <el-input
-            v-model="form.dados.roboInstrucoes"
-            :rows="3"
-            maxlength="4000"
-            placeholder="Orientações da organização: horários, sistemas atendidos, como se despedir..."
-            type="textarea"
-          />
-        </el-form-item>
-        <el-form-item label="Respostas por conversa">
-          <el-input-number v-model="form.dados.roboMaxRespostas" :max="100" :min="1" />
-          <span class="dica ml-8px">depois disso, passa para uma pessoa</span>
-        </el-form-item>
-      </template>
-      <el-form-item label="Avisos do chamado">
-        <el-switch v-model="form.dados.avisosAtivo" />
-        <span class="dica ml-8px"
-          >andamento, solução e aprovação do chamado aberto pela conversa; o aprovador é avisado
-          pelo celular do cadastro</span
-        >
-      </el-form-item>
-      <el-form-item
-        v-if="form.dados.avisosAtivo && form.dados.canal === 'whatsapp_cloud' && form.dados.id"
-        label="Modelo de aviso"
-      >
-        <el-select
-          v-model="form.dados.avisoModeloId"
-          class="!w-320px"
-          clearable
-          placeholder="Sem modelo: depois de 24 h o aviso não sai"
-        >
-          <el-option
-            v-for="m in modelosAviso"
-            :key="m.id"
-            :label="`${m.nome} (${m.idioma})`"
-            :value="m.id"
-          />
-        </el-select>
         <div class="dica"
-          >Modelo aprovado com uma variável (o texto do aviso), usado quando já passaram 24 h desde
-          a última mensagem do contato.</div
+          >Fluxo do catálogo, assistente de IA, boas-vindas, avisos do chamado e textos do robô ficam
+          num lugar só: Atendimento → Configuração → Assistente virtual.</div
         >
       </el-form-item>
       <el-form-item label="Ativa"><el-switch v-model="form.dados.ativo" /></el-form-item>
@@ -273,7 +215,6 @@ const lista = ref<Atd.Caixa[]>([])
 const formRef = ref()
 const canalRef = ref()
 const calendarios = ref<{ id: number; nome: string }[]>([])
-const modelosAviso = ref<Atd.Modelo[]>([])
 const CANAIS_EXTERNOS = ['whatsapp_cloud', 'instagram', 'telegram']
 const form = reactive({ visivel: false, dados: {} as Atd.Caixa })
 const cred = reactive({ visivel: false, dados: undefined as Atd.Credenciais | undefined })
@@ -302,12 +243,6 @@ const abrir = async (c?: Atd.Caixa) => {
       }
   form.visivel = true
   if (!calendarios.value.length) calendarios.value = await Atd.getCalendariosCaixa()
-  modelosAviso.value =
-    c?.id && c.canal === 'whatsapp_cloud'
-      ? (await Atd.getModelosDaCaixa(c.id)).filter(
-          (m) => m.status === 'APPROVED' && m.variaveis === 1
-        )
-      : []
 }
 
 const salvar = async () => {
@@ -324,6 +259,21 @@ const salvar = async () => {
   } else {
     form.visivel = false
   }
+}
+
+const router = useRouter()
+const resumoRobo = (c: Atd.Caixa) => {
+  if (!c.id) return 'configure depois de salvar a caixa'
+  const modo = c.fluxoAtivo
+    ? 'fluxo do catálogo'
+    : c.roboAtivo
+      ? `assistente de IA${c.roboNome ? ' (' + c.roboNome + ')' : ''}`
+      : 'desligado'
+  return `${modo} · avisos do chamado ${c.avisosAtivo ? 'ligados' : 'desligados'}`
+}
+const irParaAssistente = () => {
+  form.visivel = false
+  router.push({ path: '/atendimento/configuracao/assistente', query: { caixa: form.dados.id } })
 }
 
 const credenciais = async () => {

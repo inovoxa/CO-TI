@@ -571,3 +571,70 @@ export const salvarResposta = (data: RespostaPronta): Promise<number> =>
   request.post({ url: '/atendimento/resposta/save', data })
 export const excluirResposta = (id: number) =>
   request.delete({ url: '/atendimento/resposta/delete', params: { id } })
+
+// ========== assistente virtual ==========
+
+export interface TextoAssistente {
+  chave: string
+  grupo: 'menu' | 'chamado' | 'avisos' | 'ia'
+  rotulo: string
+  ajuda?: string
+  tipo: 'TEXTO' | 'SIM_NAO' | 'NUMERO'
+  padrao: string
+  valor: string
+  alterado: boolean
+  variaveis: string[]
+  minimo?: number
+  maximo?: number
+  atualizadoPor?: string
+  atualizadoEm?: string
+}
+
+export interface TelaAssistente {
+  textos: TextoAssistente[]
+  caixas: Caixa[]
+  regrasFixas: string
+  iaAtiva: boolean
+}
+
+export interface CaixaRobo {
+  id: number
+  fluxoAtivo?: boolean
+  fluxoBoasVindas?: string
+  roboAtivo?: boolean
+  roboNome?: string
+  roboInstrucoes?: string
+  roboMaxRespostas?: number
+  avisosAtivo?: boolean
+  avisoModeloId?: number
+}
+
+export interface ArquivoAssistente {
+  tipo: string
+  versao: number
+  textos: Record<string, string>
+}
+
+export interface LinhaImportacaoAssistente {
+  chave: string
+  rotulo?: string
+  atual?: string
+  novo?: string
+  situacao: 'muda' | 'igual' | 'padrao' | 'ignorada' | 'invalida'
+  erro?: string
+}
+
+export const getAssistente = (): Promise<TelaAssistente> =>
+  request.get({ url: '/atendimento/assistente/get' })
+export const salvarTextosAssistente = (valores: Record<string, string>) =>
+  request.post({ url: '/atendimento/assistente/textos', data: { valores } })
+export const salvarCaixaRobo = (data: CaixaRobo) =>
+  request.post({ url: '/atendimento/assistente/caixa', data })
+export const exportarAssistente = (): Promise<ArquivoAssistente> =>
+  request.get({ url: '/atendimento/assistente/exportar' })
+export const previaImportacaoAssistente = (
+  arq: ArquivoAssistente
+): Promise<LinhaImportacaoAssistente[]> =>
+  request.post({ url: '/atendimento/assistente/importar/previa', data: arq })
+export const importarAssistente = (arq: ArquivoAssistente): Promise<{ alterados: number }> =>
+  request.post({ url: '/atendimento/assistente/importar', data: arq })

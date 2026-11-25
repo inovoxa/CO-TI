@@ -40,6 +40,7 @@ no AD são exatamente as do portal (`FormularioService.enviar`).
 | validação pelo modelo | `Formulario.validar` por resposta (regex, data, e-mail, opções), com a mensagem de erro e a mesma pergunta de novo |
 | WF04–WF16 + HTML montado à mão | `FormularioService.enviar`: chamado, respostas, aprovação (gestor, campo ou fixo) e execução no AD |
 | WF11 consulta por e-mail digitado | só os chamados **do próprio contato** (pessoa do portal ligada ao celular) |
+| WF12 atualizar chamado | no detalhe (`#123`), o contato escreve no chamado e aprova ou recusa a solução, com as regras do portal |
 | WF18 FAQ | artigos FAQ publicados, com a mesma ordem por relevância do assistente (F2d) |
 | Consultar_CEP | consulta de CEP (ViaCEP, configurável) que preenche logradouro, bairro e cidade |
 | "escalar humano" | `atendente`, a qualquer momento: transbordo com distribuição |
@@ -88,3 +89,32 @@ Avisos de volta pelo canal, no lugar de WF13, WF14 e WF20:
 
 Inclui o modelo aprovado do WhatsApp quando a janela de 24 h já fechou, e a transcrição de áudio pelos
 provedores de IA que oferecem `/audio/transcriptions`.
+
+## Terceira parte: Assistente virtual (feita)
+
+Tela **Atendimento → Configuração → Assistente virtual** (permissão `atendimento:assistente:config`), com tudo do
+robô num lugar só:
+
+- **Caixas:** quem atende primeiro (fluxo do catálogo, assistente de IA ou direto para as pessoas), boas-vindas,
+  nome, instruções e limite do assistente de IA, avisos do chamado e o modelo de aviso do WhatsApp. O diálogo de
+  Caixas de entrada só mostra um resumo e o link.
+- **Textos** (menu, consulta e atualização, avisos e orientações gerais da IA): cada um tem o padrão do código
+  (`TextosAssistente`), variáveis clicáveis, prévia como sai no WhatsApp e "restaurar o padrão". O banco
+  (`atendimento.assistente_texto`) guarda só o que foi alterado. Uma linha cuja variável ficou vazia some.
+- **Opções:** quantos chamados listar, mostrar a última atualização da equipe, deixar escrever no chamado e
+  deixar aprovar ou recusar a solução.
+- **IA:** as regras de segurança do prompt são fixas e aparecem só para leitura; a organização muda o tom
+  (orientações gerais) e as instruções de cada caixa.
+- **Exportar e importar** em JSON, com prévia do que muda (sem segredos).
+
+### Consulta e atualização pelo canal (WF11 e WF12)
+
+- `2` no menu lista os chamados do contato; `#123` em qualquer ponto (inclusive respondendo a um aviso) abre o detalhe.
+- O detalhe mostra a situação, as datas e a última atualização pública da equipe.
+- Em andamento: `1` pede um texto, que vira acompanhamento do solicitante (`ChamadoService.adicionarInteracao`, o
+  mesmo do portal).
+- Solucionado: `1` aprova a solução e encerra; `2` pede o motivo e recusa a solução, reabrindo
+  (`ChamadoService.avaliarSolucao`).
+- Só chamados em que o contato é solicitante; o número digitado nunca alcança o chamado de outra pessoa. A etapa
+  que espera o texto expira em 30 minutos, como o formulário.
+- No assistente de IA, a ferramenta `adicionar_informacao(numero, texto)` faz o mesmo, com as mesmas restrições.

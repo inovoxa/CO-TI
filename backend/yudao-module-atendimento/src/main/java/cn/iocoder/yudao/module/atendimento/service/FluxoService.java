@@ -12,9 +12,12 @@ import cn.iocoder.yudao.module.atendimento.dal.mysql.*;
 import cn.iocoder.yudao.module.atendimento.dominio.FluxoTextos;
 import cn.iocoder.yudao.module.atendimento.dominio.PromptsIa;
 import cn.iocoder.yudao.module.atendimento.dominio.Relevancia;
+import cn.iocoder.yudao.module.atendimento.dominio.TextosAssistente;
 import cn.iocoder.yudao.module.atendimento.enums.ConversaStatus;
 import cn.iocoder.yudao.module.atendimento.enums.MensagemTipo;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.CatalogoVOs;
+import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
+import cn.iocoder.yudao.module.itsm.dal.dataobject.InteracaoDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoAtorDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ExecucaoAdDO;
@@ -34,6 +37,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -96,6 +100,14 @@ public class FluxoService {
     private ExecucaoAdService execucaoAdService;
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private AssistenteVirtualService tx;
+
+    private static final DateTimeFormatter DIA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final Pattern NUMERO_CHAMADO = Pattern.compile("#\\s*(\\d{1,9})");
+    private static final Pattern NUMERO_SEM_CERQUILHA = Pattern.compile("(\\d{1,9})[.)]?");
+    /** Etapas em que a próxima mensagem é texto livre do contato (não um comando nem um número de chamado) */
+    private static final Set<String> ETAPAS_TEXTO = Set.of("PERGUNTA", "CONFIRMAR", "CORRIGIR", "CHAMADO_TEXTO", "CHAMADO_RECUSA");
 
     /** Estado de trabalho de uma conversa (gravado em atendimento.fluxo). */
     private static final class Estado {
@@ -147,7 +159,7 @@ public class FluxoService {
         Estado e = carregar(salvo);
         boolean primeira = salvo == null;
         if (!primeira && salvo.getAtualizadoEm() != null && salvo.getAtualizadoEm().isBefore(LocalDateTime.now().minusMinutes(EXPIRA_MIN))
-                && e.formularioId != null) {
+                && (e.formularioId != null || e.etapa.startsWith("CHAMADO"))) {
             e.reiniciar();
             e.saidas.add("O pedido que estava em andamento expirou depois de " + EXPIRA_MIN + " minutos sem resposta.");
         }
@@ -165,10 +177,11 @@ public class FluxoService {
             if (primeira) {
                 primeira = false;
                 String boasVindas = ctx.caixa().getFluxoBoasVindas() == null || ctx.caixa().getFluxoBoasVindas().isBlank()
-                        ? "Olá! Sou o assistente virtual da equipe de TI 👋" : ctx.caixa().getFluxoBoasVindas().strip();
-                e.saidas.add(boasVindas + "\n\n" + FluxoTextos.MENU);
-                // só um "oi": espera a escolha; um pedido já descrito segue direto
-                if (Relevancia.termos(texto).isEmpty() && FluxoTextos.numero(texto) == null && FluxoTextos.codigo(texto) == null) {
+                        ? tx.texto(TextosAssistente.BOAS_VINDAS) : ctx.caixa().getFluxoBoasVindas().strip();
+                e.saidas.add(boasVindas + "\n\n" + tx.texto(TextosAssistente.MENU));
+                // só um "oi": espera a escolha; um pedido já descrito (ou "#123", resposta a um aviso) segue direto
+                if (Relevancia.termos(texto).isEmpty() && FluxoTextos.numero(texto) == null && FluxoTextos.codigo(texto) == null
+                        && numeroChamado(texto) == null) {
                     continue;
                 }
             }
@@ -194,7 +207,7 @@ public class FluxoService {
     private void tratar(Estado e, Contexto ctx, Long mensagemId, String t) {
         FluxoTextos.Comando cmd = FluxoTextos.comando(t);
         if (cmd == FluxoTextos.Comando.ATENDENTE) {
-            e.saidas.add("Certo! Vou chamar uma pessoa da equipe para continuar o atendimento. Só um instante.");
+            e.saidas.add(tx.texto(TextosAssistente.TRANSFERENCIA));
             e.transferir = "o contato pediu um atendente";
             return;
         }
@@ -211,6 +224,14 @@ public class FluxoService {
         }
         if (ctx.web() && !"PERGUNTA".equals(e.etapa) && !"CONFIRMAR".equals(e.etapa) && !"CORRIGIR".equals(e.etapa)) {
             menuWeb(e, ctx, t);
+            return;
+        }
+        // "#123" em qualquer ponto fora de uma resposta: abre o chamado (ex.: resposta a um aviso)
+        Long chamado = ETAPAS_TEXTO.contains(e.etapa) ? null : numeroChamado(t);
+        if (chamado != null) {
+            if (identificado(e, ctx)) {
+                detalhe(e, ctx, chamado);
+            }
             return;
         }
         switch (e.etapa) {
@@ -240,19 +261,10 @@ public class FluxoService {
                 e.etapa = "PERGUNTA";
                 e.saidas.add(FluxoTextos.pergunta(ps.get(e.indice), n, ps.size()));
             }
-            case "CONSULTA" -> {
-                // "#12" é sempre chamado; "12" também, a não ser que seja 1 a 4 e não for de um chamado dela (opção do menu)
-                boolean comCerquilha = t.startsWith("#");
-                Integer n = FluxoTextos.numero(comCerquilha ? t.substring(1) : t);
-                boolean deChamado = n != null && (comCerquilha || n > 4
-                        || chamadosDo(ctx.contato(), 200).stream().anyMatch(c -> c.getId() == n.longValue()));
-                if (deChamado) {
-                    detalhe(e, ctx, n.longValue());
-                } else {
-                    e.etapa = "MENU";
-                    menu(e, ctx, t);
-                }
-            }
+            case "CONSULTA" -> consultaOuMenu(e, ctx, t);
+            case "CHAMADO" -> opcaoDoChamado(e, ctx, t);
+            case "CHAMADO_TEXTO" -> escreverNoChamado(e, ctx, t);
+            case "CHAMADO_RECUSA" -> recusarSolucao(e, ctx, t);
             case "FAQ" -> faq(e, t);
             case "FAQ_RESULTADO" -> {
                 Integer n = FluxoTextos.numero(t);
@@ -295,10 +307,10 @@ public class FluxoService {
                     e.saidas.add("Qual é a sua dúvida? Descreva em poucas palavras (ex.: _como acessar a VPN_).");
                 }
                 case 4 -> {
-                    e.saidas.add("Certo! Vou chamar uma pessoa da equipe para continuar o atendimento. Só um instante.");
+                    e.saidas.add(tx.texto(TextosAssistente.TRANSFERENCIA));
                     e.transferir = "o contato pediu um atendente";
                 }
-                default -> e.saidas.add("Não há a opção " + n + ".\n\n" + FluxoTextos.MENU);
+                default -> e.saidas.add("Não há a opção " + n + ".\n\n" + menu(ctx));
             }
             return;
         }
@@ -396,11 +408,11 @@ public class FluxoService {
             if (achado.isPresent()) {
                 e.etapa = "MENU";
                 e.saidas.add(FluxoTextos.soNoPortal(List.of(achado.get().getCodigo() + " " + achado.get().getNome()), props.getUrlPublica())
-                        + "\n\nPosso ajudar com mais alguma coisa?\n\n" + FluxoTextos.MENU);
+                        + "\n\nPosso ajudar com mais alguma coisa?\n\n" + menu(ctx));
                 return;
             }
             e.etapa = "MENU";
-            e.saidas.add("Não entendi bem. Escolha uma opção:\n\n" + FluxoTextos.MENU);
+            e.saidas.add("Não entendi bem. Escolha uma opção:\n\n" + menu(ctx));
             return;
         }
         e.etapa = "SUGESTAO";
@@ -658,37 +670,209 @@ public class FluxoService {
         if (!identificado(e, ctx)) {
             return;
         }
-        List<ChamadoDO> lista = chamadosDo(ctx.contato(), 5);
+        List<ChamadoDO> lista = chamadosDo(ctx.contato(), tx.numero(TextosAssistente.CONSULTA_QUANTIDADE));
         if (lista.isEmpty()) {
             e.etapa = "MENU";
-            e.saidas.add("Você não tem chamados registrados.\n\n" + FluxoTextos.MENU);
+            e.saidas.add(tx.texto(TextosAssistente.CONSULTA_VAZIA) + "\n\n" + menu(ctx));
             return;
         }
-        StringBuilder s = new StringBuilder("*Seus chamados mais recentes:*\n");
+        StringBuilder s = new StringBuilder(tx.texto(TextosAssistente.CONSULTA_TITULO)).append('\n');
         for (ChamadoDO ch : lista) {
             s.append("\n#").append(ch.getId()).append(" — ").append(ch.getTitulo()).append("\n   ").append(situacao(ch));
         }
-        s.append("\n\nEnvie o número de um chamado para ver os detalhes, ou *menu*.");
+        s.append("\n\n").append(tx.texto(TextosAssistente.CONSULTA_RODAPE, Map.of("exemplo", lista.get(0).getId())));
         e.etapa = "CONSULTA";
         e.saidas.add(s.toString());
     }
 
+    /** Na lista ou no detalhe: "#12" é sempre chamado; "12" também, a não ser que seja 1 a 4 e não for de um chamado dela. */
+    private void consultaOuMenu(Estado e, Contexto ctx, String t) {
+        boolean comCerquilha = t.startsWith("#");
+        // FluxoTextos.numero vai só até 4 dígitos (opções); o número do chamado pode ter mais
+        Matcher m = NUMERO_SEM_CERQUILHA.matcher(comCerquilha ? t.substring(1).strip() : t.strip());
+        Long n = m.matches() ? Long.parseLong(m.group(1)) : null;
+        boolean deChamado = n != null && (comCerquilha || n > 4 || doContato(ctx.contato(), n));
+        if (deChamado) {
+            detalhe(e, ctx, n);
+        } else {
+            e.etapa = "MENU";
+            menu(e, ctx, t);
+        }
+    }
+
+    /**
+     * Detalhe de um chamado do próprio contato, com a última atualização da equipe e o que dá para fazer nele pelo
+     * canal: escrever (WF12 do n8n) e, se solucionado, aprovar ou recusar a solução, com as mesmas regras do portal.
+     */
     private void detalhe(Estado e, Contexto ctx, long id) {
-        boolean meu = chamadosDo(ctx.contato(), 200).stream().anyMatch(c -> c.getId() == id);
-        ChamadoDO ch = meu ? chamadoMapper.selectById(id) : null;
+        ChamadoDO ch = doContato(ctx.contato(), id) ? chamadoMapper.selectById(id) : null;
         if (ch == null) {
+            e.etapa = "CONSULTA";
             e.saidas.add("Não encontrei o chamado #" + id + " entre os seus. Envie outro número ou *menu*.");
             return;
         }
-        StringBuilder s = new StringBuilder("*Chamado #").append(ch.getId()).append("*\n").append(ch.getTitulo())
-                .append("\nSituação: ").append(situacao(ch));
-        if (ch.getAbertoEm() != null) {
-            s.append("\nAberto em: ").append(DIA.format(ch.getAbertoEm()));
+        Map<String, Object> v = new HashMap<>();
+        v.put("chamado", ch.getId());
+        v.put("titulo", ch.getTitulo());
+        v.put("situacao", situacao(ch));
+        v.put("aberto_em", ch.getAbertoEm() == null ? "" : DIA.format(ch.getAbertoEm()));
+        v.put("solucionado_em", ch.getSolucionadoEm() == null ? "" : DIA.format(ch.getSolucionadoEm()));
+        v.put("ultima_autor", "");
+        v.put("ultima_data", "");
+        v.put("ultima_texto", "");
+        if (tx.sim(TextosAssistente.MOSTRAR_ULTIMA)) {
+            ultimaDaEquipe(ch.getId(), ctx.contato().getUserId()).ifPresent(i -> {
+                v.put("ultima_autor", i.getAutor() == null ? "equipe" : i.getAutor());
+                v.put("ultima_data", i.getCriadoEm() == null ? "" : DIA_HORA.format(i.getCriadoEm()));
+                String texto = AvisosCanal.texto(i.getConteudo());
+                v.put("ultima_texto", texto.length() > 600 ? texto.substring(0, 597) + "..." : texto);
+            });
         }
-        if (ch.getSolucionadoEm() != null) {
-            s.append("\nSolucionado em: ").append(DIA.format(ch.getSolucionadoEm()));
+        ChamadoStatus st = ChamadoStatus.de(ch.getStatus());
+        String opcoes;
+        if (st == ChamadoStatus.FECHADO) {
+            e.etapa = "CONSULTA";
+            opcoes = tx.texto(TextosAssistente.ENCERRADO, v);
+        } else if (st == ChamadoStatus.SOLUCIONADO && tx.sim(TextosAssistente.PERMITIR_AVALIAR)) {
+            e.etapa = "CHAMADO";
+            opcoes = tx.texto(TextosAssistente.OPCOES_SOLUCIONADO, v);
+        } else if (tx.sim(TextosAssistente.PERMITIR_ADICIONAR)) {
+            e.etapa = "CHAMADO";
+            opcoes = tx.texto(TextosAssistente.OPCOES_ABERTO, v);
+        } else {
+            e.etapa = "CONSULTA";
+            opcoes = tx.texto(TextosAssistente.OPCOES_SO_CONSULTA, v);
         }
-        e.saidas.add(s.toString());
+        e.dados.put("chamado", ch.getId());
+        e.saidas.add(tx.texto(TextosAssistente.DETALHE, v) + "\n\n" + opcoes);
+    }
+
+    /** Último acompanhamento ou solução pública escrita por outra pessoa (não pelo próprio contato). */
+    private Optional<ChamadoVOs.Interacao> ultimaDaEquipe(Long chamadoId, Long userId) {
+        try {
+            List<ChamadoVOs.Interacao> itens = chamadoService.linhaDoTempo(chamadoId, userId);
+            for (int i = itens.size() - 1; i >= 0; i--) {
+                ChamadoVOs.Interacao x = itens.get(i);
+                boolean tipo = InteracaoDO.ACOMPANHAMENTO.equals(x.getTipo()) || InteracaoDO.SOLUCAO.equals(x.getTipo());
+                if (tipo && !Boolean.TRUE.equals(x.getPrivado()) && !Objects.equals(x.getUserId(), userId)) {
+                    return Optional.of(x);
+                }
+            }
+        } catch (ServiceException ex) {
+            log.info("[ultimaDaEquipe][chamado {}: {}]", chamadoId, ex.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    /** Resposta ao detalhe: as opções valem para o chamado mostrado; outro número abre outro chamado. */
+    private void opcaoDoChamado(Estado e, Contexto ctx, String t) {
+        Long id = e.dados.get("chamado") instanceof Number x ? x.longValue() : null;
+        ChamadoDO ch = id == null || !doContato(ctx.contato(), id) ? null : chamadoMapper.selectById(id);
+        Integer n = FluxoTextos.numero(t);
+        if (ch == null || n == null || n > 3) {
+            consultaOuMenu(e, ctx, t);
+            return;
+        }
+        Map<String, Object> v = Map.of("chamado", ch.getId(), "titulo", ch.getTitulo());
+        boolean solucionado = ChamadoStatus.de(ch.getStatus()) == ChamadoStatus.SOLUCIONADO && tx.sim(TextosAssistente.PERMITIR_AVALIAR);
+        if (solucionado && n == 1) {
+            ChamadoVOs.AvaliarSolucaoReq req = new ChamadoVOs.AvaliarSolucaoReq();
+            req.setChamadoId(ch.getId());
+            req.setAprovar(true);
+            try {
+                chamadoService.avaliarSolucao(req, ctx.contato().getUserId());
+            } catch (ServiceException ex) {
+                e.saidas.add("⚠️ Não consegui aprovar: " + ex.getMessage() + "\n\nEnvie *#" + ch.getId() + "* para ver de novo ou *menu*.");
+                e.etapa = "CONSULTA";
+                return;
+            }
+            atividade(ctx, "Contato aprovou pelo canal a solução do chamado #" + ch.getId());
+            e.reiniciar();
+            e.saidas.add(tx.texto(TextosAssistente.SOLUCAO_APROVADA, v));
+        } else if (solucionado && n == 2) {
+            e.etapa = "CHAMADO_RECUSA";
+            e.saidas.add(tx.texto(TextosAssistente.PEDIR_MOTIVO_RECUSA, v));
+        } else if (!solucionado && n == 1 && tx.sim(TextosAssistente.PERMITIR_ADICIONAR)
+                && ChamadoStatus.de(ch.getStatus()) != ChamadoStatus.FECHADO) {
+            e.etapa = "CHAMADO_TEXTO";
+            e.saidas.add(tx.texto(TextosAssistente.PEDIR_TEXTO, v));
+        } else {
+            consultaOuMenu(e, ctx, t);
+        }
+    }
+
+    /** A mensagem vira acompanhamento do solicitante, como no portal (num solucionado, recusa a solução e reabre). */
+    private void escreverNoChamado(Estado e, Contexto ctx, String t) {
+        Long id = e.dados.get("chamado") instanceof Number x ? x.longValue() : null;
+        ChamadoDO ch = id == null || !doContato(ctx.contato(), id) ? null : chamadoMapper.selectById(id);
+        if (ch == null || !tx.sim(TextosAssistente.PERMITIR_ADICIONAR)) {
+            e.reiniciar();
+            e.saidas.add("Não consegui achar o chamado. Como posso ajudar?\n\n" + menu(ctx));
+            return;
+        }
+        boolean reabre = ChamadoStatus.de(ch.getStatus()) == ChamadoStatus.SOLUCIONADO;
+        ChamadoVOs.InteracaoReq req = new ChamadoVOs.InteracaoReq();
+        req.setChamadoId(ch.getId());
+        req.setTipo(InteracaoDO.ACOMPANHAMENTO);
+        req.setPrivado(false);
+        req.setConteudo(paraHtml(t));
+        try {
+            chamadoService.adicionarInteracao(req, ctx.contato().getUserId(), false);
+        } catch (ServiceException ex) {
+            e.reiniciar();
+            e.saidas.add("⚠️ Não consegui registrar no chamado #" + ch.getId() + ": " + ex.getMessage() + "\n\n" + menu(ctx));
+            return;
+        }
+        atividade(ctx, "Contato escreveu pelo canal no chamado #" + ch.getId() + (reabre ? " (solução recusada, reaberto)" : ""));
+        e.reiniciar();
+        e.saidas.add(tx.texto(reabre ? TextosAssistente.TEXTO_REABERTO : TextosAssistente.TEXTO_OK,
+                Map.of("chamado", ch.getId(), "titulo", ch.getTitulo())));
+    }
+
+    private void recusarSolucao(Estado e, Contexto ctx, String t) {
+        Long id = e.dados.get("chamado") instanceof Number x ? x.longValue() : null;
+        ChamadoDO ch = id == null || !doContato(ctx.contato(), id) ? null : chamadoMapper.selectById(id);
+        if (ch == null) {
+            e.reiniciar();
+            e.saidas.add("Não consegui achar o chamado. Como posso ajudar?\n\n" + menu(ctx));
+            return;
+        }
+        ChamadoVOs.AvaliarSolucaoReq req = new ChamadoVOs.AvaliarSolucaoReq();
+        req.setChamadoId(ch.getId());
+        req.setAprovar(false);
+        req.setComentario(paraHtml(t));
+        try {
+            chamadoService.avaliarSolucao(req, ctx.contato().getUserId());
+        } catch (ServiceException ex) {
+            e.reiniciar();
+            e.saidas.add("⚠️ Não consegui recusar a solução: " + ex.getMessage() + "\n\n" + menu(ctx));
+            return;
+        }
+        atividade(ctx, "Contato recusou pelo canal a solução do chamado #" + ch.getId());
+        e.reiniciar();
+        e.saidas.add(tx.texto(TextosAssistente.SOLUCAO_RECUSADA, Map.of("chamado", ch.getId(), "titulo", ch.getTitulo())));
+    }
+
+    /** Texto do celular para o HTML do chamado (escapado; quebras de linha viram &lt;br&gt;). */
+    static String paraHtml(String texto) {
+        return "<p>" + HtmlUtils.htmlEscape(texto == null ? "" : texto.strip()).replace("\n", "<br>") + "</p>";
+    }
+
+    /** "#123" (com ou sem espaço) como a mensagem inteira. */
+    static Long numeroChamado(String texto) {
+        Matcher m = NUMERO_CHAMADO.matcher(texto == null ? "" : texto.strip());
+        return m.matches() ? Long.parseLong(m.group(1)) : null;
+    }
+
+    private void atividade(Contexto ctx, String texto) {
+        transactionTemplate.executeWithoutResult(st -> conversaService.atividade(conversaMapper.selectById(ctx.conversa().getId()), texto));
+    }
+
+    /** O contato é solicitante do chamado (consulta direta, sem limite da lista). */
+    private boolean doContato(ContatoDO contato, long chamadoId) {
+        return contato.getUserId() != null && chamadoAtorMapper.selectCount(new LambdaQueryWrapperX<ChamadoAtorDO>()
+                .eq(ChamadoAtorDO::getChamadoId, chamadoId).eq(ChamadoAtorDO::getUserId, contato.getUserId())
+                .eq(ChamadoAtorDO::getTipo, 1)) > 0;
     }
 
     private static String situacao(ChamadoDO ch) {
@@ -733,8 +917,7 @@ public class FluxoService {
             return true;
         }
         e.etapa = "MENU";
-        e.saidas.add("Para abrir ou consultar pedidos pelo WhatsApp, o número deste celular precisa estar no seu cadastro"
-                + " (portal da TI ou Active Directory), e não o encontrei.\n\nPosso:\n3️⃣ Tirar uma dúvida\n4️⃣ Chamar um atendente");
+        e.saidas.add(tx.texto(TextosAssistente.NAO_IDENTIFICADO));
         return false;
     }
 
@@ -752,8 +935,8 @@ public class FluxoService {
 
     /** Tela de login fora do formulário: recomeçar o reset ou chamar alguém (nada de consulta, FAQ ou outros serviços). */
     /** Na tela de login só existem o reset e o atendente; o menu completo é dos canais com pessoa identificada. */
-    private static String menu(Contexto ctx) {
-        return ctx.web() ? MENU_WEB : FluxoTextos.MENU;
+    private String menu(Contexto ctx) {
+        return ctx.web() ? MENU_WEB : tx.texto(TextosAssistente.MENU);
     }
 
     private void menuWeb(Estado e, Contexto ctx, String t) {
@@ -761,7 +944,7 @@ public class FluxoService {
         if ((n != null && n == 1) || CODIGO_RESET.equals(FluxoTextos.codigo(t))) {
             iniciar(e, ctx, formulario(ctx, CODIGO_RESET));
         } else if (n != null && n == 2) {
-            e.saidas.add("Certo! Vou chamar uma pessoa da equipe para continuar o atendimento. Só um instante.");
+            e.saidas.add(tx.texto(TextosAssistente.TRANSFERENCIA));
             e.transferir = "o visitante da tela de login pediu um atendente";
         } else {
             e.etapa = "MENU";

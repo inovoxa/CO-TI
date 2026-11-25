@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.*;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.*;
 import cn.iocoder.yudao.module.atendimento.dominio.PromptsIa;
+import cn.iocoder.yudao.module.atendimento.dominio.TextosAssistente;
 import cn.iocoder.yudao.module.atendimento.enums.ConversaStatus;
 import cn.iocoder.yudao.module.atendimento.enums.MensagemTipo;
 import jakarta.annotation.PreDestroy;
@@ -61,6 +62,8 @@ public class AssistenteService {
     private TranscricaoService transcricaoService;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private AssistenteVirtualService textos;
 
     /** A caixa tem o fluxo do catálogo, ou assistente com a IA ligada: a conversa nova fica com o robô. */
     public boolean ativoPara(CaixaDO caixa) {
@@ -128,13 +131,13 @@ public class AssistenteService {
             pergunta.insert(0, hist.get(i).getConteudo() + " ");
         }
         List<Map<String, Object>> msgs = new ArrayList<>();
-        msgs.add(PromptsIa.mensagem("system", PromptsIa.sistemaAssistente(caixa.getRoboNome(), caixa.getRoboInstrucoes(),
+        msgs.add(PromptsIa.mensagem("system", PromptsIa.sistemaAssistente(caixa.getRoboNome(), textos.texto(TextosAssistente.IA_ORIENTACOES), caixa.getRoboInstrucoes(),
                 ferramentas.artigos(pergunta.toString(), true, 3))));
         msgs.addAll(PromptsIa.historico(hist.stream().map(m -> new PromptsIa.Fala(m.getTipo() == MensagemTipo.ENTRADA, falar(m))).toList()));
         String resposta = null;
         try {
             for (int rodada = 0; rodada < MAX_RODADAS; rodada++) {
-                IaService.Resposta r = iaService.conversar(msgs, PromptsIa.ferramentas(), "assistente", conversaId, null);
+                IaService.Resposta r = iaService.conversar(msgs, PromptsIa.ferramentas(textos.sim(TextosAssistente.PERMITIR_ADICIONAR)), "assistente", conversaId, null);
                 if (r.chamadas().isEmpty()) {
                     resposta = r.conteudo();
                     break;

@@ -11,6 +11,8 @@ import cn.iocoder.yudao.module.atendimento.dal.mysql.ConversaMapper;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.IaMapper;
 import cn.iocoder.yudao.module.atendimento.dominio.PromptsIa;
 import cn.iocoder.yudao.module.atendimento.dominio.Relevancia;
+import cn.iocoder.yudao.module.atendimento.dominio.TextosAssistente;
+import cn.iocoder.yudao.module.itsm.dal.dataobject.InteracaoDO;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.ChamadoVOs;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoAtorDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoDO;
@@ -50,6 +52,8 @@ public class FerramentasAssistente {
     private ChamadoService chamadoService;
     @Resource
     private ConversaService conversaService;
+    @Resource
+    private AssistenteVirtualService textos;
 
     /**
      * Artigos publicados ligados ao texto.
@@ -83,6 +87,8 @@ public class FerramentasAssistente {
                 case "consultar_chamados" -> chamados(c);
                 case "abrir_chamado" -> abrirChamado(c, String.valueOf(ch.argumentos().getOrDefault("titulo", "")),
                         String.valueOf(ch.argumentos().getOrDefault("descricao", "")));
+                case "adicionar_informacao" -> adicionarInformacao(c, ch.argumentos().get("numero"),
+                        String.valueOf(ch.argumentos().getOrDefault("texto", "")));
                 default -> Map.of("erro", "ferramenta desconhecida: " + ch.nome());
             };
             return JsonUtils.toJsonString(r);
@@ -118,6 +124,43 @@ public class FerramentasAssistente {
             lista.add(m);
         }
         return Map.of("chamados", lista);
+    }
+
+    /**
+     * Acompanhamento do contato num chamado dele (WF12 do n8n). Só com a opção ligada, só para quem tem conta no portal
+     * e só em chamado em que é solicitante: o número vindo do modelo nunca alcança o chamado de outra pessoa.
+     */
+    private Map<String, Object> adicionarInformacao(ConversaDO c, Object numero, String texto) {
+        if (!textos.sim(TextosAssistente.PERMITIR_ADICIONAR)) {
+            return Map.of("erro", "esta ação está desligada; ofereça transferir para uma pessoa");
+        }
+        ContatoDO contato = contatoMapper.selectById(c.getContatoId());
+        if (contato.getUserId() == null) {
+            return Map.of("erro", "o contato não tem conta no portal; transfira para uma pessoa da equipe");
+        }
+        long id;
+        try {
+            id = numero instanceof Number n ? n.longValue() : Long.parseLong(String.valueOf(numero).replace("#", "").strip());
+        } catch (NumberFormatException e) {
+            return Map.of("erro", "número de chamado inválido");
+        }
+        boolean dele = chamadoAtorMapper.selectCount(new LambdaQueryWrapperX<ChamadoAtorDO>().eq(ChamadoAtorDO::getChamadoId, id)
+                .eq(ChamadoAtorDO::getUserId, contato.getUserId()).eq(ChamadoAtorDO::getTipo, 1)) > 0;
+        if (!dele) {
+            return Map.of("erro", "o chamado " + id + " não é deste contato");
+        }
+        if (texto == null || texto.isBlank()) {
+            return Map.of("erro", "texto vazio: pergunte ao contato o que acrescentar");
+        }
+        ChamadoVOs.InteracaoReq req = new ChamadoVOs.InteracaoReq();
+        req.setChamadoId(id);
+        req.setTipo(InteracaoDO.ACOMPANHAMENTO);
+        req.setPrivado(false);
+        req.setConteudo("<p>" + HtmlUtils.htmlEscape(ContatoService.cortar(texto.strip(), 4000)).replace("\n", "<br>") + "</p>");
+        chamadoService.adicionarInteracao(req, contato.getUserId(), false);
+        conversaService.atividade(c, "Assistente registrou no chamado #" + id + " uma informação do contato");
+        ChamadoDO ch = chamadoMapper.selectById(id);
+        return Map.of("numero", id, "situacao", ChamadoStatus.de(ch.getStatus()).getRotulo(), "registrado", true);
     }
 
     private Map<String, Object> abrirChamado(ConversaDO c, String titulo, String descricao) {

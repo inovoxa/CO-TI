@@ -49,5 +49,7 @@ public interface ErrorCodeConstants {
     ErrorCode MODELO_PARAMETROS = new ErrorCode(1_102_004_011, "O modelo pede {} variáveis; preencha todas");
     ErrorCode WIDGET_DESLIGADO = new ErrorCode(1_102_007_000, "O assistente do portal está desligado");
     ErrorCode WIDGET_SESSAO_INVALIDA = new ErrorCode(1_102_007_001, "Sessão do assistente inválida: recomece a conversa");
+    ErrorCode ASSISTENTE_TEXTO_INVALIDO = new ErrorCode(1_102_008_000, "{}");
+    ErrorCode ASSISTENTE_IMPORTACAO_INVALIDA = new ErrorCode(1_102_008_001, "Arquivo inválido: {}");
 
 }

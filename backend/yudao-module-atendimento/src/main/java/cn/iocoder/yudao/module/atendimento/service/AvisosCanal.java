@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.atendimento.config.AtendimentoProperties;
 import cn.iocoder.yudao.module.atendimento.dal.dataobject.*;
 import cn.iocoder.yudao.module.atendimento.dal.mysql.*;
 import cn.iocoder.yudao.module.atendimento.dominio.Telefone;
+import cn.iocoder.yudao.module.atendimento.dominio.TextosAssistente;
 import cn.iocoder.yudao.module.atendimento.enums.ConversaStatus;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.AprovacaoDO;
 import cn.iocoder.yudao.module.itsm.dal.dataobject.ChamadoAtorDO;
@@ -82,6 +83,8 @@ public class AvisosCanal {
     private AtendimentoProperties props;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private AssistenteVirtualService tx;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void aoMudarChamado(ChamadoEvento e) {
@@ -133,17 +136,16 @@ public class AvisosCanal {
                         || (i.getUserId() != null && i.getUserId().equals(contato.getUserId()))) {
                     yield null;   // nota interna, ou o próprio contato escreveu pelo portal
                 }
-                yield "📝 Chamado #" + ch.getId() + " — atualização da equipe:\n" + texto(i.getConteudo());
+                yield tx.texto(TextosAssistente.AVISO_ACOMPANHAMENTO, valores(ch, texto(i.getConteudo())));
             }
             case "solucionado", "solucao" -> {
                 InteracaoDO i = e.refId() == null ? null : interacaoMapper.selectById(e.refId());
-                yield "✅ Chamado #" + ch.getId() + " solucionado" + (i == null ? "." : ":\n" + texto(i.getConteudo()))
-                        + "\n\nSe não resolveu, responda aqui ou recuse a solução no portal.";
+                yield tx.texto(TextosAssistente.AVISO_SOLUCIONADO, valores(ch, i == null ? "" : texto(i.getConteudo())));
             }
             case "aprovado" -> ch.getValidacao() != null && ch.getValidacao() == Aprovacoes.APROVADA
-                    ? "👍 Chamado #" + ch.getId() + ": o pedido foi aprovado e segue para atendimento." : null;
-            case "recusado" -> "Chamado #" + ch.getId() + ": o pedido foi recusado pelo aprovador.";
-            case "fechado" -> "Chamado #" + ch.getId() + " encerrado. Obrigado!";
+                    ? tx.texto(TextosAssistente.AVISO_APROVADO, valores(ch, "")) : null;
+            case "recusado" -> tx.texto(TextosAssistente.AVISO_RECUSADO, valores(ch, ""));
+            case "fechado" -> tx.texto(TextosAssistente.AVISO_FECHADO, valores(ch, ""));
             default -> null;
         };
         if (texto != null) {
@@ -181,8 +183,8 @@ public class AvisosCanal {
                 conversaMapper.insert(c);
             }
             String base = props.getUrlPublica() == null ? "" : props.getUrlPublica().replaceAll("/+$", "");
-            enviar(c, caixa, ch, "🔔 Olá, " + u.getNickname() + "! O pedido *#" + ch.getId() + " — " + ch.getTitulo() + "*, de " + solicitante
-                    + ", aguarda a sua aprovação.\n\nAprove ou recuse pelo portal: " + base + "/aprovacoes");
+            enviar(c, caixa, ch, tx.texto(TextosAssistente.AVISO_APROVACAO, Map.of("aprovador", Objects.toString(u.getNickname(), "colega"),
+                    "chamado", ch.getId(), "titulo", Objects.toString(ch.getTitulo(), "sem título"), "solicitante", solicitante, "link", base + "/aprovacoes")));
         }
     }
 
@@ -215,6 +217,10 @@ public class AvisosCanal {
         conversaService.saida(c, ModeloService.preencher(m.getCorpo(), nomes, List.of(parametro)), "sistema", null, List.of(),
                 Map.of("modelo", modelo, "aviso", ch.getId()));
         conversaService.publicar("conversa", c.getId(), null);
+    }
+
+    private static Map<String, Object> valores(ChamadoDO ch, String texto) {
+        return Map.of("chamado", ch.getId(), "titulo", ch.getTitulo() == null ? "" : ch.getTitulo(), "texto", texto);
     }
 
     /** HTML do acompanhamento em texto para o canal. */

@@ -281,11 +281,15 @@ Regras completas em `docs/specs/atendimento-automacoes.md`.
 
 ### Fluxo do catálogo pelo WhatsApp (F2e) — substitui o agente do n8n
 
-Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Ligue *Fluxo do catálogo* na caixa.
+Análise do n8n e regras em `docs/specs/atendimento-fluxo-whatsapp.md`. Tudo do robô fica em
+*Atendimento → Configuração → Assistente virtual*: o modo de cada caixa (fluxo do catálogo, assistente de IA ou direto
+para as pessoas), os textos do menu, da consulta e dos avisos (com prévia e "restaurar o padrão"), as orientações da IA
+e exportar/importar.
 
 - **Menu:**
   1. abrir um chamado (áreas e serviços do catálogo, com os códigos 1.1–4.2 e 6.1–6.4);
-  2. consultar meus chamados;
+  2. consultar meus chamados (ou `#123` a qualquer momento): mostra a última atualização da equipe e deixa escrever no
+     chamado e aprovar ou recusar a solução;
   3. tirar uma dúvida (FAQ);
   4. falar com um atendente.
 - **Formulários do catálogo:** são os mesmos do portal. As perguntas vêm uma por vez, com a validação do formulário
