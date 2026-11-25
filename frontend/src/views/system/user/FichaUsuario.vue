@@ -47,17 +47,10 @@
           <el-descriptions-item label="Celular">{{ u!.mobile || '—' }}</el-descriptions-item>
           <el-descriptions-item label="Unidade">
             {{ u!.unidadeNome || '—' }}
-            <div v-if="u!.unidadeMaquina" class="ajuda">
-              {{
-                u!.unidadeOrigem === 'fora'
-                  ? 'IP fora das faixas'
-                  : u!.unidadeOrigem === 'manual'
-                    ? 'dada à mão na máquina'
-                    : 'pela faixa de IP'
-              }}
+            <div v-if="u!.unidadeId" class="ajuda">
+              {{ u!.unidadeOrigem === 'manual' ? 'dada à mão na máquina' : 'pela faixa de IP' }}
               · {{ u!.unidadeMaquina }} {{ u!.unidadeIp }}
             </div>
-            <div v-else class="ajuda">sem máquina no inventário</div>
           </el-descriptions-item>
           <el-descriptions-item label="Departamento">{{ u!.deptNome || '—' }}</el-descriptions-item>
           <el-descriptions-item label="Último acesso">

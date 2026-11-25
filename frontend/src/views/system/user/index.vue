@@ -197,15 +197,12 @@
             </el-table-column>
             <el-table-column label="Unidade" min-width="160" prop="unidade" sortable="custom">
               <template #default="{ row }">
-                <el-tooltip :content="origemUnidade(row)" placement="top">
-                  <el-link
-                    :type="row.unidadeId ? 'primary' : 'info'"
-                    :underline="false"
-                    @click.stop="daColuna(row)"
-                  >
-                    {{ row.unidadeNome || (row.unidadeOrigem === 'fora' ? 'IP fora das faixas' : '—') }}
+                <el-tooltip v-if="row.unidadeId" :content="origemUnidade(row)" placement="top">
+                  <el-link :underline="false" type="primary" @click.stop="daColuna(row)">
+                    {{ row.unidadeNome }}
                   </el-link>
                 </el-tooltip>
+                <span v-else class="text-[var(--el-text-color-placeholder)]">—</span>
               </template>
             </el-table-column>
             <el-table-column label="Perfis" min-width="190">
@@ -484,10 +481,8 @@ const origemUnidade = (u: IdentidadeApi.UsuarioLinha) => {
       return `Pela faixa de IP da máquina ${maq}. Clique para ver todos desta unidade.`
     case 'manual':
       return `Unidade dada à mão na máquina ${maq}. Clique para ver todos desta unidade.`
-    case 'fora':
-      return `A máquina ${maq} está num IP fora das faixas cadastradas (Inventário → Rede).`
     default:
-      return 'Nenhuma máquina do inventário com esta pessoa.'
+      return ''
   }
 }
 
