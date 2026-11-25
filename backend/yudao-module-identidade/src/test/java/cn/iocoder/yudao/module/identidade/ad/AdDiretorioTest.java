@@ -127,6 +127,43 @@ class AdDiretorioTest {
     }
 
     @Test
+    void propriedadesComoNoAd() throws Exception {
+        String dn = "CN=Carla Dias,OU=TI,OU=Sede," + BASE;
+        // 2026-01-15 12:00:00 UTC em FILETIME
+        long ft = (java.time.Instant.parse("2026-01-15T12:00:00Z").getEpochSecond() + 11_644_473_600L) * 10_000_000L;
+        servidor.add("dn: " + dn, "objectClass: user", "sAMAccountName: carla", "userPrincipalName: carla@empresa.local",
+                "displayName: Carla Dias", "mail: carla@empresa.local", "title: Analista", "department: TI",
+                "company: Prefeitura", "manager: CN=Ana Souza,OU=Suporte,OU=TI,OU=Sede," + BASE,
+                "userAccountControl: 66048" /* 512 + senha nunca expira */, "lastLogon: " + ft, "lastLogonTimestamp: 0",
+                "badPwdCount: 2", "badPasswordTime: " + ft, "pwdLastSet: 0", "accountExpires: 9223372036854775807",
+                "lockoutTime: " + ft, "whenCreated: 20200310143000.0Z", "profilePath: \\\\srv\\perfis\\carla",
+                "homeDirectory: \\\\srv\\home\\carla", "homeDrive: H:", "primaryGroupID: 513",
+                "memberOf: CN=GG-TI,OU=Grupos," + BASE, "memberOf: CN=Acesso VPN,OU=Grupos," + BASE);
+
+        AdPropriedades p = diretorio.propriedades(dn, "carla").orElseThrow();
+        assertEquals("carla@empresa.local", p.getUpn());
+        assertEquals("Ana Souza", p.getGestorNome());
+        assertTrue(p.isAtiva());
+        assertTrue(p.isSenhaNuncaExpira());
+        assertTrue(p.isTrocarSenhaNoLogon());
+        assertTrue(p.isBloqueada());            // sem o atributo calculado, vale lockoutTime > 0
+        assertNull(p.getContaExpiraEm());       // máximo = nunca
+        assertNull(p.getUltimoLogonReplicado()); // 0 = nunca
+        assertEquals(java.time.LocalDateTime.ofInstant(java.time.Instant.parse("2026-01-15T12:00:00Z"), java.time.ZoneId.systemDefault()),
+                p.getUltimoLogon());
+        assertEquals(2, p.getSenhasErradas());
+        assertEquals(java.time.LocalDateTime.ofInstant(java.time.Instant.parse("2020-03-10T14:30:00Z"), java.time.ZoneId.systemDefault()),
+                p.getCriadaEm());
+        assertEquals("H:", p.getUnidadePastaBase());
+        assertTrue(p.getGrupoPrincipal().startsWith("Domain Users"));
+        assertEquals(List.of("Acesso VPN", "GG-TI"), p.getGrupos().stream().map(AdPropriedades.Grupo::getNome).toList());
+
+        // mudou de OU: o DN guardado não existe mais, acha pelo login
+        assertEquals(dn, diretorio.propriedades("CN=Carla Dias,OU=Velha," + BASE, "carla").orElseThrow().getDn());
+        assertEquals(Optional.empty(), diretorio.propriedades("CN=Ninguem," + BASE, "ninguem"));
+    }
+
+    @Test
     void converteObjectGuidDoAd() {
         // GUID {01234567-89ab-cdef-0123-456789abcdef} como o AD guarda (3 primeiros campos invertidos)
         byte[] b = {0x67, 0x45, 0x23, 0x01, (byte) 0xab, (byte) 0x89, (byte) 0xef, (byte) 0xcd,

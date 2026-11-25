@@ -1,15 +1,5 @@
 <template>
-  <el-row :gutter="20">
-    <el-col :span="4" :xs="24">
-      <ContentWrap class="h-1/1">
-        <div class="ajuda mb-8px">Unidade pela máquina que a pessoa usa</div>
-        <DeptTreeSelect
-          ref="arvore"
-          @node-click="(id?: number, nome?: string) => filtrarUnidade(id, nome)"
-        />
-      </ContentWrap>
-    </el-col>
-    <el-col :span="20" :xs="24">
+  <div>
       <el-tabs v-model="aba" class="abas">
         <el-tab-pane label="Usuários" name="usuarios" />
         <el-tab-pane label="Revisão de acessos" name="revisao" />
@@ -30,6 +20,21 @@
               >
                 <template #prefix><Icon icon="ep:search" /></template>
               </el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-tree-select
+                v-model="q.unidadeId"
+                :data="unidades"
+                :props="{ label: 'name', children: 'children' }"
+                :render-after-expand="false"
+                check-strictly
+                class="!w-230px"
+                clearable
+                filterable
+                node-key="id"
+                placeholder="Unidade (com as subunidades)"
+                @change="buscar"
+              />
             </el-form-item>
             <el-form-item>
               <el-select
@@ -115,11 +120,6 @@
               </el-button>
             </el-form-item>
           </el-form>
-          <div v-if="q.unidadeId !== undefined" class="mt-8px">
-            <el-tag closable disable-transitions @close="filtrarUnidade(undefined)">
-              Unidade: {{ unidadeFiltro || 'sem unidade' }}
-            </el-tag>
-          </div>
         </ContentWrap>
 
         <ContentWrap>
@@ -343,8 +343,7 @@
           />
         </ContentWrap>
       </template>
-    </el-col>
-  </el-row>
+  </div>
 
   <UserForm ref="formRef" @success="carregar" />
   <UserAssignRoleForm ref="assignRoleFormRef" @success="carregar" />
@@ -405,7 +404,6 @@ import UserForm from './UserForm.vue'
 import UserAssignRoleForm from './UserAssignRoleForm.vue'
 import FichaUsuario from './FichaUsuario.vue'
 import RevisaoAcessos from './RevisaoAcessos.vue'
-import DeptTreeSelect from '@/views/system/dept/components/DeptTreeSelect.vue'
 
 defineOptions({ name: 'SystemUser' })
 
@@ -464,11 +462,8 @@ const buscar = () => {
   q.pageNo = 1
   carregar()
 }
-const arvore = ref<InstanceType<typeof DeptTreeSelect>>()
 const limpar = () => {
   Object.assign(q, inicial())
-  arvore.value?.reset()
-  unidadeFiltro.value = undefined
   buscar()
 }
 const ordenar = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
@@ -477,16 +472,10 @@ const ordenar = ({ prop, order }: { prop: string; order: 'ascending' | 'descendi
   buscar()
 }
 /** Unidade = a da máquina que a pessoa usa (faixa de IP ou dada à mão na máquina); -1 = sem unidade */
-const unidadeFiltro = ref<string>()
-const filtrarUnidade = (id: number | undefined, nome?: string) => {
-  q.unidadeId = id
-  unidadeFiltro.value = id !== undefined && id >= 0 ? nome : undefined
-  buscar()
-}
+const unidades = ref<any[]>([])
 const daColuna = (u: IdentidadeApi.UsuarioLinha) => {
-  arvore.value?.reset()
-  if (u.unidadeId) arvore.value?.setCurrent(u.unidadeId)
-  filtrarUnidade(u.unidadeId ?? -1, u.unidadeNome)
+  q.unidadeId = u.unidadeId ?? -1
+  buscar()
 }
 const origemUnidade = (u: IdentidadeApi.UsuarioLinha) => {
   const maq = `${u.unidadeMaquina}${u.unidadeIp ? ' (' + u.unidadeIp + ')' : ''}`
@@ -641,8 +630,7 @@ const executar = async (acao: string) => {
     return carregar()
   }
   if (acao === 'mover' || acao === 'perfil' || acao === 'tirar_perfil') {
-    if (acao === 'mover' && !depts.value.length)
-      depts.value = handleTree(await DeptApi.getSimpleDeptList())
+    if (acao === 'mover' && !depts.value.length) await carregarDepts()
     Object.assign(escolha, {
       visivel: true,
       acao,
@@ -664,8 +652,40 @@ const confirmarEscolha = async () => {
   await emLote(escolha.acao, selecionados.value, { deptId: escolha.deptId, roleId: escolha.roleId })
 }
 
+const carregarDepts = async () => {
+  depts.value = handleTree(await DeptApi.getSimpleDeptList())
+  unidades.value = [
+    { id: -1, name: 'Sem unidade (sem máquina ou IP fora das faixas)', children: [] },
+    ...depts.value
+  ]
+}
+
+/** Filtros lembrados neste navegador (só conveniência: sem o storage, a tela abre com o padrão). */
+const CHAVE_FILTROS = 'coti.usuarios.filtros'
+watch(
+  () => ({ ...q, pageNo: 1 }),
+  (v) => {
+    try {
+      localStorage.setItem(CHAVE_FILTROS, JSON.stringify(v))
+    } catch {
+      /* sem storage */
+    }
+  },
+  { deep: true }
+)
+
 onMounted(async () => {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_FILTROS) || 'null')
+    if (salvo && typeof salvo === 'object') {
+      const base = inicial()
+      for (const k of Object.keys(base)) if (k in salvo && k !== 'pageNo') (q as any)[k] = salvo[k]
+    }
+  } catch {
+    /* sem storage ou valor inválido */
+  }
   carregar()
+  carregarDepts()
   perfis.value = await RoleApi.getSimpleRoleList()
 })
 </script>

@@ -6,6 +6,9 @@ import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.identidade.ad.AdDiretorio;
+import cn.iocoder.yudao.module.identidade.ad.AdIndisponivelException;
+import cn.iocoder.yudao.module.identidade.ad.AdPropriedades;
 import cn.iocoder.yudao.module.identidade.controller.admin.vo.ImportacaoVOs;
 import cn.iocoder.yudao.module.identidade.controller.admin.vo.UsuarioGestaoVOs;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
@@ -220,6 +223,40 @@ public class UsuarioGestaoService {
     }
 
     // ======================================================================================= ficha
+
+    /**
+     * Propriedades da conta lidas na hora do AD (Geral, Conta, Perfil, Organização, Membro de...). Respeita o escopo
+     * de dados: quem não enxerga a pessoa na lista também não lê o AD dela por aqui.
+     */
+    public AdPropriedades propriedadesAd(Long id) {
+        AdminUserDO u = adminUserMapper.selectById(id);
+        if (u == null) {
+            throw exception(USUARIOS_INVALIDO, "usuário não encontrado");
+        }
+        String[] vinculo = new String[2];
+        jdbcTemplate.query("SELECT dn, login FROM identidade.vinculo_ad WHERE deleted = 0 AND user_id = ?", (RowCallbackHandler) rs -> {
+            vinculo[0] = rs.getString(1);
+            vinculo[1] = rs.getString(2);
+        }, id);
+        if (vinculo[0] == null && vinculo[1] == null) {
+            throw exception(USUARIOS_INVALIDO, "conta local, sem vínculo com o AD");
+        }
+        AdDiretorio d;
+        try {
+            d = adConfiguracaoService.diretorio()
+                    .orElseThrow(() -> exception(USUARIOS_INVALIDO, "a integração com o AD está desligada (Sistema → Active Directory)"));
+            return d.propriedades(vinculo[0], vinculo[1])
+                    .orElseThrow(() -> exception(USUARIOS_INVALIDO, "a conta não existe mais no AD"));
+        } catch (ServiceException e) {
+            throw e;
+        } catch (AdIndisponivelException e) {
+            throw exception(USUARIOS_INVALIDO, "o AD não respondeu agora; tente de novo em instantes");
+        } catch (RuntimeException e) {
+            // ex.: conexão recusada ao abrir o pool
+            throw exception(USUARIOS_INVALIDO, "não foi possível falar com o AD: " + e.getMessage());
+        }
+    }
+
 
     public UsuarioGestaoVOs.Ficha ficha(Long id) {
         AdminUserDO u = adminUserMapper.selectById(id);   // escopo de dados: fora dele, não acha

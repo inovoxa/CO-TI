@@ -82,6 +82,9 @@
         </el-descriptions>
 
         <el-tabs v-model="aba" class="mt-12px">
+          <el-tab-pane v-if="u!.origem === 'ad'" label="Active Directory" lazy name="ad">
+            <PropriedadesAd :id="u!.id" :key="u!.id" />
+          </el-tab-pane>
           <el-tab-pane :label="`Perfis (${u!.perfis.length})`" name="perfis">
             <el-table :data="u!.perfis" size="small">
               <el-table-column label="Perfil" min-width="180" prop="nome" />
@@ -198,6 +201,7 @@ import * as IdentidadeApi from '@/api/identidade'
 import * as Inv from '@/api/inventario'
 import * as Itsm from '@/api/itsm'
 import { checkPermi } from '@/utils/permission'
+import PropriedadesAd from './PropriedadesAd.vue'
 
 const emit = defineEmits<{ editar: [id: number]; mudou: [] }>()
 const message = useMessage()
@@ -226,6 +230,8 @@ const abrir = async (id: number) => {
   chamados.value = []
   try {
     f.value = await IdentidadeApi.getFichaUsuario(id)
+    // conta do AD abre direto nas propriedades lidas do AD
+    aba.value = f.value.usuario.origem === 'ad' ? 'ad' : 'perfis'
   } finally {
     carregando.value = false
   }

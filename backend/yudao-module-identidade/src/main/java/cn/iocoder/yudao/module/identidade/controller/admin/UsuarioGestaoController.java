@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.security.core.service.SecurityFrameworkService;
+import cn.iocoder.yudao.module.identidade.ad.AdPropriedades;
 import cn.iocoder.yudao.module.identidade.controller.admin.vo.ImportacaoVOs;
 import cn.iocoder.yudao.module.identidade.controller.admin.vo.UsuarioGestaoVOs;
 import cn.iocoder.yudao.module.identidade.service.UsuarioGestaoService;
@@ -59,6 +60,13 @@ public class UsuarioGestaoController {
     @PreAuthorize("@ss.hasPermission('system:user:query')")
     public CommonResult<UsuarioGestaoVOs.Ficha> ficha(@RequestParam("id") Long id) {
         return success(usuarioGestaoService.ficha(id));
+    }
+
+    @GetMapping("/ad")
+    @Operation(summary = "Propriedades da conta lidas na hora do AD (como no Usuários e Computadores do AD)")
+    @PreAuthorize("@ss.hasPermission('system:user:query')")
+    public CommonResult<AdPropriedades> ad(@RequestParam("id") Long id) {
+        return success(usuarioGestaoService.propriedadesAd(id));
     }
 
     @PostMapping("/lote")

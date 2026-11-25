@@ -24,6 +24,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -118,6 +119,215 @@ public class AdDiretorio implements AutoCloseable {
             return contas;
         } catch (LDAPException e) {
             throw new AdIndisponivelException("Falha ao buscar a conta no AD", e);
+        }
+    }
+
+    // ======================================================================================= propriedades
+
+    static final String[] ATRIBUTOS_PROPRIEDADES = {"objectGUID", "sAMAccountName", "userPrincipalName", "displayName", "cn",
+            "givenName", "sn", "description", "physicalDeliveryOfficeName", "mail", "telephoneNumber", "wWWHomePage",
+            "streetAddress", "l", "st", "postalCode", "co", "userAccountControl", "msDS-User-Account-Control-Computed",
+            "lockoutTime", "pwdLastSet", "msDS-UserPasswordExpiryTimeComputed", "accountExpires", "lastLogon",
+            "lastLogonTimestamp", "badPasswordTime", "badPwdCount", "logonCount", "whenCreated", "whenChanged",
+            "profilePath", "scriptPath", "homeDirectory", "homeDrive", "mobile", "homePhone", "ipPhone", "title",
+            "department", "company", "manager", "directReports", "employeeID", "employeeNumber", "memberOf", "primaryGroupID"};
+    private static final int UAC_SENHA_NUNCA_EXPIRA = 0x10000;
+    private static final int UAC_CARTAO_INTELIGENTE = 0x40000;
+    private static final int UAC_SENHA_EXPIRADA = 0x800000;
+    private static final int UAC_BLOQUEADA = 0x10;
+    /** Grupos principais de sempre (primaryGroupID é o RID; o nome real exigiria ler o SID do domínio). */
+    private static final Map<Integer, String> GRUPOS_PRINCIPAIS = Map.of(513, "Domain Users (Usuários do domínio)",
+            512, "Domain Admins (Admins. do domínio)", 514, "Domain Guests (Convidados do domínio)",
+            515, "Domain Computers (Computadores do domínio)");
+
+    /**
+     * Propriedades da conta lidas na hora (busca BASE no DN, que traz também os atributos calculados pelo DC, como o
+     * bloqueio e a expiração da senha). Se a conta mudou de OU, acha de novo pelo login.
+     *
+     * @return vazio se a conta não existe mais no AD
+     * @throws AdIndisponivelException se o AD não puder ser consultado
+     */
+    public Optional<AdPropriedades> propriedades(String dn, String login) {
+        LDAPConnection c = null;
+        try {
+            c = pool.getConnection();
+            SearchResultEntry e = null;
+            if (dn != null) {
+                try {
+                    e = c.searchForEntry(dn, SearchScope.BASE, Filter.createPresenceFilter("objectClass"), ATRIBUTOS_PROPRIEDADES);
+                } catch (LDAPSearchException ex) {
+                    if (ex.getResultCode() != ResultCode.NO_SUCH_OBJECT) {
+                        throw ex;
+                    }
+                }
+            }
+            if (e == null && login != null) {
+                // sem o filtro da sincronização: a conta desativada ou fora do filtro também aparece
+                SearchResultEntry achada = c.searchForEntry(props.getBaseUsuarios(), SearchScope.SUB,
+                        Filter.createANDFilter(Filter.createEqualityFilter("objectClass", "user"),
+                                Filter.createEqualityFilter("sAMAccountName", login)), "1.1");
+                if (achada != null) {
+                    e = c.searchForEntry(achada.getDN(), SearchScope.BASE, Filter.createPresenceFilter("objectClass"),
+                            ATRIBUTOS_PROPRIEDADES);
+                }
+            }
+            if (e == null) {
+                return Optional.empty();
+            }
+            AdPropriedades p = propriedades(e);
+            p.setServidor(c.getConnectedAddress());
+            if (gruposAninhados) {
+                Set<String> diretos = new HashSet<>();
+                p.getGrupos().forEach(g -> diretos.add(g.getDn().toLowerCase(Locale.ROOT)));
+                Filter emCadeia = Filter.createANDFilter(Filter.createEqualityFilter("objectClass", "group"),
+                        Filter.createExtensibleMatchFilter("member", REGRA_EM_CADEIA, false, e.getDN()));
+                for (SearchResultEntry g : c.search(raizDoDominio(e.getDN()), SearchScope.SUB, emCadeia, "1.1").getSearchEntries()) {
+                    if (!diretos.contains(g.getDN().toLowerCase(Locale.ROOT))) {
+                        p.getGrupos().add(grupo(g.getDN(), false));
+                    }
+                }
+            }
+            p.getGrupos().sort(Comparator.comparing(AdPropriedades.Grupo::isDireto).reversed()
+                    .thenComparing(g -> g.getNome().toLowerCase(Locale.ROOT)));
+            pool.releaseConnection(c);
+            c = null;
+            return Optional.of(p);
+        } catch (LDAPException ex) {
+            if (c != null) {
+                pool.releaseDefunctConnection(c);
+                c = null;
+            }
+            throw new AdIndisponivelException("Falha ao ler as propriedades da conta no AD", ex);
+        } finally {
+            if (c != null) {
+                pool.releaseConnection(c);
+            }
+        }
+    }
+
+    AdPropriedades propriedades(SearchResultEntry e) {
+        AdPropriedades p = new AdPropriedades();
+        p.setDn(e.getDN());
+        p.setGuid(guidParaTexto(e.getAttributeValueBytes("objectGUID"), e.getDN()));
+        p.setNome(Optional.ofNullable(e.getAttributeValue("displayName")).orElse(e.getAttributeValue("cn")));
+        p.setNomeProprio(e.getAttributeValue("givenName"));
+        p.setSobrenome(e.getAttributeValue("sn"));
+        p.setDescricao(e.getAttributeValue("description"));
+        p.setEscritorio(e.getAttributeValue("physicalDeliveryOfficeName"));
+        p.setEmail(e.getAttributeValue("mail"));
+        p.setTelefone(e.getAttributeValue("telephoneNumber"));
+        p.setPaginaWeb(e.getAttributeValue("wWWHomePage"));
+        p.setEndereco(e.getAttributeValue("streetAddress"));
+        p.setCidade(e.getAttributeValue("l"));
+        p.setEstado(e.getAttributeValue("st"));
+        p.setCep(e.getAttributeValue("postalCode"));
+        p.setPais(e.getAttributeValue("co"));
+
+        p.setLogin(e.getAttributeValue("sAMAccountName"));
+        p.setUpn(e.getAttributeValue("userPrincipalName"));
+        int uac = Optional.ofNullable(e.getAttributeValueAsInteger("userAccountControl")).orElse(0);
+        Integer calculado = e.getAttributeValueAsInteger("msDS-User-Account-Control-Computed");
+        LocalDateTime bloqueio = fileTime(e.getAttributeValue("lockoutTime"));
+        p.setAtiva((uac & UAC_CONTA_DESATIVADA) == 0);
+        // o atributo calculado considera o tempo de bloqueio do domínio; sem ele, lockoutTime > 0
+        p.setBloqueada(calculado != null ? (calculado & UAC_BLOQUEADA) != 0 : bloqueio != null);
+        p.setBloqueadaEm(p.isBloqueada() ? bloqueio : null);
+        p.setSenhaNuncaExpira((uac & UAC_SENHA_NUNCA_EXPIRA) != 0);
+        p.setSenhaExpirada(calculado != null ? (calculado & UAC_SENHA_EXPIRADA) != 0 : (uac & UAC_SENHA_EXPIRADA) != 0);
+        p.setExigeCartaoInteligente((uac & UAC_CARTAO_INTELIGENTE) != 0);
+        p.setTrocarSenhaNoLogon("0".equals(e.getAttributeValue("pwdLastSet")));
+        p.setSenhaAlteradaEm(fileTime(e.getAttributeValue("pwdLastSet")));
+        p.setSenhaExpiraEm(p.isSenhaNuncaExpira() ? null : fileTime(e.getAttributeValue("msDS-UserPasswordExpiryTimeComputed")));
+        p.setContaExpiraEm(fileTime(e.getAttributeValue("accountExpires")));
+        p.setUltimoLogon(fileTime(e.getAttributeValue("lastLogon")));
+        p.setUltimoLogonReplicado(fileTime(e.getAttributeValue("lastLogonTimestamp")));
+        p.setUltimaSenhaErrada(fileTime(e.getAttributeValue("badPasswordTime")));
+        p.setSenhasErradas(e.getAttributeValueAsInteger("badPwdCount"));
+        p.setQuantidadeLogons(e.getAttributeValueAsInteger("logonCount"));
+        p.setCriadaEm(generalizada(e.getAttributeValue("whenCreated")));
+        p.setAlteradaEm(generalizada(e.getAttributeValue("whenChanged")));
+
+        p.setCaminhoPerfil(e.getAttributeValue("profilePath"));
+        p.setScriptLogon(e.getAttributeValue("scriptPath"));
+        p.setPastaBase(e.getAttributeValue("homeDirectory"));
+        p.setUnidadePastaBase(e.getAttributeValue("homeDrive"));
+
+        p.setCelular(e.getAttributeValue("mobile"));
+        p.setTelefoneResidencial(e.getAttributeValue("homePhone"));
+        p.setTelefoneIp(e.getAttributeValue("ipPhone"));
+
+        p.setCargo(e.getAttributeValue("title"));
+        p.setDepartamento(e.getAttributeValue("department"));
+        p.setEmpresa(e.getAttributeValue("company"));
+        p.setGestorDn(e.getAttributeValue("manager"));
+        p.setGestorNome(nomeDoDn(p.getGestorDn()));
+        String[] subordinados = e.getAttributeValues("directReports");
+        if (subordinados != null) {
+            Arrays.stream(subordinados).map(AdDiretorio::nomeDoDn).sorted(String.CASE_INSENSITIVE_ORDER).forEach(p.getSubordinados()::add);
+        }
+        p.setMatricula(e.getAttributeValue("employeeID"));
+        p.setNumeroFuncionario(e.getAttributeValue("employeeNumber"));
+
+        Integer primario = e.getAttributeValueAsInteger("primaryGroupID");
+        p.setGrupoPrincipal(primario == null ? null : GRUPOS_PRINCIPAIS.getOrDefault(primario, "RID " + primario));
+        String[] memberOf = e.getAttributeValues("memberOf");
+        if (memberOf != null) {
+            for (String g : memberOf) {
+                p.getGrupos().add(grupo(g, true));
+            }
+        }
+        return p;
+    }
+
+    private static AdPropriedades.Grupo grupo(String dn, boolean direto) {
+        AdPropriedades.Grupo g = new AdPropriedades.Grupo();
+        g.setDn(dn);
+        g.setNome(nomeDoDn(dn));
+        g.setDireto(direto);
+        return g;
+    }
+
+    /** "CN=Ana Souza,OU=TI,DC=x" → "Ana Souza" (o DN inteiro, se não der para ler). */
+    static String nomeDoDn(String dn) {
+        if (dn == null) {
+            return null;
+        }
+        try {
+            RDN[] rdns = new DN(dn).getRDNs();
+            return rdns.length == 0 ? dn : rdns[0].getAttributeValues()[0];
+        } catch (LDAPException ex) {
+            return dn;
+        }
+    }
+
+    /** Data do AD em FILETIME (intervalos de 100 ns desde 1601, UTC); 0 e o máximo valem "nunca". */
+    static LocalDateTime fileTime(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            long v = Long.parseLong(valor.trim());
+            if (v <= 0 || v == Long.MAX_VALUE) {
+                return null;
+            }
+            long segundos = v / 10_000_000L - 11_644_473_600L;
+            return LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(segundos, (v % 10_000_000L) * 100),
+                    java.time.ZoneId.systemDefault());
+        } catch (NumberFormatException | java.time.DateTimeException ex) {
+            return null;
+        }
+    }
+
+    /** whenCreated/whenChanged: tempo generalizado (20260115123000.0Z). */
+    static LocalDateTime generalizada(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.ofInstant(com.unboundid.util.StaticUtils.decodeGeneralizedTime(valor).toInstant(),
+                    java.time.ZoneId.systemDefault());
+        } catch (java.text.ParseException ex) {
+            return null;
         }
     }
 

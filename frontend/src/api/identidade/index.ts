@@ -125,6 +125,63 @@ export interface RevisaoAcessos {
 }
 export const getUsuarios = (params: any) =>
   request.get({ url: '/identidade/usuarios/page', params })
+/** Propriedades da conta lidas na hora do AD (como no "Usuários e Computadores do AD") */
+export interface AdPropriedades {
+  servidor?: string
+  dn: string
+  guid?: string
+  nome?: string
+  nomeProprio?: string
+  sobrenome?: string
+  descricao?: string
+  escritorio?: string
+  email?: string
+  telefone?: string
+  paginaWeb?: string
+  endereco?: string
+  cidade?: string
+  estado?: string
+  cep?: string
+  pais?: string
+  login?: string
+  upn?: string
+  ativa: boolean
+  bloqueada: boolean
+  bloqueadaEm?: string
+  senhaNuncaExpira: boolean
+  senhaExpirada: boolean
+  trocarSenhaNoLogon: boolean
+  exigeCartaoInteligente: boolean
+  senhaAlteradaEm?: string
+  senhaExpiraEm?: string
+  contaExpiraEm?: string
+  ultimoLogon?: string
+  ultimoLogonReplicado?: string
+  ultimaSenhaErrada?: string
+  senhasErradas?: number
+  quantidadeLogons?: number
+  criadaEm?: string
+  alteradaEm?: string
+  caminhoPerfil?: string
+  scriptLogon?: string
+  pastaBase?: string
+  unidadePastaBase?: string
+  celular?: string
+  telefoneResidencial?: string
+  telefoneIp?: string
+  cargo?: string
+  departamento?: string
+  empresa?: string
+  gestorDn?: string
+  gestorNome?: string
+  subordinados: string[]
+  matricula?: string
+  numeroFuncionario?: string
+  grupoPrincipal?: string
+  grupos: { nome: string; dn: string; direto: boolean }[]
+}
+export const getPropriedadesAd = (id: number): Promise<AdPropriedades> =>
+  request.get({ url: '/identidade/usuarios/ad', params: { id } })
 export const getFichaUsuario = (id: number): Promise<UsuarioFicha> =>
   request.get({ url: '/identidade/usuarios/ficha', params: { id } })
 export const loteUsuarios = (data: {
