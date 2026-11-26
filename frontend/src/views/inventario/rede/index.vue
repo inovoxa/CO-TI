@@ -66,7 +66,7 @@
         </el-input>
       </el-form-item>
       <el-form-item>
-        <el-button plain @click="exportar">
+        <el-button v-hasRole="['super_admin']" plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
       </el-form-item>

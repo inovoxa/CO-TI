@@ -67,6 +67,7 @@
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> Buscar</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> Limpar</el-button>
         <el-button
+v-hasRole="['super_admin']"
           type="success"
           plain
           @click="handleExport"

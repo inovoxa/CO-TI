@@ -65,10 +65,11 @@
         >
           <Icon class="mr-4px" icon="ep:plus" />Novo monitor
         </el-button>
-        <el-button plain @click="exportar">
+        <el-button v-hasRole="['super_admin']" plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
         <el-button
+v-hasRole="['super_admin']"
           v-hasPermi="['monitoramento:monitor:update']"
           plain
           @click="importadorPlanilha?.abrir()"
@@ -82,7 +83,7 @@
         >
           <Icon class="mr-4px" icon="ep:connection" />Uptime Kuma ao vivo
         </el-button>
-        <el-button v-hasPermi="['monitoramento:importar']" @click="importar?.abrir()">
+        <el-button v-hasRole="['super_admin']" v-hasPermi="['monitoramento:importar']" @click="importar?.abrir()">
           <Icon class="mr-4px" icon="ep:upload" />Importar do Uptime Kuma
         </el-button>
       </el-form-item>

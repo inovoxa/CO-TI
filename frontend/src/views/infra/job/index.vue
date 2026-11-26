@@ -62,6 +62,7 @@
           <Icon icon="ep:delete" class="mr-5px" /> Excluir selecionados
         </el-button>
         <el-button
+v-hasRole="['super_admin']"
           type="success"
           plain
           @click="handleExport"

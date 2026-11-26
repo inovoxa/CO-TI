@@ -9,10 +9,10 @@
           atualização dos chamados, avisos e o assistente de IA.</div
         >
       </div>
-      <el-button v-hasPermi="['atendimento:assistente:config']" @click="exportar"
+      <el-button v-hasRole="['super_admin']" v-hasPermi="['atendimento:assistente:config']" @click="exportar"
         ><Icon class="mr-4px" icon="ep:download" />Exportar</el-button
       >
-      <el-button v-hasPermi="['atendimento:assistente:config']" @click="escolherArquivo"
+      <el-button v-hasRole="['super_admin']" v-hasPermi="['atendimento:assistente:config']" @click="escolherArquivo"
         ><Icon class="mr-4px" icon="ep:upload" />Importar</el-button
       >
       <input ref="arquivo" accept=".json,application/json" class="hidden" type="file" @change="lerArquivo" />

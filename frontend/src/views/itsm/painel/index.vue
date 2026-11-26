@@ -27,6 +27,7 @@
       </el-select>
       <el-button @click="carregar"><Icon class="mr-4px" icon="ep:refresh" /> Atualizar</el-button>
       <el-button
+v-hasRole="['super_admin']"
         v-hasPermi="['itsm:chamado:exportar']"
         :disabled="!p"
         :loading="exportando"

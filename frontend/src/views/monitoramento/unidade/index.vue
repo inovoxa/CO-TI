@@ -7,10 +7,10 @@
         ponto é calculado e pode ser ajustado no mapa.
       </span>
       <div class="flex gap-8px">
-        <el-button plain @click="exportar">
+        <el-button v-hasRole="['super_admin']" plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
-        <el-button v-if="pode" plain @click="importador?.abrir()">
+        <el-button v-hasRole="['super_admin']" v-if="pode" plain @click="importador?.abrir()">
           <Icon class="mr-4px" icon="ep:upload" /> Importar
         </el-button>
         <el-button v-if="pode" type="primary" @click="abrir()"

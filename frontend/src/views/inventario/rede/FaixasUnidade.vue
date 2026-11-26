@@ -16,10 +16,10 @@
       <el-button v-if="pode && faixas.length" :loading="aplicando" @click="aplicar">
         <Icon class="mr-4px" icon="ep:refresh-right" /> Aplicar nos ativos agora
       </el-button>
-      <el-button plain @click="exportar"
+      <el-button v-hasRole="['super_admin']" plain @click="exportar"
         ><Icon class="mr-4px" icon="ep:download" /> Exportar</el-button
       >
-      <el-button v-if="pode" plain @click="importador?.abrir()">
+      <el-button v-hasRole="['super_admin']" v-if="pode" plain @click="importador?.abrir()">
         <Icon class="mr-4px" icon="ep:upload" /> Importar
       </el-button>
     </div>
@@ -39,7 +39,7 @@
     <el-empty
       v-if="!carregando && !faixas.length"
       :image-size="60"
-      description='Nenhuma faixa cadastrada: a unidade vem da pessoa logada. Use "Sugerir pelas máquinas" para começar.'
+      description="Nenhuma faixa cadastrada: a unidade vem da pessoa logada. Use &quot;Sugerir pelas máquinas&quot; para começar."
     />
   </ContentWrap>
 

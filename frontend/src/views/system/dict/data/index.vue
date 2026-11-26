@@ -48,6 +48,7 @@
           <Icon icon="ep:plus" class="mr-5px" /> Novo
         </el-button>
         <el-button
+v-hasRole="['super_admin']"
           type="success"
           plain
           @click="handleExport"

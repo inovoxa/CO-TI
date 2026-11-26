@@ -4,10 +4,11 @@
       <el-button v-hasPermi="['itsm:formulario:update']" plain type="primary" @click="abrir()">
         <Icon class="mr-5px" icon="ep:plus" /> Novo formulário
       </el-button>
-      <el-button v-hasPermi="['itsm:formulario:update']" plain @click="importacao.visivel = true">
+      <el-button v-hasRole="['super_admin']" v-hasPermi="['itsm:formulario:update']" plain @click="importacao.visivel = true">
         <Icon class="mr-5px" icon="ep:upload" /> Importar
       </el-button>
       <el-button
+v-hasRole="['super_admin']"
         v-hasPermi="['itsm:formulario:query']"
         :loading="exportando"
         plain

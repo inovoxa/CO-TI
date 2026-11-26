@@ -72,7 +72,7 @@
           <div class="acoes">
             <el-button :disabled="!filtro.pessoaId" :loading="carregandoConversas" @click="verConversas">Ver conversas da pessoa</el-button>
             <el-button :loading="carregando" type="primary" @click="buscar(1)">Buscar mensagens</el-button>
-            <el-button :disabled="!resultado?.total" :loading="exportando" @click="exportarPlanilha">Exportar planilha</el-button>
+            <el-button v-hasRole="['super_admin']" :disabled="!resultado?.total" :loading="exportando" @click="exportarPlanilha">Exportar planilha</el-button>
           </div>
         </el-form>
       </ContentWrap>

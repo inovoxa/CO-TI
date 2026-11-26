@@ -7,7 +7,7 @@
         Tokens ficam cifrados.
       </span>
       <div class="flex gap-8px">
-        <el-button plain @click="exportar">
+        <el-button v-hasRole="['super_admin']" plain @click="exportar">
           <Icon class="mr-4px" icon="ep:download" /> Exportar
         </el-button>
         <el-button v-if="pode" type="primary" @click="abrir()"

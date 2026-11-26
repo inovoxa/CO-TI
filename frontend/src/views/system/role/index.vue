@@ -66,6 +66,7 @@
           Novo
         </el-button>
         <el-button
+v-hasRole="['super_admin']"
           v-hasPermi="['system:role:export']"
           :loading="exportLoading"
           plain

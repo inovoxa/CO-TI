@@ -107,10 +107,11 @@
               >
                 <Icon icon="ep:plus" class="mr-4px" />Novo
               </el-button>
-              <el-button v-hasPermi="['system:user:import']" plain @click="importador?.abrir()">
+              <el-button v-hasRole="['super_admin']" v-hasPermi="['system:user:import']" plain @click="importador?.abrir()">
                 <Icon icon="ep:upload" class="mr-4px" />Importar
               </el-button>
               <el-button
+v-hasRole="['super_admin']"
                 v-hasPermi="['system:user:export']"
                 :loading="exportando"
                 plain

@@ -46,6 +46,7 @@
         <el-button @click="handleQuery"><Icon class="mr-5px" icon="ep:search" /> Buscar</el-button>
         <el-button @click="resetQuery"><Icon class="mr-5px" icon="ep:refresh" /> Limpar</el-button>
         <el-button
+v-hasRole="['super_admin']"
           v-hasPermi="['itsm:chamado:exportar']"
           :loading="exportando"
           @click="exportarExcel"

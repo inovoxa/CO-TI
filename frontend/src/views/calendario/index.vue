@@ -18,7 +18,7 @@
         <el-checkbox v-model="mostrarCompromissos">Meus compromissos</el-checkbox>
         <el-checkbox v-model="mostrarRecados">Recados</el-checkbox>
         <div class="flex-1"></div>
-        <el-button @click="exportar"
+        <el-button v-hasRole="['super_admin']" @click="exportar"
           ><Icon class="mr-4px" icon="ep:download" />Exportar aniversariantes do mês</el-button
         >
         <el-button v-if="podePublicar" @click="novoRecado(diaSelecionado)">

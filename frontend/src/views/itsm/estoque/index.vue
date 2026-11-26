@@ -56,7 +56,7 @@
       <el-checkbox v-model="q.baixo" @change="buscar">Estoque baixo</el-checkbox>
       <el-checkbox v-model="q.garantia" @change="buscar">Garantia vencendo (90 dias)</el-checkbox>
       <div class="flex-1"></div>
-      <el-button plain @click="baixarPlanilha"><Icon class="mr-4px" icon="ep:download" /> Excel</el-button>
+      <el-button v-hasRole="['super_admin']" plain @click="baixarPlanilha"><Icon class="mr-4px" icon="ep:download" /> Excel</el-button>
       <el-button plain @click="imprimirLista"><Icon class="mr-4px" icon="ep:printer" /> PDF</el-button>
       <el-button v-hasPermi="['itsm:estoque:update']" plain @click="abrirTipo">
         <Icon class="mr-4px" icon="ep:collection-tag" /> Novo tipo

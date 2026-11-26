@@ -110,7 +110,7 @@
           <el-button @click="atualizar"
             ><Icon class="mr-4px" icon="ep:refresh" /> Atualizar</el-button
           >
-          <el-button v-hasPermi="['inventario:ativo:exportar']" plain @click="exportar">
+          <el-button v-hasRole="['super_admin']" v-hasPermi="['inventario:ativo:exportar']" plain @click="exportar">
             <Icon class="mr-4px" icon="ep:download" /> Exportar
           </el-button>
         </el-form-item>

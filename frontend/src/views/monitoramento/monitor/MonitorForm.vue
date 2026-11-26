@@ -419,7 +419,7 @@
           <el-input
             v-model="dados.cabecalhos"
             :rows="2"
-            placeholder='{"Authorization": "Bearer ..."}'
+            placeholder="{&quot;Authorization&quot;: &quot;Bearer ...&quot;}"
             type="textarea"
           />
         </el-form-item>

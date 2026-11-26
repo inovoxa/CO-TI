@@ -33,12 +33,13 @@
       </el-select>
       <el-checkbox v-model="q.emergencia" label="Só emergência" @change="buscar" />
       <el-button @click="buscar">Buscar</el-button>
-      <el-button plain @click="exportar">
+      <el-button v-hasRole="['super_admin']" plain @click="exportar">
         <Icon class="mr-4px" icon="ep:download" /> Exportar
       </el-button>
       <div v-hasPermi="['itsm:telefone:update']" class="ml-auto flex gap-8px">
-        <el-button plain @click="baixarModelo"> Baixar modelo </el-button>
+        <el-button v-hasRole="['super_admin']" plain @click="baixarModelo"> Baixar modelo </el-button>
         <el-upload
+v-hasRole="['super_admin']"
           accept=".xlsx"
           :auto-upload="false"
           :on-change="importar"
