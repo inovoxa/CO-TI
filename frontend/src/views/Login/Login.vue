@@ -6,7 +6,13 @@
     <div class="relative mx-auto h-full flex">
       <div :class="`${prefixCls}__left relative flex-1 overflow-hidden lt-xl:hidden`">
         <!-- foto da instância (Sistema > Identidade visual) -->
-        <img :src="marca.fundoUrl" alt="" :class="`${prefixCls}__foto`" />
+        <img
+          ref="fotoRef"
+          :src="marca.fundoUrl"
+          alt=""
+          :class="[`${prefixCls}__foto`, { 'is-carregada': fotoCarregada }]"
+          @load="fotoCarregada = true"
+        />
         <div :class="`${prefixCls}__veu`"></div>
         <div class="relative h-full flex flex-col justify-between p-40px text-white">
           <div :class="`${prefixCls}__selo`">
@@ -102,6 +108,23 @@ const appStore = useAppStore()
 const marca = useMarcaStore()
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('login')
+
+/** A foto de fundo surge suavemente; se já estava no cache do navegador, aparece direto ao montar. */
+const fotoRef = ref<HTMLImageElement>()
+const fotoCarregada = ref(false)
+onMounted(() => {
+  // mesmo com a foto já no cache, deixa um quadro desfocado para a entrada aparecer
+  if (fotoRef.value?.complete && fotoRef.value.naturalWidth) setTimeout(() => (fotoCarregada.value = true), 60)
+})
+watch(
+  () => marca.fundoUrl,
+  () => {
+    fotoCarregada.value = false
+    nextTick(() => {
+      if (fotoRef.value?.complete && fotoRef.value.naturalWidth) fotoCarregada.value = true
+    })
+  }
+)
 const frases = computed(() =>
   marca.fraseLogin
     .split('\n')
@@ -122,7 +145,20 @@ $prefix-cls: #{$namespace}-login;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    animation: login-foto 30s ease-in-out infinite alternate;
+    opacity: 0;
+    filter: blur(14px) saturate(0.6);
+    transform-origin: 60% 40%;
+    transition:
+      opacity 2.2s ease-out,
+      filter 2.8s ease-out;
+    will-change: transform, opacity, filter;
+    animation: login-foto 18s ease-in-out infinite alternate;
+
+    /* surge aos poucos, saindo do desfocado, quando a foto termina de carregar */
+    &.is-carregada {
+      opacity: 1;
+      filter: none;
+    }
   }
 
   /* escurece embaixo para o texto ler bem sobre qualquer foto */
@@ -205,18 +241,20 @@ $prefix-cls: #{$namespace}-login;
   }
 }
 
+/* aproximação lenta com um leve deslize, indo e voltando */
 @keyframes login-foto {
   from {
-    transform: scale(1);
+    transform: scale(1.04) translate3d(1.5%, 1%, 0);
   }
 
   to {
-    transform: scale(1.08);
+    transform: scale(1.22) translate3d(-4%, -3%, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .#{$prefix-cls}__foto {
+    transition: none;
     animation: none;
   }
 }
