@@ -35,4 +35,23 @@ class FaixasTest {
         assertEquals("172.19.21.0/24", Faixas.rede24("172.19.21.200"));
     }
 
+    @Test
+    void unidadePeloPrimeiroIpQueCaiNumaFaixa() {
+        List<Faixas.Faixa> l = List.of(Faixas.Faixa.de(1L, "172.21.9.0/24", 100L), Faixas.Faixa.de(2L, "10.20.5.0/24", 200L));
+        // o principal fora das faixas: vale o segundo
+        assertEquals(100L, Faixas.doIps("192.168.0.10", "192.168.0.10,172.21.9.105", l).orElseThrow().deptId());
+        // os dois em faixas: vale o principal
+        assertEquals(200L, Faixas.doIps("10.20.5.31", "172.21.9.105,10.20.5.31", l).orElseThrow().deptId());
+        // espaço sobrando e lista sem o principal
+        assertEquals(100L, Faixas.doIps(" 8.8.8.8 ", " 172.21.9.7 ", l).orElseThrow().deptId());
+        // nenhum numa faixa: sem unidade (sem palpite)
+        assertTrue(Faixas.doIps("192.168.0.10", "192.168.0.11", l).isEmpty());
+        assertTrue(Faixas.doIps(null, null, l).isEmpty());
+        assertEquals(List.of("10.0.0.1", "10.0.0.2"), Faixas.lista("10.0.0.1", "10.0.0.2,10.0.0.1,lixo"));
+        assertFalse(Faixas.util("127.0.0.1"));
+        assertFalse(Faixas.util("169.254.10.1"));
+        assertFalse(Faixas.util("0.0.0.0"));
+        assertTrue(Faixas.util("172.21.9.105"));
+    }
+
 }

@@ -2,16 +2,13 @@ package cn.iocoder.yudao.module.inventario.service;
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
-import cn.iocoder.yudao.module.identidade.dal.dataobject.VinculoAdDO;
-import cn.iocoder.yudao.module.identidade.dal.mysql.VinculoAdMapper;
 import cn.iocoder.yudao.module.inventario.config.InventarioProperties;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.*;
 import cn.iocoder.yudao.module.inventario.dal.mysql.*;
 import cn.iocoder.yudao.module.inventario.dominio.Normalizacao;
 import cn.iocoder.yudao.module.inventario.dominio.Protocolo;
 import cn.iocoder.yudao.module.inventario.dominio.Redes;
-import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
-import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -53,9 +50,7 @@ public class InventarioAgenteService {
     @Resource
     private CmdbHistoricoMapper cmdbHistoricoMapper;
     @Resource
-    private VinculoAdMapper vinculoAdMapper;
-    @Resource
-    private AdminUserMapper adminUserMapper;
+    private UsuarioDoLogin usuarioDoLogin;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
@@ -280,13 +275,15 @@ public class InventarioAgenteService {
         novo.setOrigem(origem);
         novo.setUltimoInventario(agora);
         novo.setUltimoContato(agora);
-        vincularUsuario(novo, atual);
-        // a faixa do IP vale mais que a unidade da pessoa logada (máquina compartilhada, sem usuário do AD...)
-        if (atual == null || !Boolean.TRUE.equals(atual.getDeptManual())) {
-            Long daFaixa = unidadeRedeService.unidadeDoIp(novo.getIp() != null ? novo.getIp() : atual == null ? null : atual.getIp());
-            if (daFaixa != null) {
-                novo.setDeptId(daFaixa);
-            }
+        boolean semUsuario = vincularUsuario(novo);
+        // unidade sem palpite: a escolhida à mão; senão a faixa do primeiro IP que cai numa; senão nenhuma
+        boolean manual = atual != null && Boolean.TRUE.equals(atual.getDeptManual());
+        Long daFaixa = null;
+        if (!manual) {
+            String ip = novo.getIp() != null ? novo.getIp() : atual == null ? null : atual.getIp();
+            String ips = novo.getIps() != null ? novo.getIps() : atual == null ? null : atual.getIps();
+            daFaixa = unidadeRedeService.unidadeDosIps(ip, ips);
+            novo.setDeptId(daFaixa);
         }
 
         if (atual == null) {
@@ -328,6 +325,14 @@ public class InventarioAgenteService {
             }
         }
         cmdbAtivoMapper.updateById(novo);
+        // o updateById pula os nulos: unidade que saiu das faixas e login que não é mais de ninguém ficam vazios aqui
+        if (!manual && daFaixa == null && atual.getDeptId() != null) {
+            cmdbAtivoMapper.update(null, new LambdaUpdateWrapper<AtivoDO>().eq(AtivoDO::getId, atual.getId()).set(AtivoDO::getDeptId, null));
+            registrar(atual.getId(), agora, "campo", "dept_id", String.valueOf(atual.getDeptId()), "nenhuma (IP fora das faixas)");
+        }
+        if (semUsuario && atual.getUsuarioId() != null) {
+            cmdbAtivoMapper.update(null, new LambdaUpdateWrapper<AtivoDO>().eq(AtivoDO::getId, atual.getId()).set(AtivoDO::getUsuarioId, null));
+        }
         gravarComponentes(atual.getId(), r.componentes(), agora, true);
         gravarSoftwares(atual.getId(), r.softwares(), agora, true);
         return atual.getId();
@@ -388,42 +393,25 @@ public class InventarioAgenteService {
                 .numeroSerie(limpar(n.numeroSerie(), 100)).patrimonio(limpar(n.patrimonio(), 100)).uuid(limpar(n.uuid(), 64))
                 .soNome(limpar(n.soNome(), 255)).soVersao(limpar(n.soVersao(), 100)).soArquitetura(limpar(n.soArquitetura(), 30))
                 .soSemSuporte(n.soSemSuporte()).cpu(limpar(n.cpu(), 255)).cpuNucleos(n.cpuNucleos()).memoriaMb(n.memoriaMb())
-                .discoTotalMb(n.discoTotalMb()).discoLivreMb(n.discoLivreMb()).discoTipo(n.discoTipo()).ip(limpar(n.ip(), 64)).mac(limpar(n.mac(), 32))
+                .discoTotalMb(n.discoTotalMb()).discoLivreMb(n.discoLivreMb()).discoTipo(n.discoTipo()).ip(limpar(n.ip(), 64)).ips(limpar(n.ips(), 1000)).mac(limpar(n.mac(), 32))
                 .dominio(limpar(n.dominio(), 255)).usuarioLogin(limpar(n.usuarioLogin(), 255)).antivirus(n.antivirus()).tag(limpar(n.tag(), 100))
                 .build();
     }
 
     /**
-     * Pessoa do portal pelo login informado pelo agente (vínculo com o AD, senão o usuário local de mesmo nome). A
-     * unidade do ativo acompanha a da pessoa, a não ser que alguém tenha escolhido a unidade à mão.
+     * Pessoa do portal pelo login informado pelo agente ({@link UsuarioDoLogin}). A unidade não vem mais da pessoa:
+     * é só a das faixas de IP (ou a escolhida à mão).
+     *
+     * @return true quando o agente informou um login que não é de ninguém (o vínculo antigo deve sair)
      */
-    private void vincularUsuario(AtivoDO novo, AtivoDO atual) {
+    private boolean vincularUsuario(AtivoDO novo) {
         String login = novo.getUsuarioLogin();
         if (login == null) {
-            return;
+            return false;
         }
-        Long userId = null;
-        VinculoAdDO v = vinculoAdMapper.selectOne(new LambdaQueryWrapperX<VinculoAdDO>()
-                .apply("lower(login) = {0}", login.toLowerCase(Locale.ROOT)).last("LIMIT 1"));
-        if (v != null) {
-            userId = v.getUserId();
-        } else {
-            AdminUserDO u = adminUserMapper.selectByUsername(login);
-            if (u != null) {
-                userId = u.getId();
-            }
-        }
-        if (userId == null) {
-            return;
-        }
+        Long userId = usuarioDoLogin.usuario(login);
         novo.setUsuarioId(userId);
-        boolean manual = atual != null && Boolean.TRUE.equals(atual.getDeptManual());
-        if (!manual) {
-            AdminUserDO u = adminUserMapper.selectById(userId);
-            if (u != null && u.getDeptId() != null) {
-                novo.setDeptId(u.getDeptId());
-            }
-        }
+        return userId == null;
     }
 
     private void gravarComponentes(Long ativoId, List<Normalizacao.Componente> recebidos, LocalDateTime agora, boolean historico) {

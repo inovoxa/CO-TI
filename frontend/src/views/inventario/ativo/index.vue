@@ -13,6 +13,13 @@
       <el-check-tag :checked="q.alerta === 'sem_contato'" @change="alertar('sem_contato')">
         Sem comunicação ({{ contagens.sem_contato ?? 0 }})
       </el-check-tag>
+      <span class="flex-1"></span>
+      <el-button @click="inconsistenciasRef.abrir()">
+        <Icon class="mr-5px" icon="ep:warning" /> Inconsistências
+      </el-button>
+      <el-button :loading="loading" @click="carregar">
+        <Icon class="mr-5px" icon="ep:refresh" /> Atualizar
+      </el-button>
     </div>
     <el-form :inline="true" class="-mb-15px" label-width="0">
       <el-form-item>
@@ -48,17 +55,16 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-tree-select
+        <el-select
           v-model="q.deptId"
-          :data="depts"
-          :props="defaultProps"
-          check-strictly
           class="!w-220px"
           clearable
-          node-key="id"
+          filterable
           placeholder="Unidade"
           @change="buscar"
-        />
+        >
+          <el-option v-for="u in unidades" :key="u.id" :label="u.nome" :value="u.deptId" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button @click="buscar"><Icon class="mr-5px" icon="ep:search" /> Buscar</el-button>
@@ -273,9 +279,23 @@
         show-overflow-tooltip
         sortable="custom"
       >
-        <template #default="{ row }">{{ row.deptNome || '—' }}</template>
+        <template #default="{ row }">
+          <template v-if="row.deptNome">{{ row.deptNome }}</template>
+          <el-tooltip v-else content="Nenhum IP da máquina cai numa faixa de unidade" placement="top">
+            <span class="text-[var(--el-text-color-placeholder)]">—</span>
+          </el-tooltip>
+        </template>
       </el-table-column>
-      <el-table-column label="IP" prop="ip" sortable="custom" width="130" />
+      <el-table-column label="IP" prop="ip" sortable="custom" width="140">
+        <template #default="{ row }">
+          {{ row.ip || '—' }}
+          <el-tooltip v-if="outrosIps(row).length" :content="'Outros IPs: ' + outrosIps(row).join(', ')">
+            <el-tag class="ml-2px" disable-transitions size="small" type="info"
+              >+{{ outrosIps(row).length }}</el-tag
+            >
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <el-table-column label="Memória" prop="memoria" sortable="custom" width="105">
         <template #default="{ row }">{{ gb(row.memoriaMb) }}</template>
       </el-table-column>
@@ -404,7 +424,13 @@
           <span v-if="a.deptManual" class="text-12px text-[var(--el-text-color-secondary)]">
             (escolhida à mão)</span
           >
+          <span v-else class="text-12px text-[var(--el-text-color-secondary)]">
+            {{ a.deptNome ? '(pela faixa de IP)' : '(nenhum IP numa faixa)' }}</span
+          >
         </el-descriptions-item>
+        <el-descriptions-item v-if="a.ips" label="IPs">{{
+          a.ips.split(',').join(', ')
+        }}</el-descriptions-item>
         <el-descriptions-item v-if="AGENTES.includes(a.origem)" label="Antivírus">
           <el-tag :type="cor(ANTIVIRUS, a.antivirus)" disable-transitions size="small">{{
             rotulo(ANTIVIRUS, a.antivirus)
@@ -589,22 +615,21 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="Unidade">
-            <el-tree-select
+            <el-select
               v-model="form.dados.deptId"
-              :data="depts"
               :disabled="form.dados.deptAutomatico"
-              :props="defaultProps"
-              check-strictly
               class="w-full"
               clearable
-              node-key="id"
-              placeholder="A do usuário"
-            />
+              filterable
+              placeholder="A da faixa de IP"
+            >
+              <el-option v-for="u in opcoesUnidade" :key="u.deptId" :label="u.nome" :value="u.deptId" />
+            </el-select>
             <el-checkbox
               v-if="!form.novo && form.deptManual"
               v-model="form.dados.deptAutomatico"
               class="mt-4px"
-              >Voltar a seguir a unidade do usuário</el-checkbox
+              >Voltar a seguir a faixa de IP</el-checkbox
             >
           </el-form-item>
         </el-col>
@@ -620,9 +645,11 @@
       <el-button @click="form.visivel = false">Cancelar</el-button>
     </template>
   </Dialog>
+  <InconsistenciasInventario ref="inconsistenciasRef" @corrigido="carregar" />
 </template>
 
 <script lang="ts" setup>
+import InconsistenciasInventario from './InconsistenciasInventario.vue'
 import UsuarioSelect from '@/components/UsuarioSelect/index.vue'
 import Pecas from './Pecas.vue'
 import * as Inv from '@/api/inventario'
@@ -637,11 +664,9 @@ import {
   gb,
   rotulo
 } from '@/api/inventario'
-import * as DeptApi from '@/api/system/dept'
 import download from '@/utils/download'
 import { formatDate } from '@/utils/formatTime'
 import { checkPermi } from '@/utils/permission'
-import { defaultProps, handleTree } from '@/utils/tree'
 
 defineOptions({ name: 'InventarioAtivo' })
 /** Origens com agente instalado (antivírus e contato só fazem sentido nelas) */
@@ -660,7 +685,14 @@ const loading = ref(true)
 const lista = ref<Inv.Ativo[]>([])
 const total = ref(0)
 const contagens = ref<Record<string, number>>({})
-const depts = ref<any[]>([])
+/** Unidades de Monitoramento → Unidades e endereços; o valor é o departamento da unidade */
+const unidades = ref<Inv.UnidadeAtivo[]>([])
+/** No cadastro: as unidades e, se o ativo estiver hoje num setor que não é unidade, esse setor (para não sumir) */
+const opcoesUnidade = computed(() => {
+  const d = form.dados.deptId
+  if (!d || unidades.value.some((u) => u.deptId === d)) return unidades.value
+  return [{ id: 0, deptId: d, nome: `${a.value?.deptNome ?? '#' + d} (setor, não é uma unidade)`, ativa: true }, ...unidades.value]
+})
 const q = reactive({
   pageNo: 1,
   pageSize: 20,
@@ -798,6 +830,9 @@ const descreverHistorico = (h: Inv.Historico) => {
       return `${CAMPOS[h.campo ?? ''] ?? h.campo}: ${de} → ${para}`
   }
 }
+
+const inconsistenciasRef = ref()
+const outrosIps = (r: Inv.Ativo) => (r.ips || '').split(',').filter((x) => x && x !== r.ip)
 
 const carregar = async () => {
   loading.value = true
@@ -971,7 +1006,7 @@ watch(
 )
 
 onMounted(async () => {
-  depts.value = handleTree(await DeptApi.getSimpleDeptList())
+  unidades.value = await Inv.getUnidadesAtivo()
   Inv.getOpcoes().then((o) => (opcoes.value = o))
   await aplicarQuery()
 })

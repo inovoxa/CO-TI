@@ -21,6 +21,8 @@ export interface Ativo {
   discoLivreMb?: number
   discoTipo?: string
   ip?: string
+  /** Todos os IPs, o principal primeiro */
+  ips?: string
   mac?: string
   dominio?: string
   usuarioLogin?: string
@@ -543,3 +545,37 @@ export const importarFaixas = (arquivo: File, removerIds: number[]) =>
     arquivo,
     removerIds: removerIds.join(',')
   })
+
+// ---------- inconsistências (unidade pela faixa de IP, usuário pelo login) ----------
+export interface InconsistenciaItem {
+  id: number
+  nome: string
+  tipo: 'unidade' | 'usuario'
+  atual?: string
+  correto?: string
+  motivo: string
+  ips?: string
+  login?: string
+}
+export interface Inconsistencias {
+  ativos: number
+  unidadeErrada: number
+  semFaixa: number
+  usuarioErrado: number
+  itens: InconsistenciaItem[]
+  redesSemFaixa: { rede: string; maquinas: number }[]
+}
+export const getInconsistencias = (): Promise<Inconsistencias> =>
+  request.get({ url: '/inventario/ativo/inconsistencias' })
+export const corrigirInconsistencias = (tipos: string[]): Promise<Record<string, number>> =>
+  request.post({ url: '/inventario/ativo/inconsistencias/corrigir?tipos=' + tipos.join(',') })
+
+/** Unidade de Monitoramento → Unidades e endereços (filtro e cadastro do ativo; o valor é o departamento dela) */
+export interface UnidadeAtivo {
+  id: number
+  nome: string
+  deptId: number
+  ativa: boolean
+}
+export const getUnidadesAtivo = (): Promise<UnidadeAtivo[]> =>
+  request.get({ url: '/inventario/ativo/unidades' })

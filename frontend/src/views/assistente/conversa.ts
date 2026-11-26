@@ -4,6 +4,7 @@ import * as Api from '@/api/assistente'
 /** Conversa com o assistente: usada pela página "Perguntar" e pela janela flutuante da barra superior. */
 
 export const EXEMPLOS = [
+  'Verificar inconsistências nos ativos do inventário',
   'Quantos computadores ainda usam Windows 10?',
   'Quais máquinas estão com o antivírus desatualizado?',
   'Resuma a fila do Service Desk',

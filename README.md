@@ -406,8 +406,16 @@ Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
 - **Inventário → Painel:** números e gráficos do parque. Clicar num número ou numa barra abre a lista filtrada.
 - **Ativos:** ordenação pelo cabeçalho, coluna e filtro de **TAG** (o `/TAG=` do agente OCS ou o `tag` do GLPI
   Agent). O detalhe tem as abas Hardware, Rede, Dispositivos, Softwares, Chamados e Histórico.
-- **Unidade do ativo:** a escolhida à mão; senão a da **faixa de IP** (Inventário → Rede → Unidade por faixa de
-  IP, com sugestões a partir das máquinas, Exportar e Importar); senão a da pessoa logada.
+- **Unidade do ativo, sem palpite:** a escolhida à mão; senão a da **faixa de IP** do **primeiro IP da máquina que
+  cai numa faixa** (o principal, depois os das outras placas); senão nenhuma. As faixas ficam na própria unidade
+  (**Monitoramento → Unidades e endereços**, campo Faixas de IP) e também em Inventário → Rede, com sugestões,
+  Exportar e Importar. A unidade da pessoa logada não é mais usada.
+- **Usuário do ativo:** a pessoa do portal dona do login que o agente informou (`DOMINIO\login` e `login@dominio`
+  valem); login que não é de ninguém deixa o usuário vazio.
+- **Inconsistências** (botão na tela de ativos, e o Assistente IA: "Verificar inconsistências nos ativos do
+  inventário"): lista os ativos com unidade ou usuário fora dessas regras, o motivo e as redes sem faixa, e corrige
+  (permissão de alterar ativos; o Assistente só corrige depois de a pessoa confirmar). Cada correção fica no
+  histórico do ativo. O botão **Atualizar** recarrega a lista.
 - **Inventário → Agentes:**
   - **Envios recebidos:** cada pedido dos agentes, aceito ou recusado (rede, senha, erro), por
     `CO_TI_INVENTARIO_ENVIOS_DIAS` (padrão 30).
@@ -592,9 +600,9 @@ Como fica:
   - ordenação pelo cabeçalho.
 - **Unidade** (coluna e árvore à esquerda): a da máquina que a pessoa usa, não o departamento da conta.
   - Vale a máquina do inventário com contato mais recente em que ela é a usuária.
-  - A unidade dada à mão na máquina vence; senão, a faixa de IP mais específica (Inventário → Rede) que contém o IP dela.
-  - Sem faixa para o IP: "IP fora das faixas". A unidade que a máquina herdou da própria pessoa não conta (seria circular).
-  - Clique na unidade para ver todos dela, com as subunidades. Regra no banco: `cmdb.unidade_do_usuario` (V93).
+  - A unidade dada à mão na máquina vence; senão, a faixa do primeiro IP da máquina que cai numa faixa.
+  - Sem faixa para nenhum IP: "—". A unidade da própria pessoa não conta (seria circular).
+  - Clique na unidade para ver todos dela, com as subunidades. Regra no banco: `cmdb.unidade_do_usuario` (V96).
   - O departamento da conta continua na Ficha, no Exportar/Importar e no escopo de dados dos perfis.
 - **Acesso administrativo:** perfil `super_admin` ou perfil que cria, altera ou exclui usuários, troca senhas, dá perfis
   ou muda permissões (`UsuarioGestaoService.PRIVILEGIOS`).

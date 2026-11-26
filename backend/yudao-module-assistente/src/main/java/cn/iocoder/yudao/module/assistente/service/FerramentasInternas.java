@@ -13,6 +13,7 @@ import cn.iocoder.yudao.module.inventario.controller.admin.vo.AtivoVOs;
 import cn.iocoder.yudao.module.inventario.dal.dataobject.AtivoDO;
 import cn.iocoder.yudao.module.inventario.dal.mysql.CmdbAtivoMapper;
 import cn.iocoder.yudao.module.inventario.service.AlertaInventarioService;
+import cn.iocoder.yudao.module.inventario.service.ConsistenciaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.AtivoService;
 import cn.iocoder.yudao.module.inventario.service.LicencaInventarioService;
 import cn.iocoder.yudao.module.inventario.service.RedeService;
@@ -59,7 +60,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Ferramentas de consulta do assistente interno. Todas são só de leitura e rodam na requisição de quem pergunta: as
+ * Ferramentas do assistente interno. Rodam na requisição de quem pergunta e são só de leitura, menos
+ * {@code corrigir_inventario}, que exige a permissão de alterar ativos e a confirmação da pessoa. As
  * permissões e o escopo de unidade do perfil valem como nas telas. Uma ferramenta só é oferecida ao modelo se a
  * pessoa tiver a permissão dela, e a permissão é conferida de novo na execução.
  */
@@ -79,6 +81,8 @@ public class FerramentasInternas {
     private CmdbAtivoMapper cmdbAtivoMapper;
     @Resource
     private AlertaInventarioService alertaInventarioService;
+    @Resource
+    private ConsistenciaInventarioService consistenciaInventarioService;
     @Resource
     private LicencaInventarioService licencaInventarioService;
     @Resource
@@ -181,6 +185,18 @@ public class FerramentasInternas {
                 props(p("regra", "string", "sem_suporte | antivirus | disco_cheio | sem_contato | licenca_excedida"),
                         p("situacao", "string", "abertos (padrão) | encerrados | todos"), p("limite", "integer", "Padrão 20, máximo 50")),
                 new String[]{"inventario:ativo:query"}, this::alertas);
+        registrar("inconsistencias_inventario", "Verifica os ativos do inventário cuja unidade ou usuário não batem com as"
+                        + " regras exatas: unidade = a escolhida à mão, senão a da faixa de IP (Unidades e endereços) do primeiro IP da"
+                        + " máquina que cai numa faixa, senão nenhuma; usuário = a pessoa do portal dona do login que o agente informou."
+                        + " Devolve as contagens, exemplos (atual → correto, com o motivo) e as redes sem faixa cadastrada.",
+                props(p("limite", "integer", "Quantos exemplos listar. Padrão 30, máximo 60")),
+                new String[]{"inventario:ativo:query"}, this::inconsistencias);
+        registrar("corrigir_inventario", "ALTERA DADOS: corrige a unidade e/ou o usuário dos ativos apontados por"
+                        + " inconsistencias_inventario, pelas mesmas regras, com registro no histórico de cada ativo. Só chame depois de"
+                        + " mostrar o que vai mudar e a pessoa confirmar explicitamente nesta conversa; passe confirmado=true.",
+                props(p("tipos", "string", "unidade | usuario | unidade,usuario (padrão: os dois)"),
+                        p("confirmado", "boolean", "true só depois de a pessoa confirmar a correção")),
+                new String[]{"inventario:ativo:update"}, this::corrigirInventario);
         registrar("licencas", "Licenças de software (ITSM) com quantidade comprada, usos registrados e instalações encontradas pelo inventário.",
                 props(p("busca", "string", "Software, edição ou fabricante"), p("limite", "integer", "Padrão 20, máximo 50")),
                 new String[]{"itsm:licenca:query"}, this::licencas);
@@ -563,6 +579,38 @@ public class FerramentasInternas {
             putSe(m, "chamado", a.getChamadoId());
             return m;
         }).toList());
+    }
+
+    private Object inconsistencias(Contexto c) {
+        ConsistenciaInventarioService.Resultado r = consistenciaInventarioService.verificar();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ativos_verificados", r.getAtivos());
+        m.put("unidade_errada", r.getUnidadeErrada());
+        m.put("sem_faixa_de_ip", r.getSemFaixa());
+        m.put("usuario_errado", r.getUsuarioErrado());
+        m.put("exemplos", r.getItens().stream().limit(c.limite(30, 60)).map(i -> {
+            Map<String, Object> x = new LinkedHashMap<>();
+            x.put("ativo", i.getNome());
+            x.put("campo", i.getTipo());
+            x.put("atual", i.getAtual() == null ? "(vazio)" : i.getAtual());
+            x.put("correto", i.getCorreto() == null ? "(vazio)" : i.getCorreto());
+            x.put("motivo", i.getMotivo());
+            putSe(x, "ips", i.getIps());
+            return x;
+        }).toList());
+        m.put("redes_sem_faixa", r.getRedesSemFaixa());
+        return m;
+    }
+
+    private Object corrigirInventario(Contexto c) {
+        if (!Boolean.TRUE.equals(c.args().get("confirmado")) && !"true".equals(String.valueOf(c.args().get("confirmado")))) {
+            return Map.of("erro", "não corrigido: mostre o que vai mudar e peça a confirmação da pessoa antes (confirmado=true)");
+        }
+        String t = c.texto("tipos");
+        List<String> tipos = t == null ? List.of() : Arrays.stream(t.split("[,; ]+")).map(String::trim)
+                .filter(x -> x.equals("unidade") || x.equals("usuario")).toList();
+        Map<String, Integer> r = consistenciaInventarioService.corrigir(tipos, c.userId());
+        return Map.of("corrigidos", r, "observacao", "cada mudança ficou no histórico do ativo");
     }
 
     private Object licencas(Contexto c) {

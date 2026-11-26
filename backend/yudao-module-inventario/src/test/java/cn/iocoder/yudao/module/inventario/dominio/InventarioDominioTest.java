@@ -78,6 +78,8 @@ class InventarioDominioTest {
         assertEquals("desktop", a.tipo());
         assertEquals("UBS-CENTRO-07", a.nome());
         assertEquals("7GH2K93", a.numeroSerie());
+        // todos os IPs: o principal, depois os das placas virtuais
+        assertEquals("10.20.5.31,172.24.0.1", a.ips());
         assertEquals("PMA-004521", a.patrimonio());
         assertEquals("Microsoft Windows 11 Pro", a.soNome());
         assertFalse(a.soSemSuporte());

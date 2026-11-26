@@ -41,6 +41,8 @@ public class AtivoService {
     static final Set<String> TIPOS = Set.of("desktop", "notebook", "servidor", "virtual", "impressora", "monitor", "rede", "telefone", "outro");
 
     @Resource
+    private UnidadeRedeService unidadeRedeService;
+    @Resource
     private InventarioProperties inventarioProperties;
     @Resource
     private CmdbAtivoMapper cmdbAtivoMapper;
@@ -92,7 +94,7 @@ public class AtivoService {
         if (req.getBusca() != null && !req.getBusca().isBlank()) {
             String b = "%" + req.getBusca().trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
             q.and(w -> w.apply("nome ILIKE {0}", b).or().apply("patrimonio ILIKE {0}", b).or().apply("numero_serie ILIKE {0}", b)
-                    .or().apply("ip ILIKE {0}", b).or().apply("usuario_login ILIKE {0}", b).or().apply("modelo ILIKE {0}", b)
+                    .or().apply("ip ILIKE {0}", b).or().apply("ips ILIKE {0}", b).or().apply("usuario_login ILIKE {0}", b).or().apply("modelo ILIKE {0}", b)
                     .or().apply("tag ILIKE {0}", b));
         }
         if (req.getAlerta() != null) {
@@ -316,13 +318,16 @@ public class AtivoService {
         if (req.getObservacao() != null && !req.getObservacao().equals(a.getObservacao())) {
             m.setObservacao(req.getObservacao());
         }
+        boolean semUnidade = false;
         if (Boolean.TRUE.equals(req.getDeptAutomatico())) {
+            // volta para a regra das faixas: a do primeiro IP que cai numa; nenhum = sem unidade
             m.setDeptManual(false);
-            Long dept = a.getUsuarioId() == null ? null : Optional.ofNullable(adminUserMapper.selectById(a.getUsuarioId()))
-                    .map(AdminUserDO::getDeptId).orElse(null);
-            if (dept != null && !dept.equals(a.getDeptId())) {
+            Long dept = unidadeRedeService.unidadeDosIps(a.getIp(), a.getIps());
+            if (!Objects.equals(dept, a.getDeptId())) {
                 m.setDeptId(dept);
-                historico(a.getId(), userId, "manual", "dept_id", nomeDept(a.getDeptId()), nomeDept(dept));
+                semUnidade = dept == null;
+                historico(a.getId(), userId, "manual", "dept_id", nomeDept(a.getDeptId()),
+                        dept == null ? "nenhuma (nenhum IP numa faixa)" : nomeDept(dept) + " (pela faixa de IP)");
             }
         } else if (req.getDeptId() != null && !req.getDeptId().equals(a.getDeptId())) {
             m.setDeptId(req.getDeptId());
@@ -369,6 +374,10 @@ public class AtivoService {
             historico(a.getId(), userId, "manual", c[0], c[2], v);
         }
         cmdbAtivoMapper.updateById(m);
+        if (semUnidade) {
+            cmdbAtivoMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<AtivoDO>()
+                    .eq(AtivoDO::getId, a.getId()).set(AtivoDO::getDeptId, null));
+        }
     }
 
     // ======================================================================================= chamados
@@ -542,6 +551,7 @@ public class AtivoService {
             r.setDiscoLivreMb(a.getDiscoLivreMb());
             r.setDiscoTipo(a.getDiscoTipo());
             r.setIp(a.getIp());
+            r.setIps(a.getIps());
             r.setMac(a.getMac());
             r.setDominio(a.getDominio());
             r.setUsuarioLogin(a.getUsuarioLogin());

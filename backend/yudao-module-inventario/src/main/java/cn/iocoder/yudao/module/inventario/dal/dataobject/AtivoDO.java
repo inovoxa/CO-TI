@@ -43,6 +43,8 @@ public class AtivoDO extends BaseDO {
     /** ssd | hdd | misto | desconhecido; null sem discos informados */
     private String discoTipo;
     private String ip;
+    /** Todos os IPs da máquina, o principal primeiro, separados por vírgula */
+    private String ips;
     private String mac;
     private String dominio;
     private String usuarioLogin;

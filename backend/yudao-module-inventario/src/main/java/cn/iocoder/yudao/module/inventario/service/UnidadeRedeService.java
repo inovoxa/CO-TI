@@ -44,6 +44,11 @@ public class UnidadeRedeService {
 
     // ======================================================================================= consulta
 
+    /** Unidade da faixa do primeiro IP da máquina que cai numa (o principal, depois os outros), ou null. */
+    public Long unidadeDosIps(String ip, String ips) {
+        return Faixas.doIps(ip, ips, faixas()).map(Faixas.Faixa::deptId).orElse(null);
+    }
+
     /** Unidade da faixa onde o IP cai, ou null. */
     public Long unidadeDoIp(String ip) {
         return Faixas.doIp(ip, faixas()).map(Faixas.Faixa::deptId).orElse(null);
@@ -175,34 +180,27 @@ public class UnidadeRedeService {
     }
 
     /**
-     * Passa os ativos (fora os de unidade escolhida à mão e os baixados) para a unidade da faixa do IP. Quem não cai
-     * em nenhuma faixa fica como está; no próximo inventário volta a valer a unidade da pessoa logada.
+     * Recalcula a unidade dos ativos (fora os de unidade escolhida à mão e os baixados) pela regra das faixas: a do
+     * primeiro IP da máquina que cai numa faixa; quem não cai em nenhuma fica sem unidade (sem palpite).
      */
     @Transactional(rollbackFor = Exception.class)
     public int aplicar(Long userId) {
         esquecer();
         List<Faixas.Faixa> faixas = faixas();
-        if (faixas.isEmpty()) {
-            return 0;
-        }
         Map<Long, String> nomes = nomesDept();
-        record Ativo(long id, String ip, Long dept) {
+        record Ativo(long id, String ip, String ips, Long dept) {
         }
         List<Ativo> ativos = jdbcTemplate.query("""
-                SELECT id, ip, dept_id FROM cmdb.ativo WHERE deleted = 0 AND situacao <> 'baixado' AND dept_manual = false AND ip IS NOT NULL
+                SELECT id, ip, ips, dept_id FROM cmdb.ativo WHERE deleted = 0 AND situacao <> 'baixado' AND dept_manual = false
                 """, (rs, i) -> {
             long d = rs.getLong("dept_id");
-            return new Ativo(rs.getLong("id"), rs.getString("ip"), rs.wasNull() ? null : d);
+            return new Ativo(rs.getLong("id"), rs.getString("ip"), rs.getString("ips"), rs.wasNull() ? null : d);
         });
         int n = 0;
         for (Ativo a : ativos) {
-            Long novo = Faixas.doIp(a.ip(), faixas).map(Faixas.Faixa::deptId).orElse(null);
-            if (novo != null && !novo.equals(a.dept())) {
-                jdbcTemplate.update("UPDATE cmdb.ativo SET dept_id = ?, update_time = now() WHERE id = ?", novo, a.id());
-                jdbcTemplate.update("""
-                        INSERT INTO cmdb.historico (id, ativo_id, quando, tipo, campo, antes, depois, user_id)
-                        VALUES (nextval('cmdb.historico_seq'), ?, now(), 'manual', 'dept_id', ?, ?, ?)
-                        """, a.id(), a.dept() == null ? null : nomes.get(a.dept()), nomes.get(novo) + " (pela faixa de IP)", userId);
+            Long novo = Faixas.doIps(a.ip(), a.ips(), faixas).map(Faixas.Faixa::deptId).orElse(null);
+            if (!Objects.equals(novo, a.dept())) {
+                mudarUnidade(a.id(), a.dept(), novo, nomes, userId);
                 n++;
             }
         }
@@ -210,6 +208,16 @@ public class UnidadeRedeService {
             auditoriaService.registrar("inventario.faixas_aplicadas", userId, null, Map.of("ativos", n));
         }
         return n;
+    }
+
+    /** Troca a unidade de um ativo e registra no histórico de onde veio. */
+    void mudarUnidade(long ativoId, Long antes, Long depois, Map<Long, String> nomes, Long userId) {
+        jdbcTemplate.update("UPDATE cmdb.ativo SET dept_id = ?, update_time = now() WHERE id = ?", depois, ativoId);
+        jdbcTemplate.update("""
+                INSERT INTO cmdb.historico (id, ativo_id, quando, tipo, campo, antes, depois, user_id)
+                VALUES (nextval('cmdb.historico_seq'), ?, now(), 'manual', 'dept_id', ?, ?, ?)
+                """, ativoId, antes == null ? null : nomes.get(antes),
+                depois == null ? "nenhuma (nenhum IP numa faixa)" : nomes.get(depois) + " (pela faixa de IP)", userId);
     }
 
     // ======================================================================================= planilha
@@ -352,7 +360,7 @@ public class UnidadeRedeService {
         return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
-    private Map<Long, String> nomesDept() {
+    Map<Long, String> nomesDept() {
         Map<Long, String> m = new HashMap<>();
         jdbcTemplate.query("SELECT id, name FROM system_dept WHERE deleted = 0",
                 (RowCallbackHandler) rs -> m.put(rs.getLong("id"), rs.getString("name")));

@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.inventario.dominio;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,6 +71,44 @@ public final class Faixas {
             return Optional.empty();
         }
         return faixas.stream().filter(f -> f.contem(n)).max(Comparator.comparingInt(Faixa::prefixo));
+    }
+
+    /**
+     * A faixa do primeiro IP da máquina que cai em alguma: o principal, depois os das outras placas, na ordem. É a
+     * regra da unidade do ativo (sem palpite: nenhum IP numa faixa = sem unidade).
+     *
+     * @param ips lista separada por vírgula (cmdb.ativo.ips); vazio = só o principal
+     */
+    public static Optional<Faixa> doIps(String ip, String ips, List<Faixa> faixas) {
+        for (String i : lista(ip, ips)) {
+            Optional<Faixa> f = doIp(i, faixas);
+            if (f.isPresent()) {
+                return f;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** O principal primeiro, sem repetir; só IPv4 válidos. */
+    public static List<String> lista(String ip, String ips) {
+        LinkedHashSet<String> l = new LinkedHashSet<>();
+        if (numero(ip) >= 0) {
+            l.add(ip.trim());
+        }
+        if (ips != null) {
+            for (String i : ips.split(",")) {
+                if (numero(i) >= 0) {
+                    l.add(i.trim());
+                }
+            }
+        }
+        return new ArrayList<>(l);
+    }
+
+    /** IPs que valem para a unidade: tira loopback, APIPA e 0.0.0.0. */
+    public static boolean util(String ip) {
+        long n = numero(ip);
+        return n > 0 && (n >>> 24) != 127 && (n >>> 16) != ((169L << 8) | 254);
     }
 
     /** "a.b.c.0/24" do IP, para agrupar máquinas por rede. */

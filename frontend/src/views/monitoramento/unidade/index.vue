@@ -60,6 +60,22 @@
           <div class="text-12px text-[var(--el-text-color-secondary)]">{{ row.deptNome }}</div>
         </template>
       </el-table-column>
+      <el-table-column v-if="veFaixas" label="Faixas de IP" min-width="170">
+        <template #default="{ row }">
+          <el-tag
+            v-for="f in faixasDa(row.deptId)"
+            :key="f.id"
+            class="mb-2px mr-4px"
+            disable-transitions
+            size="small"
+            type="info"
+            >{{ f.cidr }}</el-tag
+          >
+          <span v-if="!faixasDa(row.deptId).length" class="text-12px text-[var(--el-text-color-placeholder)]"
+            >nenhuma</span
+          >
+        </template>
+      </el-table-column>
       <el-table-column label="Endereço" min-width="280" prop="cidade" sortable="custom">
         <template #default="{ row }">{{ endereco(row) || '—' }}</template>
       </el-table-column>
@@ -242,6 +258,41 @@
       <el-form-item label="">
         <el-checkbox v-model="form.dados.ativa">Ativa (aparece no telão)</el-checkbox>
       </el-form-item>
+      <el-form-item v-if="veFaixas" label="Faixas de IP">
+        <div class="w-full">
+          <template v-if="form.dados.id && form.dados.deptId">
+            <div>
+              <el-tag
+                v-for="f in faixasDa(form.dados.deptId)"
+                :key="f.id"
+                :closable="editaFaixas"
+                class="mb-4px mr-6px"
+                disable-transitions
+                @close="excluirFaixa(f)"
+                >{{ f.cidr }} · {{ f.maquinas }} máquina(s)</el-tag
+              >
+              <span v-if="!faixasDa(form.dados.deptId).length" class="text-12px text-[var(--el-text-color-secondary)]"
+                >nenhuma faixa: as máquinas desta unidade ficam sem unidade no inventário</span
+              >
+            </div>
+            <div v-if="editaFaixas" class="mt-4px flex flex-wrap items-center gap-6px">
+              <el-input
+                v-model="novaFaixa"
+                class="!w-220px"
+                placeholder="172.21.9.0/24 ou um IP"
+                @keyup.enter="adicionarFaixa"
+              />
+              <el-button :disabled="!novaFaixa" @click="adicionarFaixa">Adicionar</el-button>
+              <el-button link type="primary" @click="aplicarFaixas">Aplicar nos ativos agora</el-button>
+            </div>
+          </template>
+          <div class="mt-2px text-12px text-[var(--el-text-color-secondary)]">
+            A unidade de uma máquina no inventário é a da faixa do primeiro IP dela que cai numa faixa
+            (sem faixa, fica sem unidade). "172.21.9.0" vale como /24; um IP sozinho vale só para ele.
+            <template v-if="!form.dados.id">Salve a unidade para cadastrar as faixas.</template>
+          </div>
+        </div>
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button type="primary" @click="salvar">Salvar</el-button>
@@ -324,6 +375,7 @@
 
 <script lang="ts" setup>
 import * as Mon from '@/api/monitoramento'
+import * as Inv from '@/api/inventario'
 import * as DeptApi from '@/api/system/dept'
 import { checkPermi } from '@/utils/permission'
 import { defaultProps, handleTree } from '@/utils/tree'
@@ -455,10 +507,37 @@ watch(filtradas, (f) => {
 const carregar = async () => {
   loading.value = true
   try {
-    lista.value = await Mon.getUnidades()
+    const [u, f] = await Promise.all([Mon.getUnidades(), veFaixas ? Inv.getFaixas() : Promise.resolve([])])
+    lista.value = u
+    faixas.value = f
   } finally {
     loading.value = false
   }
+}
+
+// ---------- faixas de IP da unidade (as do inventário, pelo departamento da unidade) ----------
+const veFaixas = checkPermi(['inventario:ativo:query'])
+const editaFaixas = checkPermi(['inventario:ativo:update'])
+const faixas = ref<Inv.FaixaUnidade[]>([])
+const novaFaixa = ref('')
+const faixasDa = (deptId?: number) => faixas.value.filter((f) => f.deptId === deptId)
+const recarregarFaixas = async () => (faixas.value = await Inv.getFaixas())
+const adicionarFaixa = async () => {
+  if (!novaFaixa.value.trim() || !form.dados.deptId) return
+  await Inv.salvarFaixa({ cidr: novaFaixa.value.trim(), deptId: form.dados.deptId })
+  novaFaixa.value = ''
+  message.success('Faixa cadastrada. Use "Aplicar nos ativos agora" para recalcular as máquinas já inventariadas.')
+  await recarregarFaixas()
+}
+const excluirFaixa = async (f: Inv.FaixaUnidade) => {
+  await message.delConfirm(`Excluir a faixa ${f.cidr}? As máquinas dela ficam sem unidade se não caírem em outra faixa.`)
+  await Inv.excluirFaixa(f.id)
+  await recarregarFaixas()
+}
+const aplicarFaixas = async () => {
+  const n = await Inv.aplicarFaixas()
+  message.success(n ? `${n} ativo(s) com a unidade recalculada (fica no histórico de cada um)` : 'Nenhum ativo mudou de unidade')
+  await recarregarFaixas()
 }
 const abrir = async (u?: Mon.Unidade) => {
   if (!depts.value.length) depts.value = handleTree(await DeptApi.getSimpleDeptList())

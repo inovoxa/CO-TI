@@ -16,10 +16,12 @@ public final class Normalizacao {
     private Normalizacao() {
     }
 
+    private static final Pattern IPV4 = Pattern.compile("\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b");
+
     public record Resumo(String tipo, String nome, String fabricante, String modelo, String numeroSerie, String patrimonio, String uuid,
                          String soNome, String soVersao, String soArquitetura, boolean soSemSuporte, String cpu, Integer cpuNucleos,
                          Integer memoriaMb, Long discoTotalMb, Long discoLivreMb, String ip, String mac, String dominio,
-                         String usuarioLogin, String antivirus, String discoTipo, String tag) {
+                         String usuarioLogin, String antivirus, String discoTipo, String tag, String ips) {
     }
 
     public record Componente(String tipo, String chave, String descricao, Map<String, String> dados) {
@@ -90,6 +92,8 @@ public final class Normalizacao {
         }
         String ip = vazio(hw.get("IPADDR"));
         String mac = null;
+        // todos os IPs: o principal, os das placas físicas e por fim os das virtuais (a unidade usa o primeiro numa faixa)
+        LinkedHashSet<String> fisicos = new LinkedHashSet<>(), virtuais = new LinkedHashSet<>();
         for (Map<String, String> n : p.lista("NETWORKS")) {
             String m = vazio(n.get("MACADDR"));
             String i = vazio(n.get("IPADDRESS"));
@@ -100,7 +104,19 @@ public final class Normalizacao {
                     ip = i;
                 }
             }
+            Matcher mi = IPV4.matcher(i == null ? "" : i);
+            while (mi.find()) {
+                (virtual ? virtuais : fisicos).add(mi.group());
+            }
         }
+        LinkedHashSet<String> todos = new LinkedHashSet<>();
+        Matcher mp = IPV4.matcher(ip == null ? "" : ip);
+        while (mp.find()) {
+            todos.add(mp.group());
+        }
+        todos.addAll(fisicos);
+        todos.addAll(virtuais);
+        String ips = cortar(todos.stream().filter(Faixas::util).collect(java.util.stream.Collectors.joining(",")), 1000);
         String login = usuario(Optional.ofNullable(vazio(hw.get("LASTLOGGEDUSER"))).orElse(vazio(hw.get("USERID"))));
         Resumo r = new Resumo(tipo(bios.get("TYPE"), soNome, hw.get("VMSYSTEM"), bios.get("SMANUFACTURER"), bios.get("SMODEL")),
                 cortar(nome, 255), cortar(semGenerico(bios.get("SMANUFACTURER")), 255), cortar(semGenerico(bios.get("SMODEL")), 255),
@@ -109,7 +125,7 @@ public final class Normalizacao {
                 semSuporte(soNome, hw.get("OSVERSION"), hoje), cortar(cpu, 255), nucleos, inteiro(hw.get("MEMORY")),
                 total > 0 ? total : null, total > 0 ? livre : null, cortar(ip, 64), mac,
                 cortar(Optional.ofNullable(vazio(hw.get("WORKGROUP"))).orElse(vazio(hw.get("USERDOMAIN"))), 255), cortar(login, 255),
-                antivirus(p, soNome), discoTipo(p.lista("STORAGES")), cortar(tag(p), 100));
+                antivirus(p, soNome), discoTipo(p.lista("STORAGES")), cortar(tag(p), 100), ips == null || ips.isEmpty() ? null : ips);
         return new Resultado(r, componentes, softwares(p));
     }
 

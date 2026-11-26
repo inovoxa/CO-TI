@@ -82,6 +82,8 @@ public final class AtivoVOs {
         private Long discoLivreMb;
         private String discoTipo;
         private String ip;
+        /** Todos os IPs, o principal primeiro (a unidade vem do primeiro que cai numa faixa) */
+        private String ips;
         private String mac;
         private String dominio;
         private String usuarioLogin;

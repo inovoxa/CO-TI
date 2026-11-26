@@ -42,6 +42,36 @@ public class AtivoController {
     private RelatorioInventarioService relatorioInventarioService;
     @Resource
     private PainelInventarioService painelInventarioService;
+    @Resource
+    private cn.iocoder.yudao.module.inventario.service.ConsistenciaInventarioService consistenciaService;
+
+    @Resource
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @GetMapping("/unidades")
+    @Operation(summary = "Unidades de Monitoramento → Unidades e endereços (filtro e cadastro do ativo)")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public CommonResult<List<Map<String, Object>>> unidades() {
+        return success(jdbcTemplate.queryForList("""
+                SELECT u.id, u.name AS nome, u.dept_id AS "deptId", u.status = 0 AS ativa
+                FROM monitor_unit u JOIN system_dept d ON d.id = u.dept_id AND d.deleted = 0
+                WHERE u.deleted = 0 ORDER BY u.name
+                """));
+    }
+
+    @GetMapping("/inconsistencias")
+    @Operation(summary = "Unidade e usuário que não batem com as regras (faixa do IP; login do agente)")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:query')")
+    public CommonResult<cn.iocoder.yudao.module.inventario.service.ConsistenciaInventarioService.Resultado> inconsistencias() {
+        return success(consistenciaService.verificar());
+    }
+
+    @PostMapping("/inconsistencias/corrigir")
+    @Operation(summary = "Corrigir unidade e/ou usuário pelas regras (fica no histórico de cada ativo)")
+    @PreAuthorize("@ss.hasPermission('inventario:ativo:update')")
+    public CommonResult<Map<String, Integer>> corrigir(@RequestParam(value = "tipos", required = false) List<String> tipos) {
+        return success(consistenciaService.corrigir(tipos, getLoginUserId()));
+    }
 
     @GetMapping("/page")
     @Operation(summary = "Lista de ativos (filtros e alertas)")
