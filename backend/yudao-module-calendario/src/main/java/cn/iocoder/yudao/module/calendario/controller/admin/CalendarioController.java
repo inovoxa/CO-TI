@@ -56,6 +56,13 @@ public class CalendarioController {
         return success(true);
     }
 
+    @GetMapping("/unidades")
+    @Operation(summary = "Unidades de Unidades e endereços, para o filtro e o recado")
+    @PreAuthorize(USAR)
+    public CommonResult<List<CalendarioService.Unidade>> unidades() {
+        return success(calendario.unidades());
+    }
+
     @GetMapping("/aniversariantes")
     @Operation(summary = "Aniversariantes do ano ou do mês, de uma unidade e das que ficam abaixo dela")
     @PreAuthorize(USAR)

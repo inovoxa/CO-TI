@@ -92,6 +92,20 @@ public class CalendarioService {
         return MonthDay.from(nascimento).atYear(ano);
     }
 
+    // ---------- unidades ----------
+
+    /** Unidade de Monitoramento → Unidades e endereços; {@code id} é o departamento dela (o filtro pega os setores abaixo). */
+    public record Unidade(Long id, String nome) {
+    }
+
+    /** Unidades ativas de Unidades e endereços, para o filtro e para o "Quem vê" do recado. */
+    public List<Unidade> unidades() {
+        return jdbcTemplate.query("""
+                SELECT u.dept_id, u.name FROM monitor_unit u JOIN system_dept d ON d.id = u.dept_id AND d.deleted = 0
+                WHERE u.deleted = 0 AND u.status = 0 ORDER BY u.name
+                """, (rs, i) -> new Unidade(rs.getLong(1), rs.getString(2)));
+    }
+
     // ---------- aniversariantes ----------
 
     /** {@code proprio}: é o aniversário de quem está vendo (aparece para ela mesmo se for privado). */
@@ -107,10 +121,12 @@ public class CalendarioService {
             throw exception(INVALIDO, "Ano inválido");
         }
         StringBuilder sql = new StringBuilder("""
-                SELECT u.id, u.nickname, u.avatar, d.name AS unidade, n.data, n.publico
+                SELECT u.id, u.nickname, u.avatar, coalesce(d.name, s.name) AS unidade, n.data, n.publico
                 FROM calendario.nascimento n
                 JOIN system_users u ON u.id = n.usuario_id AND u.deleted = 0 AND u.status = 0
-                LEFT JOIN system_dept d ON d.id = u.dept_id
+                CROSS JOIN LATERAL (SELECT cmdb.unidade_do_usuario(u.id) AS id) un
+                LEFT JOIN system_dept d ON d.id = un.id
+                LEFT JOIN system_dept s ON s.id = u.dept_id
                 WHERE (n.publico OR n.usuario_id = ?)
                 """);
         List<Object> args = new ArrayList<>(List.of(userId));
@@ -119,9 +135,10 @@ public class CalendarioService {
             args.add(mes);
         }
         if (deptId != null) {
-            // a unidade e as que ficam abaixo dela
+            // a unidade e as que ficam abaixo dela; vale o campo Unidade do usuário (a da máquina, como na tela de
+            // Usuários) e, sem ele, o setor do cadastro
             sql.append("""
-                     AND u.dept_id IN (WITH RECURSIVE arvore AS (
+                     AND coalesce(un.id, u.dept_id) IN (WITH RECURSIVE arvore AS (
                         SELECT id FROM system_dept WHERE id = ? AND deleted = 0
                         UNION SELECT s.id FROM system_dept s JOIN arvore a ON s.parent_id = a.id WHERE s.deleted = 0)
                       SELECT id FROM arvore)
@@ -193,7 +210,8 @@ public class CalendarioService {
     public List<Pessoa> pessoas(String busca, Long userId) {
         String b = "%" + (busca == null ? "" : busca.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")) + "%";
         return jdbcTemplate.query("""
-                SELECT u.id, u.nickname, d.name AS unidade FROM system_users u LEFT JOIN system_dept d ON d.id = u.dept_id
+                SELECT u.id, u.nickname, d.name AS unidade FROM system_users u
+                LEFT JOIN system_dept d ON d.id = coalesce(cmdb.unidade_do_usuario(u.id), u.dept_id)
                 WHERE u.deleted = 0 AND u.status = 0 AND u.id <> ?
                   AND (itsm.sem_acento(u.nickname) ILIKE itsm.sem_acento(?) OR u.username ILIKE ?)
                   AND NOT EXISTS (SELECT 1 FROM system_user_role ur JOIN system_role r ON r.id = ur.role_id

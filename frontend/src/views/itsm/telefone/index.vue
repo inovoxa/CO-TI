@@ -124,7 +124,30 @@ v-hasRole="['super_admin']"
   >
     <el-form ref="formRef" :model="form" :rules="regras" label-position="top">
       <el-form-item label="Nome (pessoa, sala ou serviço)" prop="nome">
-        <el-input v-model="form.nome" maxlength="120" />
+        <el-autocomplete
+          v-model="form.nome"
+          :debounce="300"
+          :fetch-suggestions="sugerirPessoas"
+          :trigger-on-focus="false"
+          class="w-full"
+          maxlength="120"
+          placeholder="Digite o nome, ou @ para buscar um usuário (local ou do AD)"
+          value-key="nome"
+          @select="escolherPessoa"
+        >
+          <template #default="{ item }">
+            <div class="pessoa">
+              <span>{{ item.nome }}</span>
+              <el-tag :type="item.origem === 'local' ? 'info' : 'primary'" size="small">
+                {{ item.origem === 'local' ? 'Local' : 'AD' }}
+              </el-tag>
+            </div>
+            <div class="nota pessoa-detalhe">
+              {{ [item.login, item.email, item.unidade].filter(Boolean).join(' · ') }}
+            </div>
+          </template>
+        </el-autocomplete>
+        <div class="nota">Comece com @ para escolher um usuário: preenche o e-mail e a unidade dele.</div>
       </el-form-item>
       <el-row :gutter="12">
         <el-col :span="12">
@@ -264,7 +287,10 @@ const celularDeEmergencia = (_: unknown, __: unknown, feito: (e?: Error) => void
   )
 }
 const regras = {
-  nome: [{ required: true, message: 'Informe o nome', trigger: 'blur' }],
+  nome: [
+    { required: true, message: 'Informe o nome', trigger: 'blur' },
+    { pattern: /^[^@]/, message: 'Escolha um usuário da lista ou tire o @', trigger: 'blur' }
+  ],
   unidadeId: [{ validator: emergenciaCompleta, trigger: 'change' }],
   ramal: [{ validator: temNumero, trigger: 'blur' }],
   celular: [{ validator: celularDeEmergencia, trigger: 'blur' }],
@@ -296,6 +322,28 @@ const buscar = () => {
 const sugerirSetores = (trecho: string, responder: (l: { value: string }[]) => void) => {
   const t = (trecho ?? '').toLowerCase()
   responder(setores.value.filter((s) => s.toLowerCase().includes(t)).map((value) => ({ value })))
+}
+
+/** Só busca pessoas quando o campo começa com @ (o nome continua livre para sala ou serviço). */
+const sugerirPessoas = (texto: string, responder: (l: Api.PessoaContato[]) => void) => {
+  const t = (texto ?? '').trim()
+  if (!t.startsWith('@') || t.length < 2) {
+    responder([])
+    return
+  }
+  Api.buscarPessoasContato(t)
+    .then(responder)
+    .catch(() => responder([]))
+}
+const escolherPessoa = (p: Record<string, any>) => {
+  const pessoa = p as Api.PessoaContato
+  form.value.nome = pessoa.nome
+  if (pessoa.email) form.value.email = pessoa.email
+  if (pessoa.unidadeId && unidades.value.some((u) => u.id === pessoa.unidadeId)) {
+    form.value.unidadeId = pessoa.unidadeId
+  }
+  if (pessoa.setor && !form.value.setor) form.value.setor = pessoa.setor
+  nextTick(() => formRef.value?.validateField(['nome', 'email']).catch(() => {}))
 }
 
 const abrir = (t?: Api.Telefone) => {
@@ -342,6 +390,17 @@ onMounted(() => Promise.all([carregar(), carregarSetores(), carregarUnidades()])
 </script>
 
 <style scoped>
+.pessoa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 20px;
+}
+.pessoa-detalhe {
+  line-height: 16px;
+  margin-bottom: 4px;
+}
 .nota {
   color: var(--el-text-color-secondary);
   font-size: 12px;

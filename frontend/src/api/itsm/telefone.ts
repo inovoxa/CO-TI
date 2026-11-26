@@ -74,3 +74,17 @@ export const baixarModeloTelefones = (): Promise<Blob> =>
 
 export const importarTelefones = (arquivo: File): Promise<ImportacaoTelefones> =>
   request.upload({ url: '/itsm/telefone/importar', data: { arquivo } })
+
+/** Pessoa para o campo Nome do contato (digitando @): usuário local, do AD já no CO-TI ou só no AD. */
+export interface PessoaContato {
+  origem: 'local' | 'ad' | 'ad-externo'
+  usuarioId?: number
+  login: string
+  nome: string
+  email?: string
+  setor?: string
+  unidadeId?: number
+  unidade?: string
+}
+export const buscarPessoasContato = (busca: string): Promise<PessoaContato[]> =>
+  request.get({ url: '/itsm/telefone/pessoas', params: { busca } })

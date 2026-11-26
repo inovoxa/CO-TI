@@ -56,7 +56,14 @@ export interface EventoVO extends Omit<Evento, 'participantes'> {
   participantes: Participante[]
 }
 
-export const getMeuNascimento = (): Promise<Nascimento> =>
+/** Unidade de Unidades e endereços; o id é o departamento dela. */
+export interface UnidadeCalendario {
+  id: number
+  nome: string
+}
+export const getUnidades = (): Promise<UnidadeCalendario[]> =>
+  request.get({ url: '/calendario/unidades' })
+export const getMeuNascimento =(): Promise<Nascimento> =>
   request.get({ url: '/calendario/meu-nascimento' })
 export const salvarMeuNascimento = (data: Nascimento) =>
   request.put({ url: '/calendario/meu-nascimento', data })

@@ -8,7 +8,7 @@ import { Screenfull } from '@/layout/components/Screenfull'
 import { Breadcrumb } from '@/layout/components/Breadcrumb'
 import { SizeDropdown } from '@/layout/components/SizeDropdown'
 import { alternarAssistente } from '@/components/AssistenteFlutuante/estado'
-import RouterSearch from '@/components/RouterSearch/index.vue'
+import { useRouter } from 'vue-router'
 import TenantVisit from '@/layout/components/TenantVisit/index.vue'
 import { useSetting } from '@/layout/components/Setting'
 import { useAppStore } from '@/store/modules/app'
@@ -32,9 +32,6 @@ const hamburger = computed(() => appStore.getHamburger)
 // 全屏图标
 const screenfull = computed(() => appStore.getScreenfull)
 
-// 搜索图片
-const search = computed(() => appStore.search)
-
 // 尺寸图标
 const size = computed(() => appStore.getSize)
 
@@ -44,6 +41,8 @@ const layout = computed(() => appStore.getLayout)
 // CO-TI: no lugar do seletor de idioma (o portal é só em português), o assistente de IA em janela flutuante
 const assistente = computed(() => checkPermi(['assistente:usar']))
 const chat = computed(() => checkPermi(['chat:usar']))
+// atalho para a tela de Usuários, no lugar da busca de telas
+const usuarios = computed(() => checkPermi(['system:user:list']))
 
 // 消息图标
 const message = computed(() => appStore.getMessage)
@@ -56,6 +55,7 @@ const hasTenantVisitPermission = computed(
 export default defineComponent({
   name: 'ToolHeader',
   setup() {
+    const router = useRouter()
     const { t } = useI18n()
     const { openSetting } = useSetting()
     const showSidebarControl = computed(
@@ -94,8 +94,14 @@ export default defineComponent({
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
           ) : undefined}
-          {search.value ? (
-            <RouterSearch isModal={false} color="var(--top-header-text-color)" />
+          {usuarios.value ? (
+            <div
+              class="custom-hover"
+              title="Usuários"
+              onClick={() => router.push('/system/user')}
+            >
+              <Icon color="var(--top-header-text-color)" size={18} icon="ep:user" />
+            </div>
           ) : undefined}
           {size.value ? (
             <SizeDropdown class="custom-hover" color="var(--top-header-text-color)"></SizeDropdown>

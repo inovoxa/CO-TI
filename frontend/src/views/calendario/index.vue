@@ -2,18 +2,16 @@
   <div class="calendario">
     <ContentWrap>
       <div class="barra">
-        <el-tree-select
+        <el-select
           v-model="deptId"
-          :data="depts"
-          :props="defaultProps"
-          check-strictly
           class="!w-260px"
           clearable
           filterable
-          node-key="id"
           placeholder="Todas as unidades"
           @change="carregarAniversariantes"
-        />
+        >
+          <el-option v-for="u in unidades" :key="u.id" :label="u.nome" :value="u.id" />
+        </el-select>
         <el-checkbox v-model="mostrarAniversarios">Aniversariantes</el-checkbox>
         <el-checkbox v-model="mostrarCompromissos">Meus compromissos</el-checkbox>
         <el-checkbox v-model="mostrarRecados">Recados</el-checkbox>
@@ -325,19 +323,16 @@
           </div>
         </el-form-item>
         <el-form-item label="Quem vê">
-          <el-tree-select
+          <el-select
             v-model="recado.unidades"
-            :data="depts"
-            :props="defaultProps"
-            check-strictly
             class="!w-full"
             clearable
             filterable
             multiple
-            node-key="id"
             placeholder="Recado geral: todas as unidades"
-            show-checkbox
-          />
+          >
+            <el-option v-for="u in opcoesRecado" :key="u.id" :label="u.nome" :value="u.id" />
+          </el-select>
           <div class="ajuda">
             Vazio é recado geral. Com unidades, vê quem está nelas ou nas que ficam abaixo delas.
           </div>
@@ -406,8 +401,6 @@
 <script lang="ts" setup>
 import type { FormInstance, FormRules } from 'element-plus'
 import * as Api from '@/api/calendario'
-import * as DeptApi from '@/api/system/dept'
-import { defaultProps, handleTree } from '@/utils/tree'
 import download from '@/utils/download'
 import { checkPermi } from '@/utils/permission'
 
@@ -424,7 +417,16 @@ const hojeIso = iso(new Date())
 const dataAtual = ref(new Date())
 const diaSelecionado = computed(() => iso(dataAtual.value))
 const deptId = ref<number>()
-const depts = ref<any[]>([])
+/** Unidades de Monitoramento → Unidades e endereços (o id é o departamento da unidade). */
+const unidades = ref<Api.UnidadeCalendario[]>([])
+/** Destinos de um recado antigo que não são unidades (ex.: um setor), para não sumirem ao editar. */
+const destinosAntigos = ref<{ id: number; nome: string | null }[]>([])
+const opcoesRecado = computed(() => [
+  ...unidades.value,
+  ...destinosAntigos.value
+    .filter((d) => !unidades.value.some((u) => u.id === d.id))
+    .map((d) => ({ id: d.id, nome: `${d.nome ?? d.id} (setor, não é uma unidade)` }))
+])
 const mostrarAniversarios = ref(true)
 const mostrarCompromissos = ref(true)
 const mostrarRecados = ref(true)
@@ -652,6 +654,7 @@ const durar = (dias: number) => {
 }
 const novoRecado = (dia: string) => {
   recado.value = { titulo: '', texto: '', periodo: [dia, dia], unidades: [], cor: null }
+  destinosAntigos.value = []
   dialogoRecado.value = true
   nextTick(() => recadoRef.value?.clearValidate())
 }
@@ -669,6 +672,7 @@ const abrirRecado = (r: Api.RecadoVO) => {
     unidades: r.unidades.map((u) => u.id),
     cor: r.cor
   }
+  destinosAntigos.value = r.unidades.map((u) => ({ id: u.id, nome: u.nome }))
   dialogoRecado.value = true
   nextTick(() => recadoRef.value?.clearValidate())
 }
@@ -791,7 +795,7 @@ const excluir = async () => {
 }
 
 onMounted(async () => {
-  DeptApi.getSimpleDeptList().then((l) => (depts.value = handleTree(l)))
+  Api.getUnidades().then((l) => (unidades.value = l))
   await carregar()
   await abrirDoLink()
 })

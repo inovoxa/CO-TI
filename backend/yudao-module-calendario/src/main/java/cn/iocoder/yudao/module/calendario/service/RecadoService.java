@@ -94,13 +94,15 @@ public class RecadoService {
                 WHERE\s""").append(filtro);
         a.addAll(args);
         if (!todos) {
-            // geral, ou para a unidade da pessoa ou alguma acima dela na árvore
+            // geral, ou para a unidade da pessoa ou alguma acima dela na árvore; a unidade é o campo Unidade do
+            // usuário (a da máquina, como na tela de Usuários) e, sem ele, o setor do cadastro
             sql.append("""
                      AND (NOT EXISTS (SELECT 1 FROM calendario.recado_unidade x WHERE x.recado_id = r.id)
                           OR EXISTS (SELECT 1 FROM calendario.recado_unidade x WHERE x.recado_id = r.id AND x.dept_id IN (
                               WITH RECURSIVE acima AS (
                                   SELECT d.id, d.parent_id FROM system_dept d
-                                  JOIN system_users p ON p.dept_id = d.id WHERE p.id = ? AND d.deleted = 0
+                                  JOIN system_users p ON coalesce(cmdb.unidade_do_usuario(p.id), p.dept_id) = d.id
+                                  WHERE p.id = ? AND d.deleted = 0
                                   UNION SELECT s.id, s.parent_id FROM system_dept s JOIN acima c ON s.id = c.parent_id
                                   WHERE s.deleted = 0)
                               SELECT id FROM acima)))

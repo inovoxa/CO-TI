@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.itsm.controller.admin.vo.TelefoneVOs;
+import cn.iocoder.yudao.module.itsm.service.PessoasDoContato;
 import cn.iocoder.yudao.module.itsm.service.TelefoneService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,8 @@ public class TelefoneController {
 
     @Resource
     private TelefoneService telefoneService;
+    @Resource
+    private PessoasDoContato pessoasDoContato;
 
     @GetMapping("/page")
     @Operation(summary = "Busca na lista")
@@ -43,6 +46,13 @@ public class TelefoneController {
     @PreAuthorize("@ss.hasPermission('itsm:telefone:query')")
     public CommonResult<List<String>> setores() {
         return success(telefoneService.setores());
+    }
+
+    @GetMapping("/pessoas")
+    @Operation(summary = "Usuários locais e do AD para o campo Nome do contato (digitando @), com e-mail e unidade")
+    @PreAuthorize("@ss.hasPermission('itsm:telefone:update')")
+    public CommonResult<List<PessoasDoContato.Pessoa>> pessoas(@RequestParam("busca") String busca) {
+        return success(pessoasDoContato.buscar(busca));
     }
 
     @GetMapping("/unidades")

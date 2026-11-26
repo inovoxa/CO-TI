@@ -122,6 +122,45 @@ public class AdDiretorio implements AutoCloseable {
         }
     }
 
+    /**
+     * Contas cujo nome, login ou e-mail contém o trecho (para escolher uma pessoa num campo). O trecho é escapado pelo
+     * filtro; no máximo {@code limite} contas.
+     */
+    public List<AdUsuario> buscarPorTrecho(String trecho, int limite) {
+        String t = trecho == null ? "" : trecho.strip();
+        if (t.length() < 2) {
+            return List.of();
+        }
+        String[] parte = {t};
+        Filter contem = Filter.createORFilter(
+                Filter.createSubstringFilter("displayName", null, parte, null),
+                Filter.createSubstringFilter("sAMAccountName", null, parte, null),
+                Filter.createSubstringFilter("mail", null, parte, null));
+        SearchRequest req = new SearchRequest(props.getBaseUsuarios(), SearchScope.SUB,
+                Filter.createANDFilter(filtroBase(), contem), ATRIBUTOS);
+        req.setSizeLimit(limite);
+        List<AdUsuario> contas = new ArrayList<>();
+        try {
+            for (SearchResultEntry e : pool.search(req).getSearchEntries()) {
+                contas.add(converter(e));
+            }
+        } catch (LDAPSearchException e) {
+            if (e.getResultCode() != ResultCode.SIZE_LIMIT_EXCEEDED) {
+                throw new AdIndisponivelException("Falha ao buscar contas no AD", e);
+            }
+            try {
+                for (SearchResultEntry x : e.getSearchEntries()) {
+                    contas.add(converter(x));
+                }
+            } catch (LDAPException e2) {
+                throw new AdIndisponivelException("Falha ao ler contas do AD", e2);
+            }
+        } catch (LDAPException e) {
+            throw new AdIndisponivelException("Falha ao buscar contas no AD", e);
+        }
+        return contas;
+    }
+
     // ======================================================================================= propriedades
 
     static final String[] ATRIBUTOS_PROPRIEDADES = {"objectGUID", "sAMAccountName", "userPrincipalName", "displayName", "cn",
