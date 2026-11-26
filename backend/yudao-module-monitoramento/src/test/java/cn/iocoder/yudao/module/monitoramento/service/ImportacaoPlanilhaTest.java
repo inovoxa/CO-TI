@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +55,8 @@ class ImportacaoPlanilhaTest {
     private MonitorUnitMapper unitMapper;
     @Mock
     private DeptApi deptApi;
+    @Mock
+    private cn.iocoder.yudao.module.inventario.service.UnidadeRedeService unidadeRede;
     @Mock
     private DeptService deptService;
     @Mock
@@ -84,6 +87,10 @@ class ImportacaoPlanilhaTest {
         ReflectionTestUtils.setField(unidades, "auditoriaService", auditoria);
         ReflectionTestUtils.setField(unidades, "validator", validator);
         ReflectionTestUtils.setField(unidades, "permissionService", permissao);
+        ReflectionTestUtils.setField(unidades, "unidadeRedeService", unidadeRede);
+        ReflectionTestUtils.setField(unidadeService, "unidadeRedeService", unidadeRede);
+        // a Saúde (dept 10) já tem uma faixa; a Educação (20) tem outra
+        lenient().when(unidadeRede.porDept()).thenReturn(Map.of(10L, List.of("172.21.9.0/24"), 20L, List.of("10.0.5.0/24")));
 
         MonitorUnitDO upa = MonitorUnitDO.builder().id(1L).name("UPA CENTRAL").deptId(10L).status(0).build();
         when(unitMapper.selectList()).thenReturn(List.of(upa));
@@ -293,6 +300,36 @@ class ImportacaoPlanilhaTest {
         assertEquals("Não", mudanca(alterada, "Ativa").getPara());
         assertEquals(1, p.getNovos().size());
         assertEquals("4 monitor(es) ficarão sem unidade.", p.getAusentes().get(0).getAviso());
+    }
+
+    @Test
+    void faixasDeIpNaPlanilhaDaUnidade() {
+        doReturn(List.of(unidade(1, "UPA CENTRAL", 0))).when(unidadeService).listar();
+        List<String> colunas = new ArrayList<>(COLUNAS_UNIDADE);
+        colunas.add("Faixas de IP");
+        java.util.function.Function<String, List<Object>> linha = f -> {
+            List<Object> l = new ArrayList<>(linhaUnidade("UPA CENTRAL", "Saúde", null, new BigDecimal("-21.7945"), new BigDecimal("-48.1756"), "Sim"));
+            l.add(f);
+            return l;
+        };
+
+        // a mesma faixa escrita de outro jeito (sem /24): nada muda
+        assertEquals(1, unidades.analisar(arquivo(colunas, List.of(linha.apply("172.21.9.0")))).getSemMudanca());
+        // vazio: as faixas de agora ficam
+        assertEquals(1, unidades.analisar(arquivo(colunas, List.of(linha.apply("")))).getSemMudanca());
+
+        ImportacaoVOs.Previa p = unidades.analisar(arquivo(colunas, List.of(linha.apply("172.21.9.0/24; 172.21.10.5"))));
+        ImportacaoVOs.Mudanca m = mudanca(p.getAlterados().get(0), "Faixas de IP");
+        assertEquals("172.21.9.0/24", m.getDe());
+        assertEquals("172.21.10.5/32, 172.21.9.0/24", m.getPara());
+
+        // faixa de outra unidade e faixa inválida recusam a linha
+        assertEquals(1, unidades.analisar(arquivo(colunas, List.of(linha.apply("10.0.5.0/24")))).getErros().size());
+        assertEquals(1, unidades.analisar(arquivo(colunas, List.of(linha.apply("999.1.1.0/24")))).getErros().size());
+
+        // aplicar: o departamento fica com exatamente as faixas da planilha
+        unidades.aplicar(arquivo(colunas, List.of(linha.apply("172.21.9.0/24, 172.21.10.0/24"))), List.of(), 1L);
+        verify(unidadeRede).definirDoDept(10L, List.of("172.21.9.0/24", "172.21.10.0/24"), 1L);
     }
 
     @Test

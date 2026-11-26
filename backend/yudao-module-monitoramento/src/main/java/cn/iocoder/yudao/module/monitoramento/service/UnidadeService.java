@@ -49,6 +49,8 @@ import static cn.iocoder.yudao.module.monitoramento.enums.ErrorCodeConstants.*;
 public class UnidadeService {
 
     @Resource
+    private cn.iocoder.yudao.module.inventario.service.UnidadeRedeService unidadeRedeService;
+    @Resource
     private MonitorUnitMapper monitorUnitMapper;
     @Resource
     private MonMonitorMapper monMonitorMapper;
@@ -69,11 +71,13 @@ public class UnidadeService {
     private long ultimaGeocodificacao;
 
     public List<Planilha.Aba> planilha() {
+        Map<Long, List<String>> faixas = unidadeRedeService.porDept();
         List<List<Object>> linhas = listar().stream().<List<Object>>map(u -> Arrays.asList(u.getNome(), u.getDeptNome(), u.getDeptSuperior(), u.getCep(),
                 u.getLogradouro(), u.getNumero(), u.getComplemento(), u.getBairro(), u.getCidade(), u.getUf(), u.getLatitude(),
-                u.getLongitude(), Planilha.simNao(u.getAtiva()), u.getMonitores())).toList();
+                u.getLongitude(), Planilha.simNao(u.getAtiva()), String.join(", ", faixas.getOrDefault(u.getDeptId(), List.of())),
+                u.getMonitores())).toList();
         return List.of(new Planilha.Aba("Unidades", List.of("Unidade", "Departamento", "Departamento superior", "CEP", "Logradouro", "Número", "Complemento",
-                "Bairro", "Cidade", "UF", "Latitude", "Longitude", "Ativa", "Monitores"), linhas));
+                "Bairro", "Cidade", "UF", "Latitude", "Longitude", "Ativa", "Faixas de IP", "Monitores"), linhas));
     }
 
     public List<UnidadeVOs.Unidade> listar() {

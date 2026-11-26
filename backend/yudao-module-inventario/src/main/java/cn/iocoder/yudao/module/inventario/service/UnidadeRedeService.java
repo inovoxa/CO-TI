@@ -170,6 +170,48 @@ public class UnidadeRedeService {
         return id;
     }
 
+    /** Faixas de cada departamento (unidade), em ordem: para a planilha de Unidades e endereços. */
+    public Map<Long, List<String>> porDept() {
+        Map<Long, List<String>> m = new HashMap<>();
+        jdbcTemplate.query("SELECT dept_id, cidr FROM cmdb.unidade_rede ORDER BY cidr",
+                (RowCallbackHandler) rs -> m.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>()).add(rs.getString(2)));
+        return m;
+    }
+
+    /**
+     * Deixa o departamento com exatamente estas faixas (já normalizadas): cadastra as que faltam e remove as outras dele.
+     * Faixa de outro departamento é recusada (a prévia da importação já avisa).
+     *
+     * @return quantas faixas entraram e saíram
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int definirDoDept(Long deptId, Collection<String> cidrs, Long userId) {
+        Set<String> novas = new LinkedHashSet<>(cidrs);
+        Map<String, Long> todas = new HashMap<>();
+        jdbcTemplate.query("SELECT cidr, dept_id FROM cmdb.unidade_rede", (RowCallbackHandler) rs -> todas.put(rs.getString(1), rs.getLong(2)));
+        int n = 0;
+        for (String c : novas) {
+            Long dono = todas.get(c);
+            if (dono == null) {
+                jdbcTemplate.update("INSERT INTO cmdb.unidade_rede (cidr, dept_id, observacao) VALUES (?, ?, 'importada com as unidades')", c, deptId);
+                n++;
+            } else if (!dono.equals(deptId)) {
+                throw exception(FAIXA_INVALIDA, "a faixa " + c + " já é de outra unidade");
+            }
+        }
+        for (Map.Entry<String, Long> e : todas.entrySet()) {
+            if (e.getValue().equals(deptId) && !novas.contains(e.getKey())) {
+                jdbcTemplate.update("DELETE FROM cmdb.unidade_rede WHERE cidr = ?", e.getKey());
+                n++;
+            }
+        }
+        if (n > 0) {
+            esquecer();
+            auditoriaService.registrar("inventario.faixas_da_unidade", userId, null, Map.of("unidade", deptId, "faixas", novas));
+        }
+        return n;
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void excluir(Long id, Long userId) {
         List<String> l = jdbcTemplate.queryForList("DELETE FROM cmdb.unidade_rede WHERE id = ? RETURNING cidr", String.class, id);

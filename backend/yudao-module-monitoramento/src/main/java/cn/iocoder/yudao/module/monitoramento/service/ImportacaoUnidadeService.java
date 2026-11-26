@@ -4,6 +4,8 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.module.identidade.service.AuditoriaService;
+import cn.iocoder.yudao.module.inventario.dominio.Faixas;
+import cn.iocoder.yudao.module.inventario.service.UnidadeRedeService;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.ImportacaoVOs;
 import cn.iocoder.yudao.module.monitoramento.controller.admin.vo.UnidadeVOs;
 import cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptListReqVO;
@@ -58,12 +60,13 @@ public class ImportacaoUnidadeService {
 
     private static final String NOME = "nome", DEPARTAMENTO = "departamento", SUPERIOR = "superior", CEP = "cep",
             LOGRADOURO = "logradouro", NUMERO = "numero", COMPLEMENTO = "complemento", BAIRRO = "bairro", CIDADE = "cidade",
-            UF = "uf", LATITUDE = "latitude", LONGITUDE = "longitude", ATIVA = "ativa";
+            UF = "uf", LATITUDE = "latitude", LONGITUDE = "longitude", ATIVA = "ativa", FAIXAS = "faixas";
 
     private static final Map<String, String> TITULOS = Map.ofEntries(Map.entry("unidade", NOME), Map.entry("departamento", DEPARTAMENTO),
             Map.entry("departamentosuperior", SUPERIOR), Map.entry("cep", CEP), Map.entry("logradouro", LOGRADOURO),
             Map.entry("numero", NUMERO), Map.entry("complemento", COMPLEMENTO), Map.entry("bairro", BAIRRO), Map.entry("cidade", CIDADE),
-            Map.entry("uf", UF), Map.entry("latitude", LATITUDE), Map.entry("longitude", LONGITUDE), Map.entry("ativa", ATIVA));
+            Map.entry("uf", UF), Map.entry("latitude", LATITUDE), Map.entry("longitude", LONGITUDE), Map.entry("ativa", ATIVA),
+            Map.entry("faixasdeip", FAIXAS));
 
     @Resource
     private UnidadeService unidadeService;
@@ -75,6 +78,8 @@ public class ImportacaoUnidadeService {
     private AuditoriaService auditoriaService;
     @Resource
     private Validator validator;
+    @Resource
+    private UnidadeRedeService unidadeRedeService;
 
     /** Departamento a criar; {@code superior} é a chave de outro a criar ou nulo, e então vale {@code paiId}. */
     private record NovoDept(String nome, String superior, Long paiId, String onde) {
@@ -85,12 +90,13 @@ public class ImportacaoUnidadeService {
     }
 
     private record Plano(List<UnidadeVOs.Unidade> gravar, ImportacaoVOs.Previa previa, Map<String, NovoDept> criar,
-                         Map<UnidadeVOs.Unidade, String> pendentes, Map<Long, Mudar> mudar) {
+                         Map<UnidadeVOs.Unidade, String> pendentes, Map<Long, Mudar> mudar, Map<UnidadeVOs.Unidade, List<String>> faixas,
+                         Map<String, String> faixasNoArquivo) {
     }
 
     /** Árvore de agora: departamentos pelo nome e pelo id, a raiz e o que quem importa pode fazer com departamentos. */
     private record Contexto(Map<String, List<DeptDO>> porNome, Map<Long, DeptDO> porId, Long raizId, String raizNome,
-                            boolean podeCriar, boolean podeEditar) {
+                            boolean podeCriar, boolean podeEditar, Map<Long, List<String>> faixas, Map<String, Long> donoDaFaixa) {
     }
 
     public ImportacaoVOs.Previa analisar(InputStream arquivo) {
@@ -114,6 +120,8 @@ public class ImportacaoUnidadeService {
             mudados.add(m.dept().getName() + " → " + m.paraNome());
         });
         unidadeService.aplicarImportacao(plano.gravar(), remover);
+        // faixas de IP: o departamento da unidade fica com exatamente as da planilha (os criados agora já têm id)
+        plano.faixas().forEach((vo, cidrs) -> unidadeRedeService.definirDoDept(vo.getDeptId(), cidrs, userId));
         ImportacaoVOs.Resultado r = resultado(plano.previa(), remover.size());
         auditoriaService.registrar("monitoramento.importar_unidades", userId, null, Map.of("adicionados", r.getAdicionados(),
                 "atualizados", r.getAtualizados(), "removidos", nomes(plano.previa(), remover), "recusados", r.getRecusados(),
@@ -148,10 +156,12 @@ public class ImportacaoUnidadeService {
                 depts.stream().collect(Collectors.toMap(DeptDO::getId, d -> d, (a, b) -> a)),
                 raiz == null ? DeptDO.PARENT_ID_ROOT : raiz.getId(), raiz == null ? null : raiz.getName(),
                 userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_CRIAR_DEPARTAMENTO),
-                userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_EDITAR_DEPARTAMENTO));
+                userId != null && permissionService.hasAnyPermissions(userId, PERMISSAO_EDITAR_DEPARTAMENTO),
+                unidadeRedeService.porDept(), new HashMap<>());
+        ctx.faixas().forEach((d, l) -> l.forEach(c -> ctx.donoDaFaixa().put(c, d)));
 
         Plano plano = new Plano(new ArrayList<>(), new ImportacaoVOs.Previa(), new LinkedHashMap<>(), new IdentityHashMap<>(),
-                new LinkedHashMap<>());
+                new LinkedHashMap<>(), new IdentityHashMap<>(), new HashMap<>());
         // quem aparece em linha recusada também conta como presente: um erro de digitação não pode virar remoção
         Set<Long> presentes = new HashSet<>();
         Set<Long> usadas = new HashSet<>();
@@ -159,6 +169,7 @@ public class ImportacaoUnidadeService {
         for (Planilha.Linha l : linhas) {
             Map<String, NovoDept> antes = new LinkedHashMap<>(plano.criar());
             Map<Long, Mudar> mudarAntes = new LinkedHashMap<>(plano.mudar());
+            Map<String, String> faixasAntes = new HashMap<>(plano.faixasNoArquivo());
             try {
                 processar(l, porNome, ctx, plano, presentes, usadas, novas);
             } catch (ServiceException | IllegalArgumentException e) {
@@ -167,6 +178,8 @@ public class ImportacaoUnidadeService {
                 plano.criar().putAll(antes);
                 plano.mudar().clear();
                 plano.mudar().putAll(mudarAntes);
+                plano.faixasNoArquivo().clear();
+                plano.faixasNoArquivo().putAll(faixasAntes);
                 recusar(plano.previa(), l, e);
             }
         }
@@ -250,6 +263,12 @@ public class ImportacaoUnidadeService {
         comparar(mudancas, "Latitude", coordenada(de.getLatitude()), coordenada(previsto.getLatitude()));
         comparar(mudancas, "Longitude", coordenada(de.getLongitude()), coordenada(previsto.getLongitude()));
         comparar(mudancas, "Ativa", atual == null ? null : Planilha.simNao(atual.getAtiva()), Planilha.simNao(previsto.getStatus() == 0));
+        List<String> faixas = faixas(c, nome, vo.getDeptId(), ctx, plano);
+        if (faixas != null) {
+            List<String> antes = A_CRIAR.equals(vo.getDeptId()) ? List.of() : ctx.faixas().getOrDefault(vo.getDeptId(), List.of());
+            comparar(mudancas, "Faixas de IP", String.join(", ", antes.stream().sorted().toList()),
+                    String.join(", ", faixas.stream().sorted().toList()));
+        }
 
         String aviso = pendente == null ? null
                 : "O departamento \"" + deptNome + "\" será criado em " + plano.criar().get(pendente).onde() + ".";
@@ -265,6 +284,43 @@ public class ImportacaoUnidadeService {
         if (pendente != null) {
             plano.pendentes().put(vo, pendente);
         }
+        if (faixas != null) {
+            plano.faixas().put(vo, faixas);
+        }
+    }
+
+    /**
+     * Faixas de IP da linha, normalizadas ("172.21.9.0" vira /24; um IP vira /32). Coluna ausente ou vazia = as faixas
+     * de agora ficam (null). Faixa de outra unidade, repetida no arquivo ou inválida recusa a linha.
+     */
+    private static List<String> faixas(Map<String, String> c, String nome, Long deptId, Contexto ctx, Plano plano) {
+        String v = vazio(c.get(FAIXAS));
+        if (v == null) {
+            return null;
+        }
+        List<String> l = new ArrayList<>();
+        for (String parte : v.split("[,;\\s]+")) {
+            if (parte.isBlank()) {
+                continue;
+            }
+            String cidr = Faixas.normalizar(parte);
+            if (cidr == null) {
+                throw new IllegalArgumentException("faixa de IP inválida: \"" + parte + "\" (use 172.21.9.0/24)");
+            }
+            Long dono = ctx.donoDaFaixa().get(cidr);
+            if (dono != null && !dono.equals(deptId)) {
+                DeptDO d = ctx.porId().get(dono);
+                throw new IllegalArgumentException("a faixa " + cidr + " já é de " + (d == null ? "outra unidade" : "\"" + d.getName() + "\""));
+            }
+            String outra = plano.faixasNoArquivo().putIfAbsent(cidr, nome);
+            if (outra != null && !outra.equals(nome)) {
+                throw new IllegalArgumentException("a faixa " + cidr + " também está na linha de \"" + outra + "\"");
+            }
+            if (!l.contains(cidr)) {
+                l.add(cidr);
+            }
+        }
+        return l;
     }
 
     /** Define o departamento e devolve o nome dele. Em branco na unidade cadastrada, mantém; o mesmo nome de agora também. */

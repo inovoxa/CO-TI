@@ -408,8 +408,8 @@ Os agentes já instalados continuam como estão: basta apontá-los para o CO-TI.
   Agent). O detalhe tem as abas Hardware, Rede, Dispositivos, Softwares, Chamados e Histórico.
 - **Unidade do ativo, sem palpite:** a escolhida à mão; senão a da **faixa de IP** do **primeiro IP da máquina que
   cai numa faixa** (o principal, depois os das outras placas); senão nenhuma. As faixas ficam na própria unidade
-  (**Monitoramento → Unidades e endereços**, campo Faixas de IP) e também em Inventário → Rede, com sugestões,
-  Exportar e Importar. A unidade da pessoa logada não é mais usada.
+  (**Monitoramento → Unidades e endereços**, campo Faixas de IP, que também vai na planilha de Exportar/Importar das
+  unidades, separadas por vírgula; vazio mantém as de agora) e em Inventário → Rede, com sugestões, Exportar e Importar. A unidade da pessoa logada não é mais usada.
 - **Usuário do ativo:** a pessoa do portal dona do login que o agente informou (`DOMINIO\login` e `login@dominio`
   valem); login que não é de ninguém deixa o usuário vazio.
 - **Inconsistências** (botão na tela de ativos, e o Assistente IA: "Verificar inconsistências nos ativos do
