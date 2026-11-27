@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.monitoramento.service;
 
+import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.framework.websocket.core.sender.WebSocketMessageSender;
 import cn.iocoder.yudao.framework.excel.core.util.Planilha;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.monitoramento.config.MonitoramentoProperties;
@@ -22,6 +24,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -52,6 +56,8 @@ public class UnidadeService {
     private cn.iocoder.yudao.module.inventario.service.UnidadeRedeService unidadeRedeService;
     @Resource
     private MonitorUnitMapper monitorUnitMapper;
+    @Resource
+    private WebSocketMessageSender webSocketMessageSender;
     @Resource
     private MonMonitorMapper monMonitorMapper;
     @Resource
@@ -147,6 +153,7 @@ public class UnidadeService {
                     .set(MonitorUnitDO::getNumero, u.getNumero()).set(MonitorUnitDO::getComplemento, u.getComplemento())
                     .set(MonitorUnitDO::getBairro, u.getBairro()).set(MonitorUnitDO::getCity, u.getCity()).set(MonitorUnitDO::getUf, u.getUf()));
         }
+        avisarTelas();
         return u.getId();
     }
 
@@ -196,6 +203,7 @@ public class UnidadeService {
                 .set(ManutencaoDO::getUnidadeId, null));
         telefoneMapper.update(null, new LambdaUpdateWrapper<TelefoneDO>().eq(TelefoneDO::getUnidadeId, id)
                 .set(TelefoneDO::getUnidadeId, null).set(TelefoneDO::getEmergencia, false));
+        avisarTelas();
     }
 
     /**
@@ -227,7 +235,43 @@ public class UnidadeService {
         detalhes.put("manutencoes", r.getManutencoes());
         detalhes.put("telefones", r.getTelefones());
         auditoriaService.registrar("monitoramento.juntar_unidades", userId, null, detalhes);
+        avisarTelas();
         return r;
+    }
+
+    /** Tipo da mensagem do WebSocket que pede às telas do mapa para recarregar a lista de unidades. */
+    public static final String TIPO_WS_UNIDADES = "monitor-unidades";
+
+    /**
+     * Avisa as telas abertas (mapa da Visão geral, telão) que as unidades mudaram: nova, excluída, juntada, ativada ou
+     * com outro ponto no mapa. Dentro de transação, só depois de gravar; várias mudanças na mesma transação avisam uma vez.
+     */
+    private void avisarTelas() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            if (TransactionSynchronizationManager.hasResource(TIPO_WS_UNIDADES)) {
+                return;
+            }
+            TransactionSynchronizationManager.bindResource(TIPO_WS_UNIDADES, Boolean.TRUE);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    TransactionSynchronizationManager.unbindResourceIfPossible(TIPO_WS_UNIDADES);
+                    if (status == STATUS_COMMITTED) {
+                        enviarAviso();
+                    }
+                }
+            });
+            return;
+        }
+        enviarAviso();
+    }
+
+    private void enviarAviso() {
+        try {
+            webSocketMessageSender.sendObject(UserTypeEnum.ADMIN.getValue(), TIPO_WS_UNIDADES, Map.of("em", System.currentTimeMillis()));
+        } catch (Exception e) {
+            log.warn("[avisarTelas] não deu para avisar as telas do mapa: {}", e.getMessage());
+        }
     }
 
     /** O nome como o cadastro compara: sem acento e sem diferença de maiúsculas ou de espaços. */

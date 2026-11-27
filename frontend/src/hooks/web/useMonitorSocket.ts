@@ -12,7 +12,7 @@ import { useMonitorStoreWithOut } from '@/store/modules/monitor'
  * A assinatura é cancelada sozinha quando a página fecha. A conexão continua aberta
  * enquanto o usuário navega entre os módulos, sem reconectar a cada troca de página.
  *
- * Tipos enviados pelo backend: monitor-kpi, monitor-ocorrencia (MonitorPushJob) e
+ * Tipos enviados pelo backend: monitor-kpi, monitor-ocorrencia (MonitorPushJob), monitor-unidades (UnidadeService) e
  * monitor-link, monitor-chamado, monitor-log, monitor-camera (FontesSimuladas ou fontes reais).
  */
 type Handler = (conteudo: any) => void
@@ -71,6 +71,8 @@ function garantirConexao() {
   const store = useMonitorStoreWithOut()
   adicionar('monitor-kpi', (l) => store.aplicarKpis(l))
   adicionar('monitor-ocorrencia', (l) => store.aplicarOcorrencias(l))
+  // o cadastro de Unidades e endereços mudou: o mapa recarrega a lista
+  adicionar('monitor-unidades', () => store.recarregarUnidades())
   return conexao
 }
 

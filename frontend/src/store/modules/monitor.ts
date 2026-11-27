@@ -11,6 +11,9 @@ const MAX_OCORRENCIAS = 80
  * - unidades, setores e indicadores de cada unidade (carregados uma vez, atualizados pelo WebSocket)
  * - ocorrências recentes (barra de alertas e contador do menu)
  */
+let recarga: ReturnType<typeof setTimeout> | undefined
+let periodica: ReturnType<typeof setInterval> | undefined
+
 export const useMonitorStore = defineStore('monitor', {
   state: () => ({
     unidadeId: undefined as number | undefined,
@@ -47,12 +50,23 @@ export const useMonitorStore = defineStore('monitor', {
           this.unidades = d.units || []
           this.ocorrencias = (d.ocorrencias || []).slice(0, MAX_OCORRENCIAS)
           this.carregado = true
+          // rede de segurança, caso algum aviso do WebSocket se perca (conexão caiu, por exemplo)
+          if (!periodica) periodica = setInterval(() => this.recarregarUnidades(), 5 * 60 * 1000)
         })
         .finally(() => (this.carregando = null))
       return this.carregando
     },
     setUnidade(id?: number) {
       this.unidadeId = id || undefined
+    },
+    /**
+     * Recarrega a lista de unidades (cadastro mudou: nova, excluída, juntada ou com outro ponto no mapa). Várias
+     * chamadas seguidas viram uma só.
+     */
+    recarregarUnidades() {
+      if (!this.carregado) return
+      clearTimeout(recarga)
+      recarga = setTimeout(() => this.carregar(true).catch(() => {}), 800)
     },
     aplicarKpis(leituras: UnitKpi[]) {
       leituras.forEach((k) => {

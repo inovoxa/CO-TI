@@ -279,7 +279,11 @@ onMounted(() => {
   desenhar()
   enquadrar()
 })
-watch(() => props.unidades.map((u) => u.kpi?.status).join(), desenhar)
+// redesenha quando muda a cor, o nome ou o ponto de alguma unidade (a lista é recarregada quando o cadastro muda)
+watch(
+  () => props.unidades.map((u) => `${u.id}:${u.kpi?.status}:${u.name}:${u.latitude}:${u.longitude}`).join('|'),
+  desenhar
+)
 watch(
   () => props.unidades.length,
   () => {
